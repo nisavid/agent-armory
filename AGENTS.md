@@ -17,6 +17,20 @@ Do not narrow that purpose into a specific content model, methodology, directory
 - "Equipment for agents" means skills, MCPs, plugins, scripts, policy frameworks, workflows, agent roles, and other tools that an agent or agentic system can equip.
 - Treat future terms of art as project vocabulary only after they appear in committed content or the user defines them.
 
+## Agent skills
+
+### Issue tracker
+
+Issues and PRDs are tracked in GitHub Issues for `nisavid/agent-armory`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the default five-label triage vocabulary. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Use single-context domain docs. See `docs/agents/domain.md`.
+
 ## Commit and PR Policy
 
 - Use Conventional Commit subjects.
