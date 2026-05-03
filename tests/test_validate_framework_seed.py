@@ -14,6 +14,7 @@ from tools.validate_framework_seed import (
     render_human,
     run,
     validate_canonical_docs,
+    validate_examples,
     validate_framework_routes,
     validate_harness_catalog,
     validate_markdown_links,
@@ -6341,6 +6342,313 @@ class TemplateValidationTests(unittest.TestCase):
                 False,
                 "missing autonomy",
                 "templates/config/example.toml",
+            ),
+            results,
+        )
+
+
+class ExampleValidationTests(unittest.TestCase):
+    required_example_paths = [
+        "examples/pr-review/capability-card.md",
+        "examples/pr-review/interface-decision-record.md",
+        "examples/pr-review/projected-components.md",
+        "examples/docs-research/capability-card.md",
+        "examples/docs-research/interface-decision-record.md",
+        "examples/docs-research/projected-components.md",
+        "examples/observability-investigation/capability-card.md",
+        "examples/observability-investigation/interface-decision-record.md",
+        "examples/observability-investigation/projected-components.md",
+    ]
+
+    def write_example(self, root: Path, example_id: str, overrides: dict[str, str] | None = None) -> None:
+        files = {
+            "capability-card.md": """\
+                # Capability Card: Example capability
+
+                Status: Framework Example
+                Promotion state: example
+
+                This Framework Example is not Published Agent Equipment and is not installable.
+                Trace: capability card -> [interface decision record](interface-decision-record.md) -> projected components.
+                """,
+            "interface-decision-record.md": """\
+                # Interface Decision Record: Example capability
+
+                Status: Framework Example
+                Promotion state: example
+
+                This Framework Example is not Published Agent Equipment and is not installable.
+                Trace: [capability card](capability-card.md) -> interface decision record -> [projected components](projected-components.md).
+                """,
+            "projected-components.md": """\
+                # Projected Components: Example capability
+
+                Status: Framework Example
+                Promotion state: example
+
+                This Framework Example is not Published Agent Equipment and is not installable.
+                Trace: [capability card](capability-card.md) -> [interface decision record](interface-decision-record.md) -> projected components.
+                """,
+        }
+        files.update(overrides or {})
+        for file_name, content in files.items():
+            path = root / "examples" / example_id / file_name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(textwrap.dedent(content).lstrip(), encoding="utf-8")
+
+    def write_all_examples(self, root: Path, overrides: dict[str, dict[str, str]] | None = None) -> None:
+        for example_id in ["pr-review", "docs-research", "observability-investigation"]:
+            self.write_example(root, example_id, (overrides or {}).get(example_id))
+
+    def test_run_requires_all_example_paths(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = run(root)
+
+        for relative_path in self.required_example_paths:
+            self.assertIn(
+                CheckResult(f"required_path:{relative_path}", False, "missing", relative_path),
+                results,
+            )
+
+    def test_validate_examples_accepts_complete_examples(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_examples(root)
+
+            results = validate_examples(root)
+
+        self.assertTrue(all(result.ok for result in results), results)
+
+    def test_validate_examples_requires_framework_example_status(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_examples(
+                root,
+                {
+                    "pr-review": {
+                        "capability-card.md": """\
+                            # Capability Card: PR review
+
+                            Promotion state: example
+
+                            This Framework Example is not Published Agent Equipment and is not installable.
+                            Trace: capability card -> [interface decision record](interface-decision-record.md) -> projected components.
+                            """
+                    }
+                },
+            )
+
+            results = validate_examples(root)
+
+        self.assertIn(
+            CheckResult(
+                "example:status:examples/pr-review/capability-card.md",
+                False,
+                "missing Status: Framework Example",
+                "examples/pr-review/capability-card.md",
+            ),
+            results,
+        )
+
+    def test_validate_examples_requires_promotion_state_example(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_examples(
+                root,
+                {
+                    "docs-research": {
+                        "interface-decision-record.md": """\
+                            # Interface Decision Record: Docs research
+
+                            Status: Framework Example
+
+                            This Framework Example is not Published Agent Equipment and is not installable.
+                            Trace: [capability card](capability-card.md) -> interface decision record -> [projected components](projected-components.md).
+                            """
+                    }
+                },
+            )
+
+            results = validate_examples(root)
+
+        self.assertIn(
+            CheckResult(
+                "example:promotion:examples/docs-research/interface-decision-record.md",
+                False,
+                "missing Promotion state: example",
+                "examples/docs-research/interface-decision-record.md",
+            ),
+            results,
+        )
+
+    def test_validate_examples_requires_non_published_boundary(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_examples(
+                root,
+                {
+                    "observability-investigation": {
+                        "projected-components.md": """\
+                            # Projected Components: Observability investigation
+
+                            Status: Framework Example
+                            Promotion state: example
+
+                            Trace: [capability card](capability-card.md) -> [interface decision record](interface-decision-record.md) -> projected components.
+                            """
+                    }
+                },
+            )
+
+            results = validate_examples(root)
+
+        self.assertIn(
+            CheckResult(
+                "example:boundary:examples/observability-investigation/projected-components.md",
+                False,
+                "missing non-published boundary",
+                "examples/observability-investigation/projected-components.md",
+            ),
+            results,
+        )
+
+    def test_validate_examples_requires_non_installable_boundary(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_examples(
+                root,
+                {
+                    "docs-research": {
+                        "projected-components.md": """\
+                            # Projected Components: Documentation research
+
+                            Status: Framework Example
+                            Promotion state: example
+
+                            This Framework Example is not Published Agent Equipment.
+                            Trace: [capability card](capability-card.md) -> [interface decision record](interface-decision-record.md) -> projected components.
+                            """
+                    }
+                },
+            )
+
+            results = validate_examples(root)
+
+        self.assertIn(
+            CheckResult(
+                "example:boundary:examples/docs-research/projected-components.md:installable",
+                False,
+                "missing non-installable boundary",
+                "examples/docs-research/projected-components.md",
+            ),
+            results,
+        )
+
+    def test_validate_examples_requires_trace_links(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_examples(
+                root,
+                {
+                    "pr-review": {
+                        "interface-decision-record.md": """\
+                            # Interface Decision Record: PR review
+
+                            Status: Framework Example
+                            Promotion state: example
+
+                            This Framework Example is not Published Agent Equipment and is not installable.
+                            Trace: capability card -> interface decision record -> projected components.
+                            """
+                    }
+                },
+            )
+
+            results = validate_examples(root)
+
+        self.assertIn(
+            CheckResult(
+                "example:trace:examples/pr-review/interface-decision-record.md:capability-card.md",
+                False,
+                "missing trace link: capability-card.md",
+                "examples/pr-review/interface-decision-record.md",
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                "example:trace:examples/pr-review/interface-decision-record.md:projected-components.md",
+                False,
+                "missing trace link: projected-components.md",
+                "examples/pr-review/interface-decision-record.md",
+            ),
+            results,
+        )
+
+    def test_validate_examples_rejects_published_or_production_claims(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_examples(
+                root,
+                {
+                    "docs-research": {
+                        "capability-card.md": """\
+                            # Capability Card: Docs research
+
+                            Status: Framework Example
+                            Promotion state: example
+
+                            This Framework Example is not Published Agent Equipment and is not installable.
+                            This example is production-ready.
+                            Trace: capability card -> [interface decision record](interface-decision-record.md) -> projected components.
+                            """
+                    }
+                },
+            )
+
+            results = validate_examples(root)
+
+        self.assertIn(
+            CheckResult(
+                "example:claim:examples/docs-research/capability-card.md:production-ready",
+                False,
+                "forbidden readiness claim: production-ready",
+                "examples/docs-research/capability-card.md",
+            ),
+            results,
+        )
+
+    def test_validate_examples_rejects_installability_claims(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_examples(
+                root,
+                {
+                    "observability-investigation": {
+                        "interface-decision-record.md": """\
+                            # Interface Decision Record: Observability investigation
+
+                            Status: Framework Example
+                            Promotion state: example
+
+                            This Framework Example is not Published Agent Equipment and is not installable.
+                            This example is installable.
+                            Trace: [capability card](capability-card.md) -> interface decision record -> [projected components](projected-components.md).
+                            """
+                    }
+                },
+            )
+
+            results = validate_examples(root)
+
+        self.assertIn(
+            CheckResult(
+                "example:claim:examples/observability-investigation/interface-decision-record.md:is installable",
+                False,
+                "forbidden readiness claim: is installable",
+                "examples/observability-investigation/interface-decision-record.md",
             ),
             results,
         )

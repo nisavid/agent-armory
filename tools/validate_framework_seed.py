@@ -349,6 +349,7 @@ REQUIRED_PRELOADED_ROUTES = [
     "docs/interface-decision-guide.md",
     "docs/harness-capabilities.md",
     "templates/",
+    "examples/",
     "specs/",
 ]
 CANONICAL_DOC_REQUIRED_SECTIONS = {
@@ -475,6 +476,42 @@ TEMPLATE_REQUIRED_PATHS = [
     "templates/config/example.toml",
     "templates/security-review.md",
     "templates/context-budget-review.md",
+]
+EXAMPLE_DIRECTORIES = [
+    "examples/pr-review",
+    "examples/docs-research",
+    "examples/observability-investigation",
+]
+EXAMPLE_FILES = [
+    "capability-card.md",
+    "interface-decision-record.md",
+    "projected-components.md",
+]
+EXAMPLE_REQUIRED_PATHS = [
+    f"{example_directory}/{example_file}"
+    for example_directory in EXAMPLE_DIRECTORIES
+    for example_file in EXAMPLE_FILES
+]
+EXAMPLE_TRACE_LINKS = {
+    "capability-card.md": ["interface-decision-record.md"],
+    "interface-decision-record.md": ["capability-card.md", "projected-components.md"],
+    "projected-components.md": ["capability-card.md", "interface-decision-record.md"],
+}
+FORBIDDEN_EXAMPLE_CLAIMS = [
+    "production-ready",
+    "ready for production",
+    "validated Agent Equipment",
+    "Promotion state: published",
+    "Status: Published",
+    "is installable",
+    "are installable",
+    "installable Agent Equipment",
+    "can be installed",
+    "ready to install",
+    "is loadable",
+    "are loadable",
+    "loadable Agent Equipment",
+    "can be loaded",
 ]
 ROOT_TEMPLATE_FILES = [
     "templates/capability-card.md",
@@ -3113,6 +3150,94 @@ def validate_templates(root: Path) -> list[CheckResult]:
     return results
 
 
+def has_framework_example_status(markdown: str) -> bool:
+    visible_markdown = markdown_visible_text(markdown)
+    nonblank_lines = [line.strip() for line in visible_markdown.splitlines() if line.strip()]
+    return "Status: Framework Example" in nonblank_lines[:8]
+
+
+def has_example_promotion_state(markdown: str) -> bool:
+    visible_markdown = markdown_visible_text(markdown)
+    nonblank_lines = [line.strip() for line in visible_markdown.splitlines() if line.strip()]
+    return "Promotion state: example" in nonblank_lines[:10]
+
+
+def validate_examples(root: Path) -> list[CheckResult]:
+    results: list[CheckResult] = []
+    for example_directory in EXAMPLE_DIRECTORIES:
+        for example_file in EXAMPLE_FILES:
+            relative_path = f"{example_directory}/{example_file}"
+            ok, detail, path = repo_relative_path_status(root, relative_path, "file")
+            if not ok:
+                if detail == "path contains symlink":
+                    detail = "example path contains symlink"
+                results.append(CheckResult(f"example:path:{relative_path}", False, detail, relative_path))
+                continue
+            markdown = path.read_text(encoding="utf-8")
+            visible_markdown = markdown_visible_text(markdown)
+            searchable_markdown = markdown_link_search_text(markdown)
+            if not has_framework_example_status(markdown):
+                results.append(
+                    CheckResult(
+                        f"example:status:{relative_path}",
+                        False,
+                        "missing Status: Framework Example",
+                        relative_path,
+                    )
+                )
+            if not has_example_promotion_state(markdown):
+                results.append(
+                    CheckResult(
+                        f"example:promotion:{relative_path}",
+                        False,
+                        "missing Promotion state: example",
+                        relative_path,
+                    )
+                )
+            if "not Published Agent Equipment".casefold() not in visible_markdown.casefold():
+                results.append(
+                    CheckResult(
+                        f"example:boundary:{relative_path}",
+                        False,
+                        "missing non-published boundary",
+                        relative_path,
+                    )
+                )
+            if "not installable".casefold() not in visible_markdown.casefold():
+                results.append(
+                    CheckResult(
+                        f"example:boundary:{relative_path}:installable",
+                        False,
+                        "missing non-installable boundary",
+                        relative_path,
+                    )
+                )
+            observed_links = set(find_markdown_links(searchable_markdown))
+            for required_link in EXAMPLE_TRACE_LINKS[example_file]:
+                if required_link not in observed_links:
+                    results.append(
+                        CheckResult(
+                            f"example:trace:{relative_path}:{required_link}",
+                            False,
+                            f"missing trace link: {required_link}",
+                            relative_path,
+                        )
+                    )
+            for forbidden_claim in FORBIDDEN_EXAMPLE_CLAIMS:
+                if forbidden_claim.casefold() in visible_markdown.casefold():
+                    results.append(
+                        CheckResult(
+                            f"example:claim:{relative_path}:{forbidden_claim}",
+                            False,
+                            f"forbidden readiness claim: {forbidden_claim}",
+                            relative_path,
+                        )
+                    )
+    if not any(result.name.startswith("example:") and not result.ok for result in results):
+        results.append(CheckResult("example:examples", True, "present", "examples"))
+    return results
+
+
 def validate_markdown_links(root: Path) -> list[CheckResult]:
     results: list[CheckResult] = []
     for path in markdown_files(root):
@@ -3174,6 +3299,7 @@ def run(root: Path) -> list[CheckResult]:
         "docs/harness-capabilities.toml",
         *CANONICAL_DOC_REQUIRED_SECTIONS,
         *TEMPLATE_REQUIRED_PATHS,
+        *EXAMPLE_REQUIRED_PATHS,
     ]
     return [
         *validate_required_paths(root, required_paths),
@@ -3183,6 +3309,7 @@ def run(root: Path) -> list[CheckResult]:
         *validate_canonical_docs(root),
         *validate_harness_catalog(root),
         *validate_templates(root),
+        *validate_examples(root),
         *validate_markdown_links(root),
     ]
 

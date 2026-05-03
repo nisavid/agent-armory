@@ -29,6 +29,7 @@ Smiths creating or modifying Agent Equipment should start with:
 - `docs/interface-decision-guide.md` for choosing skills, MCP/tools, hooks, Agent Profiles, plugins, scripts, docs, and config.
 - `docs/harness-capabilities.md` before making harness-specific claims.
 - `templates/` for seed templates.
+- `examples/` for annotated Framework Examples.
 - `specs/` for downstream Smith specs.
 
 ## Agent skills

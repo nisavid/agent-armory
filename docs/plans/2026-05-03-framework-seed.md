@@ -2336,6 +2336,9 @@ git commit -m "docs(templates): add framework seed templates" -m "Co-authored-by
 
 **Files:**
 - Create every `examples/` path listed in the File Structure section.
+- Modify: `AGENTS.md`
+- Modify: `docs/metasmith/source-projection.md`
+- Modify: `docs/plans/2026-05-03-framework-seed.md`
 - Modify: `tools/validate_framework_seed.py`
 - Modify: `tests/test_validate_framework_seed.py`
 
@@ -2384,7 +2387,7 @@ Expected: example checks PASS; specs may still FAIL.
 Run:
 
 ```bash
-git add examples tools/validate_framework_seed.py tests/test_validate_framework_seed.py
+git add AGENTS.md docs/metasmith/source-projection.md docs/plans/2026-05-03-framework-seed.md examples tools/validate_framework_seed.py tests/test_validate_framework_seed.py
 git commit -m "docs(examples): add framework method examples" -m "Co-authored-by: Codex <noreply@openai.com>"
 ```
 
