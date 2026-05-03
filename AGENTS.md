@@ -37,11 +37,13 @@ Use single-context domain docs. See `docs/agents/domain.md`.
 - Prefer concise scopes that name the affected domain.
 - Nested slash-separated scopes are welcome when they communicate the change more precisely, for example `docs/readme` or `skills/install`.
 - Before pushing changes to repo content, ensure any related or referencing repo content is updated accordingly.
-- Do not stage, commit, push, or force-push unless the user asks for it.
+- Once work is underway, agents may stage, commit, push, open PRs, update issues, and perform closeout steps when those actions advance the assigned work and respect the repository's current review, verification, and stakeholder boundaries.
+- Do not force-push or perform destructive history operations unless the user explicitly asks for that action.
 
 ## Operating Policy
 
 - This repository uses agentic engineering and operations. Agents should perform assigned tasks autonomously until they reach a boundary that requires stakeholder policy or an unavailable control surface.
+- The user reserves authority over project initiatives and over initiation or continuation of work sessions. Within an active user-directed session, agents should drive execution, review loops, commits, publication steps, and cleanup unless escalation is required.
 - Escalate when a decision or action impacts stakeholder concerns and the stakeholder's policy is unknown or uncertain.
 - Escalate when an action must be taken but the agent lacks an autonomous control surface for it.
 - When escalating a decision and a set of plausible, distinct choices is known, use a multiple-choice input tool if one is available in the interactive context. Include a way for the human operator to provide custom input.

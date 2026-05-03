@@ -1,0 +1,21 @@
+{
+  "created_at": "2026-05-03T04:46:42.243245",
+  "as_of_date": "2026-05-02",
+  "timezone": "America/New_York",
+  "files": [
+    "00-metasmith-handoff-prompt.md",
+    "01-executive-brief.md",
+    "02-ubiquitous-language.md",
+    "03-evidence-and-source-map.md",
+    "04-framework-architecture.md",
+    "05-decision-method-and-runbook.md",
+    "06-harness-capability-catalog.md",
+    "07-equipment-templates-and-examples.md",
+    "08-initial-smith-task-specs.md",
+    "09-repository-seed-plan.md",
+    "10-gap-resolution-and-design-notes.md",
+    "README.md",
+    "harness-capabilities.seed.toml"
+  ],
+  "purpose": "Self-contained final draft handoff bundle for nisavid/agent-armory."
+}

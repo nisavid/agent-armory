@@ -1,0 +1,79 @@
+checked_at = "2026-05-02T00:00:00-04:00"
+timezone = "America/New_York"
+status = "seed"
+
+[harness.codex]
+display_name = "Codex"
+version = "0.128.0"
+prerelease = "0.129.0-alpha.2"
+evidence = "documentation-supported"
+sources = ["https://github.com/openai/codex/releases"]
+components = ["skills", "mcp", "hooks", "agent_profiles", "plugins"]
+scheduling = "verify; persisted goals exist"
+notes = "hooks is stable; codex_hooks is legacy alias; plugin_hooks/plugin-bundled hooks must be verified per installed version."
+
+[harness.openclaw]
+display_name = "OpenClaw"
+latest_non_prerelease = "2026.4.29"
+top_prerelease = "2026.5.2-beta.3"
+evidence = "documentation-supported"
+sources = ["https://github.com/openclaw/openclaw/releases"]
+components = ["skills", "mcp", "hooks", "agent_profiles", "plugins", "cron"]
+scheduling = "cron, heartbeat"
+notes = "Treat as personal-assistant trust model, not hostile multi-tenant isolation."
+
+[harness.hermes]
+display_name = "Hermes Agent"
+version = "v0.12.0"
+evidence = "documentation-supported"
+sources = ["https://github.com/NousResearch/hermes-agent/releases"]
+components = ["skills", "mcp", "hooks", "agent_profiles", "plugins", "cron"]
+scheduling = "cron"
+notes = "Strong target for Agent Ops and Periodic Actions."
+
+[harness.claude_code]
+display_name = "Claude Code"
+version = "2.1.126"
+version_evidence = "Snyk package metadata; verify with claude --version"
+sources = [
+  "https://security.snyk.io/package/npm/%40anthropic-ai%2Fclaude-code/2.1.126",
+  "https://code.claude.com/docs/en/hooks",
+  "https://code.claude.com/docs/en/sub-agents",
+  "https://code.claude.com/docs/en/scheduled-tasks",
+  "https://code.claude.com/docs/en/web-scheduled-tasks",
+  "https://docs.claude.com/en/docs/claude-code/skills",
+  "https://docs.claude.com/en/docs/claude-code/plugins"
+]
+components = ["skills", "mcp", "hooks", "agent_profiles", "plugins", "scheduled_tasks", "routines"]
+scheduling = "routines, desktop scheduled tasks, /loop"
+notes = "Routines are research preview. /loop is session-scoped."
+
+[harness.cursor]
+display_name = "Cursor"
+version = "3.2"
+evidence = "documentation-supported"
+sources = [
+  "https://cursor.com/changelog",
+  "https://docs.cursor.com/en/context",
+  "https://docs.cursor.com/context/model-context-protocol",
+  "https://docs.cursor.com/en/background-agents",
+  "https://docs.cursor.com/en/cli/using"
+]
+components = ["rules", "mcp", "agent_profiles", "plugins", "background_agents", "automations"]
+scheduling = "automations/background agents; verify hooks"
+notes = "Background agents run in remote VMs with internet access and can auto-run terminal commands."
+
+[harness.opencode]
+display_name = "OpenCode"
+version = "v1.14.33"
+evidence = "documentation-supported"
+sources = [
+  "https://github.com/anomalyco/opencode/releases",
+  "https://opencode.ai/docs/skills",
+  "https://opencode.ai/docs/plugins/",
+  "https://opencode.ai/docs/agents/",
+  "https://opencode.ai/docs/config/"
+]
+components = ["skills", "mcp", "hooks", "agent_profiles", "plugins", "permissions"]
+scheduling = "verify; no first-class durable scheduler confirmed"
+notes = "Plugins provide tool.execute.before/after and session events."
