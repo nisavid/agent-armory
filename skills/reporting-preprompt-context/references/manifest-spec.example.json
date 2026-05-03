@@ -1,0 +1,31 @@
+{
+  "rules": {
+    "always_applied_workspace_rules": [
+      "/absolute/path/to/AGENTS.md",
+      "/absolute/path/to/AGENTS.md"
+    ],
+    "agent_requestable_workspace_rules": [
+      {
+        "path": "/absolute/path/to/rule.mdc",
+        "description": "Rule summary shown in the prompt catalog"
+      }
+    ],
+    "user_rules": [
+      "A visible user rule"
+    ]
+  },
+  "skills": [
+    "/absolute/path/to/skill/SKILL.md",
+    "/absolute/path/to/skill/SKILL.md"
+  ],
+  "mcps": [
+    {
+      "entry_text": "<mcp_file_system_server name=\"cursor-ide-browser\" folderPath=\"/absolute/path/to/mcps/cursor-ide-browser\">cursor-ide-browser</mcp_file_system_server>"
+    },
+    {
+      "name": "cursor-ide-browser"
+    }
+  ],
+  "workspace_context_other": 0,
+  "current_turn_overhead": 0
+}
