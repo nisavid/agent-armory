@@ -10,6 +10,8 @@ from tools.validate_framework_seed import (
     find_markdown_links,
     load_toml,
     render_human,
+    run,
+    validate_canonical_docs,
     validate_framework_routes,
     validate_markdown_links,
     validate_source_handoff_provenance,
@@ -1176,6 +1178,254 @@ class FrameworkRouteTests(unittest.TestCase):
                 False,
                 "route target not a directory",
                 "AGENTS.md",
+            ),
+            results,
+        )
+
+
+class CanonicalDocTests(unittest.TestCase):
+    canonical_docs = {
+        "docs/ubiquitous-language.md": ["Language", "Relationships", "Precision rules"],
+        "docs/equipment-framework.md": [
+            "Purpose",
+            "Least cognitive privilege",
+            "Component model",
+            "Context management",
+            "Security",
+            "Maintenance",
+        ],
+        "docs/smith-runbook.md": [
+            "Capability card",
+            "Interface decision record",
+            "Docs/config/scripts/hooks/skills/profiles/plugins",
+            "Pressure Scenario Validation",
+            "Equipment Promotion Path",
+            "Closeout",
+        ],
+        "docs/metasmith-runbook.md": [
+            "Source handoff preservation",
+            "decision projection",
+            "Review Until Clean",
+            "Harness Fact Refresh",
+            "Issue Projection",
+            "downstream Smith specs",
+        ],
+        "docs/interface-decision-guide.md": ["Decision tree", "placement guide"],
+        "docs/harness-components.md": [
+            "Skills",
+            "MCP/tools",
+            "hooks",
+            "Agent Profiles",
+            "Harness Plugins",
+            "scripts",
+            "local docs",
+            "config",
+        ],
+        "docs/evidence-taxonomy.md": [
+            "documentation-supported",
+            "source-supported",
+            "implementation inference",
+            "practitioner wisdom",
+            "hypothesis",
+            "source hygiene",
+        ],
+        "docs/security-and-control.md": [
+            "least privilege",
+            "mutation gates",
+            "secrets",
+            "hooks",
+            "MCP/tool side effects",
+            "examples caveat",
+        ],
+        "docs/equipment-promotion.md": [
+            "example",
+            "specified",
+            "planned",
+            "implemented",
+            "validated",
+            "published",
+            "entry/exit criteria",
+        ],
+    }
+
+    def write_canonical_doc(self, root: Path, relative_path: str, sections: list[str] | None = None) -> None:
+        path = root / relative_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        section_markdown = "\n".join(f"## {section}\n\nContent.\n" for section in (sections or self.canonical_docs[relative_path]))
+        path.write_text(f"# {path.stem}\n\nStatus: Framework Seed\n\n{section_markdown}", encoding="utf-8")
+
+    def write_all_canonical_docs(self, root: Path) -> None:
+        for relative_path in self.canonical_docs:
+            self.write_canonical_doc(root, relative_path)
+
+    def test_validate_canonical_docs_reports_missing_paths(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = validate_canonical_docs(root)
+
+        self.assertIn(
+            CheckResult(
+                "canonical_doc:docs/equipment-framework.md",
+                False,
+                "missing",
+                "docs/equipment-framework.md",
+            ),
+            results,
+        )
+
+    def test_validate_canonical_docs_requires_framework_seed_status(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_canonical_docs(root)
+            (root / "docs/equipment-framework.md").write_text(
+                "# Equipment Framework\n\n## Purpose\n\nContent.\n",
+                encoding="utf-8",
+            )
+
+            results = validate_canonical_docs(root)
+
+        self.assertIn(
+            CheckResult(
+                "canonical_doc:status:docs/equipment-framework.md",
+                False,
+                "missing Status: Framework Seed",
+                "docs/equipment-framework.md",
+            ),
+            results,
+        )
+
+    def test_validate_canonical_docs_ignores_status_in_fenced_code(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_canonical_docs(root)
+            fence = "`" * 3
+            (root / "docs/equipment-framework.md").write_text(
+                f"# Equipment Framework\n\n{fence}\nStatus: Framework Seed\n{fence}\n\n## Purpose\n\nContent.\n",
+                encoding="utf-8",
+            )
+
+            results = validate_canonical_docs(root)
+
+        self.assertIn(
+            CheckResult(
+                "canonical_doc:status:docs/equipment-framework.md",
+                False,
+                "missing Status: Framework Seed",
+                "docs/equipment-framework.md",
+            ),
+            results,
+        )
+
+    def test_validate_canonical_docs_requires_sections(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_canonical_docs(root)
+            self.write_canonical_doc(root, "docs/equipment-framework.md", sections=["Purpose"])
+
+            results = validate_canonical_docs(root)
+
+        self.assertIn(
+            CheckResult(
+                "canonical_doc:section:docs/equipment-framework.md:Maintenance",
+                False,
+                "missing section: Maintenance",
+                "docs/equipment-framework.md",
+            ),
+            results,
+        )
+
+    def test_validate_canonical_docs_ignores_sections_in_indented_code(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_canonical_docs(root)
+            (root / "docs/equipment-framework.md").write_text(
+                textwrap.dedent(
+                    """
+                    # Equipment Framework
+
+                    Status: Framework Seed
+
+                    ## Purpose
+
+                    Content.
+
+                        ## Maintenance
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_canonical_docs(root)
+
+        self.assertIn(
+            CheckResult(
+                "canonical_doc:section:docs/equipment-framework.md:Maintenance",
+                False,
+                "missing section: Maintenance",
+                "docs/equipment-framework.md",
+            ),
+            results,
+        )
+
+    def test_run_reports_missing_canonical_docs(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "required_path:docs/equipment-framework.md",
+                False,
+                "missing",
+                "docs/equipment-framework.md",
+            ),
+            results,
+        )
+
+    def test_run_reports_every_missing_canonical_doc(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = run(root)
+
+        for relative_path in self.canonical_docs:
+            self.assertIn(
+                CheckResult(f"required_path:{relative_path}", False, "missing", relative_path),
+                results,
+            )
+            self.assertIn(
+                CheckResult(f"canonical_doc:{relative_path}", False, "missing", relative_path),
+                results,
+            )
+
+    def test_run_reports_canonical_doc_status_and_section_failures(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_canonical_docs(root)
+            (root / "docs/equipment-framework.md").write_text(
+                "# Equipment Framework\n\n## Purpose\n\nContent.\n",
+                encoding="utf-8",
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "canonical_doc:status:docs/equipment-framework.md",
+                False,
+                "missing Status: Framework Seed",
+                "docs/equipment-framework.md",
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                "canonical_doc:section:docs/equipment-framework.md:Maintenance",
+                False,
+                "missing section: Maintenance",
+                "docs/equipment-framework.md",
             ),
             results,
         )

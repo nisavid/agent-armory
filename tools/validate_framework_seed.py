@@ -341,6 +341,69 @@ REQUIRED_PRELOADED_ROUTES = [
     "templates/",
     "specs/",
 ]
+CANONICAL_DOC_REQUIRED_SECTIONS = {
+    "docs/ubiquitous-language.md": ["Language", "Relationships", "Precision rules"],
+    "docs/equipment-framework.md": [
+        "Purpose",
+        "Least cognitive privilege",
+        "Component model",
+        "Context management",
+        "Security",
+        "Maintenance",
+    ],
+    "docs/smith-runbook.md": [
+        "Capability card",
+        "Interface decision record",
+        "Docs/config/scripts/hooks/skills/profiles/plugins",
+        "Pressure Scenario Validation",
+        "Equipment Promotion Path",
+        "Closeout",
+    ],
+    "docs/metasmith-runbook.md": [
+        "Source handoff preservation",
+        "decision projection",
+        "Review Until Clean",
+        "Harness Fact Refresh",
+        "Issue Projection",
+        "downstream Smith specs",
+    ],
+    "docs/interface-decision-guide.md": ["Decision tree", "placement guide"],
+    "docs/harness-components.md": [
+        "Skills",
+        "MCP/tools",
+        "hooks",
+        "Agent Profiles",
+        "Harness Plugins",
+        "scripts",
+        "local docs",
+        "config",
+    ],
+    "docs/evidence-taxonomy.md": [
+        "documentation-supported",
+        "source-supported",
+        "implementation inference",
+        "practitioner wisdom",
+        "hypothesis",
+        "source hygiene",
+    ],
+    "docs/security-and-control.md": [
+        "least privilege",
+        "mutation gates",
+        "secrets",
+        "hooks",
+        "MCP/tool side effects",
+        "examples caveat",
+    ],
+    "docs/equipment-promotion.md": [
+        "example",
+        "specified",
+        "planned",
+        "implemented",
+        "validated",
+        "published",
+        "entry/exit criteria",
+    ],
+}
 MARKDOWN_LINK_EXCLUDED_DIRS = [
     Path("docs/metasmith/handoff/2026-05-02"),
 ]
@@ -427,6 +490,24 @@ def markdown_section(markdown: str, heading: str) -> str | None:
     if not in_section:
         return None
     return "\n".join(collected)
+
+
+def markdown_heading_texts(markdown: str) -> set[str]:
+    headings: set[str] = set()
+    for line in strip_indented_code_blocks(strip_fenced_code_blocks(markdown)).splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("#"):
+            continue
+        text = stripped.lstrip("#").strip()
+        if text:
+            headings.add(normalize_reference_label(text))
+    return headings
+
+
+def has_framework_seed_status(markdown: str) -> bool:
+    visible_markdown = strip_indented_code_blocks(strip_fenced_code_blocks(markdown))
+    nonblank_lines = [line.strip() for line in visible_markdown.splitlines() if line.strip()]
+    return "Status: Framework Seed" in nonblank_lines[:8]
 
 
 def find_backticked_paths(markdown: str) -> list[str]:
@@ -881,6 +962,41 @@ def validate_framework_routes(root: Path) -> list[CheckResult]:
     return results
 
 
+def validate_canonical_docs(root: Path) -> list[CheckResult]:
+    results: list[CheckResult] = []
+    for relative_path, required_sections in CANONICAL_DOC_REQUIRED_SECTIONS.items():
+        ok, detail, path = repo_relative_path_status(root, relative_path, "file")
+        if not ok:
+            if detail == "path contains symlink":
+                detail = "canonical doc path contains symlink"
+            results.append(CheckResult(f"canonical_doc:{relative_path}", False, detail, relative_path))
+            continue
+        markdown = path.read_text(encoding="utf-8")
+        if not has_framework_seed_status(markdown):
+            results.append(
+                CheckResult(
+                    f"canonical_doc:status:{relative_path}",
+                    False,
+                    "missing Status: Framework Seed",
+                    relative_path,
+                )
+            )
+        headings = markdown_heading_texts(markdown)
+        for required_section in required_sections:
+            if normalize_reference_label(required_section) not in headings:
+                results.append(
+                    CheckResult(
+                        f"canonical_doc:section:{relative_path}:{required_section}",
+                        False,
+                        f"missing section: {required_section}",
+                        relative_path,
+                    )
+                )
+        if not any(result.name.startswith(f"canonical_doc:") and result.path == relative_path and not result.ok for result in results):
+            results.append(CheckResult(f"canonical_doc:{relative_path}", True, "present", relative_path))
+    return results
+
+
 def validate_markdown_links(root: Path) -> list[CheckResult]:
     results: list[CheckResult] = []
     for path in markdown_files(root):
@@ -940,12 +1056,14 @@ def run(root: Path) -> list[CheckResult]:
         "docs/prd/framework-seed.md",
         "docs/metasmith/source-projection.md",
         "docs/harness-capabilities.toml",
+        *CANONICAL_DOC_REQUIRED_SECTIONS,
     ]
     return [
         *validate_required_paths(root, required_paths),
         *validate_source_handoff_provenance(root),
         *validate_source_projection(root),
         *validate_framework_routes(root),
+        *validate_canonical_docs(root),
         *validate_markdown_links(root),
     ]
 
