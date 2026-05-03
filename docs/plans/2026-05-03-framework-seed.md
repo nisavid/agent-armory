@@ -65,12 +65,14 @@ Create or modify these files:
 - Create: `specs/periodic-actions.md`.
 - Create: `specs/harness-capability-refresh.md`.
 - Create: `tools/validate_framework_seed.py`.
+- Create: `tests/__init__.py`.
 - Create: `tests/test_validate_framework_seed.py`.
 
 ## Task 1: Seed Validation Tool Core
 
 **Files:**
 - Create: `tools/validate_framework_seed.py`
+- Create: `tests/__init__.py`
 - Create: `tests/test_validate_framework_seed.py`
 
 - [ ] **Step 1: Write failing tests for validator primitives**
@@ -334,7 +336,7 @@ Expected: PASS.
 Run:
 
 ```bash
-git add tools/validate_framework_seed.py tests/test_validate_framework_seed.py
+git add tools/validate_framework_seed.py tests/__init__.py tests/test_validate_framework_seed.py
 git commit -m "test(framework): add seed validator primitives" -m "Co-authored-by: Codex <noreply@openai.com>"
 ```
 
