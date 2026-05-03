@@ -18,6 +18,7 @@ from tools.validate_framework_seed import (
     validate_framework_routes,
     validate_harness_catalog,
     validate_markdown_links,
+    validate_specs,
     validate_source_handoff_provenance,
     validate_source_projection,
     validate_required_paths,
@@ -6652,6 +6653,425 @@ class ExampleValidationTests(unittest.TestCase):
             ),
             results,
         )
+
+
+class SpecValidationTests(unittest.TestCase):
+    required_spec_paths = [
+        "specs/agent-ops.md",
+        "specs/periodic-actions.md",
+        "specs/harness-capability-refresh.md",
+    ]
+
+    def write_spec(self, root: Path, relative_path: str, content: str) -> None:
+        path = root / relative_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(textwrap.dedent(content).lstrip(), encoding="utf-8")
+
+    def valid_spec(self, title: str, extra: str) -> str:
+        extra_text = textwrap.dedent(extra).strip()
+        return "\n".join(
+            [
+                f"# {title}",
+                "",
+                "Status: Downstream Smith Spec",
+                "Promotion state: specified",
+                "",
+                "This spec describes desired behavior only. It does not implement Agent Equipment.",
+                "",
+                "## Purpose",
+                "",
+                "Content.",
+                "",
+                "## User stories",
+                "",
+                "Content.",
+                "",
+                "## Acceptance criteria",
+                "",
+                "Content.",
+                "",
+                "## Harness projections",
+                "",
+                "- Codex",
+                "- OpenClaw",
+                "- Hermes Agent",
+                "- Claude Code",
+                "- Cursor",
+                "- OpenCode",
+                "",
+                "## Non-goals",
+                "",
+                "Content.",
+                "",
+                extra_text,
+                "",
+            ]
+        )
+
+    def write_all_specs(self, root: Path, overrides: dict[str, str] | None = None) -> None:
+        specs = {
+            "specs/agent-ops.md": self.valid_spec(
+                "Agent Ops Spec",
+                """\
+                TOML config stores durable owner and runbook config.
+                The config drives Agent behavior, hook behavior, and other configurable aspects.
+                Settings use sensibly typed values.
+                Autonomy levels: off, advisory, assisted, supervised, autonomous, forbidden.
+                Safe defaults require advance approval before automation.
+                Policy enforcement blocks violations when the harness supports blocking and otherwise uses advisory fallback.
+                """,
+            ),
+            "specs/periodic-actions.md": self.valid_spec(
+                "Periodic Actions Spec",
+                """\
+                First-session install prompt persists the choice locally.
+                List, view, install, uninstall, trigger-now, and edit-period behavior are required.
+                Mechanism selection order: native scheduled agent actions, active loop or heartbeat, suitable hook, inference-driven pre/post task check.
+                Suggested storage: .agent-ops/.
+                """,
+            ),
+            "specs/harness-capability-refresh.md": self.valid_spec(
+                "Harness Capability Refresh Spec",
+                """\
+                Required harnesses: Codex, OpenClaw, Hermes Agent, Claude Code, Cursor, OpenCode.
+                Required tracked fields: current version, checked-at timestamp, source URLs, supported Harness Component types, key affordances, known limitations, scheduling mechanisms, hook/event names, skill discovery paths, plugin interfaces, MCP behavior.
+                Change-response issue behavior creates a high-priority issue with current version, previous version, capability affected, source evidence, expected Framework impact, and suggested Smith task.
+                Fallback issue candidate path: issues/pending/high/.
+                Weekly starting cadence.
+                Prioritization order: security-relevant behavior, hook blocking semantics, permissions and sandboxing, scheduling, skill discovery/context behavior, plugin packaging, MCP tool exposure and context bloat.
+                """,
+            ),
+        }
+        specs.update(overrides or {})
+        for relative_path, content in specs.items():
+            self.write_spec(root, relative_path, content)
+
+    def test_run_requires_all_spec_paths(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = run(root)
+
+        for relative_path in self.required_spec_paths:
+            self.assertIn(
+                CheckResult(f"required_path:{relative_path}", False, "missing", relative_path),
+                results,
+            )
+
+    def test_validate_specs_accepts_complete_specs(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_specs(root)
+
+            results = validate_specs(root)
+
+        self.assertTrue(all(result.ok for result in results), results)
+
+    def test_validate_specs_requires_promotion_state_specified(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_specs(
+                root,
+                {
+                    "specs/agent-ops.md": self.valid_spec(
+                        "Agent Ops Spec",
+                        "TOML owner runbook autonomy levels safe defaults policy enforcement Codex OpenClaw Hermes Agent Claude Code Cursor OpenCode.",
+                    ).replace("Promotion state: specified\n", "")
+                },
+            )
+
+            results = validate_specs(root)
+
+        self.assertIn(
+            CheckResult(
+                "spec:promotion:specs/agent-ops.md",
+                False,
+                "missing Promotion state: specified",
+                "specs/agent-ops.md",
+            ),
+            results,
+        )
+
+    def test_validate_specs_requires_sections(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_specs(
+                root,
+                {
+                    "specs/periodic-actions.md": """\
+                        # Periodic Actions Spec
+
+                        Status: Downstream Smith Spec
+                        Promotion state: specified
+
+                        ## Purpose
+
+                        Content.
+                        """
+                },
+            )
+
+            results = validate_specs(root)
+
+        self.assertIn(
+            CheckResult(
+                "spec:section:specs/periodic-actions.md:Acceptance criteria",
+                False,
+                "missing section: Acceptance criteria",
+                "specs/periodic-actions.md",
+            ),
+            results,
+        )
+
+    def test_validate_specs_requires_agent_ops_content(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_specs(
+                root,
+                {
+                    "specs/agent-ops.md": self.valid_spec(
+                        "Agent Ops Spec",
+                        "Autonomy levels and safe defaults are required.",
+                    )
+                },
+            )
+
+            results = validate_specs(root)
+
+        self.assertIn(
+            CheckResult(
+                "spec:text:specs/agent-ops.md:TOML",
+                False,
+                "missing TOML",
+                "specs/agent-ops.md",
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                "spec:text:specs/agent-ops.md:policy enforcement",
+                False,
+                "missing policy enforcement",
+                "specs/agent-ops.md",
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                "spec:text:specs/agent-ops.md:hook behavior",
+                False,
+                "missing hook behavior",
+                "specs/agent-ops.md",
+            ),
+            results,
+        )
+
+    def test_validate_specs_requires_periodic_actions_content(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_specs(
+                root,
+                {
+                    "specs/periodic-actions.md": self.valid_spec(
+                        "Periodic Actions Spec",
+                        "First-session install prompt and .agent-ops/ storage are required.",
+                    )
+                },
+            )
+
+            results = validate_specs(root)
+
+        self.assertIn(
+            CheckResult(
+                "spec:text:specs/periodic-actions.md:trigger-now",
+                False,
+                "missing trigger-now",
+                "specs/periodic-actions.md",
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                "spec:text:specs/periodic-actions.md:mechanism selection order",
+                False,
+                "missing mechanism selection order",
+                "specs/periodic-actions.md",
+            ),
+            results,
+        )
+
+    def test_validate_specs_requires_harness_refresh_content(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_specs(
+                root,
+                {
+                    "specs/harness-capability-refresh.md": self.valid_spec(
+                        "Harness Capability Refresh Spec",
+                        "Required harnesses and tracked fields are required.",
+                    )
+                },
+            )
+
+            results = validate_specs(root)
+
+        self.assertIn(
+            CheckResult(
+                "spec:text:specs/harness-capability-refresh.md:issues/pending/high/",
+                False,
+                "missing issues/pending/high/",
+                "specs/harness-capability-refresh.md",
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                "spec:text:specs/harness-capability-refresh.md:weekly starting cadence",
+                False,
+                "missing weekly starting cadence",
+                "specs/harness-capability-refresh.md",
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                "spec:text:specs/harness-capability-refresh.md:key affordances",
+                False,
+                "missing key affordances",
+                "specs/harness-capability-refresh.md",
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                "spec:text:specs/harness-capability-refresh.md:previous version",
+                False,
+                "missing previous version",
+                "specs/harness-capability-refresh.md",
+            ),
+            results,
+        )
+
+    def test_validate_specs_requires_each_harness_refresh_field(self):
+        required_terms = [
+            "current version",
+            "checked-at timestamp",
+            "source URLs",
+            "supported Harness Component types",
+            "key affordances",
+            "known limitations",
+            "scheduling mechanisms",
+            "hook/event names",
+            "skill discovery paths",
+            "plugin interfaces",
+            "MCP behavior",
+            "previous version",
+            "capability affected",
+            "source evidence",
+            "expected Framework impact",
+            "suggested Smith task",
+        ]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_specs(root)
+            path = root / "specs/harness-capability-refresh.md"
+            spec_text = path.read_text(encoding="utf-8")
+            for required_term in required_terms:
+                path.write_text(spec_text.replace(required_term, ""), encoding="utf-8")
+                with self.subTest(required_term=required_term):
+                    results = validate_specs(root)
+                    self.assertIn(
+                        CheckResult(
+                            f"spec:text:specs/harness-capability-refresh.md:{required_term}",
+                            False,
+                            f"missing {required_term}",
+                            "specs/harness-capability-refresh.md",
+                        ),
+                        results,
+                    )
+
+    def test_validate_specs_requires_non_implementation_boundary(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_specs(
+                root,
+                {
+                    "specs/agent-ops.md": self.valid_spec(
+                        "Agent Ops Spec",
+                        "TOML owner runbook hook behavior sensibly typed values autonomy levels safe defaults policy enforcement Codex OpenClaw Hermes Agent Claude Code Cursor OpenCode.",
+                    ).replace(
+                        "This spec describes desired behavior only. It does not implement Agent Equipment.\n",
+                        "This spec describes desired behavior only.\n",
+                    )
+                },
+            )
+
+            results = validate_specs(root)
+
+        self.assertIn(
+            CheckResult(
+                "spec:boundary:specs/agent-ops.md",
+                False,
+                "missing non-implementation boundary",
+                "specs/agent-ops.md",
+            ),
+            results,
+        )
+
+    def test_validate_specs_rejects_readiness_and_installability_claims(self):
+        for forbidden_claim in ["production-ready", "is installable"]:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                root = Path(tmpdir)
+                self.write_all_specs(
+                    root,
+                    {
+                        "specs/periodic-actions.md": self.valid_spec(
+                            "Periodic Actions Spec",
+                            f"""\
+                            First-session install prompt persists the choice locally.
+                            List, view, install, uninstall, trigger-now, and edit-period behavior are required.
+                            Mechanism selection order: native scheduled agent actions, active loop or heartbeat, suitable hook, inference-driven pre/post task check.
+                            Suggested storage: .agent-ops/.
+                            This spec {forbidden_claim}.
+                            """,
+                        )
+                    },
+                )
+
+                results = validate_specs(root)
+
+            with self.subTest(forbidden_claim=forbidden_claim):
+                self.assertIn(
+                    CheckResult(
+                        f"spec:claim:specs/periodic-actions.md:{forbidden_claim}",
+                        False,
+                        f"forbidden readiness claim: {forbidden_claim}",
+                        "specs/periodic-actions.md",
+                    ),
+                    results,
+                )
+
+    def test_validate_specs_accepts_harness_specific_starting_points(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_specs(
+                root,
+                {
+                    "specs/periodic-actions.md": self.valid_spec(
+                        "Periodic Actions Spec",
+                        """\
+                        First-session install prompt persists the choice locally.
+                        List, view, install, uninstall, trigger-now, and edit-period behavior are required.
+                        Mechanism selection order: native scheduled agent actions, active loop or heartbeat, suitable hook, inference-driven pre/post task check.
+                        Suggested storage: .agent-ops/.
+                        """,
+                    ).replace("## Harness projections", "## Harness-specific starting points")
+                },
+            )
+
+            results = validate_specs(root)
+
+        self.assertTrue(all(result.ok for result in results), results)
 
 
 if __name__ == "__main__":

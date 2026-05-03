@@ -331,7 +331,7 @@ python3.14 -m unittest tests/test_validate_framework_seed.py
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Run:
 
@@ -1783,6 +1783,7 @@ class FrameworkRouteTests(unittest.TestCase):
                     - `docs/smith-runbook.md`
                     - `docs/harness-capabilities.md`
                     - `templates/`
+                    - `examples/`
                     - `specs/`
                     """
                 ),
@@ -1810,6 +1811,7 @@ class FrameworkRouteTests(unittest.TestCase):
             root = Path(tmpdir)
             (root / "docs").mkdir()
             (root / "templates").mkdir()
+            (root / "examples").mkdir()
             (root / "specs").mkdir()
             for path in [
                 "docs/equipment-framework.md",
@@ -1829,6 +1831,7 @@ class FrameworkRouteTests(unittest.TestCase):
                     - `docs/interface-decision-guide.md`
                     - `docs/harness-capabilities.md`
                     - `templates/`
+                    - `examples/`
                     - `specs/`
                     """
                 ),
@@ -1916,7 +1919,7 @@ Expected: ERROR because `validate_framework_routes` and `validate_markdown_links
 Add `validate_framework_routes(root: Path)` that checks:
 
 - `AGENTS.md` contains `## Framework Path`.
-- `AGENTS.md` links to `docs/equipment-framework.md`, `docs/smith-runbook.md`, `docs/interface-decision-guide.md`, `docs/harness-capabilities.md`, `templates/`, and `specs/`.
+- `AGENTS.md` links to `docs/equipment-framework.md`, `docs/smith-runbook.md`, `docs/interface-decision-guide.md`, `docs/harness-capabilities.md`, `templates/`, `examples/`, and `specs/`.
 - `README.md` contains `## Framework`.
 - `README.md` links to `docs/equipment-framework.md` with a real Markdown link in the Framework section.
 - Every local Markdown or directory target named in the `AGENTS.md` Framework Path and `README.md` Framework entry resolves from the repository root. Backticked path strings count as route targets for agent-facing docs; Markdown links are also accepted.
@@ -1946,6 +1949,7 @@ Smiths creating or modifying Agent Equipment should start with:
 - `docs/interface-decision-guide.md` for choosing skills, MCP/tools, hooks, Agent Profiles, plugins, scripts, docs, and config.
 - `docs/harness-capabilities.md` before making harness-specific claims.
 - `templates/` for seed templates.
+- `examples/` for annotated Framework Examples.
 - `specs/` for downstream Smith specs.
 ```
 
@@ -2397,10 +2401,12 @@ git commit -m "docs(examples): add framework method examples" -m "Co-authored-by
 - Create: `specs/agent-ops.md`
 - Create: `specs/periodic-actions.md`
 - Create: `specs/harness-capability-refresh.md`
+- Modify: `docs/metasmith/source-projection.md`
+- Modify: `docs/plans/2026-05-03-framework-seed.md`
 - Modify: `tools/validate_framework_seed.py`
 - Modify: `tests/test_validate_framework_seed.py`
 
-- [ ] **Step 1: Write failing spec validation tests**
+- [x] **Step 1: Write failing spec validation tests**
 
 Add tests that require each spec to include:
 
@@ -2411,7 +2417,7 @@ Add tests that require each spec to include:
 - Harness projections or harness-specific starting points
 - Non-goals
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run:
 
@@ -2421,7 +2427,7 @@ python3.14 -m unittest tests/test_validate_framework_seed.py
 
 Expected: FAIL for missing specs and required sections.
 
-- [ ] **Step 3: Create specs**
+- [x] **Step 3: Create specs**
 
 Create specs from `docs/metasmith/handoff/2026-05-02/08-initial-smith-task-specs.md`.
 
@@ -2454,7 +2460,7 @@ Create specs from `docs/metasmith/handoff/2026-05-02/08-initial-smith-task-specs
 - weekly starting cadence,
 - prioritization order.
 
-- [ ] **Step 4: Run validation**
+- [x] **Step 4: Run validation**
 
 Run:
 
@@ -2463,14 +2469,14 @@ python3.14 -m unittest tests/test_validate_framework_seed.py
 python3.14 tools/validate_framework_seed.py
 ```
 
-Expected: spec checks PASS.
+Expected: spec checks PASS. The full repository validator may still report the final closeout surfaces from Task 9 as missing until that task lands.
 
 - [ ] **Step 5: Commit**
 
 Run:
 
 ```bash
-git add specs tools/validate_framework_seed.py tests/test_validate_framework_seed.py
+git add docs/metasmith/source-projection.md docs/plans/2026-05-03-framework-seed.md specs tools/validate_framework_seed.py tests/test_validate_framework_seed.py
 git commit -m "docs(specs): add initial smith task specs" -m "Co-authored-by: Codex <noreply@openai.com>"
 ```
 

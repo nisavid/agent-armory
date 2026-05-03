@@ -492,6 +492,84 @@ EXAMPLE_REQUIRED_PATHS = [
     for example_directory in EXAMPLE_DIRECTORIES
     for example_file in EXAMPLE_FILES
 ]
+SPEC_REQUIRED_PATHS = [
+    "specs/agent-ops.md",
+    "specs/periodic-actions.md",
+    "specs/harness-capability-refresh.md",
+]
+SPEC_REQUIRED_SECTIONS = [
+    "Purpose",
+    "User stories",
+    "Acceptance criteria",
+    "Non-goals",
+]
+SPEC_HARNESS_SECTION_ALTERNATIVES = [
+    "Harness projections",
+    "Harness-specific starting points",
+]
+SPEC_REQUIRED_TEXT = {
+    "specs/agent-ops.md": [
+        "TOML",
+        "hook behavior",
+        "sensibly typed values",
+        "autonomy levels",
+        "owner",
+        "runbook",
+        "safe defaults",
+        "policy enforcement",
+        "Codex",
+        "OpenClaw",
+        "Hermes Agent",
+        "Claude Code",
+        "Cursor",
+        "OpenCode",
+    ],
+    "specs/periodic-actions.md": [
+        "first-session install prompt",
+        "list",
+        "view",
+        "install",
+        "uninstall",
+        "trigger-now",
+        "edit-period",
+        "mechanism selection order",
+        ".agent-ops/",
+        "Codex",
+        "OpenClaw",
+        "Hermes",
+        "Claude Code",
+        "Cursor",
+        "OpenCode",
+    ],
+    "specs/harness-capability-refresh.md": [
+        "Codex",
+        "OpenClaw",
+        "Hermes Agent",
+        "Claude Code",
+        "Cursor",
+        "OpenCode",
+        "current version",
+        "checked-at timestamp",
+        "source URLs",
+        "supported Harness Component types",
+        "key affordances",
+        "known limitations",
+        "scheduling mechanisms",
+        "hook/event names",
+        "skill discovery paths",
+        "plugin interfaces",
+        "MCP behavior",
+        "high-priority issue",
+        "previous version",
+        "capability affected",
+        "source evidence",
+        "expected Framework impact",
+        "suggested Smith task",
+        "issues/pending/high/",
+        "weekly starting cadence",
+        "prioritization order",
+    ],
+}
 EXAMPLE_TRACE_LINKS = {
     "capability-card.md": ["interface-decision-record.md"],
     "interface-decision-record.md": ["capability-card.md", "projected-components.md"],
@@ -513,6 +591,7 @@ FORBIDDEN_EXAMPLE_CLAIMS = [
     "loadable Agent Equipment",
     "can be loaded",
 ]
+FORBIDDEN_SPEC_CLAIMS = FORBIDDEN_EXAMPLE_CLAIMS
 ROOT_TEMPLATE_FILES = [
     "templates/capability-card.md",
     "templates/interface-decision-record.md",
@@ -3238,6 +3317,83 @@ def validate_examples(root: Path) -> list[CheckResult]:
     return results
 
 
+def validate_specs(root: Path) -> list[CheckResult]:
+    results: list[CheckResult] = []
+    for relative_path in SPEC_REQUIRED_PATHS:
+        ok, detail, path = repo_relative_path_status(root, relative_path, "file")
+        if not ok:
+            if detail == "path contains symlink":
+                detail = "spec path contains symlink"
+            results.append(CheckResult(f"spec:path:{relative_path}", False, detail, relative_path))
+            continue
+        markdown = path.read_text(encoding="utf-8")
+        visible_markdown = markdown_visible_text(markdown)
+        headings = markdown_heading_texts(markdown)
+        if "Promotion state: specified".casefold() not in visible_markdown.casefold():
+            results.append(
+                CheckResult(
+                    f"spec:promotion:{relative_path}",
+                    False,
+                    "missing Promotion state: specified",
+                    relative_path,
+                )
+            )
+        if "does not implement Agent Equipment".casefold() not in visible_markdown.casefold():
+            results.append(
+                CheckResult(
+                    f"spec:boundary:{relative_path}",
+                    False,
+                    "missing non-implementation boundary",
+                    relative_path,
+                )
+            )
+        for required_section in SPEC_REQUIRED_SECTIONS:
+            if normalize_reference_label(required_section) not in headings:
+                results.append(
+                    CheckResult(
+                        f"spec:section:{relative_path}:{required_section}",
+                        False,
+                        f"missing section: {required_section}",
+                        relative_path,
+                    )
+                )
+        if not any(
+            normalize_reference_label(section) in headings
+            for section in SPEC_HARNESS_SECTION_ALTERNATIVES
+        ):
+            results.append(
+                CheckResult(
+                    f"spec:section:{relative_path}:Harness projections",
+                    False,
+                    "missing section: Harness projections or Harness-specific starting points",
+                    relative_path,
+                )
+            )
+        for required_text in SPEC_REQUIRED_TEXT[relative_path]:
+            if required_text.casefold() not in visible_markdown.casefold():
+                results.append(
+                    CheckResult(
+                        f"spec:text:{relative_path}:{required_text}",
+                        False,
+                        f"missing {required_text}",
+                        relative_path,
+                    )
+                )
+        for forbidden_claim in FORBIDDEN_SPEC_CLAIMS:
+            if forbidden_claim.casefold() in visible_markdown.casefold():
+                results.append(
+                    CheckResult(
+                        f"spec:claim:{relative_path}:{forbidden_claim}",
+                        False,
+                        f"forbidden readiness claim: {forbidden_claim}",
+                        relative_path,
+                    )
+                )
+    if not any(result.name.startswith("spec:") and not result.ok for result in results):
+        results.append(CheckResult("spec:specs", True, "present", "specs"))
+    return results
+
+
 def validate_markdown_links(root: Path) -> list[CheckResult]:
     results: list[CheckResult] = []
     for path in markdown_files(root):
@@ -3300,6 +3456,7 @@ def run(root: Path) -> list[CheckResult]:
         *CANONICAL_DOC_REQUIRED_SECTIONS,
         *TEMPLATE_REQUIRED_PATHS,
         *EXAMPLE_REQUIRED_PATHS,
+        *SPEC_REQUIRED_PATHS,
     ]
     return [
         *validate_required_paths(root, required_paths),
@@ -3310,6 +3467,7 @@ def run(root: Path) -> list[CheckResult]:
         *validate_harness_catalog(root),
         *validate_templates(root),
         *validate_examples(root),
+        *validate_specs(root),
         *validate_markdown_links(root),
     ]
 
