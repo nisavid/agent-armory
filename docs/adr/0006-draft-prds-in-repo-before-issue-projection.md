@@ -11,6 +11,7 @@ Framework Seed PRDs will be drafted in the worktree before they are projected in
 ## Consequences
 
 - The Framework Seed can use worktree-based review, diff, and validation workflows before issue publication.
-- The implementation plan should include an explicit issue-tracker projection step after the PRD is reviewed.
+- The implementation plan should include explicit Issue Projection after the repo PRD is reviewed and stable.
 - After projection, the GitHub issue is the tracking surface. Material repo-draft PRD changes must include an explicit issue update or a note that issue projection is pending.
+- Framework Seed closeout must either create or update the Published PRD Issue, or record why Issue Projection remains pending.
 - Imported skill instructions are treated as workflow inputs, not automatically as repo policy.

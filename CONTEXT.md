@@ -112,6 +112,10 @@ _Avoid_: treating the draft as the final issue-tracker record
 A GitHub issue that tracks an accepted PRD after repo-draft review.
 _Avoid_: letting it drift from the Repo Draft PRD without an explicit projection note
 
+**Issue Projection**:
+The post-review step that creates or updates a Published PRD Issue from a stable Repo Draft PRD.
+_Avoid_: issue churn during draft review, untracked divergence
+
 **Review Until Clean**:
 A repeated review-and-revision loop that stops only when the latest review cycle has no findings.
 _Avoid_: assuming any named external review skill is repo policy unless the operator invokes it or repo policy names it
@@ -148,6 +152,18 @@ _Avoid_: informal read-through, author confidence
 A seed artifact that shows how Smiths should shape future skills without itself being equipped as a skill.
 _Avoid_: repo-local skill, production skill
 
+**Preloaded Framework Path**:
+The canonical Framework routing that a Smith receives from preloaded root `AGENTS.md`, without scouting.
+_Avoid_: requiring repo-wide search, relying only on README discovery
+
+**Human Framework Entry**:
+A concise README entry point that explains the Framework and links humans to the canonical starting path without exposing agent-only machinery.
+_Avoid_: maintainer process dump, agent policy surface
+
+**Source Projection Register**:
+A canonical map that records each accepted Source Handoff requirement and where it was projected or why it was deferred.
+_Avoid_: implicit coverage, unverifiable handoff completeness
+
 ## Relationships
 
 - The **Agent Armory** contains **Agent Equipment** and the **Agent Equipment Framework**.
@@ -166,6 +182,7 @@ _Avoid_: repo-local skill, production skill
 - In an **Agent-Operated Repository**, **Initiative Authority** stays with the human operator while agents drive assigned execution.
 - A **Repo Draft PRD** can become the source for a **Published PRD Issue** after review.
 - A **Published PRD Issue** is the tracking surface; material repo-draft changes need explicit issue re-projection.
+- **Issue Projection** happens after repo-draft review; closeout records either the issue update or the reason projection remains pending.
 - A **Metasmith Runbook** guides Framework maintenance without replacing ADRs, PRDs, implementation plans, or Smith runbooks.
 - A **Target Structure** can guide a PRD, but the **Framework Seed** creates only **Seed Surfaces**.
 - A **Seed Validation Tool** implements **Seed Validation** without adding runtime dependencies.
@@ -174,6 +191,8 @@ _Avoid_: repo-local skill, production skill
 - **Seed Validation** may check promotion-state labels for seed surfaces, but downstream equipment behavior needs equipment-specific validation.
 - A **Skill Template** can guide future skill creation but is not **Published Agent Equipment**.
 - A repo-local skill needs **Pressure Scenario Validation** before promotion to **Published Agent Equipment**.
+- The **Framework Seed** should expose a **Preloaded Framework Path** for Smiths and a **Human Framework Entry** for readers.
+- **Seed Validation** checks the **Source Projection Register** so accepted Source Handoff requirements are auditable.
 
 ## Example dialogue
 
@@ -191,6 +210,7 @@ _Avoid_: repo-local skill, production skill
 - "Example" can mean a teaching artifact or an installable package. Resolution: use **Framework Example** for annotated demonstrations and reserve **Agent Equipment** for promoted, validated equipment.
 - "Agent Equipment" can mean the broad category or a ready-to-equip surface. Resolution: use **Equipment Candidate** before validation/publication and **Published Agent Equipment** for ready-to-equip surfaces.
 - "PRD tracking" can mean worktree drafting or issue-tracker publication. Resolution: use **Repo Draft PRD** for reviewable drafts, **Published PRD Issue** for tracking, and re-project material draft changes into the issue.
+- "Issue projection" can mean publication timing or synchronization mechanics. Resolution: use **Issue Projection** for post-review publication and closeout synchronization.
 - "Metasmith guidance" can mean durable workflow or a specific plan. Resolution: use the **Metasmith Runbook** for repeatable maintenance duties and keep project-specific steps in PRDs, plans, and ADRs.
 - "Review until clean" can mean a general quality gate or a named imported skill. Resolution: use **Review Until Clean** for the repo concept and invoke named review skills only when requested or adopted by repo policy.
 - "Repository structure" can mean an intended architecture or files to create now. Resolution: use **Target Structure** for the PRD-level architecture and **Seed Surface** for files created in the Framework Seed.
@@ -198,3 +218,5 @@ _Avoid_: repo-local skill, production skill
 - "Harness evidence" can mean docs, release notes, source, third-party package metadata, or local CLI output. Resolution: follow the **Harness Evidence Source Policy** and label each evidence category.
 - "Equipment status" can mean a teaching example, an accepted spec, a plan, implementation, validation result, or published equipment. Resolution: use the **Equipment Promotion Path** states.
 - "Skill surface" can mean a template for Smiths or a real equipped skill. Resolution: use **Skill Template** for seed guidance and create repo-local skills only after **Pressure Scenario Validation**.
+- "Framework discovery" can mean preloaded agent routing or human README discovery. Resolution: use **Preloaded Framework Path** for Smiths and **Human Framework Entry** for human readers.
+- "Handoff coverage" can mean informal confidence or auditable projection. Resolution: use a **Source Projection Register** for accepted requirements and deferments.
