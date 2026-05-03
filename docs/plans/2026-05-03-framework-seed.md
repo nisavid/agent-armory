@@ -1,0 +1,2062 @@
+# Framework Seed Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Build the Framework Seed defined in `docs/prd/framework-seed.md`.
+
+**Architecture:** The seed is documentation- and validation-first. Canonical docs, templates, examples, specs, and refreshed harness facts are created as Seed Surfaces, while `tools/validate_framework_seed.py` and `tests/test_validate_framework_seed.py` enforce the repository shape, link paths, source projection register, promotion-state labels, and catalog metadata.
+
+**Tech Stack:** Markdown, TOML, Python 3.14 standard library, `unittest`, Git, Firecrawl or equivalent first-party web source retrieval, GitHub issue tooling for post-review Issue Projection.
+
+---
+
+## File Structure
+
+Create or modify these files:
+
+- Modify: `README.md` for the Human Framework Entry.
+- Modify: `AGENTS.md` for the Preloaded Framework Path, durable file-placement policy, and change-set security closeout policy.
+- Modify: `CONTEXT.md` for any new durable term exposed by implementation or closeout policy.
+- Modify: `docs/prd/framework-seed.md` if security closeout or seed-surface requirements are refined during implementation.
+- Create: ADRs for new durable policy decisions.
+- Create: `docs/metasmith/source-projection.md` for the Source Projection Register.
+- Create: `docs/security/threat-model.md` for the persistent Repository Threat Model.
+- Create: `docs/security/framework-seed-closeout.md` for Framework Seed security closeout evidence.
+- Create: `docs/closeout/framework-seed-documentation.md` for Framework Seed documentation closeout evidence.
+- Create: `docs/ubiquitous-language.md`.
+- Create: `docs/equipment-framework.md`.
+- Create: `docs/smith-runbook.md`.
+- Create: `docs/metasmith-runbook.md`.
+- Create: `docs/interface-decision-guide.md`.
+- Create: `docs/harness-components.md`.
+- Create: `docs/harness-capabilities.md`.
+- Create: `docs/harness-capabilities.toml`.
+- Create: `docs/evidence-taxonomy.md`.
+- Create: `docs/security-and-control.md`.
+- Create: `docs/equipment-promotion.md`.
+- Create: `templates/capability-card.md`.
+- Create: `templates/interface-decision-record.md`.
+- Create: `templates/skill/README.md`.
+- Create: `templates/skill/SKILL.md`.
+- Create: `templates/hook/README.md`.
+- Create: `templates/hook/hook.ts`.
+- Create: `templates/agent-profile/README.md`.
+- Create: `templates/agent-profile/profile.toml`.
+- Create: `templates/plugin/README.md`.
+- Create: `templates/plugin/manifest.toml`.
+- Create: `templates/script/README.md`.
+- Create: `templates/script/validate-example.py`.
+- Create: `templates/mcp/README.md`.
+- Create: `templates/mcp/tool-spec.md`.
+- Create: `templates/config/README.md`.
+- Create: `templates/config/example.toml`.
+- Create: `templates/security-review.md`.
+- Create: `templates/context-budget-review.md`.
+- Create: `examples/pr-review/capability-card.md`.
+- Create: `examples/pr-review/interface-decision-record.md`.
+- Create: `examples/pr-review/projected-components.md`.
+- Create: `examples/docs-research/capability-card.md`.
+- Create: `examples/docs-research/interface-decision-record.md`.
+- Create: `examples/docs-research/projected-components.md`.
+- Create: `examples/observability-investigation/capability-card.md`.
+- Create: `examples/observability-investigation/interface-decision-record.md`.
+- Create: `examples/observability-investigation/projected-components.md`.
+- Create: `specs/agent-ops.md`.
+- Create: `specs/periodic-actions.md`.
+- Create: `specs/harness-capability-refresh.md`.
+- Create: `tools/validate_framework_seed.py`.
+- Create: `tests/test_validate_framework_seed.py`.
+
+## Task 1: Seed Validation Tool Core
+
+**Files:**
+- Create: `tools/validate_framework_seed.py`
+- Create: `tests/test_validate_framework_seed.py`
+
+- [ ] **Step 1: Write failing tests for validator primitives**
+
+Add `tests/test_validate_framework_seed.py` with these tests:
+
+```python
+import json
+import tempfile
+import textwrap
+import unittest
+from pathlib import Path
+
+from tools.validate_framework_seed import (
+    CheckResult,
+    find_markdown_links,
+    load_toml,
+    render_human,
+    validate_required_paths,
+)
+
+
+class ValidatorPrimitiveTests(unittest.TestCase):
+    def test_validate_required_paths_reports_missing_paths(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "README.md").write_text("# Demo\n", encoding="utf-8")
+
+            results = validate_required_paths(root, ["README.md", "docs/missing.md"])
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="required_path:README.md",
+                    ok=True,
+                    detail="exists",
+                    path="README.md",
+                ),
+                CheckResult(
+                    name="required_path:docs/missing.md",
+                    ok=False,
+                    detail="missing",
+                    path="docs/missing.md",
+                ),
+            ],
+        )
+
+    def test_find_markdown_links_ignores_external_and_anchor_links(self):
+        markdown = textwrap.dedent(
+            """
+            [local](docs/start.md)
+            [anchor](#section)
+            [external](https://example.com)
+            [mail](mailto:agent@example.test)
+            """
+        )
+
+        self.assertEqual(find_markdown_links(markdown), ["docs/start.md"])
+
+    def test_find_markdown_links_ignores_fenced_code_blocks(self):
+        fence = "`" * 3
+        markdown = textwrap.dedent(
+            f"""
+            [real](docs/real.md)
+
+            {fence}markdown
+            [fixture](docs/missing-fixture.md)
+            {fence}
+
+               {fence}python
+               [indented](docs/missing-indented.md)
+               {fence}
+
+            ~~~~
+            [tilde](docs/missing-tilde.md)
+            ~~~~
+            """
+        )
+
+        self.assertEqual(find_markdown_links(markdown), ["docs/real.md"])
+
+    def test_load_toml_returns_data(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "catalog.toml"
+            path.write_text('[harness.codex]\nversion = "0.128.0"\n', encoding="utf-8")
+
+            self.assertEqual(load_toml(path), {"harness": {"codex": {"version": "0.128.0"}}})
+
+    def test_render_human_summarizes_pass_and_fail(self):
+        output = render_human(
+            [
+                CheckResult("alpha", True, "ok", "README.md"),
+                CheckResult("beta", False, "missing", "docs/beta.md"),
+            ]
+        )
+
+        self.assertIn("PASS alpha README.md - ok", output)
+        self.assertIn("FAIL beta docs/beta.md - missing", output)
+        self.assertIn("1 failed, 1 passed", output)
+
+
+if __name__ == "__main__":
+    unittest.main()
+```
+
+- [ ] **Step 2: Run tests to verify they fail**
+
+Run:
+
+```bash
+python3.14 -m unittest tests/test_validate_framework_seed.py
+```
+
+Expected: FAIL or ERROR because `tools.validate_framework_seed` does not exist.
+
+- [ ] **Step 3: Implement validator primitives**
+
+Create `tools/validate_framework_seed.py`:
+
+```python
+#!/usr/bin/env python3.14
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+import tomllib
+from dataclasses import asdict, dataclass
+from pathlib import Path
+from typing import Iterable
+from urllib.parse import urlparse
+
+
+@dataclass(frozen=True)
+class CheckResult:
+    name: str
+    ok: bool
+    detail: str
+    path: str
+
+
+MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
+FENCE_START_RE = re.compile(r"(`{3,}|~{3,})")
+
+
+def strip_fenced_code_blocks(markdown: str) -> str:
+    visible_lines: list[str] = []
+    fence_char: str | None = None
+    fence_length = 0
+    for line in markdown.splitlines(keepends=True):
+        stripped = line.lstrip(" ")
+        indent = len(line) - len(stripped)
+        if indent <= 3:
+            if fence_char is not None:
+                closing_fence = re.match(rf"{re.escape(fence_char)}{{{fence_length},}}\s*$", stripped)
+                if closing_fence:
+                    fence_char = None
+                    fence_length = 0
+                continue
+            opening_fence = FENCE_START_RE.match(stripped)
+            if opening_fence:
+                marker = opening_fence.group(1)
+                fence_char = marker[0]
+                fence_length = len(marker)
+                continue
+        if fence_char is None:
+            visible_lines.append(line)
+    return "".join(visible_lines)
+
+
+def validate_required_paths(root: Path, paths: Iterable[str]) -> list[CheckResult]:
+    results: list[CheckResult] = []
+    for path in paths:
+        exists = (root / path).exists()
+        results.append(
+            CheckResult(
+                name=f"required_path:{path}",
+                ok=exists,
+                detail="exists" if exists else "missing",
+                path=path,
+            )
+        )
+    return results
+
+
+def find_markdown_links(markdown: str) -> list[str]:
+    searchable_markdown = strip_fenced_code_blocks(markdown)
+    links: list[str] = []
+    for match in MARKDOWN_LINK_RE.finditer(searchable_markdown):
+        target = match.group(1).split("#", 1)[0]
+        if not target:
+            continue
+        if "://" in target or target.startswith(("mailto:", "#")):
+            continue
+        links.append(target)
+    return links
+
+
+def load_toml(path: Path) -> dict:
+    with path.open("rb") as handle:
+        return tomllib.load(handle)
+
+
+def render_human(results: list[CheckResult]) -> str:
+    lines: list[str] = []
+    for result in results:
+        status = "PASS" if result.ok else "FAIL"
+        lines.append(f"{status} {result.name} {result.path} - {result.detail}")
+    failed = sum(1 for result in results if not result.ok)
+    passed = len(results) - failed
+    lines.append(f"{failed} failed, {passed} passed")
+    return "\n".join(lines)
+
+
+def render_json(results: list[CheckResult]) -> str:
+    return json.dumps([asdict(result) for result in results], indent=2, sort_keys=True)
+
+
+def run(root: Path) -> list[CheckResult]:
+    required_paths = [
+        "README.md",
+        "AGENTS.md",
+        "CONTEXT.md",
+        "docs/prd/framework-seed.md",
+        "docs/metasmith/source-projection.md",
+        "docs/harness-capabilities.toml",
+    ]
+    return validate_required_paths(root, required_paths)
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Validate the Agent Armory Framework Seed.")
+    parser.add_argument("--root", default=".", help="Repository root to validate.")
+    parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON.")
+    args = parser.parse_args(argv)
+
+    results = run(Path(args.root).resolve())
+    output = render_json(results) if args.json else render_human(results)
+    print(output)
+    return 0 if all(result.ok for result in results) else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+```
+
+- [ ] **Step 4: Run tests to verify they pass**
+
+Run:
+
+```bash
+python3.14 -m unittest tests/test_validate_framework_seed.py
+```
+
+Expected: PASS.
+
+- [ ] **Step 5: Commit**
+
+Run:
+
+```bash
+git add tools/validate_framework_seed.py tests/test_validate_framework_seed.py
+git commit -m "test(framework): add seed validator primitives" -m "Co-authored-by: Codex <noreply@openai.com>"
+```
+
+## Task 2: Source Projection Register and Handoff Provenance
+
+**Files:**
+- Modify: `tools/validate_framework_seed.py`
+- Modify: `tests/test_validate_framework_seed.py`
+- Create: `docs/metasmith/source-projection.md`
+- Validate existing archived handoff files under `docs/metasmith/handoff/2026-05-02/`.
+
+- [ ] **Step 1: Write failing tests for source projection validation**
+
+Append to `tests/test_validate_framework_seed.py`:
+
+```python
+from tools.validate_framework_seed import (
+    ACCEPTED_SOURCE_REQUIREMENTS,
+    validate_source_handoff_provenance,
+    validate_source_projection,
+)
+
+
+class SourceProjectionTests(unittest.TestCase):
+    def write_register(self, root: Path, rows: list[str]) -> None:
+        register = root / "docs/metasmith/source-projection.md"
+        register.parent.mkdir(parents=True)
+        register.write_text(
+            textwrap.dedent(
+                f"""
+                # Source Projection Register
+
+                | requirement_id | source_file | source_anchor | summary | disposition | target_path | deferment_reason | validation_status |
+                | --- | --- | --- | --- | --- | --- | --- | --- |
+                {chr(10).join(rows)}
+                """
+            ),
+            encoding="utf-8",
+        )
+
+    def write_source_handoff_fixture(self, root: Path, omit: set[str] | None = None) -> None:
+        omitted = omit or set()
+        handoff = root / "docs/metasmith/handoff/2026-05-02"
+        handoff.mkdir(parents=True, exist_ok=True)
+        anchors_by_file: dict[str, list[str]] = {}
+        for metadata in ACCEPTED_SOURCE_REQUIREMENTS.values():
+            anchors_by_file.setdefault(metadata["source_file"], []).append(metadata["source_anchor"])
+        for source_file, anchors in anchors_by_file.items():
+            if source_file in omitted:
+                continue
+            (handoff / source_file).parent.mkdir(parents=True, exist_ok=True)
+            (handoff / source_file).write_text(
+                "\n".join(f"# {anchor}" for anchor in anchors) + "\n",
+                encoding="utf-8",
+            )
+
+    def test_validate_source_projection_accepts_complete_inventory(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs").mkdir()
+            self.write_source_handoff_fixture(root)
+            (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
+            rows = [
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | planned |"
+                for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
+            ]
+            self.write_register(root, rows)
+
+            results = validate_source_projection(root)
+
+        self.assertTrue(all(result.ok for result in results), results)
+
+    def test_validate_source_projection_rejects_wrong_source_reference(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs").mkdir()
+            self.write_source_handoff_fixture(root)
+            (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
+            rows = [
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | planned |"
+                for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
+            ]
+            rows[0] = rows[0].replace("00-metasmith-handoff-prompt.md", "wrong-source.md")
+            self.write_register(root, rows)
+
+            results = validate_source_projection(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_projection:H001",
+                ok=False,
+                detail="source_file must be 00-metasmith-handoff-prompt.md",
+                path="docs/metasmith/source-projection.md",
+            ),
+            results,
+        )
+
+    def test_validate_source_projection_rejects_missing_source_anchor(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs").mkdir()
+            self.write_source_handoff_fixture(root)
+            (root / "docs/metasmith/handoff/2026-05-02/00-metasmith-handoff-prompt.md").write_text(
+                "# Different anchor\n",
+                encoding="utf-8",
+            )
+            (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
+            rows = [
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | planned |"
+                for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
+            ]
+            self.write_register(root, rows)
+
+            results = validate_source_projection(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_projection:H001",
+                ok=False,
+                detail="source_anchor not found in 00-metasmith-handoff-prompt.md",
+                path="docs/metasmith/source-projection.md",
+            ),
+            results,
+        )
+
+    def test_validate_source_projection_rejects_missing_source_file(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs").mkdir()
+            self.write_source_handoff_fixture(root, omit={"00-metasmith-handoff-prompt.md"})
+            (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
+            rows = [
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | planned |"
+                for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
+            ]
+            self.write_register(root, rows)
+
+            results = validate_source_projection(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_projection:H001",
+                ok=False,
+                detail="source_file missing: 00-metasmith-handoff-prompt.md",
+                path="docs/metasmith/source-projection.md",
+            ),
+            results,
+        )
+
+    def test_validate_source_projection_rejects_missing_projected_target(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_source_handoff_fixture(root)
+            rows = [
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/missing.md |  | planned |"
+                for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
+            ]
+            self.write_register(root, rows)
+
+            results = validate_source_projection(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_projection:H001:target:docs/missing.md",
+                ok=False,
+                detail="projected target missing",
+                path="docs/metasmith/source-projection.md",
+            ),
+            results,
+        )
+
+    def test_validate_source_projection_accepts_deferred_future_target_path(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs").mkdir()
+            self.write_source_handoff_fixture(root)
+            (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
+            rows = [
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | planned |"
+                for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
+            ]
+            rows[0] = "| H001 | 00-metasmith-handoff-prompt.md | Your objective | Defer seed objective | deferred | specs/future-work.md | Deferred until follow-up. | planned |"
+            self.write_register(root, rows)
+
+            results = validate_source_projection(root)
+
+        self.assertTrue(all(result.ok for result in results), results)
+
+    def test_validate_source_projection_rejects_deferred_url_target(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_source_handoff_fixture(root)
+            self.write_register(
+                root,
+                [
+                    "| H001 | 00-metasmith-handoff-prompt.md | Your objective | Defer seed objective | deferred | file:///tmp/future.md | Deferred until follow-up. | planned |"
+                ],
+            )
+
+            results = validate_source_projection(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_projection:H001:target:file:///tmp/future.md",
+                ok=False,
+                detail="deferred target invalid",
+                path="docs/metasmith/source-projection.md",
+            ),
+            results,
+        )
+
+    def test_validate_source_projection_rejects_deferred_parent_traversal_target(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_source_handoff_fixture(root)
+            self.write_register(
+                root,
+                [
+                    "| H001 | 00-metasmith-handoff-prompt.md | Your objective | Defer seed objective | deferred | ../future.md | Deferred until follow-up. | planned |"
+                ],
+            )
+
+            results = validate_source_projection(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_projection:H001:target:../future.md",
+                ok=False,
+                detail="deferred target invalid",
+                path="docs/metasmith/source-projection.md",
+            ),
+            results,
+        )
+
+    def test_validate_source_projection_rejects_missing_accepted_requirement(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs").mkdir()
+            self.write_source_handoff_fixture(root)
+            (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
+            self.write_register(
+                root,
+                [
+                    "| H001 | 00-metasmith-handoff-prompt.md | Required content | Ubiquitous language docs | projected | docs/ubiquitous-language.md |  | planned |"
+                ],
+            )
+
+            results = validate_source_projection(root)
+
+        self.assertTrue(
+            any(
+                result.name == "source_projection:coverage"
+                and not result.ok
+                and result.detail.startswith("missing accepted requirements: H002")
+                for result in results
+            ),
+            results,
+        )
+
+    def test_validate_source_projection_rejects_deferred_without_reason(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            register = root / "docs/metasmith/source-projection.md"
+            register.parent.mkdir(parents=True)
+            register.write_text(
+                textwrap.dedent(
+                    """
+                    # Source Projection Register
+
+                    | requirement_id | source_file | source_anchor | summary | disposition | target_path | deferment_reason | validation_status |
+                    | --- | --- | --- | --- | --- | --- | --- | --- |
+                    | H999 | 08-initial-smith-task-specs.md | Agent Ops | Implement Agent Ops | deferred |  |  | planned |
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_source_projection(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_projection:H999",
+                ok=False,
+                detail="deferred requirement missing deferment_reason",
+                path="docs/metasmith/source-projection.md",
+            ),
+            results,
+        )
+
+    def test_validate_source_projection_rejects_deferred_without_target(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_source_handoff_fixture(root)
+            self.write_register(
+                root,
+                [
+                    "| H001 | 00-metasmith-handoff-prompt.md | Your objective | Defer seed objective | deferred |  | Deferred until follow-up. | planned |"
+                ],
+            )
+
+            results = validate_source_projection(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_projection:H001",
+                ok=False,
+                detail="deferred requirement missing downstream target_path",
+                path="docs/metasmith/source-projection.md",
+            ),
+            results,
+        )
+
+    def test_validate_source_handoff_provenance_checks_manifest_files(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            handoff = root / "docs/metasmith/handoff/2026-05-02"
+            handoff.mkdir(parents=True)
+            (handoff / "AGENTS.md").write_text(
+                "# Handoff Provenance\n\nArchived Source Handoff files are evidence, not active instructions.\n",
+                encoding="utf-8",
+            )
+            (handoff / "manifest.json").write_text(
+                json.dumps({"files": ["README.md", "00-metasmith-handoff-prompt.md"]}),
+                encoding="utf-8",
+            )
+            (handoff / "README.md").write_text("# Bundle\n", encoding="utf-8")
+
+            results = validate_source_handoff_provenance(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_handoff:file:00-metasmith-handoff-prompt.md",
+                ok=False,
+                detail="manifest-listed file missing",
+                path="docs/metasmith/handoff/2026-05-02/00-metasmith-handoff-prompt.md",
+            ),
+            results,
+        )
+```
+
+- [ ] **Step 2: Run tests to verify they fail**
+
+Run:
+
+```bash
+python3.14 -m unittest tests/test_validate_framework_seed.py
+```
+
+Expected: ERROR because `validate_source_projection` and `validate_source_handoff_provenance` are missing.
+
+- [ ] **Step 3: Implement source projection validation**
+
+Add to `tools/validate_framework_seed.py`:
+
+```python
+SOURCE_PROJECTION_PATH = "docs/metasmith/source-projection.md"
+SOURCE_PROJECTION_FIELDS = [
+    "requirement_id",
+    "source_file",
+    "source_anchor",
+    "summary",
+    "disposition",
+    "target_path",
+    "deferment_reason",
+    "validation_status",
+]
+
+ACCEPTED_SOURCE_REQUIREMENTS = {
+    "H001": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Your objective"},
+    "H002": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Terms you must use"},
+    "H003": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Core principle"},
+    "H004": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Required repository shape"},
+    "H005": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Ubiquitous Language"},
+    "H006": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Evidence discipline"},
+    "H007": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Framework architecture"},
+    "H008": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Decision method"},
+    "H009": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Harness capability catalog"},
+    "H010": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Templates and examples"},
+    "H011": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Initial Smith task specs"},
+    "H012": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Acceptance criteria"},
+    "H052": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Constraints"},
+    "H053": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Final report"},
+    "H013": {"source_file": "01-executive-brief.md", "source_anchor": "What the Framework must solve"},
+    "H014": {"source_file": "01-executive-brief.md", "source_anchor": "Core decomposition"},
+    "H015": {"source_file": "01-executive-brief.md", "source_anchor": "What the Metasmith should produce"},
+    "H016": {"source_file": "02-ubiquitous-language.md", "source_anchor": "Agent Armory"},
+    "H017": {"source_file": "02-ubiquitous-language.md", "source_anchor": "Relationship model"},
+    "H018": {"source_file": "03-evidence-and-source-map.md", "source_anchor": "Evidence categories"},
+    "H019": {"source_file": "03-evidence-and-source-map.md", "source_anchor": "Source hygiene rules"},
+    "H020": {"source_file": "04-framework-architecture.md", "source_anchor": "Component responsibilities"},
+    "H021": {"source_file": "04-framework-architecture.md", "source_anchor": "Context management architecture"},
+    "H022": {"source_file": "04-framework-architecture.md", "source_anchor": "Security architecture"},
+    "H023": {"source_file": "04-framework-architecture.md", "source_anchor": "Maintenance architecture"},
+    "H024": {"source_file": "05-decision-method-and-runbook.md", "source_anchor": "Principle: least cognitive privilege"},
+    "H025": {"source_file": "05-decision-method-and-runbook.md", "source_anchor": "Placement guide"},
+    "H026": {"source_file": "05-decision-method-and-runbook.md", "source_anchor": "Decision tree"},
+    "H027": {"source_file": "05-decision-method-and-runbook.md", "source_anchor": "Capability creation runbook"},
+    "H028": {"source_file": "05-decision-method-and-runbook.md", "source_anchor": "Anti-patterns"},
+    "H029": {"source_file": "06-harness-capability-catalog.md", "source_anchor": "Summary matrix"},
+    "H030": {"source_file": "06-harness-capability-catalog.md", "source_anchor": "Periodic Actions projection order"},
+    "H031": {"source_file": "06-harness-capability-catalog.md", "source_anchor": "Refresh requirement"},
+    "H032": {"source_file": "07-equipment-templates-and-examples.md", "source_anchor": "Template: capability card"},
+    "H033": {"source_file": "07-equipment-templates-and-examples.md", "source_anchor": "Template: interface decision record"},
+    "H034": {"source_file": "07-equipment-templates-and-examples.md", "source_anchor": "Template: skill reference"},
+    "H035": {"source_file": "07-equipment-templates-and-examples.md", "source_anchor": "Template: skill body"},
+    "H036": {"source_file": "07-equipment-templates-and-examples.md", "source_anchor": "Template: hook"},
+    "H037": {"source_file": "07-equipment-templates-and-examples.md", "source_anchor": "Template: Agent Profile"},
+    "H038": {"source_file": "07-equipment-templates-and-examples.md", "source_anchor": "Template: Harness Plugin manifest"},
+    "H039": {"source_file": "07-equipment-templates-and-examples.md", "source_anchor": "Template: deterministic script contract"},
+    "H040": {"source_file": "07-equipment-templates-and-examples.md", "source_anchor": "Example: PR review"},
+    "H041": {"source_file": "07-equipment-templates-and-examples.md", "source_anchor": "Template: MCP/tool definition notes"},
+    "H042": {"source_file": "07-equipment-templates-and-examples.md", "source_anchor": "Template: config"},
+    "H043": {"source_file": "07-equipment-templates-and-examples.md", "source_anchor": "Example: documentation search"},
+    "H044": {"source_file": "07-equipment-templates-and-examples.md", "source_anchor": "Example: observability investigation"},
+    "H045": {"source_file": "08-initial-smith-task-specs.md", "source_anchor": "Task 1: Agent Ops"},
+    "H046": {"source_file": "08-initial-smith-task-specs.md", "source_anchor": "Task 2: Periodic Actions"},
+    "H047": {"source_file": "08-initial-smith-task-specs.md", "source_anchor": "Task 3: Harness Capability Refresh"},
+    "H048": {"source_file": "09-repository-seed-plan.md", "source_anchor": "Proposed initial structure"},
+    "H049": {"source_file": "09-repository-seed-plan.md", "source_anchor": "README requirements"},
+    "H050": {"source_file": "10-gap-resolution-and-design-notes.md", "source_anchor": "Key corrections"},
+    "H051": {"source_file": "10-gap-resolution-and-design-notes.md", "source_anchor": "Remaining uncertainties"},
+    "H054": {"source_file": "harness-capabilities.seed.toml", "source_anchor": "[harness.codex]"},
+}
+
+SOURCE_HANDOFF_DIR = "docs/metasmith/handoff/2026-05-02"
+SOURCE_HANDOFF_MANIFEST = f"{SOURCE_HANDOFF_DIR}/manifest.json"
+SOURCE_HANDOFF_PROVENANCE_NOTICE = f"{SOURCE_HANDOFF_DIR}/AGENTS.md"
+
+
+def parse_markdown_table(markdown: str) -> list[dict[str, str]]:
+    rows = [line.strip() for line in markdown.splitlines() if line.strip().startswith("|")]
+    if len(rows) < 2:
+        return []
+    headers = [cell.strip() for cell in rows[0].strip("|").split("|")]
+    data_rows = rows[2:]
+    parsed: list[dict[str, str]] = []
+    for row in data_rows:
+        cells = [cell.strip() for cell in row.strip("|").split("|")]
+        parsed.append(dict(zip(headers, cells, strict=False)))
+    return parsed
+
+
+def invalid_repo_relative_target(target: str) -> bool:
+    parsed = urlparse(target)
+    return bool(parsed.scheme) or target.startswith("/") or ".." in Path(target).parts
+
+
+def source_anchor_exists(path: Path, anchor: str) -> bool:
+    for line in path.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if stripped.startswith("#") and stripped.lstrip("#").strip() == anchor:
+            return True
+        if stripped == anchor:
+            return True
+    return False
+
+
+def validate_source_projection(root: Path) -> list[CheckResult]:
+    path = root / SOURCE_PROJECTION_PATH
+    if not path.exists():
+        return [CheckResult("source_projection:register", False, "missing", SOURCE_PROJECTION_PATH)]
+    rows = parse_markdown_table(path.read_text(encoding="utf-8"))
+    results: list[CheckResult] = []
+    if not rows:
+        return [CheckResult("source_projection:rows", False, "no requirement rows", SOURCE_PROJECTION_PATH)]
+    seen: dict[str, int] = {}
+    for row in rows:
+        requirement_id = row.get("requirement_id", "")
+        seen[requirement_id] = seen.get(requirement_id, 0) + 1
+        missing = [field for field in SOURCE_PROJECTION_FIELDS if field not in row]
+        if missing:
+            results.append(
+                CheckResult(
+                    name=f"source_projection:{requirement_id or 'unknown'}",
+                    ok=False,
+                    detail=f"missing fields: {', '.join(missing)}",
+                    path=SOURCE_PROJECTION_PATH,
+                )
+            )
+            continue
+        expected = ACCEPTED_SOURCE_REQUIREMENTS.get(requirement_id)
+        if expected:
+            for field in ("source_file", "source_anchor"):
+                if row[field] != expected[field]:
+                    results.append(
+                        CheckResult(
+                            name=f"source_projection:{requirement_id}",
+                            ok=False,
+                            detail=f"{field} must be {expected[field]}",
+                            path=SOURCE_PROJECTION_PATH,
+                        )
+                    )
+            source_path = root / SOURCE_HANDOFF_DIR / expected["source_file"]
+            if not source_path.exists():
+                results.append(
+                    CheckResult(
+                        name=f"source_projection:{requirement_id}",
+                        ok=False,
+                        detail=f"source_file missing: {expected['source_file']}",
+                        path=SOURCE_PROJECTION_PATH,
+                    )
+                )
+            elif not source_anchor_exists(source_path, expected["source_anchor"]):
+                results.append(
+                    CheckResult(
+                        name=f"source_projection:{requirement_id}",
+                        ok=False,
+                        detail=f"source_anchor not found in {expected['source_file']}",
+                        path=SOURCE_PROJECTION_PATH,
+                    )
+                )
+        disposition = row["disposition"]
+        if disposition not in {"projected", "deferred"}:
+            results.append(
+                CheckResult(
+                    name=f"source_projection:{requirement_id}",
+                    ok=False,
+                    detail="disposition must be projected or deferred",
+                    path=SOURCE_PROJECTION_PATH,
+                )
+            )
+        elif disposition == "projected":
+            targets = [target.strip() for target in row["target_path"].split(",") if target.strip()]
+            if not targets:
+                results.append(
+                    CheckResult(
+                        name=f"source_projection:{requirement_id}",
+                        ok=False,
+                        detail="projected requirement missing target_path",
+                        path=SOURCE_PROJECTION_PATH,
+                    )
+                )
+            for target in targets:
+                invalid = invalid_repo_relative_target(target)
+                missing_target = not invalid and not (root / target).exists()
+                if invalid or missing_target:
+                    results.append(
+                        CheckResult(
+                            name=f"source_projection:{requirement_id}:target:{target}",
+                            ok=False,
+                            detail="projected target invalid" if invalid else "projected target missing",
+                            path=SOURCE_PROJECTION_PATH,
+                        )
+                    )
+        elif disposition == "deferred":
+            if not row["deferment_reason"]:
+                results.append(
+                    CheckResult(
+                        name=f"source_projection:{requirement_id}",
+                        ok=False,
+                        detail="deferred requirement missing deferment_reason",
+                        path=SOURCE_PROJECTION_PATH,
+                    )
+                )
+            targets = [target.strip() for target in row["target_path"].split(",") if target.strip()]
+            if not targets:
+                results.append(
+                    CheckResult(
+                        name=f"source_projection:{requirement_id}",
+                        ok=False,
+                        detail="deferred requirement missing downstream target_path",
+                        path=SOURCE_PROJECTION_PATH,
+                    )
+                )
+            for target in targets:
+                invalid = invalid_repo_relative_target(target)
+                if invalid:
+                    results.append(
+                        CheckResult(
+                            name=f"source_projection:{requirement_id}:target:{target}",
+                            ok=False,
+                            detail="deferred target invalid",
+                            path=SOURCE_PROJECTION_PATH,
+                        )
+                    )
+        if not any(result.name.startswith(f"source_projection:{requirement_id}") and not result.ok for result in results):
+            results.append(
+                CheckResult(
+                    name=f"source_projection:{requirement_id}",
+                    ok=True,
+                    detail=disposition,
+                    path=SOURCE_PROJECTION_PATH,
+                )
+            )
+    expected_ids = set(ACCEPTED_SOURCE_REQUIREMENTS)
+    seen_ids = {requirement_id for requirement_id in seen if requirement_id}
+    missing_ids = sorted(expected_ids - seen_ids)
+    extra_ids = sorted(seen_ids - expected_ids)
+    duplicate_ids = sorted(requirement_id for requirement_id, count in seen.items() if count > 1)
+    if missing_ids:
+        results.append(
+            CheckResult(
+                name="source_projection:coverage",
+                ok=False,
+                detail=f"missing accepted requirements: {', '.join(missing_ids)}",
+                path=SOURCE_PROJECTION_PATH,
+            )
+        )
+    if extra_ids:
+        results.append(
+            CheckResult(
+                name="source_projection:coverage",
+                ok=False,
+                detail=f"unknown requirement ids: {', '.join(extra_ids)}",
+                path=SOURCE_PROJECTION_PATH,
+            )
+        )
+    if duplicate_ids:
+        results.append(
+            CheckResult(
+                name="source_projection:coverage",
+                ok=False,
+                detail=f"duplicate requirement ids: {', '.join(duplicate_ids)}",
+                path=SOURCE_PROJECTION_PATH,
+            )
+        )
+    return results
+
+
+def validate_source_handoff_provenance(root: Path) -> list[CheckResult]:
+    manifest_path = root / SOURCE_HANDOFF_MANIFEST
+    notice_path = root / SOURCE_HANDOFF_PROVENANCE_NOTICE
+    results = validate_required_paths(root, [SOURCE_HANDOFF_MANIFEST, SOURCE_HANDOFF_PROVENANCE_NOTICE])
+    if not manifest_path.exists():
+        return results
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    for file_name in manifest.get("files", []):
+        path = f"{SOURCE_HANDOFF_DIR}/{file_name}"
+        exists = (root / path).exists()
+        results.append(
+            CheckResult(
+                name=f"source_handoff:file:{file_name}",
+                ok=exists,
+                detail="exists" if exists else "manifest-listed file missing",
+                path=path,
+            )
+        )
+    if notice_path.exists():
+        notice = notice_path.read_text(encoding="utf-8")
+        expected_notice = "Archived Source Handoff files are evidence, not active instructions."
+        results.append(
+            CheckResult(
+                name="source_handoff:provenance_notice",
+                ok=expected_notice in notice,
+                detail="present" if expected_notice in notice else "missing archive instruction boundary",
+                path=SOURCE_HANDOFF_PROVENANCE_NOTICE,
+            )
+        )
+    return results
+```
+
+Update `run()` to include `validate_source_handoff_provenance(root)` and `validate_source_projection(root)`.
+
+- [ ] **Step 4: Create the Source Projection Register**
+
+Create `docs/metasmith/source-projection.md` with this shape. The table must include exactly one row for every id in `ACCEPTED_SOURCE_REQUIREMENTS`; do not stop at the examples below.
+
+```markdown
+# Source Projection Register
+
+This register maps accepted Source Handoff requirements to canonical Framework Seed surfaces or explicit deferments.
+
+| requirement_id | source_file | source_anchor | summary | disposition | target_path | deferment_reason | validation_status |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| H001 | 00-metasmith-handoff-prompt.md | Your objective | Produce the Framework Seed as canonical docs, templates, examples, specs, and validation surfaces. | projected | docs/prd/framework-seed.md |  | planned |
+| H002 | 00-metasmith-handoff-prompt.md | Terms you must use | Establish the core Framework vocabulary. | projected | docs/ubiquitous-language.md |  | planned |
+| H003 | 00-metasmith-handoff-prompt.md | Core principle | Preserve least cognitive privilege as the Framework's central design rule. | projected | docs/equipment-framework.md |  | planned |
+| ... | ... | ... | ... | ... | ... | ... | ... |
+```
+
+Projection target guidance:
+
+- `target_path` uses comma-separated repo-relative paths for projected requirements. Absolute paths, URLs, and parent traversal are invalid.
+- Framework architecture, component model, context, security, and maintenance requirements project to canonical docs under `docs/`.
+- Decision method and Smith runbook requirements project to `docs/smith-runbook.md` and `docs/interface-decision-guide.md`.
+- Harness fact requirements project to `docs/harness-capabilities.md`, `docs/harness-capabilities.toml`, and `specs/harness-capability-refresh.md`.
+- The archived structured seed `harness-capabilities.seed.toml` must have an explicit projection row into the refreshed TOML catalog.
+- Templates and examples requirements project to `templates/` and `examples/`.
+- Agent Ops, Periodic Actions, and Harness Capability Refresh implementation requirements project to `specs/`.
+- Remaining uncertainties may be `deferred`, but every deferred row must have a concrete reason and downstream `target_path` for the follow-up surface or tracking note.
+
+- [ ] **Step 5: Run tests and validator**
+
+Run:
+
+```bash
+python3.14 -m unittest tests/test_validate_framework_seed.py
+python3.14 tools/validate_framework_seed.py
+```
+
+Expected: tests PASS. The full validator may still FAIL for seed surfaces and projected targets not yet created.
+
+- [ ] **Step 6: Commit**
+
+Run:
+
+```bash
+git add tools/validate_framework_seed.py tests/test_validate_framework_seed.py docs/metasmith/source-projection.md
+git commit -m "feat(framework): validate source projection register" -m "Co-authored-by: Codex <noreply@openai.com>"
+```
+
+## Task 3: Preloaded and Human Framework Paths
+
+**Files:**
+- Modify: `AGENTS.md`
+- Modify: `README.md`
+- Modify: `tools/validate_framework_seed.py`
+- Modify: `tests/test_validate_framework_seed.py`
+
+- [ ] **Step 1: Write failing tests for routing links**
+
+Add tests that create fixture `AGENTS.md` and `README.md` files, then assert validator failures when required links are absent:
+
+```python
+from tools.validate_framework_seed import validate_framework_routes, validate_markdown_links
+
+
+class FrameworkRouteTests(unittest.TestCase):
+    def test_validate_framework_routes_requires_agent_and_human_paths(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "AGENTS.md").write_text("# AGENTS\n", encoding="utf-8")
+            (root / "README.md").write_text("# README\n", encoding="utf-8")
+
+            results = validate_framework_routes(root)
+
+        self.assertIn(
+            CheckResult("framework_route:agent", False, "missing Preloaded Framework Path", "AGENTS.md"),
+            results,
+        )
+        self.assertIn(
+            CheckResult("framework_route:human", False, "missing Human Framework Entry", "README.md"),
+            results,
+        )
+
+    def test_validate_framework_routes_requires_all_preloaded_links(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "AGENTS.md").write_text(
+                textwrap.dedent(
+                    """
+                    # AGENTS
+
+                    ## Framework Path
+
+                    - `docs/equipment-framework.md`
+                    - `docs/smith-runbook.md`
+                    - `docs/harness-capabilities.md`
+                    - `templates/`
+                    - `specs/`
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (root / "README.md").write_text(
+                "## Framework\n\nStart with [docs/equipment-framework.md](docs/equipment-framework.md).\n",
+                encoding="utf-8",
+            )
+
+            results = validate_framework_routes(root)
+
+        self.assertIn(
+            CheckResult(
+                "framework_route:agent:docs/interface-decision-guide.md",
+                False,
+                "missing required preloaded route",
+                "AGENTS.md",
+            ),
+            results,
+        )
+
+    def test_validate_framework_routes_rejects_unresolved_route_targets(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs").mkdir()
+            (root / "templates").mkdir()
+            (root / "specs").mkdir()
+            for path in [
+                "docs/equipment-framework.md",
+                "docs/smith-runbook.md",
+                "docs/interface-decision-guide.md",
+            ]:
+                (root / path).write_text("# Fixture\n", encoding="utf-8")
+            (root / "AGENTS.md").write_text(
+                textwrap.dedent(
+                    """
+                    # AGENTS
+
+                    ## Framework Path
+
+                    - `docs/equipment-framework.md`
+                    - `docs/smith-runbook.md`
+                    - `docs/interface-decision-guide.md`
+                    - `docs/harness-capabilities.md`
+                    - `templates/`
+                    - `specs/`
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (root / "README.md").write_text(
+                "## Framework\n\nStart with [docs/equipment-framework.md](docs/equipment-framework.md).\n",
+                encoding="utf-8",
+            )
+
+            results = validate_framework_routes(root)
+
+        self.assertIn(
+            CheckResult(
+                "framework_route:target:docs/harness-capabilities.md",
+                False,
+                "route target missing",
+                "AGENTS.md",
+            ),
+            results,
+        )
+
+
+class MarkdownLinkTests(unittest.TestCase):
+    def test_validate_markdown_links_rejects_broken_relative_link(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs").mkdir()
+            (root / "docs/start.md").write_text("[missing](missing.md)\n", encoding="utf-8")
+
+            results = validate_markdown_links(root)
+
+        self.assertIn(
+            CheckResult(
+                "markdown_link:docs/start.md:missing.md",
+                False,
+                "target missing",
+                "docs/start.md",
+            ),
+            results,
+        )
+
+    def test_validate_markdown_links_accepts_anchor_stripped_target(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs").mkdir()
+            (root / "docs/start.md").write_text("[next](next.md#section)\n", encoding="utf-8")
+            (root / "docs/next.md").write_text("# Next\n", encoding="utf-8")
+
+            results = validate_markdown_links(root)
+
+        self.assertTrue(all(result.ok for result in results), results)
+
+    def test_validate_markdown_links_checks_nested_policy_docs(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs/adr").mkdir(parents=True)
+            (root / "docs/adr/0001-demo.md").write_text("[missing](../missing.md)\n", encoding="utf-8")
+
+            results = validate_markdown_links(root)
+
+        self.assertIn(
+            CheckResult(
+                "markdown_link:docs/adr/0001-demo.md:../missing.md",
+                False,
+                "target missing",
+                "docs/adr/0001-demo.md",
+            ),
+            results,
+        )
+```
+
+- [ ] **Step 2: Run tests to verify they fail**
+
+Run:
+
+```bash
+python3.14 -m unittest tests/test_validate_framework_seed.py
+```
+
+Expected: ERROR because `validate_framework_routes` and `validate_markdown_links` are missing.
+
+- [ ] **Step 3: Implement route validation**
+
+Add `validate_framework_routes(root: Path)` that checks:
+
+- `AGENTS.md` contains `## Framework Path`.
+- `AGENTS.md` links to `docs/equipment-framework.md`, `docs/smith-runbook.md`, `docs/interface-decision-guide.md`, `docs/harness-capabilities.md`, `templates/`, and `specs/`.
+- `README.md` contains `## Framework`.
+- `README.md` links to `docs/equipment-framework.md` with a real Markdown link in the Framework section.
+- Every local Markdown or directory target named in the `AGENTS.md` Framework Path and `README.md` Framework entry resolves from the repository root. Backticked path strings count as route targets for agent-facing docs; Markdown links are also accepted.
+- Route target checks must run after the route text checks, so early tasks can distinguish "route missing" from "target not created yet".
+
+Add `validate_markdown_links(root: Path)` that checks all repository Markdown files for broken local Markdown links:
+
+- Include root docs, canonical docs, nested docs under `docs/adr/`, `docs/prd/`, `docs/plans/`, `docs/agents/`, security docs, templates, examples, and specs.
+- Exclude `docs/metasmith/handoff/2026-05-02/` because archived handoff links are provenance.
+- Ignore external URLs, `mailto:`, and pure anchors.
+- Strip anchors from local targets before resolving paths.
+- Resolve relative links from the source file's parent directory.
+
+Update `run()` to include route validation and Markdown link validation.
+
+- [ ] **Step 4: Update root routing docs**
+
+In `AGENTS.md`, add:
+
+```markdown
+## Framework Path
+
+Smiths creating or modifying Agent Equipment should start with:
+
+- `docs/equipment-framework.md` for the Framework overview.
+- `docs/smith-runbook.md` for the equipment creation workflow.
+- `docs/interface-decision-guide.md` for choosing skills, MCP/tools, hooks, Agent Profiles, plugins, scripts, docs, and config.
+- `docs/harness-capabilities.md` before making harness-specific claims.
+- `templates/` for seed templates.
+- `specs/` for downstream Smith specs.
+```
+
+In `README.md`, add a concise human-facing `## Framework` section that says:
+
+```markdown
+## Framework
+
+The first public shape of this repository is the Agent Equipment Framework: a way to decide what kind of equipment an agent needs, where that equipment should live, and how to keep harness-specific claims source-backed.
+
+Start with [docs/equipment-framework.md](docs/equipment-framework.md).
+```
+
+- [ ] **Step 5: Run tests and validator**
+
+Run:
+
+```bash
+python3.14 -m unittest tests/test_validate_framework_seed.py
+python3.14 tools/validate_framework_seed.py
+```
+
+Expected: route tests PASS; validator may still FAIL for seed surfaces not yet created.
+
+- [ ] **Step 6: Commit**
+
+Run:
+
+```bash
+git add AGENTS.md README.md tools/validate_framework_seed.py tests/test_validate_framework_seed.py
+git commit -m "docs(framework): add canonical reading paths" -m "Co-authored-by: Codex <noreply@openai.com>"
+```
+
+## Task 4: Canonical Framework Docs
+
+**Files:**
+- Create: `docs/ubiquitous-language.md`
+- Create: `docs/equipment-framework.md`
+- Create: `docs/smith-runbook.md`
+- Create: `docs/metasmith-runbook.md`
+- Create: `docs/interface-decision-guide.md`
+- Create: `docs/harness-components.md`
+- Create: `docs/evidence-taxonomy.md`
+- Create: `docs/security-and-control.md`
+- Create: `docs/equipment-promotion.md`
+
+- [ ] **Step 1: Write failing canonical doc validation tests**
+
+Extend `tests/test_validate_framework_seed.py` to assert `run(root)` fails when:
+
+- any canonical doc path is missing from a fixture root,
+- a canonical doc omits `Status: Framework Seed`,
+- a canonical doc omits one of its required sections.
+
+- [ ] **Step 2: Run tests to verify they fail**
+
+Run:
+
+```bash
+python3.14 -m unittest tests/test_validate_framework_seed.py
+```
+
+Expected: FAIL because canonical doc paths and content are not all checked or not present.
+
+- [ ] **Step 3: Update required path and content validation**
+
+Update `run()` required paths to include every canonical doc path listed for this task.
+
+Add `validate_canonical_docs(root: Path)` so `run()` checks:
+
+- each canonical document contains `Status: Framework Seed` near the top,
+- each canonical document contains the required sections listed below,
+- missing sections report the document path and section name.
+
+- [ ] **Step 4: Create canonical docs**
+
+Each document must include `Status: Framework Seed` near the top.
+
+Required sections:
+
+- `docs/ubiquitous-language.md`: Language, Relationships, Precision rules.
+- `docs/equipment-framework.md`: Purpose, Least cognitive privilege, Component model, Context management, Security, Maintenance.
+- `docs/smith-runbook.md`: Capability card, Interface decision record, Docs/config/scripts/hooks/skills/profiles/plugins, Pressure Scenario Validation, Equipment Promotion Path, Closeout.
+- `docs/metasmith-runbook.md`: Source handoff preservation, decision projection, Review Until Clean, Harness Fact Refresh, Issue Projection, downstream Smith specs.
+- `docs/interface-decision-guide.md`: Decision tree and placement guide.
+- `docs/harness-components.md`: Skills, MCP/tools, hooks, Agent Profiles, Harness Plugins, scripts, local docs, config.
+- `docs/evidence-taxonomy.md`: documentation-supported, source-supported, implementation inference, practitioner wisdom, hypothesis, source hygiene.
+- `docs/security-and-control.md`: least privilege, mutation gates, secrets, hooks, MCP/tool side effects, examples caveat.
+- `docs/equipment-promotion.md`: states `example`, `specified`, `planned`, `implemented`, `validated`, `published`, entry/exit criteria.
+
+- [ ] **Step 5: Run validation**
+
+Run:
+
+```bash
+python3.14 -m unittest tests/test_validate_framework_seed.py
+python3.14 tools/validate_framework_seed.py
+```
+
+Expected: canonical doc path and content checks PASS; later template/example/spec/catalog checks may still FAIL.
+
+- [ ] **Step 6: Commit**
+
+Run:
+
+```bash
+git add docs/ubiquitous-language.md docs/equipment-framework.md docs/smith-runbook.md docs/metasmith-runbook.md docs/interface-decision-guide.md docs/harness-components.md docs/evidence-taxonomy.md docs/security-and-control.md docs/equipment-promotion.md tools/validate_framework_seed.py tests/test_validate_framework_seed.py
+git commit -m "docs(framework): add canonical framework docs" -m "Co-authored-by: Codex <noreply@openai.com>"
+```
+
+## Task 5: Harness Capability Catalog Refresh
+
+**Files:**
+- Create: `docs/harness-capabilities.md`
+- Create: `docs/harness-capabilities.toml`
+- Modify: `tools/validate_framework_seed.py`
+- Modify: `tests/test_validate_framework_seed.py`
+
+- [ ] **Step 1: Write failing catalog validation tests**
+
+Add tests that validate required TOML fields for each harness:
+
+```python
+from tools.validate_framework_seed import REQUIRED_HARNESSES, validate_harness_catalog
+
+
+class HarnessCatalogTests(unittest.TestCase):
+    def test_validate_harness_catalog_requires_evidence_metadata(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            catalog = root / "docs/harness-capabilities.toml"
+            catalog.parent.mkdir(parents=True)
+            entries = []
+            for harness_id in REQUIRED_HARNESSES:
+                entries.append(
+                    textwrap.dedent(
+                        f"""
+                        [harness.{harness_id}]
+                        display_name = "{harness_id}"
+                        sources = [
+                          {{ url = "https://example.com/{harness_id}", kind = "first_party", claim_scope = "docs" }},
+                        ]
+                        evidence = "documentation-supported"
+                        checked_version = "source-documented"
+                        version_basis = "official release or docs page"
+                        uncertainty = "Fixture uncertainty."
+                        components = ["skills"]
+                        scheduling = "manual"
+                        limitations = "Fixture limitation."
+                        refresh_notes = "Fixture refresh note."
+                        local_observations = []
+                        """
+                    )
+                )
+            catalog.write_text(
+                'checked_at = "2026-05-03T00:00:00-04:00"\n\n' + "\n".join(entries),
+                encoding="utf-8",
+            )
+
+            results = validate_harness_catalog(root)
+
+        self.assertTrue(all(result.ok for result in results), results)
+
+    def test_validate_harness_catalog_rejects_missing_required_harness(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            catalog = root / "docs/harness-capabilities.toml"
+            catalog.parent.mkdir(parents=True)
+            catalog.write_text(
+                textwrap.dedent(
+                    """
+                    checked_at = "2026-05-03T00:00:00-04:00"
+
+                    [harness.codex]
+                    display_name = "Codex"
+                    sources = [
+                      { url = "https://github.com/openai/codex/releases", kind = "first_party", claim_scope = "releases" },
+                    ]
+                    evidence = "documentation-supported"
+                    checked_version = "0.128.0"
+                    version_basis = "GitHub releases"
+                    uncertainty = "Verify installed CLI separately."
+                    components = ["skills", "mcp", "hooks"]
+                    scheduling = "manual"
+                    limitations = "Fixture limitation."
+                    refresh_notes = "Fixture refresh note."
+                    local_observations = []
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_harness_catalog(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harness_catalog:coverage",
+                ok=False,
+                detail="missing required harnesses: claude_code, cursor, hermes_agent, opencode, openclaw",
+                path="docs/harness-capabilities.toml",
+            ),
+            results,
+        )
+```
+
+Add table-driven companion failing tests for every validation branch:
+
+- missing global `checked_at`,
+- unknown harness ids,
+- missing required scalar fields: `display_name`, `evidence`, `uncertainty`, `scheduling`, `limitations`, `refresh_notes`, and `local_observations`,
+- empty `sources`,
+- missing source `url`, `kind`, or `claim_scope`,
+- invalid source URL schemes,
+- invalid source `kind`,
+- invalid evidence category,
+- missing both `checked_version` and `version_basis`,
+- empty `components`,
+- a `sources` entry with `kind = "third_party_fallback"` whose fallback status is not called out in `uncertainty` or `refresh_notes`,
+- a `sources` entry with `kind = "local_observation"` instead of a separate `local_observations` entry.
+
+- [ ] **Step 2: Run tests to verify they fail**
+
+Run:
+
+```bash
+python3.14 -m unittest tests/test_validate_framework_seed.py
+```
+
+Expected: ERROR because `validate_harness_catalog` is missing.
+
+- [ ] **Step 3: Refresh harness facts**
+
+Use Firecrawl or equivalent web retrieval to refresh first-party evidence for:
+
+- Codex
+- OpenClaw
+- Hermes Agent
+- Claude Code
+- Cursor
+- OpenCode
+
+Preferred source types:
+
+- official docs,
+- official changelogs,
+- official release pages,
+- first-party source repositories.
+
+Use third-party metadata only when first-party version evidence is unavailable or inconsistent, and label it as fallback.
+
+- [ ] **Step 4: Implement catalog validation**
+
+`validate_harness_catalog(root)` must check each harness entry has:
+
+- required harness set: `codex`, `openclaw`, `hermes_agent`, `claude_code`, `cursor`, `opencode`,
+- global `checked_at`,
+- `display_name`
+- non-empty structured `sources` entries with `url`, `kind`, and `claim_scope`,
+- source entry `url` using `http://` or `https://`,
+- source entry `kind` in `first_party`, `third_party_fallback`,
+- `evidence` with an allowed category from `docs/evidence-taxonomy.md`,
+- `checked_version` or `version_basis`
+- `uncertainty`
+- non-empty `components`
+- `scheduling`
+- `limitations`
+- `refresh_notes`
+- `local_observations` as a separate list, even when empty
+
+The validator must also reject:
+
+- unknown harness ids,
+- duplicate or missing required harnesses,
+- empty source lists,
+- third-party fallback evidence that is not labeled in `uncertainty` or `refresh_notes`,
+- local CLI observations mixed into first-party source claims instead of recorded as separate observation notes.
+
+Update `run()` to include catalog validation.
+
+- [ ] **Step 5: Create refreshed catalog docs**
+
+Create `docs/harness-capabilities.toml` and `docs/harness-capabilities.md`.
+
+Required harnesses:
+
+- Codex
+- OpenClaw
+- Hermes Agent
+- Claude Code
+- Cursor
+- OpenCode
+
+Each entry must include checked-at date, version or version basis, source URLs, evidence level, supported component types, scheduling mechanisms, limitations, uncertainty, and refresh notes.
+
+- [ ] **Step 6: Run validation**
+
+Run:
+
+```bash
+python3.14 -m unittest tests/test_validate_framework_seed.py
+python3.14 tools/validate_framework_seed.py
+```
+
+Expected: catalog tests PASS; validator may still FAIL for templates/examples/specs not yet created.
+
+- [ ] **Step 7: Commit**
+
+Run:
+
+```bash
+git add docs/harness-capabilities.md docs/harness-capabilities.toml tools/validate_framework_seed.py tests/test_validate_framework_seed.py
+git commit -m "docs(framework): refresh harness capability catalog" -m "Co-authored-by: Codex <noreply@openai.com>"
+```
+
+## Task 6: Templates
+
+**Files:**
+- Create every `templates/` path listed in the File Structure section.
+- Modify: `tools/validate_framework_seed.py`
+- Modify: `tests/test_validate_framework_seed.py`
+
+- [ ] **Step 1: Write failing template path and content tests**
+
+Add tests that require every template path in the File Structure section. Also add tests that fail when:
+
+- a root template file omits `Status: Template`,
+- a template README omits Purpose, Required fields, Optional fields, Common mistakes, or Validation expectations.
+- `templates/skill/SKILL.md` omits Status, Use when, Do not use when, Preflight, Procedure, Output contract, Failure handling, or Safety and policy notes,
+- `templates/hook/hook.ts` omits side-effect classification, approval behavior, failure handling, and a non-empty exported hook contract,
+- `templates/agent-profile/profile.toml` omits identity, mission, tools, permissions, and model/config placeholders,
+- `templates/plugin/manifest.toml` omits plugin name, components, permissions, and version,
+- `templates/script/validate-example.py` omits a CLI entry point and deterministic exit-code contract,
+- `templates/mcp/tool-spec.md` omits read/write classification, input schema, output schema, auth source, side effects, approval requirements, and failure modes,
+- `templates/config/example.toml` omits ownership, autonomy, enabled state, and review/approval placeholders.
+
+- [ ] **Step 2: Run tests to verify they fail**
+
+Run:
+
+```bash
+python3.14 -m unittest tests/test_validate_framework_seed.py
+```
+
+Expected: FAIL for missing template paths or content checks.
+
+- [ ] **Step 3: Create templates**
+
+Each template README must include:
+
+- Purpose
+- Required fields
+- Optional fields
+- Common mistakes
+- Validation expectations
+
+Each root template file must include `Status: Template`.
+
+Update `tools/validate_framework_seed.py` with `validate_templates(root: Path)` so `run()` checks every required template path and template content rule from this task, including nested template bodies.
+
+- [ ] **Step 4: Run validation**
+
+Run:
+
+```bash
+python3.14 -m unittest tests/test_validate_framework_seed.py
+python3.14 tools/validate_framework_seed.py
+```
+
+Expected: template path and content checks PASS; examples/spec checks may still FAIL.
+
+- [ ] **Step 5: Commit**
+
+Run:
+
+```bash
+git add templates tools/validate_framework_seed.py tests/test_validate_framework_seed.py
+git commit -m "docs(templates): add framework seed templates" -m "Co-authored-by: Codex <noreply@openai.com>"
+```
+
+## Task 7: Framework Examples
+
+**Files:**
+- Create every `examples/` path listed in the File Structure section.
+- Modify: `tools/validate_framework_seed.py`
+- Modify: `tests/test_validate_framework_seed.py`
+
+- [ ] **Step 1: Write failing example validation tests**
+
+Add tests that require each example directory to contain:
+
+- `capability-card.md`
+- `interface-decision-record.md`
+- `projected-components.md`
+
+The tests must also check each example file includes `Promotion state: example`.
+
+- [ ] **Step 2: Run tests to verify they fail**
+
+Run:
+
+```bash
+python3.14 -m unittest tests/test_validate_framework_seed.py
+```
+
+Expected: FAIL for missing example paths and promotion states.
+
+- [ ] **Step 3: Create examples**
+
+Create PR review, docs research, and observability investigation examples. Each example must:
+
+- declare `Promotion state: example`,
+- say it is not Published Agent Equipment,
+- trace from capability card to interface decision record to projected components,
+- avoid claiming installability or production readiness.
+
+- [ ] **Step 4: Run validation**
+
+Run:
+
+```bash
+python3.14 -m unittest tests/test_validate_framework_seed.py
+python3.14 tools/validate_framework_seed.py
+```
+
+Expected: example checks PASS; specs may still FAIL.
+
+- [ ] **Step 5: Commit**
+
+Run:
+
+```bash
+git add examples tools/validate_framework_seed.py tests/test_validate_framework_seed.py
+git commit -m "docs(examples): add framework method examples" -m "Co-authored-by: Codex <noreply@openai.com>"
+```
+
+## Task 8: Downstream Smith Specs
+
+**Files:**
+- Create: `specs/agent-ops.md`
+- Create: `specs/periodic-actions.md`
+- Create: `specs/harness-capability-refresh.md`
+- Modify: `tools/validate_framework_seed.py`
+- Modify: `tests/test_validate_framework_seed.py`
+
+- [ ] **Step 1: Write failing spec validation tests**
+
+Add tests that require each spec to include:
+
+- `Promotion state: specified`
+- Purpose
+- User stories
+- Acceptance criteria
+- Harness projections or harness-specific starting points
+- Non-goals
+
+- [ ] **Step 2: Run tests to verify they fail**
+
+Run:
+
+```bash
+python3.14 -m unittest tests/test_validate_framework_seed.py
+```
+
+Expected: FAIL for missing specs and required sections.
+
+- [ ] **Step 3: Create specs**
+
+Create specs from `docs/metasmith/handoff/2026-05-02/08-initial-smith-task-specs.md`.
+
+`specs/agent-ops.md` must include:
+
+- promotion state `specified`,
+- durable TOML config requirements,
+- autonomy levels,
+- owner/runbook config,
+- safe defaults,
+- policy enforcement behavior,
+- harness projections for Codex, OpenClaw, Hermes Agent, Claude Code, Cursor, and OpenCode.
+
+`specs/periodic-actions.md` must include:
+
+- promotion state `specified`,
+- first-session install prompt,
+- list/view/install/uninstall/trigger-now/edit-period behavior,
+- mechanism selection order,
+- suggested `.agent-ops/` storage,
+- harness-specific starting points.
+
+`specs/harness-capability-refresh.md` must include:
+
+- promotion state `specified`,
+- required harnesses,
+- required tracked fields,
+- change-response issue behavior,
+- fallback issue-candidate path,
+- weekly starting cadence,
+- prioritization order.
+
+- [ ] **Step 4: Run validation**
+
+Run:
+
+```bash
+python3.14 -m unittest tests/test_validate_framework_seed.py
+python3.14 tools/validate_framework_seed.py
+```
+
+Expected: spec checks PASS.
+
+- [ ] **Step 5: Commit**
+
+Run:
+
+```bash
+git add specs tools/validate_framework_seed.py tests/test_validate_framework_seed.py
+git commit -m "docs(specs): add initial smith task specs" -m "Co-authored-by: Codex <noreply@openai.com>"
+```
+
+## Task 9: Final Validation, Security Closeout, Documentation Closeout, Review, and Issue Projection
+
+**Files:**
+- Modify: `docs/metasmith/source-projection.md`
+- Create or modify: `docs/security/threat-model.md`
+- Create or modify: `docs/security/framework-seed-closeout.md`
+- Create or modify: `docs/closeout/framework-seed-documentation.md`
+- Modify: affected agent-facing or human-facing docs as documentation closeout requires.
+- Modify: any canonical docs, templates, examples, specs, or validation files needed by final review.
+
+- [ ] **Step 1: Write failing tests for the Repository Threat Model surface**
+
+Extend `tests/test_validate_framework_seed.py` with failing tests that require:
+
+- `docs/security/threat-model.md` exists,
+- the threat model contains sections for assets, trust boundaries, attacker-controlled inputs, invariants, assumptions, and high-impact failure modes,
+- the threat model is linked or referenced from `docs/security-and-control.md` or another canonical security surface.
+
+Run:
+
+```bash
+python3.14 -m unittest tests/test_validate_framework_seed.py
+```
+
+Expected: FAIL because the threat model surface or validator checks are missing.
+
+- [ ] **Step 2: Create the Repository Threat Model and validator**
+
+Use Codex Security threat-model workflow to create or update `docs/security/threat-model.md` as the persistent Repository Threat Model for Agent Armory.
+
+Update `tools/validate_framework_seed.py` so `run()` validates the threat model requirements from Step 1.
+
+- [ ] **Step 2a: Write failing tests for the completed documentation closeout summary**
+
+Extend `tests/test_validate_framework_seed.py` with failing tests that require `docs/closeout/framework-seed-documentation.md` to exist and contain these sections:
+
+- scope of inspected docs,
+- docs changed,
+- docs unchanged with rationale,
+- stale-language cleanup result,
+- established precedents added or updated,
+- review cycles and latest clean review,
+- residual documentation risk.
+
+Run:
+
+```bash
+python3.14 -m unittest tests/test_validate_framework_seed.py
+```
+
+Expected: FAIL because the completed documentation closeout summary is not populated yet.
+
+- [ ] **Step 3: Perform Change Set Documentation Closeout**
+
+Inspect every agent-facing and human-facing doc that the Framework Seed could plausibly affect:
+
+- `README.md`,
+- `AGENTS.md`,
+- `CONTEXT.md`,
+- `docs/agents/*.md`,
+- canonical Framework docs,
+- `docs/security/*.md`,
+- `docs/closeout/*.md`,
+- `docs/prd/framework-seed.md`,
+- `docs/adr/*.md`,
+- `docs/plans/*.md`,
+- `specs/*.md`,
+- `templates/**/*.md`,
+- `examples/**/*.md`.
+
+For each doc, either update it or record why no change is needed in the closeout summary. Check for:
+
+- stale initial-state language that says no structure, concepts, or precedents are established,
+- missing or inaccurate mentions of Framework Seed deliverables when the doc's audience should see them,
+- agent-facing policy that belongs in `AGENTS.md`, `docs/agents/`, or triggered workflow docs rather than human-facing README prose,
+- human-facing docs that expose maintainer-only or agent-only machinery without a reader need,
+- unresolved ambiguities that should still reserve judgment rather than overstate the Seed's precedent.
+
+Record documentation closeout evidence in `docs/closeout/framework-seed-documentation.md` with these fields:
+
+- scope of inspected docs,
+- docs changed,
+- docs unchanged with rationale,
+- stale-language cleanup result,
+- established precedents added or updated,
+- review cycles and latest clean review,
+- residual documentation risk.
+
+Apply the appropriate doc-writing guidance during edits:
+
+- agent-facing docs: honing-agent-facing-docs and writing-skills guidance,
+- human-facing docs: honing-human-facing-docs and documentation-writer guidance,
+- all prose: writing-clearly-and-concisely guidance.
+
+Update `tools/validate_framework_seed.py` so `run()` validates the completed documentation closeout summary requirements from Step 2a.
+
+Run:
+
+```bash
+python3.14 -m unittest tests/test_validate_framework_seed.py
+python3.14 tools/validate_framework_seed.py
+```
+
+Expected: documentation closeout checks PASS.
+
+- [ ] **Step 4: Ralph-review documentation closeout**
+
+Dispatch an xhigh reviewer for documentation closeout. Give the reviewer the updated docs, `docs/closeout/framework-seed-documentation.md`, and the applicable guidance from honing-agent-facing-docs, honing-human-facing-docs, documentation-writer, writing-clearly-and-concisely, and writing-skills when skill or agent-facing policy is involved.
+
+Require review for:
+
+- audience fit,
+- policy placement,
+- stale initial-state language,
+- missing or overstated deliverable mentions,
+- lost information,
+- link flow,
+- clear and concise prose.
+
+Repeat until the latest documentation closeout review has no findings.
+
+- [ ] **Step 5: Write failing tests for the completed security closeout summary**
+
+Extend `tests/test_validate_framework_seed.py` with failing tests that require `docs/security/framework-seed-closeout.md` to contain:
+
+- scan scope,
+- commands,
+- scan artifact directory,
+- final report path,
+- findings disposition,
+- hardening changes,
+- re-validation status,
+- deferred-risk tracking.
+
+Run:
+
+```bash
+python3.14 -m unittest tests/test_validate_framework_seed.py
+```
+
+Expected: FAIL because the completed security closeout summary is not populated yet.
+
+- [ ] **Step 6: Perform Codex Security scan and hardening**
+
+Use Codex Security workflows before the Framework Seed is considered merge-ready:
+
+1. Run Codex Security's phase sequence against the Seed change set: threat modeling, finding discovery, validation, attack-path analysis, and final report assembly.
+2. Scope the scan to the full merge-base-to-working-tree diff, including committed changes, staged changes, unstaged changes, and untracked intended files. Capture untracked files with `git ls-files --others --exclude-standard` and include their contents in the scan context, or stage all intended files before scanning. The final scan target must include `docs/closeout/framework-seed-documentation.md`, hardening changes, and review fixes that have not yet been committed. Keep the Repository Threat Model repository-scoped.
+3. Record the scan scope, commands, scan artifact directory, final report path, findings dispositions, hardening changes, re-validation status, and deferred-risk tracking in `docs/security/framework-seed-closeout.md`. Do not commit transient `/tmp/codex-security-scans/...` artifacts unless a later policy explicitly makes them repo artifacts.
+4. Fix reportable findings, suppress false positives with evidence, or escalate deferment requests to the human operator with risk rationale and tracking issue.
+5. After hardening changes, rerun or update the applicable Codex Security phases so the final security report and closeout summary describe the current repo state. At minimum, rerun validation and final report assembly for fixed findings; rerun finding discovery when the fix changes trust boundaries, side effects, or exposed inputs.
+6. Update `tools/validate_framework_seed.py` so `run()` validates the completed security closeout summary requirements from Step 5.
+
+- [ ] **Step 6a: Refresh documentation closeout after security closeout**
+
+Update `docs/closeout/framework-seed-documentation.md` for the populated `docs/security/framework-seed-closeout.md` and any security hardening changes. Run a narrow xhigh documentation closeout review for the updated security docs and closeout summary using the same doc-writing guidance as Step 4.
+
+After the security closeout summary is populated and any hardening changes are complete, rerun:
+
+```bash
+python3.14 -m unittest
+python3.14 tools/validate_framework_seed.py
+python3.14 tools/validate_framework_seed.py --json
+git diff --check
+```
+
+- [ ] **Step 7: Ralph-review the full Framework Seed**
+
+Dispatch an xhigh reviewer with the full merge-base-to-working-tree diff, including committed changes, staged changes, unstaged changes, and untracked intended files. Capture untracked files with `git ls-files --others --exclude-standard` and include their contents in the review context, or stage all intended files before review. Require review for:
+
+- PRD compliance,
+- source projection completeness,
+- AGENTS/README boundary,
+- harness evidence quality,
+- validation coverage,
+- templates/examples/spec promotion states,
+- downstream-equipment non-goals,
+- documentation closeout evidence and latest clean documentation closeout review,
+- security threat model and closeout evidence,
+- Codex Security findings disposition,
+- security/privacy issues.
+
+Expected: latest review cycle has no findings.
+
+- [ ] **Step 8: Apply fixes and rerun validation**
+
+If review finds issues, fix them, rerun:
+
+```bash
+python3.14 -m unittest
+python3.14 tools/validate_framework_seed.py
+git diff --check
+```
+
+Repeat review until clean.
+
+If review fixes affect security policy, side effects, exposed inputs, trust boundaries, MCP/tool behavior, hooks, executable code, or the threat model, rerun or update the applicable Codex Security phases and `docs/security/framework-seed-closeout.md` before the next review cycle.
+If review fixes affect agent-facing or human-facing docs, rerun documentation closeout review with the applicable doc-writing guidance before the next full Framework Seed review cycle.
+
+- [ ] **Step 9: Commit final adjustments**
+
+Run:
+
+```bash
+git add README.md AGENTS.md CONTEXT.md docs templates examples specs tools tests
+git commit -m "feat(framework): implement framework seed" -m "Co-authored-by: Codex <noreply@openai.com>"
+```
+
+If no changes remain after prior task commits, skip this commit and record that the branch is clean.
+
+- [ ] **Step 10: Issue Projection**
+
+Use GitHub MCP or `gh` to create or update the Published PRD Issue for `docs/prd/framework-seed.md`.
+
+The issue body must include:
+
+- PRD title,
+- status,
+- link or branch/path reference to `docs/prd/framework-seed.md`,
+- success criteria,
+- implementation summary,
+- validation commands and results,
+- security closeout summary, including threat model path, scan report path, findings disposition, and deferred-risk tracking,
+- documentation closeout summary, including affected docs inspected, material updates, and review result,
+- current commit SHA,
+- note that repo draft remains the detailed review artifact while the issue is the tracking surface.
+
+Immediately before writing to the issue tracker, capture the projected SHA:
+
+```bash
+git rev-parse HEAD
+```
+
+Use that SHA in the issue body. If GitHub issue creation is unavailable, update `docs/metasmith/source-projection.md` or a closeout note with `Issue Projection pending`, the reason, and the attempted projection SHA captured immediately before the fallback note. Then rerun validation, Ralph-review that repo-file adjustment, and commit it before closeout.
+
+After any fallback commit, rerun:
+
+```bash
+git rev-parse HEAD
+```
+
+Report that post-fallback final SHA only in external closeout surfaces, such as the final response, PR body, or a later issue update. Do not require a committed file to contain the SHA of the commit that contains that file.
+
+- [ ] **Step 11: Rollback and recovery paths**
+
+- If final review or security closeout finds a blocking flaw, keep the branch open, fix forward in the worktree, rerun validation and applicable security phases, and restart Ralph review.
+- If Issue Projection targets the wrong issue or publishes stale content, update the issue with a correction that names the superseded SHA and current SHA; if a repo fallback note was committed, amend it with the correction in a new commit.
+- Do not rewrite public history or force-push to hide a failed projection or security finding. Preserve the audit trail and fix forward unless the human operator explicitly requests a destructive history operation.
+
+- [ ] **Step 12: Verify branch closeout state**
+
+Run:
+
+```bash
+git status --short --branch
+```
+
+Expected: branch is clean after final commit or documented issue-projection fallback commit.
+
+## Self-Review
+
+Spec coverage:
+
+- Source Handoff provenance: Task 2 validates the archived handoff manifest, files, and provenance boundary.
+- Preloaded Framework Path and Human Framework Entry: Task 3.
+- Canonical docs: Task 4.
+- Harness Capability Catalog refresh: Task 5.
+- Templates: Task 6.
+- Examples: Task 7.
+- Downstream Smith specs: Task 8.
+- Seed Validation: Tasks 1 through 8.
+- Change Set Security Closeout and Repository Threat Model: Task 9.
+- Change Set Documentation Closeout: Task 9.
+- Issue Projection: Task 9.
+
+Placeholder scan:
+
+- No `TBD`, `TODO`, `fill in`, or `implement later` placeholders are intended in this plan.
+- Each deferred scope is named as a non-goal or downstream Smith spec, not a placeholder.
+
+Type and name consistency:
+
+- Use `Seed Validation Tool` for `tools/validate_framework_seed.py`.
+- Use `Source Projection Register` for `docs/metasmith/source-projection.md`.
+- Use `Repository Threat Model` for `docs/security/threat-model.md`.
+- Use `Change Set Security Closeout` for the merge-readiness security gate.
+- Use `Change Set Documentation Closeout` for the affected-doc sweep and review gate.
+- Use `Published Agent Equipment` only for equipment that has completed promotion.
+- Use `Framework Example` for example surfaces.
+
+## Execution Handoff
+
+Plan complete and saved to `docs/plans/2026-05-03-framework-seed.md`.
+
+Execution mode for this repo is Subagent-Driven Development. Dispatch one implementer per task, then run spec-compliance review and code-quality/doc-quality review before moving to the next task.

@@ -164,6 +164,18 @@ _Avoid_: maintainer process dump, agent policy surface
 A canonical map that records each accepted Source Handoff requirement and where it was projected or why it was deferred.
 _Avoid_: implicit coverage, unverifiable handoff completeness
 
+**Change Set Security Closeout**:
+The end-of-change security activity that determines and performs the applicable security analyses, records findings and resolutions, and blocks merge-readiness on unresolved reportable risk.
+_Avoid_: treating security review as optional cleanup, replacing analysis with a generic note
+
+**Repository Threat Model**:
+A repository-scoped security model that records assets, trust boundaries, attacker-controlled inputs, assumptions, invariants, and high-impact failure modes for future scans.
+_Avoid_: target-specific finding list, one-off scan report
+
+**Change Set Documentation Closeout**:
+The end-of-change documentation activity that inspects affected agent-facing and human-facing docs, updates stale or incomplete claims, and reviews the result with audience-appropriate doc-writing standards.
+_Avoid_: README-only cleanup, indiscriminate doc churn, stale initial-state language
+
 ## Relationships
 
 - The **Agent Armory** contains **Agent Equipment** and the **Agent Equipment Framework**.
@@ -193,6 +205,8 @@ _Avoid_: implicit coverage, unverifiable handoff completeness
 - A repo-local skill needs **Pressure Scenario Validation** before promotion to **Published Agent Equipment**.
 - The **Framework Seed** should expose a **Preloaded Framework Path** for Smiths and a **Human Framework Entry** for readers.
 - **Seed Validation** checks the **Source Projection Register** so accepted Source Handoff requirements are auditable.
+- A **Change Set Security Closeout** uses the **Repository Threat Model** when deciding which security analyses and fixes are required before merge-readiness.
+- A **Change Set Documentation Closeout** updates affected **Canonical Framework Docs**, agent-facing policy, and human-facing orientation so established precedents and remaining ambiguities are represented accurately.
 
 ## Example dialogue
 
@@ -218,5 +232,7 @@ _Avoid_: implicit coverage, unverifiable handoff completeness
 - "Harness evidence" can mean docs, release notes, source, third-party package metadata, or local CLI output. Resolution: follow the **Harness Evidence Source Policy** and label each evidence category.
 - "Equipment status" can mean a teaching example, an accepted spec, a plan, implementation, validation result, or published equipment. Resolution: use the **Equipment Promotion Path** states.
 - "Skill surface" can mean a template for Smiths or a real equipped skill. Resolution: use **Skill Template** for seed guidance and create repo-local skills only after **Pressure Scenario Validation**.
+- "Security review" can mean a repository threat model, a diff-focused scan, a repository-wide scan, a secret scan, or a hardening task. Resolution: use **Change Set Security Closeout** for the merge-readiness gate and name the specific analysis performed.
+- "Doc closeout" can mean updating one touched file or reassessing every affected doc audience. Resolution: use **Change Set Documentation Closeout** for the affected-doc sweep and review gate.
 - "Framework discovery" can mean preloaded agent routing or human README discovery. Resolution: use **Preloaded Framework Path** for Smiths and **Human Framework Entry** for human readers.
 - "Handoff coverage" can mean informal confidence or auditable projection. Resolution: use a **Source Projection Register** for accepted requirements and deferments.

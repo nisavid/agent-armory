@@ -11,6 +11,9 @@ Do not narrow that purpose into a specific content model, methodology, directory
 - Keep `README.md` human-facing and limited to the project's confirmed public shape.
 - Keep `AGENTS.md` agent-facing and focused on durable guidance that is not obvious from scouting the files.
 - Do not add inventories, command lists, setup notes, or status summaries here when an agent can discover them directly from the repository.
+- Keep durable committed docs in neutral project paths named for their repository role, such as `docs/plans/`, `docs/prd/`, `docs/adr/`, `docs/agents/`, `specs/`, `templates/`, or `examples/`.
+- Do not place durable committed docs under a skill-, plugin-, tool-, or workflow-specific path unless the document is intrinsically about that specific skill, plugin, tool, or workflow.
+- A neutral project doc may name the skill, plugin, tool, or workflow that should execute it; the file path should still reflect the document's repository role.
 
 ## Language and Concepts
 
@@ -37,6 +40,14 @@ Use single-context domain docs. See `docs/agents/domain.md`.
 - Prefer concise scopes that name the affected domain.
 - Nested slash-separated scopes are welcome when they communicate the change more precisely, for example `docs/readme` or `skills/install`.
 - Before pushing changes to repo content, ensure any related or referencing repo content is updated accordingly.
+- Before treating a change set as merge-ready, perform the security analyses applicable to that change set and record the commands, artifacts, findings, fixes, suppressions, or explicit non-applicability in the closeout.
+- Security closeout evidence belongs in the PR body, final change summary, issue tracker, or a neutral committed security document when the evidence is durable project material. Do not bury it in transient tool logs.
+- Use Codex Security workflows when they apply. A change set that introduces or materially changes executable code, hooks, MCP/tool definitions, permissions, secrets handling, network/file/process side effects, package metadata, or security policy must receive a Codex Security scan or a documented reason why a narrower security action is sufficient.
+- Resolve reportable security findings before merge-readiness, or record a stakeholder-approved deferment with the tracking issue and risk rationale.
+- Before treating a change set as merge-ready, inspect every agent-facing and human-facing doc that the change could plausibly affect. Update gaps, inaccuracies, stale status language, and appropriate mentions of the change-set deliverables.
+- Apply the repo's doc-honing standards to that inspection: agent-facing docs must stay narrow, durable, and discoverable; human-facing docs must stay audience-fit, current, and free of maintainer-only clutter.
+- Documentation closeout evidence belongs in the PR body, final change summary, issue tracker, or a neutral committed closeout document when the evidence is durable project material.
+- Ralph-review documentation closeout changes with reviewer guidance that includes the applicable doc-writing standards: `honing-agent-facing-docs` for agent-facing docs, `honing-human-facing-docs` for human-facing docs, `writing-skills` for skill docs or skill-like instructions, `documentation-writer` for Diataxis structure, and `writing-clearly-and-concisely` for clear prose.
 - Once work is underway, agents may stage, commit, push, open PRs, update issues, and perform closeout steps when those actions advance the assigned work and respect the repository's current review, verification, and stakeholder boundaries.
 - Do not force-push or perform destructive history operations unless the user explicitly asks for that action.
 

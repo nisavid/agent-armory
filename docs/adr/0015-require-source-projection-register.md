@@ -11,5 +11,6 @@ The Framework Seed will include `docs/metasmith/source-projection.md` as the aud
 ## Consequences
 
 - Seed Validation can check for the register and required projection fields: `requirement_id`, `source_file`, `source_anchor`, `summary`, `disposition`, `target_path`, `deferment_reason`, and `validation_status`.
+- Seed Validation can confirm accepted requirement ids, source file/anchor references, projected target paths, and deferred downstream target path syntax rather than trusting table prose.
 - Metasmiths can audit where accepted handoff requirements landed.
-- Deferred requirements must carry a reason, not just disappear from canonical docs.
+- Deferred requirements must carry both a reason and a downstream target path, not just disappear from canonical docs.
