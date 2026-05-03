@@ -203,7 +203,7 @@ _Avoid_: README-only cleanup, indiscriminate doc churn, stale initial-state lang
 - **Seed Validation** may check promotion-state labels for seed surfaces, but downstream equipment behavior needs equipment-specific validation.
 - A **Skill Template** can guide future skill creation but is not **Published Agent Equipment**.
 - A repo-local skill needs **Pressure Scenario Validation** before promotion to **Published Agent Equipment**.
-- The **Framework Seed** should expose a **Preloaded Framework Path** for Smiths and a **Human Framework Entry** for readers.
+- The **Framework Seed** exposes a **Preloaded Framework Path** for Smiths and a **Human Framework Entry** for readers.
 - **Seed Validation** checks the **Source Projection Register** and Source Handoff manifest coverage so accepted requirements are auditable.
 - A **Change Set Security Closeout** uses the **Repository Threat Model** when deciding which security analyses and fixes are required before merge-readiness.
 - A **Change Set Documentation Closeout** updates affected **Canonical Framework Docs**, agent-facing policy, and human-facing orientation so established precedents and remaining ambiguities are represented accurately.

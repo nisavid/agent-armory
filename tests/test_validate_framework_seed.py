@@ -10,6 +10,8 @@ from tools.validate_framework_seed import (
     find_markdown_links,
     load_toml,
     render_human,
+    validate_framework_routes,
+    validate_markdown_links,
     validate_source_handoff_provenance,
     validate_source_projection,
     validate_required_paths,
@@ -53,6 +55,86 @@ class ValidatorPrimitiveTests(unittest.TestCase):
         )
 
         self.assertEqual(find_markdown_links(markdown), ["docs/start.md"])
+
+    def test_find_markdown_links_includes_outer_link_wrapping_badge(self):
+        markdown = "[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)\n"
+
+        self.assertEqual(find_markdown_links(markdown), ["LICENSE"])
+
+    def test_find_markdown_links_strips_inline_titles(self):
+        markdown = textwrap.dedent(
+            """
+            [quoted](docs/quoted.md "Title")
+            [single](docs/single.md 'Title')
+            [paren](docs/paren.md (Title))
+            [angled](<docs/angled.md> "Title")
+            """
+        )
+
+        self.assertEqual(
+            find_markdown_links(markdown),
+            [
+                "docs/quoted.md",
+                "docs/single.md",
+                "docs/paren.md",
+                "docs/angled.md",
+            ],
+        )
+
+    def test_find_markdown_links_includes_local_image_targets(self):
+        markdown = "![Diagram](docs/diagram.png)\n"
+
+        self.assertEqual(find_markdown_links(markdown), ["docs/diagram.png"])
+
+    def test_find_markdown_links_ignores_inline_code_spans(self):
+        markdown = "Use `[example](docs/missing.md)` when describing Markdown syntax.\n"
+
+        self.assertEqual(find_markdown_links(markdown), [])
+
+    def test_find_markdown_links_ignores_indented_code_blocks(self):
+        markdown = textwrap.dedent(
+            """
+            [real](docs/real.md)
+
+                [example](docs/missing.md)
+            """
+        )
+
+        self.assertEqual(find_markdown_links(markdown), ["docs/real.md"])
+
+    def test_find_markdown_links_includes_reference_definitions(self):
+        markdown = textwrap.dedent(
+            """
+            See [guide][framework].
+
+            [framework]: docs/framework.md "Framework"
+            [absolute]: https://example.com/reference
+            [anchor]: #local
+            """
+        )
+
+        self.assertEqual(find_markdown_links(markdown), ["docs/framework.md"])
+
+    def test_find_markdown_links_ignores_footnote_definitions(self):
+        markdown = textwrap.dedent(
+            """
+            See this note.[^1]
+
+            [^1]: This note is prose, not a link target.
+            """
+        )
+
+        self.assertEqual(find_markdown_links(markdown), [])
+
+    def test_validate_markdown_links_ignores_escaped_reference_use(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs").mkdir()
+            (root / "docs/start.md").write_text(r"\[guide][missing]" + "\n", encoding="utf-8")
+
+            results = validate_markdown_links(root)
+
+        self.assertTrue(all(result.ok for result in results), results)
 
     def test_find_markdown_links_ignores_fenced_code_blocks(self):
         fence = "`" * 3
@@ -941,6 +1023,313 @@ class SourceProjectionTests(unittest.TestCase):
                 ok=False,
                 detail="manifest file path invalid",
                 path="docs/metasmith/handoff/2026-05-02/manifest.json",
+            ),
+            results,
+        )
+
+
+class FrameworkRouteTests(unittest.TestCase):
+    def test_validate_framework_routes_requires_agent_and_human_paths(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "AGENTS.md").write_text("# AGENTS\n", encoding="utf-8")
+            (root / "README.md").write_text("# README\n", encoding="utf-8")
+
+            results = validate_framework_routes(root)
+
+        self.assertIn(
+            CheckResult("framework_route:agent", False, "missing Preloaded Framework Path", "AGENTS.md"),
+            results,
+        )
+        self.assertIn(
+            CheckResult("framework_route:human", False, "missing Human Framework Entry", "README.md"),
+            results,
+        )
+
+    def test_validate_framework_routes_requires_all_preloaded_links(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "AGENTS.md").write_text(
+                textwrap.dedent(
+                    """
+                    # AGENTS
+
+                    ## Framework Path
+
+                    - `docs/equipment-framework.md`
+                    - `docs/smith-runbook.md`
+                    - `docs/harness-capabilities.md`
+                    - `templates/`
+                    - `specs/`
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (root / "README.md").write_text(
+                "## Framework\n\nStart with [docs/equipment-framework.md](docs/equipment-framework.md).\n",
+                encoding="utf-8",
+            )
+
+            results = validate_framework_routes(root)
+
+        self.assertIn(
+            CheckResult(
+                "framework_route:agent:docs/interface-decision-guide.md",
+                False,
+                "missing required preloaded route",
+                "AGENTS.md",
+            ),
+            results,
+        )
+
+    def test_validate_framework_routes_rejects_unresolved_route_targets(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs").mkdir()
+            (root / "templates").mkdir()
+            (root / "specs").mkdir()
+            for path in [
+                "docs/equipment-framework.md",
+                "docs/smith-runbook.md",
+                "docs/interface-decision-guide.md",
+            ]:
+                (root / path).write_text("# Fixture\n", encoding="utf-8")
+            (root / "AGENTS.md").write_text(
+                textwrap.dedent(
+                    """
+                    # AGENTS
+
+                    ## Framework Path
+
+                    - `docs/equipment-framework.md`
+                    - `docs/smith-runbook.md`
+                    - `docs/interface-decision-guide.md`
+                    - `docs/harness-capabilities.md`
+                    - `templates/`
+                    - `specs/`
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (root / "README.md").write_text(
+                "## Framework\n\nStart with [docs/equipment-framework.md](docs/equipment-framework.md).\n",
+                encoding="utf-8",
+            )
+
+            results = validate_framework_routes(root)
+
+        self.assertIn(
+            CheckResult(
+                "framework_route:target:docs/harness-capabilities.md",
+                False,
+                "route target missing",
+                "AGENTS.md",
+            ),
+            results,
+        )
+
+    def test_validate_framework_routes_rejects_wrong_route_target_kind(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs/equipment-framework.md").mkdir(parents=True)
+            (root / "docs/smith-runbook.md").write_text("# Fixture\n", encoding="utf-8")
+            (root / "docs/interface-decision-guide.md").write_text("# Fixture\n", encoding="utf-8")
+            (root / "docs/harness-capabilities.md").write_text("# Fixture\n", encoding="utf-8")
+            (root / "templates").write_text("not a directory\n", encoding="utf-8")
+            (root / "specs").mkdir()
+            (root / "AGENTS.md").write_text(
+                textwrap.dedent(
+                    """
+                    # AGENTS
+
+                    ## Framework Path
+
+                    - `docs/equipment-framework.md`
+                    - `docs/smith-runbook.md`
+                    - `docs/interface-decision-guide.md`
+                    - `docs/harness-capabilities.md`
+                    - `templates/`
+                    - `specs/`
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (root / "README.md").write_text(
+                "## Framework\n\nStart with [docs/equipment-framework.md](docs/equipment-framework.md).\n",
+                encoding="utf-8",
+            )
+
+            results = validate_framework_routes(root)
+
+        self.assertIn(
+            CheckResult(
+                "framework_route:target:docs/equipment-framework.md",
+                False,
+                "route target not a file",
+                "AGENTS.md",
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                "framework_route:target:templates/",
+                False,
+                "route target not a directory",
+                "AGENTS.md",
+            ),
+            results,
+        )
+
+
+class MarkdownLinkTests(unittest.TestCase):
+    def test_validate_markdown_links_rejects_broken_relative_link(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs").mkdir()
+            (root / "docs/start.md").write_text("[missing](missing.md)\n", encoding="utf-8")
+
+            results = validate_markdown_links(root)
+
+        self.assertIn(
+            CheckResult(
+                "markdown_link:docs/start.md:missing.md",
+                False,
+                "target missing",
+                "docs/start.md",
+            ),
+            results,
+        )
+
+    def test_validate_markdown_links_accepts_anchor_stripped_target(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs").mkdir()
+            (root / "docs/start.md").write_text("[next](next.md#section)\n", encoding="utf-8")
+            (root / "docs/next.md").write_text("# Next\n", encoding="utf-8")
+
+            results = validate_markdown_links(root)
+
+        self.assertTrue(all(result.ok for result in results), results)
+
+    def test_validate_markdown_links_checks_nested_policy_docs(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs/adr").mkdir(parents=True)
+            (root / "docs/adr/0001-demo.md").write_text("[missing](../missing.md)\n", encoding="utf-8")
+
+            results = validate_markdown_links(root)
+
+        self.assertIn(
+            CheckResult(
+                "markdown_link:docs/adr/0001-demo.md:../missing.md",
+                False,
+                "target missing",
+                "docs/adr/0001-demo.md",
+            ),
+            results,
+        )
+
+    def test_validate_markdown_links_rejects_symlinked_markdown_source(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs").mkdir()
+            outside = root / "outside.md"
+            outside.write_text("[missing](missing.md)\n", encoding="utf-8")
+            (root / "docs/source.md").symlink_to(outside)
+
+            results = validate_markdown_links(root)
+
+        self.assertIn(
+            CheckResult(
+                "markdown_file:docs/source.md",
+                False,
+                "markdown file path contains symlink",
+                "docs/source.md",
+            ),
+            results,
+        )
+
+    def test_validate_markdown_links_rejects_symlinked_link_target(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs").mkdir()
+            (root / "docs/start.md").write_text("[target](target.md)\n", encoding="utf-8")
+            (root / "docs/real.md").write_text("# Real\n", encoding="utf-8")
+            (root / "docs/target.md").symlink_to(root / "docs/real.md")
+
+            results = validate_markdown_links(root)
+
+        self.assertIn(
+            CheckResult(
+                "markdown_link:docs/start.md:target.md",
+                False,
+                "target missing",
+                "docs/start.md",
+            ),
+            results,
+        )
+
+    def test_validate_markdown_links_checks_reference_definition_targets(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs").mkdir()
+            (root / "docs/start.md").write_text("[framework]: missing.md\n", encoding="utf-8")
+
+            results = validate_markdown_links(root)
+
+        self.assertIn(
+            CheckResult(
+                "markdown_link:docs/start.md:missing.md",
+                False,
+                "target missing",
+                "docs/start.md",
+            ),
+            results,
+        )
+
+    def test_validate_markdown_links_uses_first_duplicate_reference_definition(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs").mkdir()
+            (root / "docs/start.md").write_text(
+                textwrap.dedent(
+                    """
+                    [guide][ref]
+
+                    [ref]: missing.md
+                    [ref]: exists.md
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (root / "docs/exists.md").write_text("# Exists\n", encoding="utf-8")
+
+            results = validate_markdown_links(root)
+
+        self.assertIn(
+            CheckResult(
+                "markdown_link:docs/start.md:missing.md",
+                False,
+                "target missing",
+                "docs/start.md",
+            ),
+            results,
+        )
+
+    def test_validate_markdown_links_rejects_undefined_reference_uses(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs").mkdir()
+            (root / "docs/start.md").write_text("[guide][missing]\n", encoding="utf-8")
+
+            results = validate_markdown_links(root)
+
+        self.assertIn(
+            CheckResult(
+                "markdown_reference:docs/start.md:missing",
+                False,
+                "undefined reference",
+                "docs/start.md",
             ),
             results,
         )
