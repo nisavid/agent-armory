@@ -1,0 +1,29 @@
+name = "<plugin-name>"
+version = "0.1.0"
+description = "Describe the plugin capability boundary."
+
+[components.skills]
+paths = ["skills/<skill-name>"]
+
+[components.hooks]
+paths = ["hooks/<hook-name>"]
+
+[components.agents]
+paths = ["agents/<agent-name>.toml"]
+
+[components.mcp]
+servers = ["<server-name>"]
+
+[components.scripts]
+paths = ["scripts/<script-name>"]
+
+[ownership]
+owner = "<human-or-team>"
+source = "<repo-or-policy-doc>"
+
+[permissions]
+required = ["read"]
+approval_required_for = ["external disclosure", "local write", "network write", "process execution", "privileged operation", "irreversible mutation"]
+
+[config]
+placeholder = "replace with plugin defaults"

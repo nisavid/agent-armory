@@ -53,7 +53,7 @@ Exit criteria:
 
 Entry criteria:
 
-- the planned docs, config, scripts, hooks, skills, profiles, plugins, tools, or templates exist;
+- the planned docs, config, scripts, hooks, skills, Agent Profiles, plugins, tools, or templates exist;
 - local checks relevant to the implementation have run or have an explicit unavailable-control note.
 
 Exit criteria:

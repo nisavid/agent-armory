@@ -40,8 +40,8 @@ Create or modify these files:
 - Create: `templates/skill/SKILL.md`.
 - Create: `templates/hook/README.md`.
 - Create: `templates/hook/hook.ts`.
-- Create: `templates/agent-profile/README.md`.
-- Create: `templates/agent-profile/profile.toml`.
+- Create: `templates/agents/README.md`.
+- Create: `templates/agents/profile.toml`.
 - Create: `templates/plugin/README.md`.
 - Create: `templates/plugin/manifest.toml`.
 - Create: `templates/script/README.md`.
@@ -2028,7 +2028,7 @@ Required sections:
 
 - `docs/ubiquitous-language.md`: Language, Relationships, Precision rules.
 - `docs/equipment-framework.md`: Purpose, Least cognitive privilege, Component model, Context management, Security, Maintenance.
-- `docs/smith-runbook.md`: Capability card, Interface decision record, Docs/config/scripts/hooks/skills/profiles/plugins, Pressure Scenario Validation, Equipment Promotion Path, Closeout.
+- `docs/smith-runbook.md`: Capability card, Interface decision record, Docs/config/scripts/hooks/skills/agents/plugins, Pressure Scenario Validation, Equipment Promotion Path, Closeout.
 - `docs/metasmith-runbook.md`: Source handoff preservation, decision projection, Review Until Clean, Harness Fact Refresh, Issue Projection, downstream Smith specs.
 - `docs/interface-decision-guide.md`: Decision tree and placement guide.
 - `docs/harness-components.md`: Skills, MCP/tools, hooks, Agent Profiles, Harness Plugins, scripts, local docs, config.
@@ -2275,11 +2275,18 @@ Add tests that require every template path in the File Structure section. Also a
 - a template README omits Purpose, Required fields, Optional fields, Common mistakes, or Validation expectations.
 - `templates/skill/SKILL.md` omits Status, Use when, Do not use when, Preflight, Procedure, Output contract, Failure handling, or Safety and policy notes,
 - `templates/hook/hook.ts` omits side-effect classification, approval behavior, failure handling, and a non-empty exported hook contract,
-- `templates/agent-profile/profile.toml` omits identity, mission, tools, permissions, and model/config placeholders,
-- `templates/plugin/manifest.toml` omits plugin name, components, permissions, and version,
-- `templates/script/validate-example.py` omits a CLI entry point and deterministic exit-code contract,
-- `templates/mcp/tool-spec.md` omits read/write classification, input schema, output schema, auth source, side effects, approval requirements, and failure modes,
-- `templates/config/example.toml` omits ownership, autonomy, enabled state, and review/approval placeholders.
+- `templates/hook/hook.ts` does not bind `hookContract` and `handle()` at module top level,
+- `templates/hook/hook.ts` does not require exact canonical contract values, full approval-gated side-effect approval behavior, fail-closed failure handling, and a handler-level fallback `return { allow: false, reason: "<literal>" }`,
+- `templates/hook/hook.ts` accepts fail-open, non-literal, side-effectful, nested, computed, accessor, method, spread, duplicate, comment/regex/template-literal-masked decision shapes, missing literal reasons, missing malformed-event guards, or side-effectful module load, signatures, or branch conditions,
+- `templates/agents/profile.toml` omits identity, mission, tools, typed tool allow/deny lists, permissions, read-only permission mode, and model/config placeholders,
+- `templates/agents/profile.toml` omits canonical approval-gated labels or uses non-list/noncanonical approval labels,
+- `templates/plugin/manifest.toml` omits plugin name, components, permissions, ownership/source, and version,
+- `templates/plugin/manifest.toml` omits canonical approval-gated labels, external-disclosure approval, or a non-empty source field,
+- `templates/script/validate-example.py` omits a plain module-level CLI entry point, deterministic exit-code contract, final guarded `raise SystemExit(main())`, stable `main` binding immediately before the guard, side-effect-safe script/class/main bodies, rejection of authority-bearing imports and network-capable APIs, exact import-shape validation, a narrow allowlist for benign call and expression shapes, rejection of delegated callable arguments, rejection of keyword-unpacking call shapes, or rejection of reserved call-name rebinding through assignments, imports, synchronous declarations, and asynchronous declarations,
+- `templates/mcp/tool-spec.md` omits read/write classification, input schema, output schema, auth source, side effects, approval requirements, rate limits, pagination, rollback/cleanup, failure modes, or prose process-execution classification in the read/write classification section,
+- `templates/config/example.toml` omits ownership, autonomy, enabled state, and review/approval placeholders,
+- `templates/config/example.toml` allows continuation or initiative defaults, enables equipment by default, omits review/security/doc closeout flags, or omits canonical approval-gated labels,
+- root safety templates omit visible, section-scoped external-disclosure prompts or visible capability promotion state in the template preamble.
 
 - [ ] **Step 2: Run tests to verify they fail**
 
@@ -2722,6 +2729,96 @@ git status --short --branch
 ```
 
 Expected: branch is clean after final commit or documented issue-projection fallback commit.
+
+## Post-Seed Follow-Ups
+
+These notes are deferred follow-ups. They are not Framework Seed acceptance
+criteria and should not be promoted into `AGENTS.md`, `README.md`, PRD success
+criteria, or canonical Framework docs until the corresponding post-Seed task is
+actively designed.
+
+### Post-Seed Skill Migration
+
+After the initial Framework Seed is merged, migrate the operator's current
+engineering workflow skills into repo-local Agent Equipment so local repo use,
+Smith references, and future equipment bundles do not depend on global user
+installation state.
+
+Before bulk import, design the repository structure and promotion policy for
+imported skills. Preserve source/provenance and licensing context, identify
+global-installation assumptions, and classify each migrated skill as an example,
+candidate, internal repo workflow, or publishable/bundleable equipment.
+
+### Side-Thread Hand-Back Workflow
+
+After the Framework Seed, specify the Agent Ops workflow for side conversations
+that inspect, advise, or make narrow operator-requested edits while a main worker
+owns the active change set.
+
+The workflow should define the default non-mutating side-thread boundary, the
+conditions for narrow side-thread edits, and the hand-back note contract. A
+hand-back note should record provenance, operator intent, files touched, review
+and validation implications, and commit guidance. The main worker remains
+responsible for integration, validation, review, and commit/PR handling.
+
+### Portable Agentic Engineering Workflow Equipment
+
+After the Framework Seed, process the side-thread workflow reflection handoff at
+`docs/metasmith/handoff/2026-05-03-agentic-engineering-workflow-equipment.md`
+into rigorously engineered Agent Equipment.
+
+Begin with handoff ingestion and a `grill-with-docs` loop. The grill loop should
+challenge terminology, scope, portability, ceremony, and placement against the
+then-current `CONTEXT.md`, Framework docs, existing templates, and Agent Ops
+policy before drafting requirements.
+
+If the Post-Seed Skill Migration or Side-Thread Hand-Back Workflow tasks have
+already landed, ingest their outputs as source material. Treat their repo-local
+skills, provenance notes, side-thread contracts, and progressive-disclosure
+routes as evidence to reconcile rather than decisions to bypass.
+
+The resulting story should define the minimal repo equipment needed for future
+agents to recover the agent-operated engineering workflow from repo files alone.
+It should consider always-loaded policy, triggered skills, templates,
+validators, examples, security closeout, documentation closeout, review loops,
+side-thread hand-back, and issue or PR projection. It should be robustly
+portable across repos, adaptable across software engineering and operations
+work, and usable by humans as well as agents.
+
+The story should include pressure-scenario validation for prompt reduction,
+right-sized ceremony, missing control surfaces, security-sensitive changes,
+side-thread hand-back, and use in a repo without the operator's user-global
+skills installed.
+
+### Ephemeral Workflow Opportunity Capture
+
+After the Framework Seed, process the side-thread opportunity-capture handoff at
+`docs/metasmith/handoff/2026-05-03-ephemeral-workflow-opportunity-capture.md`
+into rigorously engineered Agent Equipment.
+
+Begin with handoff ingestion and a `grill-with-docs` loop. The grill loop should
+challenge terminology, detection thresholds, routing surfaces, privacy
+constraints, harness adapters, and right-sizing rules before drafting
+requirements.
+
+The resulting story should define how agents notice session-scoped workflow
+constructs that may deserve durable extraction, recommend an appropriate
+handling route, and preserve source material without silently promoting
+undeveloped doctrine. It should condition recommendations on harness
+capabilities, operator preference, current-thread disruption, security/privacy
+risk, and locally preferred follow-up mechanisms.
+
+If the Portable Agentic Engineering Workflow Equipment, Side-Thread Hand-Back
+Workflow, or Post-Seed Skill Migration tasks have already landed, ingest their
+outputs as source material. Treat their workflow routing, side-thread boundary,
+hand-back contracts, migrated skill provenance, and progressive-disclosure paths
+as evidence to reconcile rather than decisions to bypass.
+
+The story should include pressure-scenario validation for side-chat,
+subagent-thread, current-thread, active-plan, queued-plan, backlog, issue
+tracker, and no-action routes. It should prove that agents can surface useful
+durability recommendations without creating excessive noise or leaking sensitive
+session content.
 
 ## Self-Review
 

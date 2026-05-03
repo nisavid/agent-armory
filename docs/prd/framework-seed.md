@@ -156,7 +156,7 @@ templates/
   hook/
     README.md
     hook.ts
-  agent-profile/
+  agents/
     README.md
     profile.toml
   plugin/

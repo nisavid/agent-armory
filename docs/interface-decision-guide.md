@@ -45,7 +45,7 @@ Use this guide after the capability card identifies what the equipment must do. 
 | Procedural judgment | Skill | Keep it concise and route to supporting surfaces. |
 | Specialized worker | Agent Profile | Use when identity, tools, permissions, context, or model materially differ. |
 | Lifecycle policy | Hook | Keep hooks narrow and explain allow/block/rewrite decisions. |
-| Portable bundle | Harness Plugin | Bundle related skills, hooks, tools, profiles, scripts, docs, and config. |
+| Portable bundle | Harness Plugin | Bundle related skills, hooks, tools, Agent Profiles, scripts, docs, and config. |
 
 Common anti-patterns:
 

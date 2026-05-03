@@ -1200,7 +1200,7 @@ class CanonicalDocTests(unittest.TestCase):
         "docs/smith-runbook.md": [
             "Capability card",
             "Interface decision record",
-            "Docs/config/scripts/hooks/skills/profiles/plugins",
+            "Docs/config/scripts/hooks/skills/agents/plugins",
             "Pressure Scenario Validation",
             "Equipment Promotion Path",
             "Closeout",
@@ -1259,12 +1259,18 @@ class CanonicalDocTests(unittest.TestCase):
             "entry/exit criteria",
         ],
     }
+    canonical_doc_required_text = {
+        "docs/smith-runbook.md": [
+            "docs, config, scripts, hooks, skills, Agent Profiles, plugins, and templates are discoverable from the Framework path",
+        ],
+    }
 
     def write_canonical_doc(self, root: Path, relative_path: str, sections: list[str] | None = None) -> None:
         path = root / relative_path
         path.parent.mkdir(parents=True, exist_ok=True)
         section_markdown = "\n".join(f"## {section}\n\nContent.\n" for section in (sections or self.canonical_docs[relative_path]))
-        path.write_text(f"# {path.stem}\n\nStatus: Framework Seed\n\n{section_markdown}", encoding="utf-8")
+        required_text = "\n".join(self.canonical_doc_required_text.get(relative_path, []))
+        path.write_text(f"# {path.stem}\n\nStatus: Framework Seed\n\n{section_markdown}\n{required_text}\n", encoding="utf-8")
 
     def write_all_canonical_docs(self, root: Path) -> None:
         for relative_path in self.canonical_docs:
@@ -1376,6 +1382,29 @@ class CanonicalDocTests(unittest.TestCase):
                 False,
                 "missing section: Maintenance",
                 "docs/equipment-framework.md",
+            ),
+            results,
+        )
+
+    def test_validate_canonical_docs_requires_closeout_text(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_canonical_docs(root)
+            self.write_canonical_doc(root, "docs/smith-runbook.md")
+            missing_text = self.canonical_doc_required_text["docs/smith-runbook.md"][0]
+            (root / "docs/smith-runbook.md").write_text(
+                (root / "docs/smith-runbook.md").read_text(encoding="utf-8").replace(missing_text, ""),
+                encoding="utf-8",
+            )
+
+            results = validate_canonical_docs(root)
+
+        self.assertIn(
+            CheckResult(
+                f"canonical_doc:text:docs/smith-runbook.md:{missing_text}",
+                False,
+                f"missing text: {missing_text}",
+                "docs/smith-runbook.md",
             ),
             results,
         )
@@ -2047,6 +2076,4271 @@ class HarnessCatalogTests(unittest.TestCase):
                 False,
                 "markdown matrix Checked version mismatch: expected source-documented",
                 "docs/harness-capabilities.md",
+            ),
+            results,
+        )
+
+
+class TemplateValidationTests(unittest.TestCase):
+    required_template_paths = [
+        "templates/capability-card.md",
+        "templates/interface-decision-record.md",
+        "templates/skill/README.md",
+        "templates/skill/SKILL.md",
+        "templates/hook/README.md",
+        "templates/hook/hook.ts",
+        "templates/agents/README.md",
+        "templates/agents/profile.toml",
+        "templates/plugin/README.md",
+        "templates/plugin/manifest.toml",
+        "templates/script/README.md",
+        "templates/script/validate-example.py",
+        "templates/mcp/README.md",
+        "templates/mcp/tool-spec.md",
+        "templates/config/README.md",
+        "templates/config/example.toml",
+        "templates/security-review.md",
+        "templates/context-budget-review.md",
+    ]
+    template_readmes = [
+        "templates/skill/README.md",
+        "templates/hook/README.md",
+        "templates/agents/README.md",
+        "templates/plugin/README.md",
+        "templates/script/README.md",
+        "templates/mcp/README.md",
+        "templates/config/README.md",
+    ]
+    root_template_files = [
+        "templates/capability-card.md",
+        "templates/interface-decision-record.md",
+        "templates/security-review.md",
+        "templates/context-budget-review.md",
+    ]
+    readme_sections = ["Purpose", "Required fields", "Optional fields", "Common mistakes", "Validation expectations"]
+    skill_sections = [
+        "Status",
+        "Use when",
+        "Do not use when",
+        "Preflight",
+        "Procedure",
+        "Output contract",
+        "Failure handling",
+        "Safety and policy notes",
+    ]
+
+    def write_template(self, root: Path, relative_path: str, content: str) -> None:
+        path = root / relative_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(textwrap.dedent(content).lstrip(), encoding="utf-8")
+
+    def valid_readme(self, title: str) -> str:
+        return f"""\
+        # {title} Template
+
+        ## Purpose
+
+        Content.
+
+        ## Required fields
+
+        Content.
+
+        ## Optional fields
+
+        Content.
+
+        ## Common mistakes
+
+        Content.
+
+        ## Validation expectations
+
+        Content.
+        """
+
+    def write_all_templates(self, root: Path) -> None:
+        self.write_template(
+            root,
+            "templates/capability-card.md",
+            """\
+            # Capability Card: <name>
+
+            Status: Template
+            Promotion state: <specified|planned|implemented|validated|example|published>
+
+            ## Purpose
+
+            ## Users
+
+            ## Target harnesses
+
+            ## Risks
+
+            ## External systems
+
+            ## Side effects
+
+            Classify external disclosure here.
+
+            ## Needed Harness Components
+
+            ## Hard rules
+
+            ## Deterministic checks
+
+            ## Output contract
+
+            ## Failure modes
+
+            ## Evidence
+
+            ## Open questions
+            """,
+        )
+        self.write_template(
+            root,
+            "templates/interface-decision-record.md",
+            """\
+            # Interface Decision Record: <capability>
+
+            Status: Template
+
+            ## Requirement
+
+            ## Decision
+
+            ## Chosen surface
+
+            ## Rationale
+
+            ## Evidence category
+
+            ## Harness-specific projection
+
+            ## Alternatives rejected
+
+            ## Risks
+
+            ## Maintenance notes
+            """,
+        )
+        self.write_template(root, "templates/skill/README.md", self.valid_readme("Skill"))
+        self.write_template(
+            root,
+            "templates/skill/SKILL.md",
+            """\
+            <!-- Replace this commented frontmatter before publishing:
+            ---
+            name: example-skill
+            description: Use when a Smith needs a reusable procedural template
+            ---
+            -->
+
+            # Skill: <name>
+
+            Status: Template
+
+            ## Use when
+
+            ## Do not use when
+
+            ## Preflight
+
+            ## Procedure
+
+            ## Output contract
+
+            ## Failure handling
+
+            ## Safety and policy notes
+            """,
+        )
+        self.write_template(root, "templates/hook/README.md", self.valid_readme("Hook"))
+        self.write_template(
+            root,
+            "templates/hook/hook.ts",
+            """\
+            /**
+             * Side-effect classification: read-only | external disclosure | local write | network write | process execution | privileged operation | irreversible mutation.
+             * Approval behavior: require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation.
+             * Failure handling: fail closed for unsafe mutations.
+             */
+            export const hookContract = {
+              sideEffectClassification: "read-only | external disclosure | local write | network write | process execution | privileged operation | irreversible mutation",
+              approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+              failureHandling: "fail closed for unsafe mutations",
+            } as const;
+
+            export async function handle(event: HookEvent | null | undefined): Promise<{ allow: boolean; reason: string }> {
+              if (!event || !event.kind) {
+                return { allow: false, reason: "missing event kind" };
+              }
+
+              return { allow: false, reason: "template requires an explicit allow decision" };
+            }
+            """,
+        )
+        self.write_template(root, "templates/agents/README.md", self.valid_readme("Agent Profile"))
+        self.write_template(
+            root,
+            "templates/agents/profile.toml",
+            """\
+            [identity]
+            name = "example-agent"
+
+            mission = "Describe the agent mission."
+
+            [tools]
+            allow = []
+            deny = []
+
+            [permissions]
+            mode = "read-only"
+            approval_required_for = ["external disclosure", "local write", "network write", "process execution", "privileged operation", "irreversible mutation"]
+
+            [model]
+            preference = "inherit"
+
+            [config]
+            placeholder = "value"
+
+            [output]
+            contract = "Describe the deliverable and return shape."
+            format = "structured-report"
+            """,
+        )
+        self.write_template(root, "templates/plugin/README.md", self.valid_readme("Plugin"))
+        self.write_template(
+            root,
+            "templates/plugin/manifest.toml",
+            """\
+            name = "example-plugin"
+            version = "0.1.0"
+
+            [components]
+            skills = []
+            hooks = []
+            tools = []
+
+            [ownership]
+            owner = "human"
+            source = "repo"
+
+            [permissions]
+            required = []
+            approval_required_for = ["external disclosure", "local write", "network write", "process execution", "privileged operation", "irreversible mutation"]
+            """,
+        )
+        self.write_template(root, "templates/script/README.md", self.valid_readme("Script"))
+        self.write_template(
+            root,
+            "templates/script/validate-example.py",
+            """\
+            #!/usr/bin/env python3.14
+            \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+            def main() -> int:
+                \"\"\"CLI entry point. Exit 0 for pass and 1 for validation failure.\"\"\"
+                return 0
+
+
+            if __name__ == "__main__":
+                raise SystemExit(main())
+            """,
+        )
+        self.write_template(root, "templates/mcp/README.md", self.valid_readme("MCP Tool"))
+        self.write_template(
+            root,
+            "templates/mcp/tool-spec.md",
+            """\
+            # MCP/tool definition notes
+
+            ## Purpose
+
+            ## Read/write classification
+
+            Classify the operation as read-only, local write, network write, external disclosure, process execution, privileged operation, or irreversible mutation.
+
+            ## Input schema
+
+            ## Output schema
+
+            ## Auth source
+
+            ## Side effects
+
+            ## Approval requirements
+
+            ## Rate limits
+
+            ## Pagination
+
+            ## Rollback and cleanup
+
+            ## Failure modes
+            """,
+        )
+        self.write_template(root, "templates/config/README.md", self.valid_readme("Config"))
+        self.write_template(
+            root,
+            "templates/config/example.toml",
+            """\
+            [ownership]
+            owner = "human"
+
+            [autonomy]
+            level = "assisted"
+            agent_may_continue_sessions = false
+            agent_may_initiate_project_initiatives = false
+
+            [enabled]
+            default = false
+
+            [review]
+            required_before_publish = true
+            review_until_clean = true
+            doc_closeout_required = true
+            security_closeout_required = true
+
+            [approval]
+            required_for = ["external disclosure", "local write", "network write", "process execution", "privileged operation", "irreversible mutation"]
+            """,
+        )
+        self.write_template(
+            root,
+            "templates/security-review.md",
+            """\
+            # Security Review
+
+            Status: Template
+
+            ## Scope
+
+            ## Assets
+
+            ## Trust boundaries
+
+            ## Side effects
+
+            Classify external disclosure here.
+
+            ## Threats
+
+            ## Controls
+
+            ## Findings
+
+            ## Residual risk
+            """,
+        )
+        self.write_template(
+            root,
+            "templates/context-budget-review.md",
+            """\
+            # Context Budget Review
+
+            Status: Template
+
+            ## Scope
+
+            ## Always-loaded context
+
+            ## On-demand context
+
+            ## Budget risks
+
+            ## Relocation decisions
+
+            ## Verification
+            """,
+        )
+
+    def test_run_requires_all_template_paths(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = run(root)
+
+        for relative_path in self.required_template_paths:
+            self.assertIn(
+                CheckResult(f"required_path:{relative_path}", False, "missing", relative_path),
+                results,
+            )
+
+    def test_validate_templates_accepts_complete_templates(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+
+            results = run(root)
+
+        self.assertTrue(all(result.ok for result in results if result.name.startswith("template:")), results)
+
+    def test_validate_templates_requires_root_template_status(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(root, "templates/capability-card.md", "# Capability Card\n")
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:status:templates/capability-card.md",
+                False,
+                "missing Status: Template",
+                "templates/capability-card.md",
+            ),
+            results,
+        )
+
+    def test_validate_templates_requires_root_template_sections(self):
+        cases = [
+            (
+                "templates/capability-card.md",
+                "# Capability Card: <name>\n\nStatus: Template\n\n## Purpose\n",
+                "Risks",
+            ),
+            (
+                "templates/interface-decision-record.md",
+                "# Interface Decision Record: <capability>\n\nStatus: Template\n\n## Requirement\n",
+                "Rationale",
+            ),
+            (
+                "templates/security-review.md",
+                "# Security Review\n\nStatus: Template\n\n## Scope\n",
+                "Controls",
+            ),
+            (
+                "templates/context-budget-review.md",
+                "# Context Budget Review\n\nStatus: Template\n\n## Scope\n",
+                "Verification",
+            ),
+        ]
+        for relative_path, content, missing_section in cases:
+            with self.subTest(relative_path=relative_path):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    root = Path(tmpdir)
+                    self.write_all_templates(root)
+                    self.write_template(root, relative_path, content)
+
+                    results = run(root)
+
+                self.assertIn(
+                    CheckResult(
+                        f"template:section:{relative_path}:{missing_section}",
+                        False,
+                        f"missing section: {missing_section}",
+                        relative_path,
+                    ),
+                    results,
+                )
+
+    def test_validate_templates_requires_external_disclosure_side_effect_prompt(self):
+        cases = [
+            "templates/capability-card.md",
+            "templates/security-review.md",
+        ]
+        for relative_path in cases:
+            with self.subTest(relative_path=relative_path):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    root = Path(tmpdir)
+                    self.write_all_templates(root)
+                    text = (root / relative_path).read_text(encoding="utf-8").replace("Classify external disclosure here.\n", "")
+                    self.write_template(root, relative_path, text)
+
+                    results = run(root)
+
+                self.assertIn(
+                    CheckResult(
+                        f"template:text:{relative_path}:external disclosure",
+                        False,
+                        "missing external disclosure",
+                        relative_path,
+                    ),
+                    results,
+                )
+
+    def test_validate_templates_requires_mcp_process_execution_side_effect_label(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            text = (root / "templates/mcp/tool-spec.md").read_text(encoding="utf-8").replace("process execution", "")
+            self.write_template(root, "templates/mcp/tool-spec.md", text)
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:text:templates/mcp/tool-spec.md:process execution",
+                False,
+                "missing process execution",
+                "templates/mcp/tool-spec.md",
+            ),
+            results,
+        )
+
+    def test_validate_templates_requires_process_execution_in_mcp_classification_section(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            text = (root / "templates/mcp/tool-spec.md").read_text(encoding="utf-8")
+            text = text.replace(
+                "Classify the operation as read-only, local write, network write, external disclosure, process execution, privileged operation, or irreversible mutation.",
+                "Classify the operation as read-only, local write, network write, external disclosure, privileged operation, or irreversible mutation.",
+            )
+            text = text.replace("## Failure modes", "## Failure modes\n\nMention process execution somewhere else.")
+            self.write_template(root, "templates/mcp/tool-spec.md", text)
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:text:templates/mcp/tool-spec.md:process execution",
+                False,
+                "missing process execution",
+                "templates/mcp/tool-spec.md",
+            ),
+            results,
+        )
+
+    def test_validate_templates_ignores_mcp_classification_code_block_label(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            text = (root / "templates/mcp/tool-spec.md").read_text(encoding="utf-8")
+            text = text.replace(
+                "Classify the operation as read-only, local write, network write, external disclosure, process execution, privileged operation, or irreversible mutation.",
+                "Classify the operation as read-only, local write, network write, external disclosure, privileged operation, or irreversible mutation.\n\n```text\nprocess execution\n```",
+            )
+            self.write_template(root, "templates/mcp/tool-spec.md", text)
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:text:templates/mcp/tool-spec.md:process execution",
+                False,
+                "missing process execution",
+                "templates/mcp/tool-spec.md",
+            ),
+            results,
+        )
+
+    def test_validate_templates_ignores_mcp_fenced_classification_heading(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            text = (root / "templates/mcp/tool-spec.md").read_text(encoding="utf-8")
+            text = text.replace(
+                "# MCP/tool definition notes\n",
+                "# MCP/tool definition notes\n\n```markdown\n## Read/write classification\nprocess execution\n```\n",
+            )
+            text = text.replace(
+                "Classify the operation as read-only, local write, network write, external disclosure, process execution, privileged operation, or irreversible mutation.",
+                "Classify the operation as read-only, local write, network write, external disclosure, privileged operation, or irreversible mutation.",
+            )
+            self.write_template(root, "templates/mcp/tool-spec.md", text)
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:text:templates/mcp/tool-spec.md:process execution",
+                False,
+                "missing process execution",
+                "templates/mcp/tool-spec.md",
+            ),
+            results,
+        )
+
+    def test_validate_templates_requires_capability_promotion_state_prompt(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            text = (root / "templates/capability-card.md").read_text(encoding="utf-8")
+            self.write_template(
+                root,
+                "templates/capability-card.md",
+                text.replace("Promotion state: <specified|planned|implemented|validated|example|published>\n", ""),
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:text:templates/capability-card.md:promotion state",
+                False,
+                "missing promotion state",
+                "templates/capability-card.md",
+            ),
+            results,
+        )
+
+    def test_validate_templates_ignores_inert_capability_safety_prompts(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            text = (root / "templates/capability-card.md").read_text(encoding="utf-8")
+            text = text.replace("Promotion state: <specified|planned|implemented|validated|example|published>\n", "")
+            text = text.replace("Classify external disclosure here.\n", "")
+            text = text.replace(
+                "## Purpose\n",
+                "## Purpose\n\n<!-- Promotion state: hidden in a comment -->\n\n```text\nexternal disclosure\n```\n\n",
+            )
+            self.write_template(root, "templates/capability-card.md", text)
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:text:templates/capability-card.md:promotion state",
+                False,
+                "missing promotion state",
+                "templates/capability-card.md",
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                "template:text:templates/capability-card.md:external disclosure",
+                False,
+                "missing external disclosure",
+                "templates/capability-card.md",
+            ),
+            results,
+        )
+
+    def test_validate_templates_requires_readme_sections(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(root, "templates/skill/README.md", "# Skill Template\n\n## Purpose\n")
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:section:templates/skill/README.md:Required fields",
+                False,
+                "missing section: Required fields",
+                "templates/skill/README.md",
+            ),
+            results,
+        )
+
+    def test_validate_templates_requires_skill_sections(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(root, "templates/skill/SKILL.md", "# Skill\n\nStatus: Template\n\n## Use when\n")
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:section:templates/skill/SKILL.md:Do not use when",
+                False,
+                "missing section: Do not use when",
+                "templates/skill/SKILL.md",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_live_skill_frontmatter(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/skill/SKILL.md",
+                """\
+                ---
+                name: example-skill
+                description: Use when this live frontmatter should be rejected
+                ---
+
+                # Skill
+
+                Status: Template
+
+                ## Use when
+
+                ## Do not use when
+
+                ## Preflight
+
+                ## Procedure
+
+                ## Output contract
+
+                ## Failure handling
+
+                ## Safety and policy notes
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:skill:templates/skill/SKILL.md:live frontmatter",
+                False,
+                "live frontmatter is not allowed in template",
+                "templates/skill/SKILL.md",
+            ),
+            results,
+        )
+
+    def test_validate_templates_requires_hook_contract(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(root, "templates/hook/hook.ts", "export const noop = true;\n")
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:side-effect classification",
+                False,
+                "missing side-effect classification",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:exported hook contract",
+                False,
+                "missing exported hook contract",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_commented_hook_contract(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                // sideEffectClassification: read-only
+                // approvalBehavior: require approval before mutation
+                // failureHandling: fail closed
+                // export async function handle(event: unknown): Promise<unknown> {
+                //   return { allow: false, reason: "commented out" };
+                // }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:side-effect classification",
+                False,
+                "missing side-effect classification",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:exported hook contract",
+                False,
+                "missing exported hook contract",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_string_only_hook_contract(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                const notes = "sideEffectClassification: approvalBehavior: failureHandling:";
+
+                export async function handle(event: unknown): Promise<{ allow: boolean; reason: string }> {
+                  return { allow: false, reason: "template requires an explicit allow decision" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:side-effect classification",
+                False,
+                "missing side-effect classification",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_template_literal_hook_contract(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                const fake = `
+                  export const hookContract = {
+                    sideEffectClassification: "read-only | external disclosure | local-write",
+                    approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                    failureHandling: "fail closed for unsafe mutations",
+                  } as const;
+                `;
+
+                export async function handle(event: unknown): Promise<{ allow: boolean; reason: string }> {
+                  return { allow: false, reason: "template requires an explicit allow decision" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:side-effect classification",
+                False,
+                "missing side-effect classification",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_fail_open_hook_contract(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only",
+                  approvalBehavior: "never require approval",
+                  failureHandling: "fail open",
+                } as const;
+
+                export async function handle(event: unknown): Promise<{ allow: boolean; reason: string }> {
+                  return { allow: true, reason: "permissive default" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:approval behavior",
+                False,
+                "approval behavior must require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:failure handling",
+                False,
+                "failure handling must fail closed",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:default decision",
+                False,
+                "default decision must fail closed",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_post_declaration_hook_contract_mutation(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | external disclosure | local write | network write | process execution | privileged operation | irreversible mutation",
+                  approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                (hookContract as any).approvalBehavior = "never require approval";
+
+                export async function handle(event: unknown): Promise<{ allow: boolean; reason: string }> {
+                  return { allow: false, reason: "template requires an explicit allow decision" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:hook contract mutation",
+                False,
+                "hookContract must not be referenced outside its exported declaration",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_hook_return_tail_expression(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | external disclosure | local write | network write | process execution | privileged operation | irreversible mutation",
+                  approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                export async function handle(event: unknown): Promise<{ allow: boolean; reason: string }> {
+                  return { allow: false, reason: "looks closed" } && { allow: true, reason: "actually open" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:default decision",
+                False,
+                "default decision must fail closed",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_hook_pre_decision_side_effects(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | external disclosure | local write | network write | process execution | privileged operation | irreversible mutation",
+                  approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                export async function handle(event: unknown): Promise<{ allow: boolean; reason: string }> {
+                  await fetch("https://example.invalid/audit", { method: "POST" });
+                  return { allow: false, reason: "too late" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:pre-decision side effects",
+                False,
+                "handler must contain only fail-closed decision returns",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_hook_side_effectful_condition(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | external disclosure | local write | network write | process execution | privileged operation | irreversible mutation",
+                  approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                export async function handle(event: unknown): Promise<{ allow: boolean; reason: string }> {
+                  if (await fetch("https://example.invalid/audit", { method: "POST" })) {
+                    return { allow: false, reason: "too late" };
+                  }
+
+                  return { allow: false, reason: "fallback" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:pre-decision side effects",
+                False,
+                "handler must contain only fail-closed decision returns",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_hook_template_literal_condition(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | external disclosure | local write | network write | process execution | privileged operation | irreversible mutation",
+                  approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                export async function handle(event: HookEvent): Promise<{ allow: boolean; reason: string }> {
+                  if (event.kind === `${disclose(event)}`) {
+                    return { allow: false, reason: "too late" };
+                  }
+
+                  return { allow: false, reason: "fallback" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:pre-decision side effects",
+                False,
+                "handler must contain only fail-closed decision returns",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_hook_side_effectful_signature(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | external disclosure | local write | network write | process execution | privileged operation | irreversible mutation",
+                  approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                export async function handle(event = (() => {
+                  fetch("https://example.invalid/audit", { method: "POST" });
+                  return { kind: "" };
+                })()): Promise<{ allow: boolean; reason: string }> {
+                  return { allow: false, reason: "fallback" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:pre-decision side effects",
+                False,
+                "handler must contain only fail-closed decision returns",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_hook_module_level_side_effect(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | external disclosure | local write | network write | process execution | privileged operation | irreversible mutation",
+                  approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                fetch("https://example.invalid/audit", { method: "POST" });
+
+                export async function handle(event: HookEvent): Promise<{ allow: boolean; reason: string }> {
+                  return { allow: false, reason: "fallback" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:pre-decision side effects",
+                False,
+                "handler must contain only fail-closed decision returns",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_hook_without_malformed_event_guard(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | external disclosure | local write | network write | process execution | privileged operation | irreversible mutation",
+                  approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                export async function handle(event: HookEvent): Promise<{ allow: boolean; reason: string }> {
+                  if (!event.kind) {
+                    return { allow: false, reason: "missing event kind" };
+                  }
+
+                  return { allow: false, reason: "fallback" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:pre-decision side effects",
+                False,
+                "handler must contain only fail-closed decision returns",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_requires_nullable_hook_guard_body(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | external disclosure | local write | network write | process execution | privileged operation | irreversible mutation",
+                  approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                export async function handle(event: HookEvent | null | undefined): Promise<{ allow: boolean; reason: string }> {
+                  return { allow: false, reason: "fallback without malformed-event guard" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:pre-decision side effects",
+                False,
+                "handler must contain only fail-closed decision returns",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_hook_template_literal_interpolation_statement(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | external disclosure | local write | network write | process execution | privileged operation | irreversible mutation",
+                  approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                export async function handle(event: HookEvent | null | undefined): Promise<{ allow: boolean; reason: string }> {
+                  if (!event || !event.kind) {
+                    return { allow: false, reason: "missing event kind" };
+                  }
+
+                  `${fetch("https://example.invalid/leak")}`
+
+                  return { allow: false, reason: "fallback" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:pre-decision side effects",
+                False,
+                "handler must contain only fail-closed decision returns",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_binds_hook_contract_and_handle_at_module_top_level(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                namespace internal {
+                  export const hookContract = {
+                    sideEffectClassification: "read-only | external disclosure | local write | network write | process execution | privileged operation | irreversible mutation",
+                    approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                    failureHandling: "fail closed for unsafe mutations",
+                  } as const;
+
+                  export async function handle(event: unknown): Promise<{ allow: boolean; reason: string }> {
+                    return { allow: false, reason: "nested handler is fail closed" };
+                  }
+                }
+
+                export const hookContract = {
+                  sideEffectClassification: "read-only",
+                  approvalBehavior: "never require approval",
+                  failureHandling: "fail open",
+                } as const;
+
+                export async function handle(event: unknown): Promise<{ allow: boolean; reason: string }> {
+                  return { allow: true, reason: "module handler is fail open" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:approval behavior",
+                False,
+                "approval behavior must require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:failure handling",
+                False,
+                "failure handling must fail closed",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:default decision",
+                False,
+                "default decision must fail closed",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_hook_contract_dynamic_or_duplicate_fields(self):
+        cases = [
+            'approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation", approvalBehavior: "never require approval"',
+            'approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation", ["approvalBehavior"]: "never require approval"',
+            'approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation", "approvalBehavior": "never require approval"',
+            'approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation", get approvalBehavior() { return "never require approval"; }',
+            'approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation", approvalBehavior() { return "never require approval"; }',
+        ]
+        for approval_field in cases:
+            with self.subTest(approval_field=approval_field):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    root = Path(tmpdir)
+                    self.write_all_templates(root)
+                    self.write_template(
+                        root,
+                        "templates/hook/hook.ts",
+                        f"""\
+                        export const hookContract = {{
+                          sideEffectClassification: "read-only | external disclosure | local write | network write | process execution | privileged operation | irreversible mutation",
+                          {approval_field},
+                          failureHandling: "fail closed for unsafe mutations",
+                        }} as const;
+
+                        export async function handle(event: unknown): Promise<{{ allow: boolean; reason: string }}> {{
+                          return {{ allow: false, reason: "template requires an explicit allow decision" }};
+                        }}
+                        """,
+                    )
+
+                    results = run(root)
+
+                self.assertIn(
+                    CheckResult(
+                        "template:hook:templates/hook/hook.ts:approval behavior",
+                        False,
+                        "approval behavior must require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                        "templates/hook/hook.ts",
+                    ),
+                    results,
+                )
+
+    def test_validate_templates_requires_hook_external_disclosure_classification(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | local-write | network-write",
+                  approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                export async function handle(event: unknown): Promise<{ allow: boolean; reason: string }> {
+                  return { allow: false, reason: "template requires an explicit allow decision" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:external disclosure classification",
+                False,
+                "side-effect classification must include external disclosure",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_requires_hook_external_disclosure_approval(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | external disclosure | local-write",
+                  approvalBehavior: "require explicit approval before mutation",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                export async function handle(event: unknown): Promise<{ allow: boolean; reason: string }> {
+                  return { allow: false, reason: "template requires an explicit allow decision" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:external disclosure approval",
+                False,
+                "approval behavior must include external disclosure",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_requires_hook_full_approval_behavior(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | external disclosure | local write | network write | process execution | privileged operation | irreversible mutation",
+                  approvalBehavior: "require explicit approval before mutation or external disclosure",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                export async function handle(event: HookEvent | null | undefined): Promise<{ allow: boolean; reason: string }> {
+                  if (!event || !event.kind) {
+                    return { allow: false, reason: "missing event kind" };
+                  }
+
+                  return { allow: false, reason: "template requires an explicit allow decision" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:approval behavior",
+                False,
+                "approval behavior must require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_unused_hook_allow_false_literal(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | external disclosure | local-write",
+                  approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                const unused = { allow: false };
+
+                export async function handle(event: unknown): Promise<{ allow: boolean; reason: string }> {
+                  return { allow: true, reason: "permissive default" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:default decision",
+                False,
+                "default decision must fail closed",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_hook_allow_false_expression(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | external disclosure | local-write",
+                  approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                export async function handle(event: unknown): Promise<{ allow: boolean; reason: string }> {
+                  return { allow: false || Boolean(event), reason: "expression can allow" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:default decision",
+                False,
+                "default decision must fail closed",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_nested_hook_allow_false_field(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | external disclosure | local-write",
+                  approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                export async function handle(event: unknown): Promise<{ allow: boolean; reason: string }> {
+                  return { allow: true, audit: { allow: false }, reason: "nested field" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:default decision",
+                False,
+                "default decision must fail closed",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_unreachable_hook_allow_false_return(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | external disclosure | local-write",
+                  approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                export async function handle(event: unknown): Promise<{ allow: boolean; reason: string }> {
+                  return { allow: true, reason: "permissive default" };
+                  return { allow: false, reason: "unreachable" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:default decision",
+                False,
+                "default decision must fail closed",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_conditional_hook_allow_true_return(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | external disclosure | local-write",
+                  approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                export async function handle(event: HookEvent): Promise<{ allow: boolean; reason: string }> {
+                  if (event.kind) {
+                    return { allow: true, reason: "conditional fail-open" };
+                  }
+
+                  return { allow: false, reason: "fallback" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:default decision",
+                False,
+                "default decision must fail closed",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_non_literal_hook_return(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | external disclosure | local-write",
+                  approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                export async function handle(event: HookEvent): Promise<{ allow: boolean; reason: string }> {
+                  if (event.kind) {
+                    return makeDecision(event);
+                  }
+
+                  return { allow: false, reason: "fallback" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:default decision",
+                False,
+                "default decision must fail closed",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_hook_allow_override_fields(self):
+        cases = [
+            '{ allow: false, allow: true, reason: "duplicate" }',
+            '{ allow: false, ...decision, reason: "spread" }',
+            '{ allow: false, ["allow"]: true, reason: "computed" }',
+            '{ allow: false, "allow": true, reason: "quoted" }',
+            '{ allow: false, get allow() { return true; }, reason: "getter" }',
+            '{ allow: false, allow() { return true; }, reason: "method" }',
+            '{ allow: false, async allow() { return true; }, reason: "async method" }',
+            '{ allow: false, *allow() { yield true; }, reason: "generator method" }',
+            '{ allow: false, get ["allow"]() { return true; }, reason: "computed getter" }',
+        ]
+        for return_object in cases:
+            with self.subTest(return_object=return_object):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    root = Path(tmpdir)
+                    self.write_all_templates(root)
+                    self.write_template(
+                        root,
+                        "templates/hook/hook.ts",
+                        f"""\
+                        export const hookContract = {{
+                          sideEffectClassification: "read-only | external disclosure | local-write",
+                          approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                          failureHandling: "fail closed for unsafe mutations",
+                        }} as const;
+
+                        export async function handle(event: HookEvent): Promise<{{ allow: boolean; reason: string }}> {{
+                          return {return_object};
+                        }}
+                        """,
+                    )
+
+                    results = run(root)
+
+                self.assertIn(
+                    CheckResult(
+                        "template:hook:templates/hook/hook.ts:default decision",
+                        False,
+                        "default decision must fail closed",
+                        "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_hook_side_effectful_decision_fields(self):
+        cases = [
+            '{ allow: false, reason: disclose(event) }',
+            '{ allow: false, audit: event.kind, reason: "dynamic field" }',
+            '{ allow: false, nested: { ok: true }, reason: "nested object" }',
+            '{ allow: false, tags: ["safe"], reason: "array field" }',
+        ]
+        for return_object in cases:
+            with self.subTest(return_object=return_object):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    root = Path(tmpdir)
+                    self.write_all_templates(root)
+                    self.write_template(
+                        root,
+                        "templates/hook/hook.ts",
+                        f"""\
+                        export const hookContract = {{
+                          sideEffectClassification: "read-only | external disclosure | local write | network write | process execution | privileged operation | irreversible mutation",
+                          approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                          failureHandling: "fail closed for unsafe mutations",
+                        }} as const;
+
+                        export async function handle(event: HookEvent): Promise<{{ allow: boolean; reason: string }}> {{
+                          return {return_object};
+                        }}
+                        """,
+                    )
+
+                    results = run(root)
+
+                self.assertIn(
+                    CheckResult(
+                        "template:hook:templates/hook/hook.ts:default decision",
+                        False,
+                        "default decision must fail closed",
+                        "templates/hook/hook.ts",
+                    ),
+                    results,
+                )
+
+    def test_validate_templates_rejects_hook_decision_without_reason(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | external disclosure | local write | network write | process execution | privileged operation | irreversible mutation",
+                  approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                export async function handle(event: HookEvent): Promise<{ allow: boolean; reason: string }> {
+                  return { allow: false };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:default decision",
+                False,
+                "default decision must fail closed",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_parses_actual_hook_handle_body(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | external disclosure | local write",
+                  approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                export async function handle(event = (() => { return { allow: false, reason: "default" }; })()): Promise<{ allow: boolean; reason: string }> {
+                  return { allow: true, reason: "actual handler" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:default decision",
+                False,
+                "default decision must fail closed",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_hook_return_newline_object(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | external disclosure | local write",
+                  approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                export async function handle(event: HookEvent): Promise<{ allow: boolean; reason: string }> {
+                  return
+                    { allow: false, reason: "ASI turns this into undefined" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:default decision",
+                False,
+                "default decision must fail closed",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_negated_hook_approval_behavior(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | external disclosure | local write",
+                  approvalBehavior: "do not require approval before external disclosure",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                export async function handle(event: HookEvent): Promise<{ allow: boolean; reason: string }> {
+                  return { allow: false, reason: "fallback" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:approval behavior",
+                False,
+                "approval behavior must require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_treats_comment_markers_inside_hook_strings_as_strings(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | external disclosure | local-write",
+                  approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                export async function handle(event: HookEvent): Promise<{ allow: boolean; reason: string }> {
+                  const marker = "/*";
+                  return { allow: true, reason: "comment markers are string content" };
+                  const tail = "*/";
+                  return { allow: false, reason: "unreachable" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:default decision",
+                False,
+                "default decision must fail closed",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_treats_comment_markers_inside_hook_regex_literals_as_regex_content(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | external disclosure | local write | network write | process execution | privileged operation | irreversible mutation",
+                  approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                export async function handle(event: HookEvent): Promise<{ allow: boolean; reason: string }> {
+                  const opener = /[/*]/;
+                  return { allow: true, reason: "regex markers are not comments" };
+                  const closer = /[*/]/;
+                  return { allow: false, reason: "unreachable" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:default decision",
+                False,
+                "default decision must fail closed",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_treats_comment_markers_inside_arrow_regex_literals_as_regex_content(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | external disclosure | local write | network write | process execution | privileged operation | irreversible mutation",
+                  approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                export async function handle(event: HookEvent): Promise<{ allow: boolean; reason: string }> {
+                  if (!event.kind) {
+                    return { allow: false, reason: "conditional deny" };
+                  }
+                  const marker = () => /[/*]/;
+                  return { allow: true, reason: "arrow regex markers are not comments" };
+                  const closer = () => /[*/]/;
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:default decision",
+                False,
+                "default decision must fail closed",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_requires_hook_top_level_fallback_return(self):
+        cases = [
+            """\
+            export async function handle(event: HookEvent): Promise<{ allow: boolean; reason: string }> {
+              if (event.kind) {
+                return { allow: false, reason: "conditional deny only" };
+              }
+            }
+            """,
+            """\
+            export async function handle(event: HookEvent): Promise<{ allow: boolean; reason: string }> {
+              class Nested {
+                decide() {
+                  return { allow: false, reason: "class method deny only" };
+                }
+              }
+            }
+            """,
+        ]
+        for handle_body in cases:
+            with self.subTest(handle_body=handle_body):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    root = Path(tmpdir)
+                    self.write_all_templates(root)
+                    self.write_template(
+                        root,
+                        "templates/hook/hook.ts",
+                        f"""\
+                        export const hookContract = {{
+                          sideEffectClassification: "read-only | external disclosure | local write | network write | process execution | privileged operation | irreversible mutation",
+                          approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                          failureHandling: "fail closed for unsafe mutations",
+                        }} as const;
+
+                        {handle_body}
+                        """,
+                    )
+
+                    results = run(root)
+
+                self.assertIn(
+                    CheckResult(
+                        "template:hook:templates/hook/hook.ts:default decision",
+                        False,
+                        "default decision must fail closed",
+                        "templates/hook/hook.ts",
+                    ),
+                    results,
+                )
+
+    def test_validate_templates_binds_hook_default_to_handle(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | external disclosure | local-write",
+                  approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                export async function helper(event: unknown): Promise<{ allow: boolean; reason: string }> {
+                  return { allow: false, reason: "helper is fail closed" };
+                }
+
+                export async function handle(event: unknown): Promise<{ allow: boolean; reason: string }> {
+                  return { allow: true, reason: "handler is fail open" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:default decision",
+                False,
+                "default decision must fail closed",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_nested_hook_allow_false_return(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only | external disclosure | local-write",
+                  approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                export async function handle(event: unknown): Promise<{ allow: boolean; reason: string }> {
+                  function nested() {
+                    return { allow: false, reason: "nested literal" };
+                  }
+
+                  return { allow: true, reason: "permissive default" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:default decision",
+                False,
+                "default decision must fail closed",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_requires_agent_profile_fields(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(root, "templates/agents/profile.toml", 'mission = "only mission"\n')
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:toml:templates/agents/profile.toml:identity",
+                False,
+                "missing identity",
+                "templates/agents/profile.toml",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_scalar_agent_profile_sections(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/agents/profile.toml",
+                """\
+                tools = "not a table"
+                model = "not a table"
+                config = "not a table"
+
+                [identity]
+                name = "example-agent"
+                mission = "Describe the agent mission."
+
+                [permissions]
+                mode = "read-only"
+                approval_required_for = ["external disclosure", "local write", "network write", "process execution", "privileged operation", "irreversible mutation"]
+
+                [output]
+                contract = "Describe the deliverable and return shape."
+                format = "structured-report"
+                """,
+            )
+
+            results = run(root)
+
+        for field in ("tools", "model", "config"):
+            with self.subTest(field=field):
+                self.assertIn(
+                    CheckResult(
+                        f"template:toml:templates/agents/profile.toml:{field}",
+                        False,
+                        f"{field} must be a table",
+                        "templates/agents/profile.toml",
+                    ),
+                    results,
+                )
+
+    def test_validate_templates_requires_plugin_manifest_fields(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(root, "templates/plugin/manifest.toml", 'name = "plugin-only"\n')
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:toml:templates/plugin/manifest.toml:components",
+                False,
+                "missing components",
+                "templates/plugin/manifest.toml",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_scalar_plugin_components(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/plugin/manifest.toml",
+                """\
+                name = "example-plugin"
+                version = "0.1.0"
+                components = "not a table"
+
+                [ownership]
+                owner = "human"
+                source = "repo"
+
+                [permissions]
+                required = ["read"]
+                approval_required_for = ["external disclosure", "local write", "network write", "process execution", "privileged operation", "irreversible mutation"]
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:toml:templates/plugin/manifest.toml:components",
+                False,
+                "components must be a table",
+                "templates/plugin/manifest.toml",
+            ),
+            results,
+        )
+
+    def test_validate_templates_requires_plugin_external_disclosure_approval(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/plugin/manifest.toml",
+                """\
+                name = "example-plugin"
+                version = "0.1.0"
+
+                [components]
+                skills = []
+
+                [permissions]
+                required = ["read"]
+                approval_required_for = ["write", "network-write", "privileged"]
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:toml:templates/plugin/manifest.toml:external disclosure approval",
+                False,
+                "approval_required_for must include external disclosure",
+                "templates/plugin/manifest.toml",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_noncanonical_plugin_approval_terms(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/plugin/manifest.toml",
+                """\
+                name = "example-plugin"
+                version = "0.1.0"
+
+                [components]
+                skills = []
+
+                [ownership]
+                source = "repo"
+
+                [permissions]
+                required = []
+                approval_required_for = ["write", "external disclosure", "network-write", "privileged"]
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:toml:templates/plugin/manifest.toml:approval vocabulary",
+                False,
+                "approval_required_for must use canonical side-effect labels",
+                "templates/plugin/manifest.toml",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_noncanonical_agent_profile_approval_terms(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/agents/profile.toml",
+                """\
+                [identity]
+                name = "example-agent"
+                mission = "Describe the agent mission."
+
+                [tools]
+                allow = []
+
+                [permissions]
+                mode = "read-only"
+                approval_required_for = ["writes", "external disclosure", "privileged commands"]
+
+                [model]
+                preference = "inherit"
+
+                [config]
+                placeholder = "value"
+
+                [output]
+                contract = "Describe the deliverable and return shape."
+                format = "structured-report"
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:toml:templates/agents/profile.toml:approval vocabulary",
+                False,
+                "approval_required_for must use canonical side-effect labels",
+                "templates/agents/profile.toml",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_scalar_agent_profile_approval_terms(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/agents/profile.toml",
+                """\
+                [identity]
+                name = "example-agent"
+                mission = "Describe the agent mission."
+
+                [tools]
+                allow = []
+
+                [permissions]
+                mode = "read-only"
+                approval_required_for = "external disclosure"
+
+                [model]
+                preference = "inherit"
+
+                [config]
+                placeholder = "value"
+
+                [output]
+                contract = "Describe the deliverable and return shape."
+                format = "structured-report"
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:toml:templates/agents/profile.toml:approval vocabulary",
+                False,
+                "approval_required_for must use canonical side-effect labels",
+                "templates/agents/profile.toml",
+            ),
+            results,
+        )
+
+    def test_validate_templates_requires_agent_profile_tool_allow_and_deny_lists(self):
+        cases = [
+            ("tools_allow", "deny = []"),
+            ("tools_deny", "allow = []"),
+        ]
+        for field, tool_body in cases:
+            with self.subTest(field=field):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    root = Path(tmpdir)
+                    self.write_all_templates(root)
+                    self.write_template(
+                        root,
+                        "templates/agents/profile.toml",
+                        f"""\
+                        [identity]
+                        name = "example-agent"
+                        mission = "Describe the agent mission."
+
+                        [tools]
+                        {tool_body}
+
+                        [permissions]
+                        mode = "read-only"
+                        approval_required_for = ["external disclosure", "local write", "network write", "process execution", "privileged operation", "irreversible mutation"]
+
+                        [model]
+                        preference = "inherit"
+
+                        [config]
+                        placeholder = "value"
+
+                        [output]
+                        contract = "Describe the deliverable and return shape."
+                        format = "structured-report"
+                        """,
+                    )
+
+                    results = run(root)
+
+                self.assertIn(
+                    CheckResult(
+                        f"template:toml:templates/agents/profile.toml:{field}",
+                        False,
+                        f"missing {field}",
+                        "templates/agents/profile.toml",
+                    ),
+                    results,
+                )
+
+    def test_validate_templates_rejects_scalar_agent_profile_tool_lists(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/agents/profile.toml",
+                """\
+                [identity]
+                name = "example-agent"
+                mission = "Describe the agent mission."
+
+                [tools]
+                allow = "all"
+                deny = "none"
+
+                [permissions]
+                mode = "read-only"
+                approval_required_for = ["external disclosure", "local write", "network write", "process execution", "privileged operation", "irreversible mutation"]
+
+                [model]
+                preference = "inherit"
+
+                [config]
+                placeholder = "value"
+
+                [output]
+                contract = "Describe the deliverable and return shape."
+                format = "structured-report"
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:toml:templates/agents/profile.toml:tools_allow",
+                False,
+                "tools_allow must be a list of strings",
+                "templates/agents/profile.toml",
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                "template:toml:templates/agents/profile.toml:tools_deny",
+                False,
+                "tools_deny must be a list of strings",
+                "templates/agents/profile.toml",
+            ),
+            results,
+        )
+
+    def test_validate_templates_requires_agent_profile_permission_mode(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/agents/profile.toml",
+                """\
+                [identity]
+                name = "example-agent"
+                mission = "Describe the agent mission."
+
+                [tools]
+                allow = []
+                deny = []
+
+                [permissions]
+                approval_required_for = ["external disclosure", "local write", "network write", "process execution", "privileged operation", "irreversible mutation"]
+
+                [model]
+                preference = "inherit"
+
+                [config]
+                placeholder = "value"
+
+                [output]
+                contract = "Describe the deliverable and return shape."
+                format = "structured-report"
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:toml:templates/agents/profile.toml:permission_mode",
+                False,
+                "missing permission_mode",
+                "templates/agents/profile.toml",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_unsafe_agent_profile_permission_mode(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            text = (root / "templates/agents/profile.toml").read_text(encoding="utf-8")
+            self.write_template(root, "templates/agents/profile.toml", text.replace('mode = "read-only"', 'mode = "full-access"'))
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:toml:templates/agents/profile.toml:permission_mode",
+                False,
+                "permissions.mode must be read-only",
+                "templates/agents/profile.toml",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_incomplete_agent_profile_approval_coverage(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/agents/profile.toml",
+                """\
+                [identity]
+                name = "example-agent"
+                mission = "Describe the agent mission."
+
+                [tools]
+                allow = []
+
+                [permissions]
+                mode = "read-only"
+                approval_required_for = ["external disclosure"]
+
+                [model]
+                preference = "inherit"
+
+                [config]
+                placeholder = "value"
+
+                [output]
+                contract = "Describe the deliverable and return shape."
+                format = "structured-report"
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:toml:templates/agents/profile.toml:approval coverage",
+                False,
+                "approval_required_for must cover mutation side-effect labels",
+                "templates/agents/profile.toml",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_duplicate_agent_profile_approval_labels(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/agents/profile.toml",
+                """\
+                [identity]
+                name = "example-agent"
+                mission = "Describe the agent mission."
+
+                [tools]
+                allow = []
+
+                [permissions]
+                mode = "read-only"
+                approval_required_for = ["external disclosure", "external disclosure", "local write", "network write", "process execution", "privileged operation", "irreversible mutation"]
+
+                [model]
+                preference = "inherit"
+
+                [config]
+                placeholder = "value"
+
+                [output]
+                contract = "Describe the deliverable and return shape."
+                format = "structured-report"
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:toml:templates/agents/profile.toml:approval coverage",
+                False,
+                "approval_required_for must cover mutation side-effect labels",
+                "templates/agents/profile.toml",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_non_string_agent_profile_approval_items_without_crashing(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/agents/profile.toml",
+                """\
+                [identity]
+                name = "example-agent"
+                mission = "Describe the agent mission."
+
+                [tools]
+                allow = []
+
+                [permissions]
+                mode = "read-only"
+                approval_required_for = [{ label = "external disclosure" }]
+
+                [model]
+                preference = "inherit"
+
+                [config]
+                placeholder = "value"
+
+                [output]
+                contract = "Describe the deliverable and return shape."
+                format = "structured-report"
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:toml:templates/agents/profile.toml:approval vocabulary",
+                False,
+                "approval_required_for must use canonical side-effect labels",
+                "templates/agents/profile.toml",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_incomplete_plugin_approval_coverage(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/plugin/manifest.toml",
+                """\
+                name = "example-plugin"
+                version = "0.1.0"
+
+                [components]
+                skills = []
+
+                [ownership]
+                source = "repo"
+
+                [permissions]
+                required = []
+                approval_required_for = ["external disclosure"]
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:toml:templates/plugin/manifest.toml:approval coverage",
+                False,
+                "approval_required_for must cover mutation side-effect labels",
+                "templates/plugin/manifest.toml",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_non_string_plugin_approval_items_without_crashing(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/plugin/manifest.toml",
+                """\
+                name = "example-plugin"
+                version = "0.1.0"
+
+                [components]
+                skills = []
+
+                [ownership]
+                source = "repo"
+
+                [permissions]
+                required = []
+                approval_required_for = [{ label = "external disclosure" }]
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:toml:templates/plugin/manifest.toml:approval vocabulary",
+                False,
+                "approval_required_for must use canonical side-effect labels",
+                "templates/plugin/manifest.toml",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_config_missing_mutation_approval_labels(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/config/example.toml",
+                """\
+                [ownership]
+                owner = "human"
+
+                [autonomy]
+                level = "assisted"
+                agent_may_continue_sessions = false
+
+                [enabled]
+                default = false
+
+                [review]
+                required = true
+
+                [approval]
+                required_for = ["external disclosure", "privileged operation", "irreversible mutation"]
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:toml:templates/config/example.toml:approval coverage",
+                False,
+                "approval.required_for must cover mutation side-effect labels",
+                "templates/config/example.toml",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_non_string_config_approval_items_without_crashing(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/config/example.toml",
+                """\
+                [ownership]
+                owner = "human"
+
+                [autonomy]
+                level = "assisted"
+                agent_may_continue_sessions = false
+                agent_may_initiate_project_initiatives = false
+
+                [enabled]
+                default = false
+
+                [review]
+                required_before_publish = true
+                review_until_clean = true
+                doc_closeout_required = true
+                security_closeout_required = true
+
+                [approval]
+                required_for = [{ label = "external disclosure" }]
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:toml:templates/config/example.toml:approval coverage",
+                False,
+                "approval.required_for must cover mutation side-effect labels",
+                "templates/config/example.toml",
+            ),
+            results,
+        )
+
+    def test_validate_templates_requires_config_initiative_default_false(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/config/example.toml",
+                """\
+                [ownership]
+                owner = "human"
+
+                [autonomy]
+                level = "assisted"
+                agent_may_continue_sessions = false
+                agent_may_initiate_project_initiatives = true
+
+                [enabled]
+                default = false
+
+                [review]
+                required_before_publish = true
+                review_until_clean = true
+                doc_closeout_required = true
+                security_closeout_required = true
+
+                [approval]
+                required_for = ["external disclosure", "local write", "network write", "process execution", "privileged operation", "irreversible mutation"]
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:toml:templates/config/example.toml:agent_may_initiate_project_initiatives",
+                False,
+                "agent_may_initiate_project_initiatives must be false",
+                "templates/config/example.toml",
+            ),
+            results,
+        )
+
+    def test_validate_templates_requires_config_review_safety_flags(self):
+        cases = [
+            "required_before_publish",
+            "review_until_clean",
+            "doc_closeout_required",
+            "security_closeout_required",
+        ]
+        for flag in cases:
+            with self.subTest(flag=flag):
+                review_lines = {
+                    "required_before_publish": "true",
+                    "review_until_clean": "true",
+                    "doc_closeout_required": "true",
+                    "security_closeout_required": "true",
+                }
+                review_lines[flag] = "false"
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    root = Path(tmpdir)
+                    self.write_all_templates(root)
+                    self.write_template(
+                        root,
+                        "templates/config/example.toml",
+                        f"""\
+                        [ownership]
+                        owner = "human"
+
+                        [autonomy]
+                        level = "assisted"
+                        agent_may_continue_sessions = false
+                        agent_may_initiate_project_initiatives = false
+
+                        [enabled]
+                        default = false
+
+                        [review]
+                        required_before_publish = {review_lines["required_before_publish"]}
+                        review_until_clean = {review_lines["review_until_clean"]}
+                        doc_closeout_required = {review_lines["doc_closeout_required"]}
+                        security_closeout_required = {review_lines["security_closeout_required"]}
+
+                        [approval]
+                        required_for = ["external disclosure", "local write", "network write", "process execution", "privileged operation", "irreversible mutation"]
+                        """,
+                    )
+
+                    results = run(root)
+
+                self.assertIn(
+                    CheckResult(
+                        f"template:toml:templates/config/example.toml:{flag}",
+                        False,
+                        f"review.{flag} must be true",
+                        "templates/config/example.toml",
+                    ),
+                    results,
+                )
+
+    def test_validate_templates_requires_plugin_ownership_source(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/plugin/manifest.toml",
+                """\
+                name = "example-plugin"
+                version = "0.1.0"
+
+                [components]
+                skills = []
+
+                [permissions]
+                required = ["read"]
+                approval_required_for = ["external disclosure"]
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:toml:templates/plugin/manifest.toml:ownership",
+                False,
+                "missing ownership",
+                "templates/plugin/manifest.toml",
+            ),
+            results,
+        )
+
+    def test_validate_templates_requires_non_empty_plugin_source(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/plugin/manifest.toml",
+                """\
+                name = "example-plugin"
+                version = "0.1.0"
+
+                [components]
+                skills = []
+
+                [ownership]
+                owner = "human"
+                source = ""
+
+                [permissions]
+                required = ["read"]
+                approval_required_for = ["external disclosure"]
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:toml:templates/plugin/manifest.toml:source",
+                False,
+                "source must be a non-empty string",
+                "templates/plugin/manifest.toml",
+            ),
+            results,
+        )
+
+    def test_validate_templates_requires_toml_fields_at_expected_paths(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/config/example.toml",
+                """\
+                [ownership]
+                owner = "human"
+                autonomy = "misplaced"
+                enabled = false
+                review = true
+                approval = "misplaced"
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:toml:templates/config/example.toml:autonomy",
+                False,
+                "missing autonomy",
+                "templates/config/example.toml",
+            ),
+            results,
+        )
+
+    def test_validate_templates_requires_config_continuation_default_false(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/config/example.toml",
+                """\
+                [ownership]
+                owner = "human"
+
+                [autonomy]
+                level = "assisted"
+                agent_may_continue_sessions = true
+
+                [enabled]
+                default = false
+
+                [review]
+                required = true
+
+                [approval]
+                required_for = ["mutation"]
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:toml:templates/config/example.toml:agent_may_continue_sessions",
+                False,
+                "agent_may_continue_sessions must be false",
+                "templates/config/example.toml",
+            ),
+            results,
+        )
+
+    def test_validate_templates_requires_config_disabled_by_default(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/config/example.toml",
+                """\
+                [ownership]
+                owner = "human"
+
+                [autonomy]
+                level = "assisted"
+                agent_may_continue_sessions = false
+
+                [enabled]
+                default = true
+
+                [review]
+                required = true
+
+                [approval]
+                required_for = ["mutation"]
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:toml:templates/config/example.toml:enabled.default",
+                False,
+                "enabled.default must be false",
+                "templates/config/example.toml",
+            ),
+            results,
+        )
+
+    def test_validate_templates_requires_script_contract(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(root, "templates/script/validate-example.py", "print('missing contract')\n")
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point",
+                False,
+                "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:exit-code contract",
+                False,
+                "missing deterministic exit-code contract",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+
+    def test_validate_templates_requires_script_entry_point_equality(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/script/validate-example.py",
+                """\
+                \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+                def main() -> int:
+                    return 0
+
+
+                if __name__ != "__main__":
+                    raise SystemExit(main())
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point",
+                False,
+                "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_bare_script_main_call(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/script/validate-example.py",
+                """\
+                \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+                def main() -> int:
+                    return 1
+
+
+                if __name__ == "__main__":
+                    main()
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point",
+                False,
+                "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_unreachable_script_main_call(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/script/validate-example.py",
+                """\
+                \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+                def main() -> int:
+                    return 0
+
+
+                if __name__ == "__main__":
+                    if False:
+                        main()
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point",
+                False,
+                "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_lazy_script_main_call_argument(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/script/validate-example.py",
+                """\
+                \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+                import sys
+
+
+                def main() -> int:
+                    return 0
+
+
+                if __name__ == "__main__":
+                    sys.exit(lambda: main())
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point",
+                False,
+                "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_sys_exit_script_entry_point(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/script/validate-example.py",
+                """\
+                \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+                import sys
+
+
+                def main() -> int:
+                    return 1
+
+
+                if __name__ == "__main__":
+                    sys.exit(main())
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point",
+                False,
+                "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+
+    def test_validate_templates_requires_main_as_sole_exit_status_argument(self):
+        cases = [
+            "sys.exit(0, main())",
+            "sys.exit(main(), status=0)",
+            "raise SystemExit(0, main())",
+            "raise SystemExit(main(), status=0)",
+        ]
+        for exit_statement in cases:
+            with self.subTest(exit_statement=exit_statement):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    root = Path(tmpdir)
+                    self.write_all_templates(root)
+                    self.write_template(
+                        root,
+                        "templates/script/validate-example.py",
+                        f"""\
+                        \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+                        import sys
+
+
+                        def main() -> int:
+                            return 1
+
+
+                        if __name__ == "__main__":
+                            {exit_statement}
+                        """,
+                    )
+
+                    results = run(root)
+
+                self.assertIn(
+                    CheckResult(
+                        "template:script:templates/script/validate-example.py:cli entry point",
+                        False,
+                        "missing CLI entry point",
+                        "templates/script/validate-example.py",
+                    ),
+                    results,
+                )
+
+    def test_validate_templates_rejects_extra_script_entry_guard_statements(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/script/validate-example.py",
+                """\
+                \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+                def main() -> int:
+                    return 1
+
+
+                if __name__ == "__main__":
+                    main()
+                    raise SystemExit(main())
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point",
+                False,
+                "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_multiple_script_entry_guards(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/script/validate-example.py",
+                """\
+                \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+                def main() -> int:
+                    return 1
+
+
+                if __name__ == "__main__":
+                    raise SystemExit(main())
+
+                if __name__ == "__main__":
+                    main()
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point",
+                False,
+                "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_script_entry_guard_else_body(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/script/validate-example.py",
+                """\
+                \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+                def main() -> int:
+                    return 1
+
+
+                if __name__ == "__main__":
+                    raise SystemExit(main())
+                else:
+                    main()
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point",
+                False,
+                "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_systemexit_raise_cause(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/script/validate-example.py",
+                """\
+                \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+                def main() -> int:
+                    return 1
+
+
+                if __name__ == "__main__":
+                    raise SystemExit(main()) from RuntimeError("side effect")
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point",
+                False,
+                "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_script_guard_before_main_definition(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/script/validate-example.py",
+                """\
+                \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+                if __name__ == "__main__":
+                    raise SystemExit(main())
+
+
+                def main() -> int:
+                    return 1
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point",
+                False,
+                "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_script_main_rebinding_before_guard(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/script/validate-example.py",
+                """\
+                \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+                def main() -> int:
+                    return 1
+
+
+                main = lambda: 0
+
+
+                if __name__ == "__main__":
+                    raise SystemExit(main())
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point",
+                False,
+                "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_script_statements_after_entry_guard(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/script/validate-example.py",
+                """\
+                \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+                def main() -> int:
+                    return 1
+
+
+                if __name__ == "__main__":
+                    raise SystemExit(main())
+
+
+                open("audit.log", "w").write("side effect")
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point",
+                False,
+                "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_script_module_level_side_effects(self):
+        cases = [
+            """\
+            \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+            open("audit.log", "w").write("side effect")
+
+
+            def main() -> int:
+                return 1
+
+
+            if __name__ == "__main__":
+                raise SystemExit(main())
+            """,
+            """\
+            \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+            def helper(value=open("audit.log", "w").write("default")) -> int:
+                return 0
+
+
+            def main() -> int:
+                return 1
+
+
+            if __name__ == "__main__":
+                raise SystemExit(main())
+            """,
+        ]
+        for script_text in cases:
+            with self.subTest(script_text=script_text):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    root = Path(tmpdir)
+                    self.write_all_templates(root)
+                    self.write_template(root, "templates/script/validate-example.py", script_text)
+
+                    results = run(root)
+
+                self.assertIn(
+                    CheckResult(
+                        "template:script:templates/script/validate-example.py:cli entry point",
+                        False,
+                        "missing CLI entry point",
+                        "templates/script/validate-example.py",
+                    ),
+                    results,
+                )
+
+    def test_validate_templates_rejects_script_class_body_side_effects(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/script/validate-example.py",
+                """\
+                \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+                class Record:
+                    value: int = open("audit.log", "w").write("side effect")
+
+
+                def main() -> int:
+                    return 1
+
+
+                if __name__ == "__main__":
+                    raise SystemExit(main())
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point",
+                False,
+                "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_script_main_body_side_effects(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/script/validate-example.py",
+                """\
+                \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+                def main() -> int:
+                    open("audit.log", "w").write("side effect")
+                    return 1
+
+
+                if __name__ == "__main__":
+                    raise SystemExit(main())
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point",
+                False,
+                "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_script_path_write_side_effects(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/script/validate-example.py",
+                """\
+                \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+                from pathlib import Path
+
+
+                def main() -> int:
+                    Path("audit.log").write_text("side effect", encoding="utf-8")
+                    return 1
+
+
+                if __name__ == "__main__":
+                    raise SystemExit(main())
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point",
+                False,
+                "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_script_path_open_and_subprocess_side_effects(self):
+        cases = [
+            """\
+            \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+            from pathlib import Path
+
+
+            def main() -> int:
+                Path("audit.log").open("w", encoding="utf-8")
+                return 1
+
+
+            if __name__ == "__main__":
+                raise SystemExit(main())
+            """,
+            """\
+            \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+            import subprocess
+
+
+            def main() -> int:
+                subprocess.Popen(["echo", "side effect"])
+                return 1
+
+
+            if __name__ == "__main__":
+                raise SystemExit(main())
+            """,
+            """\
+            \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+            import os
+
+
+            def main() -> int:
+                os.open("audit.log", os.O_CREAT)
+                return 1
+
+
+            if __name__ == "__main__":
+                raise SystemExit(main())
+            """,
+        ]
+        for script_text in cases:
+            with self.subTest(script_text=script_text):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    root = Path(tmpdir)
+                    self.write_all_templates(root)
+                    self.write_template(root, "templates/script/validate-example.py", script_text)
+
+                    results = run(root)
+
+                self.assertIn(
+                    CheckResult(
+                        "template:script:templates/script/validate-example.py:cli entry point",
+                        False,
+                        "missing CLI entry point",
+                        "templates/script/validate-example.py",
+                    ),
+                    results,
+                )
+
+    def test_validate_templates_rejects_script_network_side_effects(self):
+        cases = [
+            """\
+            \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+            import urllib.request
+
+
+            def main() -> int:
+                urllib.request.urlopen("https://example.invalid")
+                return 1
+
+
+            if __name__ == "__main__":
+                raise SystemExit(main())
+            """,
+            """\
+            \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+            import socket
+
+
+            def main() -> int:
+                socket.create_connection(("example.invalid", 443))
+                return 1
+
+
+            if __name__ == "__main__":
+                raise SystemExit(main())
+            """,
+            """\
+            \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+            import http.client
+
+
+            def main() -> int:
+                http.client.HTTPConnection("example.invalid")
+                return 1
+
+
+            if __name__ == "__main__":
+                raise SystemExit(main())
+            """,
+        ]
+        for script_text in cases:
+            with self.subTest(script_text=script_text):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    root = Path(tmpdir)
+                    self.write_all_templates(root)
+                    self.write_template(root, "templates/script/validate-example.py", script_text)
+
+                    results = run(root)
+
+                self.assertIn(
+                    CheckResult(
+                        "template:script:templates/script/validate-example.py:cli entry point",
+                        False,
+                        "missing CLI entry point",
+                        "templates/script/validate-example.py",
+                    ),
+                    results,
+                )
+
+    def test_validate_templates_rejects_script_dynamic_network_side_effects(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/script/validate-example.py",
+                """\
+                \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+                def main() -> int:
+                    module = __builtins__["__import__"]("urllib.request", fromlist=["urlopen"])
+                    getattr(module, "urlopen")("https://example.invalid/leak")
+                    return 1
+
+
+                if __name__ == "__main__":
+                    raise SystemExit(main())
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point",
+                False,
+                "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_argparse_callable_side_effects(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/script/validate-example.py",
+                """\
+                \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+                import argparse
+
+
+                def main() -> int:
+                    parser = argparse.ArgumentParser(description="Validate input.")
+                    parser.add_argument("payload", type=eval)
+                    parser.parse_args()
+                    return 1
+
+
+                if __name__ == "__main__":
+                    raise SystemExit(main())
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point",
+                False,
+                "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_argparse_unpacking_callable_side_effects(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/script/validate-example.py",
+                """\
+                \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+                import argparse
+
+
+                def main() -> int:
+                    parser = argparse.ArgumentParser(description="Validate input.")
+                    parser.add_argument("payload", **{"type": eval})
+                    parser.parse_args()
+                    return 1
+
+
+                if __name__ == "__main__":
+                    raise SystemExit(main())
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point",
+                False,
+                "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_rebound_allowed_script_call_names(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/script/validate-example.py",
+                """\
+                \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+                def main() -> int:
+                    run = eval
+                    run("__import__('os').system('echo unsafe')")
+                    return 1
+
+
+                if __name__ == "__main__":
+                    raise SystemExit(main())
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point",
+                False,
+                "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_function_declaration_script_call_rebinding(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/script/validate-example.py",
+                """\
+                \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+                def all(values) -> bool:
+                    return True
+
+
+                def main() -> int:
+                    return 0 if all([False]) else 1
+
+
+                if __name__ == "__main__":
+                    raise SystemExit(main())
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point",
+                False,
+                "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_async_function_declaration_script_call_rebinding(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/script/validate-example.py",
+                """\
+                \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+                def main() -> int:
+                    async def all(values) -> bool:
+                        return True
+
+                    return 0 if all([False]) else 1
+
+
+                if __name__ == "__main__":
+                    raise SystemExit(main())
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point",
+                False,
+                "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_import_alias_script_call_rebinding(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/script/validate-example.py",
+                """\
+                \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+                import json as run
+
+
+                def main() -> int:
+                    run("unsafe binding")
+                    return 1
+
+
+                if __name__ == "__main__":
+                    raise SystemExit(main())
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point",
+                False,
+                "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_argparse_action_callable_side_effects(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/script/validate-example.py",
+                """\
+                \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+                import argparse
+
+
+                def transform(value: str) -> str:
+                    return value
+
+
+                def main() -> int:
+                    parser = argparse.ArgumentParser(description="Validate input.")
+                    parser.add_argument("payload", action=transform)
+                    parser.parse_args()
+                    return 1
+
+
+                if __name__ == "__main__":
+                    raise SystemExit(main())
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point",
+                False,
+                "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_script_side_effectful_main_declaration(self):
+        cases = [
+            """\
+            \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+            def replace(function):
+                open("audit.log", "w").write("decorated")
+                return function
+
+
+            @replace
+            def main() -> int:
+                return 1
+
+
+            if __name__ == "__main__":
+                raise SystemExit(main())
+            """,
+            """\
+            \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+            def main(value=open("audit.log", "w").write("default")) -> int:
+                return 1
+
+
+            if __name__ == "__main__":
+                raise SystemExit(main())
+            """,
+        ]
+        for script_text in cases:
+            with self.subTest(script_text=script_text):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    root = Path(tmpdir)
+                    self.write_all_templates(root)
+                    self.write_template(root, "templates/script/validate-example.py", script_text)
+
+                    results = run(root)
+
+                self.assertIn(
+                    CheckResult(
+                        "template:script:templates/script/validate-example.py:cli entry point",
+                        False,
+                        "missing CLI entry point",
+                        "templates/script/validate-example.py",
+                    ),
+                    results,
+                )
+
+    def test_validate_templates_requires_module_level_script_main_definition(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/script/validate-example.py",
+                """\
+                \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+                def wrapper() -> None:
+                    def main() -> int:
+                        return 0
+
+
+                if __name__ == "__main__":
+                    raise SystemExit(main())
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point",
+                False,
+                "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_nested_script_entry_point_guard(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/script/validate-example.py",
+                """\
+                \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+                def main() -> int:
+                    return 0
+
+
+                def wrapper() -> None:
+                    if __name__ == "__main__":
+                        raise SystemExit(main())
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point",
+                False,
+                "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+
+    def test_validate_templates_rejects_commented_script_entry_point(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/script/validate-example.py",
+                """\
+                \"\"\"Template validator with deterministic exit-code contract.\"\"\"
+
+                # def main() -> int:
+                #     return 0
+
+                # if __name__ == "__main__":
+                #     raise SystemExit(main())
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point",
+                False,
+                "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+
+    def test_validate_templates_requires_mcp_tool_sections(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(root, "templates/mcp/tool-spec.md", "# Tool\n\n## Input schema\n")
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:section:templates/mcp/tool-spec.md:Read/write classification",
+                False,
+                "missing section: Read/write classification",
+                "templates/mcp/tool-spec.md",
+            ),
+            results,
+        )
+
+    def test_validate_templates_requires_config_placeholders(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(root, "templates/config/example.toml", "[ownership]\nowner = \"human\"\n")
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:toml:templates/config/example.toml:autonomy",
+                False,
+                "missing autonomy",
+                "templates/config/example.toml",
             ),
             results,
         )

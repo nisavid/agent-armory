@@ -1,0 +1,24 @@
+[identity]
+name = "<agent-name>"
+description = "Describe the bounded role."
+nickname_candidates = ["<short-name>"]
+mission = "State the agent mission in one sentence."
+
+[tools]
+allow = ["<read-tool>"]
+deny = ["<mutation-without-approval>"]
+
+[permissions]
+mode = "read-only"
+approval_required_for = ["external disclosure", "local write", "network write", "process execution", "privileged operation", "irreversible mutation"]
+
+[model]
+preference = "inherit"
+reasoning_effort = "inherit"
+
+[config]
+placeholder = "replace with role-specific settings"
+
+[output]
+contract = "Describe the deliverable, return shape, and handoff expectations."
+format = "structured-report"

@@ -28,6 +28,10 @@ This document is the canonical vocabulary surface for Smiths and Metasmiths. Use
 
 **Agent Profile** is a reusable harness configuration for identity, mission, prompt, tools, model, permissions, and related behavior.
 
+Many harnesses and Harness Plugin file paths call Agent Profiles `agents`.
+Use Agent Profile in prose when the subject is the reusable configuration, and
+use `agents/` for source paths that follow harness/plugin convention.
+
 **Harness Component** is reusable behavior integrated into an Agent Harness.
 
 **Harness Plugin** is a portable collection of Harness Components.
@@ -64,7 +68,7 @@ This document is the canonical vocabulary surface for Smiths and Metasmiths. Use
 ## Precision rules
 
 - Use **Agent** for the running causal stream, not for a reusable harness declaration.
-- Use **Agent Profile** for a reusable identity, mission, tool, permission, or model configuration.
+- Use **Agent Profile** for a reusable identity, mission, tool, permission, or model configuration. Use `agents/` for source paths when following harness/plugin convention.
 - Use **Agent Harness** for the runtime or orchestration system that mediates the Agent.
 - Use **Agent Equipment** for reusable capability; use **Equipment Candidate** until validation and publication are complete.
 - Use **Published Agent Equipment** only after the promotion path reaches `published`.

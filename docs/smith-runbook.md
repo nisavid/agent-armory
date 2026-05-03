@@ -6,7 +6,8 @@ This runbook is the canonical workflow for Smiths creating Agent Equipment with 
 
 ## Capability card
 
-Write the capability card before choosing an interface.
+Write the capability card before choosing an interface. Start from
+`templates/capability-card.md` when creating a new equipment candidate.
 
 Capture:
 
@@ -22,7 +23,9 @@ The card keeps the capability independent from any first implementation shape.
 
 ## Interface decision record
 
-Create an interface decision record after the capability card.
+Create an interface decision record after the capability card. Start from
+`templates/interface-decision-record.md` and keep it aligned with the capability
+card as the design changes.
 
 For each requirement, decide the narrowest reliable surface:
 
@@ -37,7 +40,7 @@ For each requirement, decide the narrowest reliable surface:
 
 Record rejected alternatives, evidence category, harness-specific projection, risks, and maintenance notes.
 
-## Docs/config/scripts/hooks/skills/profiles/plugins
+## Docs/config/scripts/hooks/skills/agents/plugins
 
 Build from lower-overhead surfaces upward.
 
@@ -50,6 +53,10 @@ Build from lower-overhead surfaces upward.
 7. Put portable bundles in Harness Plugins.
 
 Do not duplicate the same rule across every surface. Keep one canonical source and point or enforce from the others.
+
+Use the component templates under `templates/` when a capability needs a skill,
+hook, Agent Profile, plugin, script, MCP/tool definition, config file, security
+review, or context-budget review.
 
 ## Pressure Scenario Validation
 
@@ -84,7 +91,7 @@ Before closeout, verify:
 - harness claims name their evidence and refresh basis;
 - affected agent-facing and human-facing docs are inspected and updated, or unchanged rationale is recorded;
 - applicable security closeout evidence is recorded;
-- docs, config, scripts, hooks, skills, profiles, plugins, and templates are discoverable from the Framework path;
+- docs, config, scripts, hooks, skills, Agent Profiles, plugins, and templates are discoverable from the Framework path;
 - promotion state and next validation step are recorded.
 
 If a stakeholder decision or unavailable control surface blocks the work, escalate with the needed result or artifact stated clearly.

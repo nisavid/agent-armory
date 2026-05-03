@@ -39,7 +39,7 @@ Primary component types:
 - **Skills** teach task judgment, sequencing, fallback behavior, and output contracts.
 - **MCP/tools** expose typed local or external operations.
 - **Hooks** enforce, observe, inject, rewrite, block, route, or record around harness lifecycle events.
-- **Agent Profiles** define specialized worker identity, authority, context, model, tools, and permissions.
+- **Agent Profiles** define specialized worker identity, authority, context, model, tools, and permissions. Harness and plugin paths often call these `agents`.
 - **Harness Plugins** package components for installation, versioning, sharing, and reuse.
 - **Scripts** perform deterministic parsing, validation, inspection, formatting, or safe explicit side effects.
 - **Local docs** store canonical project truth that humans or Agents need to read.

@@ -10,7 +10,7 @@ The structured source of truth is [docs/harness-capabilities.toml](harness-capab
 
 Use this catalog before making harness-specific claims in Framework docs, Smith specs, templates, examples, or equipment implementation plans.
 
-Treat every entry as versioned state. A Smith must refresh the relevant harness entry before relying on recently changed scheduling, hook, plugin, MCP, permission, or agent-profile behavior. Record local CLI observations separately from public source facts.
+Treat every entry as versioned state. A Smith must refresh the relevant harness entry before relying on recently changed scheduling, hook, plugin, MCP, permission, or Agent Profile behavior. Record local CLI observations separately from public source facts.
 
 Use first-party sources where available. Use third-party fallback metadata only when first-party evidence is unavailable or clearly insufficient, and label it as fallback evidence in the TOML entry's source, uncertainty, or refresh notes.
 

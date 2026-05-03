@@ -1,0 +1,26 @@
+[ownership]
+owner = "<human-or-team>"
+source_of_truth = "<repo-or-policy-doc>"
+
+[autonomy]
+level = "assisted"
+agent_may_continue_sessions = false
+agent_may_initiate_project_initiatives = false
+
+[enabled]
+default = false
+reason = "Enable only after validation and approval policy are set."
+
+[review]
+required_before_publish = true
+review_until_clean = true
+doc_closeout_required = true
+security_closeout_required = true
+
+[approval]
+required_for = ["external disclosure", "local write", "network write", "process execution", "privileged operation", "irreversible mutation"]
+return_contract = "Record the approval result and validation evidence."
+
+[harness]
+target = "<harness-name>"
+override_policy = "Document any harness-specific weakening or strengthening here."
