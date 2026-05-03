@@ -345,6 +345,9 @@ git commit -m "test(framework): add seed validator primitives" -m "Co-authored-b
 **Files:**
 - Modify: `tools/validate_framework_seed.py`
 - Modify: `tests/test_validate_framework_seed.py`
+- Modify: `CONTEXT.md`
+- Modify: `docs/prd/framework-seed.md`
+- Modify: `docs/adr/0015-require-source-projection-register.md`
 - Create: `docs/metasmith/source-projection.md`
 - Validate existing archived handoff files under `docs/metasmith/handoff/2026-05-02/`.
 
@@ -363,7 +366,7 @@ from tools.validate_framework_seed import (
 class SourceProjectionTests(unittest.TestCase):
     def write_register(self, root: Path, rows: list[str]) -> None:
         register = root / "docs/metasmith/source-projection.md"
-        register.parent.mkdir(parents=True)
+        register.parent.mkdir(parents=True, exist_ok=True)
         register.write_text(
             textwrap.dedent(
                 f"""
@@ -408,6 +411,29 @@ class SourceProjectionTests(unittest.TestCase):
             results = validate_source_projection(root)
 
         self.assertTrue(all(result.ok for result in results), results)
+
+    def test_validate_source_projection_rejects_symlinked_register(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            register = root / "docs/metasmith/source-projection.md"
+            register.parent.mkdir(parents=True)
+            outside = root / "outside-register.md"
+            outside.write_text("# Source Projection Register\n", encoding="utf-8")
+            register.symlink_to(outside)
+
+            results = validate_source_projection(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="source_projection:register",
+                    ok=False,
+                    detail="register path contains symlink",
+                    path="docs/metasmith/source-projection.md",
+                )
+            ],
+        )
 
     def test_validate_source_projection_rejects_wrong_source_reference(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -481,6 +507,91 @@ class SourceProjectionTests(unittest.TestCase):
                 name="source_projection:H001",
                 ok=False,
                 detail="source_file missing: 00-metasmith-handoff-prompt.md",
+                path="docs/metasmith/source-projection.md",
+            ),
+            results,
+        )
+
+    def test_validate_source_projection_rejects_symlinked_source_file(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_source_handoff_fixture(root)
+            source = root / "docs/metasmith/handoff/2026-05-02/00-metasmith-handoff-prompt.md"
+            source.unlink()
+            outside = root / "outside-handoff.md"
+            outside.write_text("# Your objective\n", encoding="utf-8")
+            source.symlink_to(outside)
+            (root / "docs/target.md").write_text("# Target\n", encoding="utf-8")
+            self.write_register(
+                root,
+                [
+                    "| H001 | 00-metasmith-handoff-prompt.md | Your objective | Summary | projected | docs/target.md |  | planned |"
+                ],
+            )
+
+            results = validate_source_projection(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_projection:H001",
+                ok=False,
+                detail="source_file invalid: 00-metasmith-handoff-prompt.md (manifest-listed file is a symlink)",
+                path="docs/metasmith/source-projection.md",
+            ),
+            results,
+        )
+
+    def test_validate_source_projection_rejects_symlinked_handoff_root(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            handoff_parent = root / "docs/metasmith/handoff"
+            handoff_parent.mkdir(parents=True)
+            outside = root / "outside-handoff"
+            outside.mkdir()
+            (outside / "00-metasmith-handoff-prompt.md").write_text("# Your objective\n", encoding="utf-8")
+            (handoff_parent / "2026-05-02").symlink_to(outside, target_is_directory=True)
+            (root / "docs/target.md").write_text("# Target\n", encoding="utf-8")
+            self.write_register(
+                root,
+                [
+                    "| H001 | 00-metasmith-handoff-prompt.md | Your objective | Summary | projected | docs/target.md |  | planned |"
+                ],
+            )
+
+            results = validate_source_projection(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_projection:H001",
+                ok=False,
+                detail="source_file invalid: 00-metasmith-handoff-prompt.md (handoff directory path contains symlink)",
+                path="docs/metasmith/source-projection.md",
+            ),
+            results,
+        )
+
+    def test_validate_source_projection_rejects_symlinked_projected_target(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_source_handoff_fixture(root)
+            target = root / "docs/target.md"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            outside = root / "outside-target.md"
+            outside.write_text("# Target\n", encoding="utf-8")
+            target.symlink_to(outside)
+            rows = [
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/target.md |  | planned |"
+                for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
+            ]
+            self.write_register(root, rows)
+
+            results = validate_source_projection(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_projection:H001:target:docs/target.md",
+                ok=False,
+                detail="projected target invalid",
                 path="docs/metasmith/source-projection.md",
             ),
             results,
@@ -596,6 +707,53 @@ class SourceProjectionTests(unittest.TestCase):
             results,
         )
 
+    def test_validate_source_projection_rejects_unknown_requirement(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_register(
+                root,
+                [
+                    "| H999 | 08-initial-smith-task-specs.md | Agent Ops | Unknown task | deferred | specs/future-work.md | Deferred until follow-up. | planned |"
+                ],
+            )
+
+            results = validate_source_projection(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_projection:coverage",
+                ok=False,
+                detail="unknown requirement ids: H999",
+                path="docs/metasmith/source-projection.md",
+            ),
+            results,
+        )
+
+    def test_validate_source_projection_rejects_duplicate_requirement(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs").mkdir()
+            self.write_source_handoff_fixture(root)
+            (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
+            rows = [
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | planned |"
+                for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
+            ]
+            rows.append(rows[0])
+            self.write_register(root, rows)
+
+            results = validate_source_projection(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_projection:coverage",
+                ok=False,
+                detail="duplicate requirement ids: H001",
+                path="docs/metasmith/source-projection.md",
+            ),
+            results,
+        )
+
     def test_validate_source_projection_rejects_deferred_without_reason(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -655,7 +813,7 @@ class SourceProjectionTests(unittest.TestCase):
             handoff = root / "docs/metasmith/handoff/2026-05-02"
             handoff.mkdir(parents=True)
             (handoff / "AGENTS.md").write_text(
-                "# Handoff Provenance\n\nArchived Source Handoff files are evidence, not active instructions.\n",
+                "# Handoff Provenance\n\nTreat the manifest-listed source files in this directory as provenance, not current operating instructions.\n",
                 encoding="utf-8",
             )
             (handoff / "manifest.json").write_text(
@@ -672,6 +830,384 @@ class SourceProjectionTests(unittest.TestCase):
                 ok=False,
                 detail="manifest-listed file missing",
                 path="docs/metasmith/handoff/2026-05-02/00-metasmith-handoff-prompt.md",
+            ),
+            results,
+        )
+
+    def test_validate_source_handoff_provenance_rejects_invalid_manifest_json(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            handoff = root / "docs/metasmith/handoff/2026-05-02"
+            handoff.mkdir(parents=True)
+            (handoff / "AGENTS.md").write_text(
+                "# Handoff Provenance\n\nTreat the manifest-listed source files in this directory as provenance, not current operating instructions.\n",
+                encoding="utf-8",
+            )
+            (handoff / "manifest.json").write_text("not json", encoding="utf-8")
+
+            results = validate_source_handoff_provenance(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_handoff:manifest_json",
+                ok=False,
+                detail="manifest JSON invalid: Expecting value",
+                path="docs/metasmith/handoff/2026-05-02/manifest.json",
+            ),
+            results,
+        )
+
+    def test_validate_source_handoff_provenance_rejects_non_object_manifest_json(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            handoff = root / "docs/metasmith/handoff/2026-05-02"
+            handoff.mkdir(parents=True)
+            (handoff / "AGENTS.md").write_text(
+                "# Handoff Provenance\n\nTreat the manifest-listed source files in this directory as provenance, not current operating instructions.\n",
+                encoding="utf-8",
+            )
+            (handoff / "manifest.json").write_text("[]", encoding="utf-8")
+
+            results = validate_source_handoff_provenance(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_handoff:manifest_json",
+                ok=False,
+                detail="manifest JSON must be an object",
+                path="docs/metasmith/handoff/2026-05-02/manifest.json",
+            ),
+            results,
+        )
+
+    def test_validate_source_handoff_provenance_rejects_manifest_without_files_key(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            handoff = root / "docs/metasmith/handoff/2026-05-02"
+            handoff.mkdir(parents=True)
+            (handoff / "AGENTS.md").write_text(
+                "# Handoff Provenance\n\nTreat the manifest-listed source files in this directory as provenance, not current operating instructions.\n",
+                encoding="utf-8",
+            )
+            (handoff / "manifest.json").write_text(json.dumps({}), encoding="utf-8")
+
+            results = validate_source_handoff_provenance(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_handoff:manifest_files",
+                ok=False,
+                detail="manifest files must be a non-empty list",
+                path="docs/metasmith/handoff/2026-05-02/manifest.json",
+            ),
+            results,
+        )
+
+    def test_validate_source_handoff_provenance_rejects_empty_manifest_files(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            handoff = root / "docs/metasmith/handoff/2026-05-02"
+            handoff.mkdir(parents=True)
+            (handoff / "AGENTS.md").write_text(
+                "# Handoff Provenance\n\nTreat the manifest-listed source files in this directory as provenance, not current operating instructions.\n",
+                encoding="utf-8",
+            )
+            (handoff / "manifest.json").write_text(json.dumps({"files": []}), encoding="utf-8")
+
+            results = validate_source_handoff_provenance(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_handoff:manifest_files",
+                ok=False,
+                detail="manifest files must be a non-empty list",
+                path="docs/metasmith/handoff/2026-05-02/manifest.json",
+            ),
+            results,
+        )
+
+    def test_validate_source_handoff_provenance_rejects_null_manifest_files(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            handoff = root / "docs/metasmith/handoff/2026-05-02"
+            handoff.mkdir(parents=True)
+            (handoff / "AGENTS.md").write_text(
+                "# Handoff Provenance\n\nTreat the manifest-listed source files in this directory as provenance, not current operating instructions.\n",
+                encoding="utf-8",
+            )
+            (handoff / "manifest.json").write_text(json.dumps({"files": None}), encoding="utf-8")
+
+            results = validate_source_handoff_provenance(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_handoff:manifest_files",
+                ok=False,
+                detail="manifest files must be a non-empty list",
+                path="docs/metasmith/handoff/2026-05-02/manifest.json",
+            ),
+            results,
+        )
+
+    def test_validate_source_handoff_provenance_rejects_string_manifest_files(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            handoff = root / "docs/metasmith/handoff/2026-05-02"
+            handoff.mkdir(parents=True)
+            (handoff / "AGENTS.md").write_text(
+                "# Handoff Provenance\n\nTreat the manifest-listed source files in this directory as provenance, not current operating instructions.\n",
+                encoding="utf-8",
+            )
+            (handoff / "manifest.json").write_text(json.dumps({"files": "README.md"}), encoding="utf-8")
+
+            results = validate_source_handoff_provenance(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_handoff:manifest_files",
+                ok=False,
+                detail="manifest files must be a non-empty list",
+                path="docs/metasmith/handoff/2026-05-02/manifest.json",
+            ),
+            results,
+        )
+
+    def test_validate_source_handoff_provenance_rejects_manifest_missing_accepted_source(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_source_handoff_fixture(root)
+            handoff = root / "docs/metasmith/handoff/2026-05-02"
+            (handoff / "AGENTS.md").write_text(
+                "# Handoff Provenance\n\nTreat the manifest-listed source files in this directory as provenance, not current operating instructions.\n",
+                encoding="utf-8",
+            )
+            source_files = sorted({metadata["source_file"] for metadata in ACCEPTED_SOURCE_REQUIREMENTS.values()})
+            source_files.remove("00-metasmith-handoff-prompt.md")
+            (handoff / "manifest.json").write_text(json.dumps({"files": source_files}), encoding="utf-8")
+
+            results = validate_source_handoff_provenance(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_handoff:manifest_coverage",
+                ok=False,
+                detail="accepted source files missing from manifest: 00-metasmith-handoff-prompt.md",
+                path="docs/metasmith/handoff/2026-05-02/manifest.json",
+            ),
+            results,
+        )
+
+    def test_validate_source_handoff_provenance_rejects_symlink_handoff_root(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            handoff_parent = root / "docs/metasmith/handoff"
+            handoff_parent.mkdir(parents=True)
+            outside = root / "outside-handoff"
+            outside.mkdir()
+            (outside / "AGENTS.md").write_text(
+                "# Handoff Provenance\n\nTreat the manifest-listed source files in this directory as provenance, not current operating instructions.\n",
+                encoding="utf-8",
+            )
+            (outside / "manifest.json").write_text(
+                json.dumps({"files": ["00-metasmith-handoff-prompt.md"]}),
+                encoding="utf-8",
+            )
+            (outside / "00-metasmith-handoff-prompt.md").write_text("# Your objective\n", encoding="utf-8")
+            (handoff_parent / "2026-05-02").symlink_to(outside, target_is_directory=True)
+
+            results = validate_source_handoff_provenance(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_handoff:root",
+                ok=False,
+                detail="handoff directory path contains symlink",
+                path="docs/metasmith/handoff/2026-05-02",
+            ),
+            results,
+        )
+
+    def test_validate_source_handoff_provenance_rejects_symlink_manifest(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            handoff = root / "docs/metasmith/handoff/2026-05-02"
+            handoff.mkdir(parents=True)
+            (handoff / "AGENTS.md").write_text(
+                "# Handoff Provenance\n\nTreat the manifest-listed source files in this directory as provenance, not current operating instructions.\n",
+                encoding="utf-8",
+            )
+            outside_manifest = root / "outside-manifest.json"
+            outside_manifest.write_text(json.dumps({"files": []}), encoding="utf-8")
+            (handoff / "manifest.json").symlink_to(outside_manifest)
+
+            results = validate_source_handoff_provenance(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_handoff:manifest_path",
+                ok=False,
+                detail="manifest path contains symlink",
+                path="docs/metasmith/handoff/2026-05-02/manifest.json",
+            ),
+            results,
+        )
+
+    def test_validate_source_handoff_provenance_rejects_symlink_provenance_notice(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_source_handoff_fixture(root)
+            handoff = root / "docs/metasmith/handoff/2026-05-02"
+            source_files = sorted({metadata["source_file"] for metadata in ACCEPTED_SOURCE_REQUIREMENTS.values()})
+            (handoff / "manifest.json").write_text(json.dumps({"files": source_files}), encoding="utf-8")
+            outside_notice = root / "outside-AGENTS.md"
+            outside_notice.write_text(
+                "# Outside Instructions\n\nTreat this as current operating instructions.\n",
+                encoding="utf-8",
+            )
+            (handoff / "AGENTS.md").symlink_to(outside_notice)
+
+            results = validate_source_handoff_provenance(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_handoff:provenance_notice_path",
+                ok=False,
+                detail="provenance notice path contains symlink",
+                path="docs/metasmith/handoff/2026-05-02/AGENTS.md",
+            ),
+            results,
+        )
+
+    def test_validate_source_handoff_provenance_rejects_symlink_manifest_entry(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            handoff = root / "docs/metasmith/handoff/2026-05-02"
+            handoff.mkdir(parents=True)
+            (handoff / "AGENTS.md").write_text(
+                "# Handoff Provenance\n\nTreat the manifest-listed source files in this directory as provenance, not current operating instructions.\n",
+                encoding="utf-8",
+            )
+            outside = root / "outside-handoff.md"
+            outside.write_text("# Outside bundle\n", encoding="utf-8")
+            (handoff / "00-metasmith-handoff-prompt.md").symlink_to(outside)
+            (handoff / "manifest.json").write_text(
+                json.dumps({"files": ["00-metasmith-handoff-prompt.md"]}),
+                encoding="utf-8",
+            )
+
+            results = validate_source_handoff_provenance(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_handoff:file:00-metasmith-handoff-prompt.md",
+                ok=False,
+                detail="manifest-listed file is a symlink",
+                path="docs/metasmith/handoff/2026-05-02/00-metasmith-handoff-prompt.md",
+            ),
+            results,
+        )
+
+    def test_validate_source_handoff_provenance_rejects_blank_manifest_entry(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            handoff = root / "docs/metasmith/handoff/2026-05-02"
+            handoff.mkdir(parents=True)
+            (handoff / "AGENTS.md").write_text(
+                "# Handoff Provenance\n\nTreat the manifest-listed source files in this directory as provenance, not current operating instructions.\n",
+                encoding="utf-8",
+            )
+            (handoff / "manifest.json").write_text(
+                json.dumps({"files": [""]}),
+                encoding="utf-8",
+            )
+
+            results = validate_source_handoff_provenance(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_handoff:file:",
+                ok=False,
+                detail="manifest file path invalid",
+                path="docs/metasmith/handoff/2026-05-02/manifest.json",
+            ),
+            results,
+        )
+
+    def test_validate_source_handoff_provenance_rejects_directory_manifest_entry(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            handoff = root / "docs/metasmith/handoff/2026-05-02"
+            handoff.mkdir(parents=True)
+            (handoff / "AGENTS.md").write_text(
+                "# Handoff Provenance\n\nTreat the manifest-listed source files in this directory as provenance, not current operating instructions.\n",
+                encoding="utf-8",
+            )
+            (handoff / "manifest.json").write_text(
+                json.dumps({"files": ["."]}),
+                encoding="utf-8",
+            )
+
+            results = validate_source_handoff_provenance(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_handoff:file:.",
+                ok=False,
+                detail="manifest-listed file missing",
+                path="docs/metasmith/handoff/2026-05-02/.",
+            ),
+            results,
+        )
+
+    def test_validate_source_handoff_provenance_rejects_manifest_traversal(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "README.md").write_text("# Outside bundle\n", encoding="utf-8")
+            handoff = root / "docs/metasmith/handoff/2026-05-02"
+            handoff.mkdir(parents=True)
+            (handoff / "AGENTS.md").write_text(
+                "# Handoff Provenance\n\nTreat the manifest-listed source files in this directory as provenance, not current operating instructions.\n",
+                encoding="utf-8",
+            )
+            (handoff / "manifest.json").write_text(
+                json.dumps({"files": ["../../../../README.md"]}),
+                encoding="utf-8",
+            )
+
+            results = validate_source_handoff_provenance(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_handoff:file:../../../../README.md",
+                ok=False,
+                detail="manifest file path invalid",
+                path="docs/metasmith/handoff/2026-05-02/manifest.json",
+            ),
+            results,
+        )
+
+    def test_validate_source_handoff_provenance_rejects_manifest_url(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            handoff = root / "docs/metasmith/handoff/2026-05-02"
+            handoff.mkdir(parents=True)
+            (handoff / "AGENTS.md").write_text(
+                "# Handoff Provenance\n\nTreat the manifest-listed source files in this directory as provenance, not current operating instructions.\n",
+                encoding="utf-8",
+            )
+            (handoff / "manifest.json").write_text(
+                json.dumps({"files": ["file:///tmp/handoff.md"]}),
+                encoding="utf-8",
+            )
+
+            results = validate_source_handoff_provenance(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_handoff:file:file:///tmp/handoff.md",
+                ok=False,
+                detail="manifest file path invalid",
+                path="docs/metasmith/handoff/2026-05-02/manifest.json",
             ),
             results,
         )
@@ -709,13 +1245,13 @@ ACCEPTED_SOURCE_REQUIREMENTS = {
     "H002": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Terms you must use"},
     "H003": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Core principle"},
     "H004": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Required repository shape"},
-    "H005": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Ubiquitous Language"},
-    "H006": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Evidence discipline"},
-    "H007": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Framework architecture"},
-    "H008": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Decision method"},
-    "H009": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Harness capability catalog"},
-    "H010": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Templates and examples"},
-    "H011": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Initial Smith task specs"},
+    "H005": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "1. Ubiquitous Language"},
+    "H006": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "2. Evidence discipline"},
+    "H007": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "3. Framework architecture"},
+    "H008": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "4. Decision method"},
+    "H009": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "5. Harness capability catalog"},
+    "H010": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "6. Templates and examples"},
+    "H011": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "7. Initial Smith task specs"},
     "H012": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Acceptance criteria"},
     "H052": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Constraints"},
     "H053": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Final report"},
@@ -784,6 +1320,40 @@ def invalid_repo_relative_target(target: str) -> bool:
     return bool(parsed.scheme) or target.startswith("/") or ".." in Path(target).parts
 
 
+def repo_relative_path_status(root: Path, relative_path: str, expected_kind: str) -> tuple[bool, str, Path]:
+    if invalid_repo_relative_target(relative_path):
+        return False, "path invalid", root / relative_path
+    candidate = root / relative_path
+    current = root
+    for part in Path(relative_path).parts:
+        current = current / part
+        if current.is_symlink():
+            return False, "path contains symlink", candidate
+    try:
+        root_resolved = root.resolve(strict=True)
+        candidate_resolved = candidate.resolve(strict=True)
+    except OSError:
+        return False, "missing", candidate
+    try:
+        candidate_resolved.relative_to(root_resolved)
+    except ValueError:
+        return False, "path escapes repository root", candidate
+    if expected_kind == "file" and not candidate.is_file():
+        return False, "not a file", candidate
+    if expected_kind == "directory" and not candidate.is_dir():
+        return False, "not a directory", candidate
+    return True, "exists", candidate
+
+
+def repo_surface_status(root: Path, relative_path: str, label: str) -> tuple[bool, str, Path]:
+    ok, detail, path = repo_relative_path_status(root, relative_path, "any")
+    if ok:
+        return ok, detail, path
+    if detail == "path contains symlink":
+        return False, f"{label} path contains symlink", path
+    return False, f"{label} {detail}", path
+
+
 def source_anchor_exists(path: Path, anchor: str) -> bool:
     for line in path.read_text(encoding="utf-8").splitlines():
         stripped = line.strip()
@@ -794,10 +1364,57 @@ def source_anchor_exists(path: Path, anchor: str) -> bool:
     return False
 
 
+def handoff_root_status(root: Path) -> tuple[bool, str, Path]:
+    ok, detail, path = repo_relative_path_status(root, SOURCE_HANDOFF_DIR, "directory")
+    if ok:
+        return ok, detail, path
+    if detail == "path contains symlink":
+        return False, "handoff directory path contains symlink", path
+    if detail == "missing":
+        return False, "handoff directory missing", path
+    return False, f"handoff directory {detail}", path
+
+
+def handoff_control_file_status(root: Path, relative_path: str, label: str) -> tuple[bool, str, Path]:
+    ok, detail, path = repo_relative_path_status(root, relative_path, "file")
+    if ok:
+        return ok, detail, path
+    if detail == "path contains symlink":
+        return False, f"{label} path contains symlink", path
+    if detail == "missing":
+        return False, f"{label} missing", path
+    return False, f"{label} {detail}", path
+
+
+def handoff_file_status(root: Path, file_name: str) -> tuple[bool, str, Path]:
+    root_ok, root_detail, handoff_root = handoff_root_status(root)
+    candidate = handoff_root / file_name
+    if not root_ok:
+        return False, root_detail, candidate
+    handoff_root_resolved = handoff_root.resolve(strict=True)
+    current = handoff_root
+    for part in Path(file_name).parts:
+        current = current / part
+        if current.is_symlink():
+            return False, "manifest-listed file is a symlink", candidate
+    try:
+        candidate_resolved = candidate.resolve(strict=True)
+    except OSError:
+        return False, "manifest-listed file missing", candidate
+    try:
+        candidate_resolved.relative_to(handoff_root_resolved)
+    except ValueError:
+        return False, "manifest-listed file escapes handoff directory", candidate
+    if not candidate.is_file():
+        return False, "manifest-listed file missing", candidate
+    return True, "exists", candidate
+
+
 def validate_source_projection(root: Path) -> list[CheckResult]:
-    path = root / SOURCE_PROJECTION_PATH
-    if not path.exists():
-        return [CheckResult("source_projection:register", False, "missing", SOURCE_PROJECTION_PATH)]
+    register_ok, register_detail, path = repo_surface_status(root, SOURCE_PROJECTION_PATH, "register")
+    if not register_ok:
+        detail = "missing" if register_detail == "register missing" else register_detail
+        return [CheckResult("source_projection:register", False, detail, SOURCE_PROJECTION_PATH)]
     rows = parse_markdown_table(path.read_text(encoding="utf-8"))
     results: list[CheckResult] = []
     if not rows:
@@ -829,13 +1446,18 @@ def validate_source_projection(root: Path) -> list[CheckResult]:
                             path=SOURCE_PROJECTION_PATH,
                         )
                     )
-            source_path = root / SOURCE_HANDOFF_DIR / expected["source_file"]
-            if not source_path.exists():
+            source_ok, source_detail, source_path = handoff_file_status(root, expected["source_file"])
+            if not source_ok:
+                detail = (
+                    f"source_file missing: {expected['source_file']}"
+                    if source_detail == "manifest-listed file missing"
+                    else f"source_file invalid: {expected['source_file']} ({source_detail})"
+                )
                 results.append(
                     CheckResult(
                         name=f"source_projection:{requirement_id}",
                         ok=False,
-                        detail=f"source_file missing: {expected['source_file']}",
+                        detail=detail,
                         path=SOURCE_PROJECTION_PATH,
                     )
                 )
@@ -870,14 +1492,18 @@ def validate_source_projection(root: Path) -> list[CheckResult]:
                     )
                 )
             for target in targets:
-                invalid = invalid_repo_relative_target(target)
-                missing_target = not invalid and not (root / target).exists()
-                if invalid or missing_target:
+                target_ok, target_detail, _ = repo_surface_status(root, target, "projected target")
+                if not target_ok:
+                    detail = (
+                        "projected target missing"
+                        if target_detail == "projected target missing"
+                        else "projected target invalid"
+                    )
                     results.append(
                         CheckResult(
                             name=f"source_projection:{requirement_id}:target:{target}",
                             ok=False,
-                            detail="projected target invalid" if invalid else "projected target missing",
+                            detail=detail,
                             path=SOURCE_PROJECTION_PATH,
                         )
                     )
@@ -960,23 +1586,94 @@ def validate_source_handoff_provenance(root: Path) -> list[CheckResult]:
     manifest_path = root / SOURCE_HANDOFF_MANIFEST
     notice_path = root / SOURCE_HANDOFF_PROVENANCE_NOTICE
     results = validate_required_paths(root, [SOURCE_HANDOFF_MANIFEST, SOURCE_HANDOFF_PROVENANCE_NOTICE])
-    if not manifest_path.exists():
+    root_ok, root_detail, _ = handoff_root_status(root)
+    if not root_ok:
+        results.append(CheckResult("source_handoff:root", False, root_detail, SOURCE_HANDOFF_DIR))
         return results
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    for file_name in manifest.get("files", []):
+    manifest_ok, manifest_detail, manifest_path = handoff_control_file_status(root, SOURCE_HANDOFF_MANIFEST, "manifest")
+    if not manifest_ok:
+        if manifest_detail != "manifest missing":
+            results.append(CheckResult("source_handoff:manifest_path", False, manifest_detail, SOURCE_HANDOFF_MANIFEST))
+        return results
+    notice_ok, notice_detail, notice_path = handoff_control_file_status(
+        root,
+        SOURCE_HANDOFF_PROVENANCE_NOTICE,
+        "provenance notice",
+    )
+    if not notice_ok and notice_detail != "provenance notice missing":
+        results.append(
+            CheckResult("source_handoff:provenance_notice_path", False, notice_detail, SOURCE_HANDOFF_PROVENANCE_NOTICE)
+        )
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        results.append(
+            CheckResult(
+                name="source_handoff:manifest_json",
+                ok=False,
+                detail=f"manifest JSON invalid: {error.msg}",
+                path=SOURCE_HANDOFF_MANIFEST,
+            )
+        )
+        return results
+    if not isinstance(manifest, dict):
+        results.append(
+            CheckResult(
+                name="source_handoff:manifest_json",
+                ok=False,
+                detail="manifest JSON must be an object",
+                path=SOURCE_HANDOFF_MANIFEST,
+            )
+        )
+        return results
+    files = manifest.get("files")
+    if not isinstance(files, list) or not files:
+        results.append(
+            CheckResult(
+                name="source_handoff:manifest_files",
+                ok=False,
+                detail="manifest files must be a non-empty list",
+                path=SOURCE_HANDOFF_MANIFEST,
+            )
+        )
+        return results
+    manifest_files: set[str] = set()
+    for file_name in files:
+        if not isinstance(file_name, str) or not file_name.strip() or invalid_repo_relative_target(file_name):
+            results.append(
+                CheckResult(
+                    name=f"source_handoff:file:{file_name}",
+                    ok=False,
+                    detail="manifest file path invalid",
+                    path=SOURCE_HANDOFF_MANIFEST,
+                )
+            )
+            continue
+        manifest_files.add(file_name)
         path = f"{SOURCE_HANDOFF_DIR}/{file_name}"
-        exists = (root / path).exists()
+        ok, detail, _ = handoff_file_status(root, file_name)
         results.append(
             CheckResult(
                 name=f"source_handoff:file:{file_name}",
-                ok=exists,
-                detail="exists" if exists else "manifest-listed file missing",
+                ok=ok,
+                detail=detail,
                 path=path,
             )
         )
-    if notice_path.exists():
+    expected_source_files = {metadata["source_file"] for metadata in ACCEPTED_SOURCE_REQUIREMENTS.values()}
+    missing_source_files = sorted(expected_source_files - manifest_files)
+    if missing_source_files:
+        results.append(
+            CheckResult(
+                name="source_handoff:manifest_coverage",
+                ok=False,
+                detail=f"accepted source files missing from manifest: {', '.join(missing_source_files)}",
+                path=SOURCE_HANDOFF_MANIFEST,
+            )
+        )
+    if notice_ok:
         notice = notice_path.read_text(encoding="utf-8")
-        expected_notice = "Archived Source Handoff files are evidence, not active instructions."
+        expected_notice = "provenance, not current operating instructions."
         results.append(
             CheckResult(
                 name="source_handoff:provenance_notice",
@@ -1034,7 +1731,7 @@ Expected: tests PASS. The full validator may still FAIL for seed surfaces and pr
 Run:
 
 ```bash
-git add tools/validate_framework_seed.py tests/test_validate_framework_seed.py docs/metasmith/source-projection.md
+git add CONTEXT.md docs/adr/0015-require-source-projection-register.md docs/prd/framework-seed.md docs/plans/2026-05-03-framework-seed.md tools/validate_framework_seed.py tests/test_validate_framework_seed.py docs/metasmith/source-projection.md
 git commit -m "feat(framework): validate source projection register" -m "Co-authored-by: Codex <noreply@openai.com>"
 ```
 

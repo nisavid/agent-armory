@@ -11,7 +11,7 @@ Status: Repo Draft PRD
 **Success Criteria**:
 
 - **Framework routing coverage**: Root `AGENTS.md` exposes the Smith Framework path, and `README.md` exposes the Human Framework Entry; Seed Validation confirms all linked target paths exist.
-- **Source projection coverage**: 100% of accepted Source Handoff requirements are recorded in `docs/metasmith/source-projection.md` with disposition `projected` or `deferred`; every projected target path exists, and every deferred requirement has both a reason and a downstream target path.
+- **Source projection coverage**: 100% of accepted Source Handoff requirements are recorded in `docs/metasmith/source-projection.md` with disposition `projected` or `deferred`; every accepted source file is listed in the handoff manifest; every projected target path exists; and every deferred requirement has both a reason and a downstream target path.
 - **Validation pass rate**: `python3.14 -m unittest` and `python3.14 tools/validate_framework_seed.py` both exit 0 from the repository root.
 - **Harness evidence completeness**: 100% of canonical Harness Capability Catalog claims include evidence category, source URL, checked-at date, checked version or version basis, and uncertainty note when evidence is incomplete or inconsistent.
 - **Promotion-state coverage**: 100% of Framework Examples and downstream Smith specs declare an Equipment Promotion Path state; every Framework Example traces from capability card to interface decision record to projected components.
@@ -44,7 +44,7 @@ Status: Repo Draft PRD
 - `README.md` gives humans a concise Framework entry point and links to the canonical starting path without exposing agent-only machinery.
 - `CONTEXT.md` defines the Framework Seed language used by canonical docs and specs.
 - `docs/metasmith/handoff/2026-05-02/` preserves the manifest-listed Source Handoff and contains a local provenance wrapper that prevents archived prompts from becoming current instructions.
-- `docs/metasmith/source-projection.md` records accepted Source Handoff requirements with `requirement_id`, `source_file`, `source_anchor`, `summary`, `disposition`, `target_path`, `deferment_reason`, and `validation_status`; Seed Validation checks accepted requirement ids, source references, projected target paths, and deferred downstream target path syntax.
+- `docs/metasmith/source-projection.md` records accepted Source Handoff requirements with `requirement_id`, `source_file`, `source_anchor`, `summary`, `disposition`, `target_path`, `deferment_reason`, and `validation_status`; Seed Validation checks accepted requirement ids, handoff manifest coverage, source references, projected target paths, and deferred downstream target path syntax.
 - Canonical Framework docs include, at minimum, a Framework overview, Smith runbook, Metasmith runbook, interface decision guide, harness component guide, evidence taxonomy, harness capability catalog, equipment promotion guidance, and security/control guidance.
 - Seed templates cover capability cards, interface decision records, skill templates, hooks, Agent Profiles, plugins, scripts, MCP/tool definitions, config, security reviews, and context-budget reviews.
 - Framework Examples demonstrate PR review, documentation research, and observability investigation as annotated examples with promotion state `example`; each example traces from capability card to interface decision record to projected components.

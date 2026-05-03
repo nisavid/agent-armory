@@ -1,0 +1,60 @@
+# Source Projection Register
+
+This register maps accepted Source Handoff requirements to canonical Framework Seed surfaces or explicit deferments.
+
+| requirement_id | source_file | source_anchor | summary | disposition | target_path | deferment_reason | validation_status |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| H001 | 00-metasmith-handoff-prompt.md | Your objective | Produce the Framework Seed as canonical docs, templates, examples, specs, and validation surfaces. | projected | docs/prd/framework-seed.md,docs/plans/2026-05-03-framework-seed.md |  | planned |
+| H002 | 00-metasmith-handoff-prompt.md | Terms you must use | Establish the core Framework vocabulary. | projected | CONTEXT.md,docs/ubiquitous-language.md |  | planned |
+| H003 | 00-metasmith-handoff-prompt.md | Core principle | Preserve least cognitive privilege as the Framework design rule. | projected | docs/equipment-framework.md,docs/interface-decision-guide.md |  | planned |
+| H004 | 00-metasmith-handoff-prompt.md | Required repository shape | Create the Framework Seed repository surfaces without treating the seed structure as final project law. | projected | docs/prd/framework-seed.md,docs/adr/0008-treat-repo-structure-as-target-not-mandate.md |  | planned |
+| H005 | 00-metasmith-handoff-prompt.md | 1. Ubiquitous Language | Define Framework terms and relationships for future Smiths and Metasmiths. | projected | CONTEXT.md,docs/ubiquitous-language.md |  | planned |
+| H006 | 00-metasmith-handoff-prompt.md | 2. Evidence discipline | Record source and evidence rules for Framework claims and harness facts. | projected | docs/evidence-taxonomy.md,docs/harness-capabilities.md |  | planned |
+| H007 | 00-metasmith-handoff-prompt.md | 3. Framework architecture | Describe Framework components and their responsibilities. | projected | docs/equipment-framework.md,docs/harness-components.md |  | planned |
+| H008 | 00-metasmith-handoff-prompt.md | 4. Decision method | Provide the interface decision method and runbook guidance. | projected | docs/interface-decision-guide.md,docs/smith-runbook.md |  | planned |
+| H009 | 00-metasmith-handoff-prompt.md | 5. Harness capability catalog | Refresh and publish the canonical harness capability catalog. | projected | docs/harness-capabilities.md,docs/harness-capabilities.toml |  | planned |
+| H010 | 00-metasmith-handoff-prompt.md | 6. Templates and examples | Ship seed templates and annotated Framework Examples. | projected | templates/capability-card.md,examples/pr-review/capability-card.md,examples/docs-research/capability-card.md,examples/observability-investigation/capability-card.md |  | planned |
+| H011 | 00-metasmith-handoff-prompt.md | 7. Initial Smith task specs | Create downstream specs for the initial Smith tasks. | projected | specs/agent-ops.md,specs/periodic-actions.md,specs/harness-capability-refresh.md |  | planned |
+| H012 | 00-metasmith-handoff-prompt.md | Acceptance criteria | Validate source projection, seed surfaces, examples, specs, and issue projection. | projected | tools/validate_framework_seed.py,tests/test_validate_framework_seed.py |  | planned |
+| H052 | 00-metasmith-handoff-prompt.md | Constraints | Preserve standard-library validation and non-production seed boundaries. | projected | docs/prd/framework-seed.md,docs/adr/0009-use-standard-library-python-for-seed-validation.md,docs/adr/0012-ship-skill-templates-not-repo-skills-in-seed.md |  | planned |
+| H053 | 00-metasmith-handoff-prompt.md | Final report | Record final implementation, validation, issue projection, and closeout summaries. | projected | docs/closeout/framework-seed-documentation.md,docs/security/framework-seed-closeout.md |  | planned |
+| H013 | 01-executive-brief.md | What the Framework must solve | Explain why Agent Armory needs a Framework instead of ad hoc equipment. | projected | docs/equipment-framework.md |  | planned |
+| H014 | 01-executive-brief.md | Core decomposition | Preserve the capability, interface, harness, and context decomposition. | projected | docs/equipment-framework.md,docs/harness-components.md |  | planned |
+| H015 | 01-executive-brief.md | What the Metasmith should produce | Define Metasmith outputs and seed production responsibilities. | projected | docs/metasmith-runbook.md |  | planned |
+| H016 | 02-ubiquitous-language.md | Agent Armory | Define Agent Armory and Agent Equipment vocabulary. | projected | CONTEXT.md,docs/ubiquitous-language.md |  | planned |
+| H017 | 02-ubiquitous-language.md | Relationship model | Preserve relationships between capabilities, equipment, harnesses, and roles. | projected | CONTEXT.md,docs/equipment-framework.md |  | planned |
+| H018 | 03-evidence-and-source-map.md | Evidence categories | Define evidence categories for project and harness claims. | projected | docs/evidence-taxonomy.md |  | planned |
+| H019 | 03-evidence-and-source-map.md | Source hygiene rules | Define source hygiene and provenance rules. | projected | docs/evidence-taxonomy.md,docs/metasmith/source-projection.md |  | planned |
+| H020 | 04-framework-architecture.md | Component responsibilities | Describe responsibilities for capability cards, decisions, components, and specs. | projected | docs/equipment-framework.md,docs/harness-components.md |  | planned |
+| H021 | 04-framework-architecture.md | Context management architecture | Define context budget and routing expectations. | projected | docs/equipment-framework.md,templates/context-budget-review.md |  | planned |
+| H022 | 04-framework-architecture.md | Security architecture | Define security and control requirements for equipment surfaces. | projected | docs/security-and-control.md,templates/security-review.md |  | planned |
+| H023 | 04-framework-architecture.md | Maintenance architecture | Define maintenance and refresh expectations for Framework facts. | projected | docs/metasmith-runbook.md,specs/harness-capability-refresh.md |  | planned |
+| H024 | 05-decision-method-and-runbook.md | Principle: least cognitive privilege | Encode least cognitive privilege in the decision method. | projected | docs/interface-decision-guide.md |  | planned |
+| H025 | 05-decision-method-and-runbook.md | Placement guide | Provide placement guidance for equipment interfaces. | projected | docs/interface-decision-guide.md,docs/smith-runbook.md |  | planned |
+| H026 | 05-decision-method-and-runbook.md | Decision tree | Provide the interface decision tree. | projected | docs/interface-decision-guide.md |  | planned |
+| H027 | 05-decision-method-and-runbook.md | Capability creation runbook | Provide the Smith capability creation workflow. | projected | docs/smith-runbook.md |  | planned |
+| H028 | 05-decision-method-and-runbook.md | Anti-patterns | Preserve Framework anti-patterns for future reviewers. | projected | docs/interface-decision-guide.md,docs/security-and-control.md |  | planned |
+| H029 | 06-harness-capability-catalog.md | Summary matrix | Publish the refreshed harness capability summary matrix. | projected | docs/harness-capabilities.md,docs/harness-capabilities.toml |  | planned |
+| H030 | 06-harness-capability-catalog.md | Periodic Actions projection order | Preserve the Periodic Actions projection order. | projected | specs/periodic-actions.md,docs/harness-capabilities.md |  | planned |
+| H031 | 06-harness-capability-catalog.md | Refresh requirement | Define refresh cadence and evidence requirements for harness facts. | projected | specs/harness-capability-refresh.md,docs/harness-capabilities.md |  | planned |
+| H032 | 07-equipment-templates-and-examples.md | Template: capability card | Provide the capability card template. | projected | templates/capability-card.md |  | planned |
+| H033 | 07-equipment-templates-and-examples.md | Template: interface decision record | Provide the interface decision record template. | projected | templates/interface-decision-record.md |  | planned |
+| H034 | 07-equipment-templates-and-examples.md | Template: skill reference | Provide the skill reference template. | projected | templates/skill/README.md |  | planned |
+| H035 | 07-equipment-templates-and-examples.md | Template: skill body | Provide the skill body template. | projected | templates/skill/SKILL.md |  | planned |
+| H036 | 07-equipment-templates-and-examples.md | Template: hook | Provide the hook template. | projected | templates/hook/README.md,templates/hook/hook.ts |  | planned |
+| H037 | 07-equipment-templates-and-examples.md | Template: Agent Profile | Provide the Agent Profile template. | projected | templates/agent-profile/README.md,templates/agent-profile/profile.toml |  | planned |
+| H038 | 07-equipment-templates-and-examples.md | Template: Harness Plugin manifest | Provide the Harness Plugin manifest template. | projected | templates/plugin/README.md,templates/plugin/manifest.toml |  | planned |
+| H039 | 07-equipment-templates-and-examples.md | Template: deterministic script contract | Provide the deterministic script template. | projected | templates/script/README.md,templates/script/validate-example.py |  | planned |
+| H040 | 07-equipment-templates-and-examples.md | Example: PR review | Provide an annotated PR review Framework Example. | projected | examples/pr-review/capability-card.md,examples/pr-review/interface-decision-record.md,examples/pr-review/projected-components.md |  | planned |
+| H041 | 07-equipment-templates-and-examples.md | Template: MCP/tool definition notes | Provide the MCP/tool definition template. | projected | templates/mcp/README.md,templates/mcp/tool-spec.md |  | planned |
+| H042 | 07-equipment-templates-and-examples.md | Template: config | Provide the config template. | projected | templates/config/README.md,templates/config/example.toml |  | planned |
+| H043 | 07-equipment-templates-and-examples.md | Example: documentation search | Provide an annotated documentation research Framework Example. | projected | examples/docs-research/capability-card.md,examples/docs-research/interface-decision-record.md,examples/docs-research/projected-components.md |  | planned |
+| H044 | 07-equipment-templates-and-examples.md | Example: observability investigation | Provide an annotated observability investigation Framework Example. | projected | examples/observability-investigation/capability-card.md,examples/observability-investigation/interface-decision-record.md,examples/observability-investigation/projected-components.md |  | planned |
+| H045 | 08-initial-smith-task-specs.md | Task 1: Agent Ops | Specify Agent Ops without implementing it in the Seed. | projected | specs/agent-ops.md |  | planned |
+| H046 | 08-initial-smith-task-specs.md | Task 2: Periodic Actions | Specify Periodic Actions without implementing it in the Seed. | projected | specs/periodic-actions.md |  | planned |
+| H047 | 08-initial-smith-task-specs.md | Task 3: Harness Capability Refresh | Specify Harness Capability Refresh without implementing it in the Seed. | projected | specs/harness-capability-refresh.md |  | planned |
+| H048 | 09-repository-seed-plan.md | Proposed initial structure | Project the proposed seed structure into the reviewed implementation plan. | projected | docs/plans/2026-05-03-framework-seed.md |  | planned |
+| H049 | 09-repository-seed-plan.md | README requirements | Expose the Human Framework Entry in the README. | projected | README.md |  | planned |
+| H050 | 10-gap-resolution-and-design-notes.md | Key corrections | Preserve accepted corrections from the handoff gap analysis. | projected | docs/metasmith-runbook.md,docs/interface-decision-guide.md,docs/harness-capabilities.md |  | planned |
+| H051 | 10-gap-resolution-and-design-notes.md | Remaining uncertainties | Preserve unresolved uncertainties without overstating Seed precedent. | projected | docs/equipment-framework.md,docs/metasmith-runbook.md,docs/closeout/framework-seed-documentation.md |  | planned |
+| H054 | harness-capabilities.seed.toml | [harness.codex] | Project the structured Codex harness seed into the refreshed catalog. | projected | docs/harness-capabilities.toml,docs/harness-capabilities.md |  | planned |
