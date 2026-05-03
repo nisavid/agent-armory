@@ -1,6 +1,6 @@
 # Require Change Set Documentation Closeout
 
-Every change set must inspect agent-facing and human-facing docs that the change could plausibly affect before merge-readiness. Agents must update stale claims, gaps, inaccuracies, and appropriate mentions of deliverables, then Ralph-review the documentation changes with the applicable doc-writing guidance.
+Every change set must inspect agent-facing and human-facing docs that the change could plausibly affect near the end of the cohesive change set and before merge-readiness. Agents must update stale claims, gaps, inaccuracies, and appropriate mentions of deliverables, or record why no doc edits were needed. Documentation changes must be Ralph-reviewed with the applicable doc-writing guidance.
 
 ## Considered Options
 

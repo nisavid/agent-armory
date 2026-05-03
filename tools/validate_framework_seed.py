@@ -364,6 +364,7 @@ CANONICAL_DOC_REQUIRED_SECTIONS = {
         "decision projection",
         "Review Until Clean",
         "Harness Fact Refresh",
+        "Change set closeout",
         "Issue Projection",
         "downstream Smith specs",
     ],
@@ -377,6 +378,14 @@ CANONICAL_DOC_REQUIRED_SECTIONS = {
         "scripts",
         "local docs",
         "config",
+    ],
+    "docs/harness-capabilities.md": [
+        "Catalog policy",
+        "Refresh summary",
+        "Harness matrix",
+        "Harness notes",
+        "Periodic Actions projection order",
+        "Refresh requirement",
     ],
     "docs/evidence-taxonomy.md": [
         "documentation-supported",
@@ -404,6 +413,34 @@ CANONICAL_DOC_REQUIRED_SECTIONS = {
         "entry/exit criteria",
     ],
 }
+HARNESS_CATALOG_MARKDOWN_PATH = "docs/harness-capabilities.md"
+HARNESS_CATALOG_PATH = "docs/harness-capabilities.toml"
+REQUIRED_HARNESSES = [
+    "codex",
+    "claude_code",
+    "cursor",
+    "hermes_agent",
+    "opencode",
+    "openclaw",
+]
+ALLOWED_SOURCE_KINDS = {"first_party", "third_party_fallback"}
+ALLOWED_EVIDENCE_CATEGORIES = {
+    "documentation-supported",
+    "source-supported",
+    "implementation inference",
+    "practitioner wisdom",
+    "hypothesis",
+}
+HARNESS_REQUIRED_FIELDS = [
+    "display_name",
+    "evidence",
+    "uncertainty",
+    "summary_scheduling",
+    "scheduling",
+    "limitations",
+    "refresh_notes",
+    "local_observations",
+]
 MARKDOWN_LINK_EXCLUDED_DIRS = [
     Path("docs/metasmith/handoff/2026-05-02"),
 ]
@@ -420,6 +457,18 @@ def parse_markdown_table(markdown: str) -> list[dict[str, str]]:
         cells = [cell.strip() for cell in row.strip("|").split("|")]
         parsed.append(dict(zip(headers, cells, strict=False)))
     return parsed
+
+
+def harness_matrix_rows(markdown: str) -> dict[str, dict[str, str]]:
+    section = markdown_section(markdown, "## Harness matrix")
+    if section is None:
+        return {}
+    rows = {}
+    for row in parse_markdown_table(section):
+        harness = row.get("Harness", "")
+        if harness:
+            rows[harness] = row
+    return rows
 
 
 def invalid_repo_relative_target(target: str) -> bool:
@@ -997,6 +1046,234 @@ def validate_canonical_docs(root: Path) -> list[CheckResult]:
     return results
 
 
+def non_empty_string(value: object) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def non_empty_string_list(value: object) -> bool:
+    return isinstance(value, list) and bool(value) and all(non_empty_string(item) for item in value)
+
+
+def string_list(value: object) -> bool:
+    return isinstance(value, list) and all(isinstance(item, str) for item in value)
+
+
+def validate_harness_catalog(root: Path) -> list[CheckResult]:
+    results: list[CheckResult] = []
+    ok, detail, path = repo_relative_path_status(root, HARNESS_CATALOG_PATH, "file")
+    if not ok:
+        if detail == "path contains symlink":
+            detail = "harness catalog path contains symlink"
+        return [CheckResult("harness_catalog:catalog", False, detail, HARNESS_CATALOG_PATH)]
+    try:
+        catalog = load_toml(path)
+    except tomllib.TOMLDecodeError as error:
+        return [CheckResult("harness_catalog:toml", False, f"TOML invalid: {error.msg}", HARNESS_CATALOG_PATH)]
+
+    if not non_empty_string(catalog.get("checked_at")):
+        results.append(CheckResult("harness_catalog:checked_at", False, "missing checked_at", HARNESS_CATALOG_PATH))
+
+    harnesses = catalog.get("harness")
+    if not isinstance(harnesses, dict):
+        results.append(CheckResult("harness_catalog:coverage", False, "missing harness table", HARNESS_CATALOG_PATH))
+        return results
+
+    required_ids = set(REQUIRED_HARNESSES)
+    observed_ids = {harness_id for harness_id in harnesses if isinstance(harness_id, str)}
+    missing_ids = [harness_id for harness_id in REQUIRED_HARNESSES if harness_id not in observed_ids]
+    unknown_ids = sorted(observed_ids - required_ids)
+    if missing_ids:
+        results.append(
+            CheckResult(
+                "harness_catalog:coverage",
+                False,
+                f"missing required harnesses: {', '.join(missing_ids)}",
+                HARNESS_CATALOG_PATH,
+            )
+        )
+    if unknown_ids:
+        results.append(
+            CheckResult(
+                "harness_catalog:coverage",
+                False,
+                f"unknown harness ids: {', '.join(unknown_ids)}",
+                HARNESS_CATALOG_PATH,
+            )
+        )
+
+    for harness_id in REQUIRED_HARNESSES:
+        entry = harnesses.get(harness_id)
+        if not isinstance(entry, dict):
+            continue
+        for field in HARNESS_REQUIRED_FIELDS:
+            if field not in entry:
+                results.append(
+                    CheckResult(
+                        f"harness_catalog:{harness_id}:{field}",
+                        False,
+                        f"missing {field}",
+                        HARNESS_CATALOG_PATH,
+                    )
+                )
+        for field in [
+            "display_name",
+            "evidence",
+            "uncertainty",
+            "summary_scheduling",
+            "scheduling",
+            "limitations",
+            "refresh_notes",
+        ]:
+            if field in entry and not non_empty_string(entry[field]):
+                results.append(
+                    CheckResult(
+                        f"harness_catalog:{harness_id}:{field}",
+                        False,
+                        f"{field} must be non-empty",
+                        HARNESS_CATALOG_PATH,
+                    )
+                )
+        local_observations = entry.get("local_observations")
+        if "local_observations" in entry and not string_list(local_observations):
+            results.append(
+                CheckResult(
+                    f"harness_catalog:{harness_id}:local_observations",
+                    False,
+                    "local_observations must be a list of strings",
+                    HARNESS_CATALOG_PATH,
+                )
+            )
+        sources = entry.get("sources")
+        if not isinstance(sources, list) or not sources:
+            results.append(
+                CheckResult(
+                    f"harness_catalog:{harness_id}:sources",
+                    False,
+                    "sources must be non-empty",
+                    HARNESS_CATALOG_PATH,
+                )
+            )
+        else:
+            for index, source in enumerate(sources):
+                if not isinstance(source, dict):
+                    results.append(
+                        CheckResult(
+                            f"harness_catalog:{harness_id}:sources:{index}",
+                            False,
+                            "source must be a table",
+                            HARNESS_CATALOG_PATH,
+                        )
+                    )
+                    continue
+                for field in ["url", "kind", "claim_scope"]:
+                    if not non_empty_string(source.get(field)):
+                        results.append(
+                            CheckResult(
+                                f"harness_catalog:{harness_id}:sources:{index}:{field}",
+                                False,
+                                f"missing source {field}",
+                                HARNESS_CATALOG_PATH,
+                            )
+                        )
+                url = source.get("url")
+                if non_empty_string(url):
+                    parsed_url = urlparse(url)
+                    if parsed_url.scheme not in {"http", "https"} or not parsed_url.netloc:
+                        results.append(
+                            CheckResult(
+                                f"harness_catalog:{harness_id}:sources:{index}:url",
+                                False,
+                                "source url must be http or https with a host",
+                                HARNESS_CATALOG_PATH,
+                            )
+                        )
+                kind = source.get("kind")
+                if non_empty_string(kind) and kind not in ALLOWED_SOURCE_KINDS:
+                    results.append(
+                        CheckResult(
+                            f"harness_catalog:{harness_id}:sources:{index}:kind",
+                            False,
+                            "source kind must be first_party or third_party_fallback",
+                            HARNESS_CATALOG_PATH,
+                        )
+                    )
+        evidence = entry.get("evidence")
+        if non_empty_string(evidence) and evidence not in ALLOWED_EVIDENCE_CATEGORIES:
+            results.append(
+                CheckResult(
+                    f"harness_catalog:{harness_id}:evidence",
+                    False,
+                    "invalid evidence category",
+                    HARNESS_CATALOG_PATH,
+                )
+            )
+        if not non_empty_string(entry.get("checked_version")) and not non_empty_string(entry.get("version_basis")):
+            results.append(
+                CheckResult(
+                    f"harness_catalog:{harness_id}:version",
+                    False,
+                    "missing checked_version or version_basis",
+                    HARNESS_CATALOG_PATH,
+                )
+            )
+        components = entry.get("components")
+        if not non_empty_string_list(components):
+            results.append(
+                CheckResult(
+                    f"harness_catalog:{harness_id}:components",
+                    False,
+                    "components must be non-empty",
+                    HARNESS_CATALOG_PATH,
+                )
+            )
+        if not any(result.name.startswith(f"harness_catalog:{harness_id}:") and not result.ok for result in results):
+            results.append(CheckResult(f"harness_catalog:{harness_id}", True, "present", HARNESS_CATALOG_PATH))
+
+    markdown_ok, markdown_detail, markdown_path = repo_relative_path_status(root, HARNESS_CATALOG_MARKDOWN_PATH, "file")
+    if not markdown_ok:
+        if markdown_detail == "path contains symlink":
+            markdown_detail = "harness catalog markdown path contains symlink"
+        results.append(CheckResult("harness_catalog_markdown:catalog", False, markdown_detail, HARNESS_CATALOG_MARKDOWN_PATH))
+        return results
+
+    markdown = markdown_path.read_text(encoding="utf-8")
+    matrix_rows = harness_matrix_rows(markdown)
+    for harness_id in REQUIRED_HARNESSES:
+        entry = harnesses.get(harness_id)
+        if not isinstance(entry, dict):
+            continue
+        display_name = entry.get("display_name")
+        if not non_empty_string(display_name):
+            continue
+        row = matrix_rows.get(display_name)
+        if row is None:
+            results.append(
+                CheckResult(
+                    f"harness_catalog_markdown:{harness_id}:display_name",
+                    False,
+                    f"markdown missing matrix row: {display_name}",
+                    HARNESS_CATALOG_MARKDOWN_PATH,
+                )
+            )
+            continue
+        expected_cells = {
+            "checked_version": ("Checked version", entry.get("checked_version")),
+            "evidence": ("Evidence", entry.get("evidence")),
+            "summary_scheduling": ("Scheduling posture", entry.get("summary_scheduling")),
+        }
+        for field, (column, expected_value) in expected_cells.items():
+            if non_empty_string(expected_value) and row.get(column) != expected_value:
+                results.append(
+                    CheckResult(
+                        f"harness_catalog_markdown:{harness_id}:{field}",
+                        False,
+                        f"markdown matrix {column} mismatch: expected {expected_value}",
+                        HARNESS_CATALOG_MARKDOWN_PATH,
+                    )
+                )
+    return results
+
+
 def validate_markdown_links(root: Path) -> list[CheckResult]:
     results: list[CheckResult] = []
     for path in markdown_files(root):
@@ -1064,6 +1341,7 @@ def run(root: Path) -> list[CheckResult]:
         *validate_source_projection(root),
         *validate_framework_routes(root),
         *validate_canonical_docs(root),
+        *validate_harness_catalog(root),
         *validate_markdown_links(root),
     ]
 

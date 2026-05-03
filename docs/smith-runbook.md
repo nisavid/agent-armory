@@ -82,6 +82,8 @@ Before closeout, verify:
 - deterministic checks run or have an explicit unavailable-control note;
 - security and control requirements are represented in the right surfaces;
 - harness claims name their evidence and refresh basis;
+- affected agent-facing and human-facing docs are inspected and updated, or unchanged rationale is recorded;
+- applicable security closeout evidence is recorded;
 - docs, config, scripts, hooks, skills, profiles, plugins, and templates are discoverable from the Framework path;
 - promotion state and next validation step are recorded.
 

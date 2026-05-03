@@ -39,6 +39,14 @@ Refresh harness facts before relying on moving harness capabilities.
 
 Use first-party docs, releases, source, or schemas where available. Label third-party metadata as fallback, and keep local CLI observations separate from source-backed facts. Record checked date, version basis, source URL, uncertainty, and the affected Framework surfaces.
 
+## Change set closeout
+
+Near the end of each cohesive Framework change set, inspect every agent-facing and human-facing doc the change could plausibly affect. Update stale claims, gaps, inaccurate initial-state language, and appropriate deliverable mentions. If no doc edits are needed, record the rationale in the closeout.
+
+Run the security analyses applicable to the change-set scope before merge-readiness. Resolve reportable findings, or record stakeholder-approved deferment with risk rationale and tracking.
+
+Ralph-review doc closeout changes with the relevant doc-writing guidance for the affected audience.
+
 ## Issue Projection
 
 Repo Draft PRDs are review surfaces. Published PRD Issues are tracking surfaces.
