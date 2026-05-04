@@ -16,6 +16,10 @@ _Avoid_: asset, artifact, extension when used as the general term
 A proposed, specified, planned, or implemented equipment surface that has not yet been validated and published for use.
 _Avoid_: Published Agent Equipment
 
+**Forge Entry Bundle**:
+A neutral project-path bundle that gathers the Forge entry artifacts for one Equipment Candidate, such as the capability card, interface decision, security/control classification, pressure scenarios, validation plan, closeout evidence plan, and related design records.
+_Avoid_: Inventory, component implementation path, status dump
+
 **Published Agent Equipment**:
 Agent Equipment that has completed the promotion path and is intended to be equipped.
 _Avoid_: example, draft, candidate
@@ -115,6 +119,13 @@ _Avoid_: letting it drift from the Repo Draft PRD without an explicit projection
 **Issue Projection**:
 The post-review step that creates or updates a Published PRD Issue from a stable Repo Draft PRD.
 _Avoid_: issue churn during draft review, untracked divergence
+
+**Issue Tracker Operations**:
+Agent Equipment for recording, reviewing, repairing, enriching, organizing,
+assigning, working, and orchestrating issue-tracked follow-ups directly in an
+issue tracker.
+_Avoid_: Issue Projection when the work is broader than PRD publication;
+in-tree tracking state when the issue tracker is available
 
 **Review Until Clean**:
 A repeated review-and-revision loop that stops only when the latest review cycle has no findings.
@@ -267,6 +278,7 @@ _Avoid_: chat-only conclusion, undocumented resume instruction
 - The **Agent Armory** contains **Agent Equipment** and the **Agent Equipment Forge**.
 - The **Agent Equipment Forge** is created by **Forgewrights** and used by **Smiths**.
 - **Smiths** create **Agent Equipment** for one or more **Agent Harnesses**.
+- A **Forge Entry Bundle** gathers the early design and validation-planning surfaces for one **Equipment Candidate** before the interface decision projects implemented components into their chosen paths.
 - **Equipment Candidates** may become **Published Agent Equipment** after validation and publication.
 - An **Agent** is **Strapped** when its reasoning and actions are mediated by an **Agent Harness**.
 - A **Harness Plugin** packages one or more **Harness Components**.

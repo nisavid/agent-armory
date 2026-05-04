@@ -2,7 +2,14 @@
 
 Issues and PRDs for this repo live in GitHub Issues for `nisavid/agent-armory`.
 
-Use the `gh` CLI from this repository when a skill needs to create, read, update, label, comment on, or close an issue.
+Use `tools/issue_tracker_ops.py` for Issue Tracker Operations bootstrap modes
+that create, update, comment on, or add dependency relations for GitHub Issues.
+The adapter defaults write operations to dry-run output; pass `--execute` only
+when the active session allows tracker mutation.
+
+Use the `gh` CLI directly when a needed GitHub Issues operation is outside the
+bootstrap adapter's current modes, or when a skill needs a read-only query that
+is simpler through `gh`.
 
 ## Follow-Up Captures
 
