@@ -172,9 +172,17 @@ _Avoid_: downstream Smith spec when naming the current artifact shape
 An index or catalog of available, candidate, or planned equipment.
 _Avoid_: treating every docs list as Inventory
 
+**Outfitter**:
+An Agent that selects and assembles Agent Equipment from the Agent Armory into a Loadout for a role, task, session, Agent, or agentic system.
+_Avoid_: Smith, Forgewright, Equipment creator
+
 **Loadout**:
-The selected equipment set for a role, task, or session.
+The selected equipment set for a role, task, session, Agent, or agentic system.
 _Avoid_: Inventory, Assembly
+
+**Wielder**:
+An Agent outfitted with a Loadout and actively using that Agent Equipment to perform work.
+_Avoid_: Outfitter, Loadout, Agent Profile
 
 **Assembly**:
 A cohesive grouping of equipment designed to work together.

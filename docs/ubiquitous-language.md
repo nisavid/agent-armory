@@ -62,7 +62,11 @@ use `agents/` for source paths that follow harness/plugin convention.
 
 **Inventory** is an index or catalog of available, candidate, or planned equipment.
 
-**Loadout** is the selected equipment set for a role, task, or session.
+**Outfitter** is an Agent that selects and assembles Agent Equipment from the Agent Armory into a Loadout for a role, task, session, Agent, or agentic system.
+
+**Loadout** is the selected equipment set for a role, task, session, Agent, or agentic system.
+
+**Wielder** is an Agent outfitted with a Loadout and actively using that Agent Equipment to perform work.
 
 **Assembly** is a cohesive grouping of equipment designed to work together.
 
@@ -81,6 +85,8 @@ use `agents/` for source paths that follow harness/plugin convention.
 - The Agent Armory contains Agent Equipment and the Agent Equipment Forge.
 - The Agent Equipment Forge is created by Forgewrights and used by Smiths.
 - Smiths create Agent Equipment for one or more Agent Harnesses.
+- Outfitters select Agent Equipment from the Agent Armory and assemble Loadouts.
+- Wielders use Loadouts to perform work.
 - Equipment Candidates may become Published Agent Equipment after validation and publication.
 - An Agent is strapped when its reasoning and actions are mediated by an Agent Harness.
 - A Harness Plugin packages one or more Harness Components.
@@ -100,6 +106,8 @@ use `agents/` for source paths that follow harness/plugin convention.
 - Use **Agent Harness** for the runtime or orchestration system that mediates the Agent.
 - Use **Agent Equipment** for reusable capability; use **Equipment Candidate** until validation and publication are complete.
 - Use **Published Agent Equipment** only after the promotion path reaches `published`.
+- Use **Outfitter** for equipment selection and Loadout assembly, not for Equipment creation.
+- Use **Wielder** for the equipped Agent using a Loadout, not for the Loadout itself.
 - Use **Source Handoff** for source material before disposition and **Source Disposition Ledger** for durable coverage after raw source retirement.
 - Use **Forge Canon** for current guidance.
 - Use **Forge Seed** for this first Forge pass; name downstream equipment separately.
