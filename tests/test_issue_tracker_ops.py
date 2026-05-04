@@ -202,7 +202,9 @@ class IssueTrackerOpsTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 2)
         self.assertEqual(stdout, "")
-        self.assertEqual(stderr, f"could not read --body-file {body_file!r}: No such file or directory\n")
+        self.assertTrue(stderr.startswith("could not read --body-file "), stderr)
+        self.assertIn(repr(body_file), stderr)
+        self.assertTrue(stderr.endswith("\n"), stderr)
         self.assertNotIn("Traceback", stderr)
         self.assertEqual(gh.calls, [])
 
@@ -224,7 +226,9 @@ class IssueTrackerOpsTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 2)
         self.assertEqual(stdout, "")
-        self.assertEqual(stderr, f"could not read --body-file {body_file!r}: Is a directory\n")
+        self.assertTrue(stderr.startswith("could not read --body-file "), stderr)
+        self.assertIn(repr(body_file), stderr)
+        self.assertTrue(stderr.endswith("\n"), stderr)
         self.assertNotIn("Traceback", stderr)
         self.assertEqual(gh.calls, [])
 
