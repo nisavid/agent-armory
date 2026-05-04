@@ -26,6 +26,8 @@ The human-facing documentation spine refresh touched `README.md`,
 `docs/ubiquitous-language.md`, `docs/prd/forge-seed.md`,
 `docs/security/threat-model.md`, `templates/skill/SKILL.md`, this closeout
 surface, `docs/closeout/forge-seed-documentation.md`, and projection evidence.
+The final public README presentation refresh also added
+`docs/assets/agent-armory-hero.png` and a README image reference.
 It did not add or materially change executable code, hooks, MCP/tool
 definitions, permissions, secrets handling, network/file/process side effects,
 package metadata, security policy, or Published Agent Equipment.

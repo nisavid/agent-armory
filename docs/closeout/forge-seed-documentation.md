@@ -33,6 +33,9 @@ Also inspected the raw Source Handoff before source retirement. The final tree p
 - `README.md`: replaced the minimal landing page with an under-construction
   public orientation, current Forge Seed value, agent role model, reader paths,
   differentiators, and grounded roadmap links.
+- `README.md` and `docs/assets/agent-armory-hero.png`: added the public hero
+  image while preserving the under-construction notice as the first substantive
+  README content.
 - `docs/forge-tour.md`: expanded the human-facing Forge introduction with the
   the Armory/the Forge distinction, Wielder/Outfitter/Smith/Forgewright role
   model, agent-operated repo model, equipment lifecycle, future outfitting
@@ -67,6 +70,8 @@ Also inspected the raw Source Handoff before source retirement. The final tree p
 - `docs/forgewright-runbook.md`: added Forgewright intake and hand-back responsibilities for Smith-discovered Tooling Gaps and linked Story Closeout from Forge change-set closeout.
 - `templates/agents/README.md` and `templates/agents/profile.toml`: tightened remaining Agent Profile terminology after review.
 - `docs/closeout/forge-seed-source-disposition.md`: records the Source Disposition Ledger, source-bearing checkpoint, and final source-retirement stamp.
+- `docs/closeout/forge-seed-source-disposition.md`: restamped the final
+  source-retirement tree digest after adding the README hero asset.
 - `docs/closeout/forge-seed-documentation.md`: added this documentation closeout summary.
 - `docs/plans/2026-05-03-forge-seed.md`: tracked Task 9 work as it landed, repaired historical completed-step checkboxes, preserved the deferred post-Seed follow-up boundaries, and expanded the deferred Post-Seed Skill Migration capture with ingestion-pipeline design requirements.
 - `tools/validate_forge_seed.py` and `tests/test_validate_forge_seed.py`: added validation for the Repository Threat Model, this documentation closeout summary, the security closeout summary, projection drafts, Source Disposition Ledger semantics, the Smith-to-Forgewright escalation path, the Story Closeout process, the story-closeout review gates, and strict final-closeout evidence before branch push or external projection.
