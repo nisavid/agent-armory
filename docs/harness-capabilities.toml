@@ -1,0 +1,285 @@
+checked_at = "2026-05-03T09:25:05-04:00"
+
+[harness.codex]
+display_name = "Codex"
+checked_version = "0.128.0 stable; 0.129.0-alpha.2 prerelease observed"
+version_basis = "GitHub releases for openai/codex, plus first-party OpenAI Codex docs."
+evidence = "source-supported"
+sources = [
+  { url = "https://github.com/openai/codex/releases/tag/rust-v0.128.0", kind = "first_party", claim_scope = "stable release version, release date, and release notes" },
+  { url = "https://github.com/openai/codex/releases/tag/rust-v0.129.0-alpha.2", kind = "first_party", claim_scope = "latest observed prerelease version" },
+  { url = "https://developers.openai.com/codex/changelog", kind = "first_party", claim_scope = "Codex change history" },
+  { url = "https://developers.openai.com/codex/skills", kind = "first_party", claim_scope = "skill support" },
+  { url = "https://developers.openai.com/codex/plugins", kind = "first_party", claim_scope = "plugin support" },
+  { url = "https://developers.openai.com/codex/plugins/build", kind = "first_party", claim_scope = "plugin authoring support" },
+  { url = "https://developers.openai.com/codex/hooks", kind = "first_party", claim_scope = "hook support" },
+  { url = "https://developers.openai.com/codex/subagents", kind = "first_party", claim_scope = "subagent and profile-like support" },
+  { url = "https://developers.openai.com/codex/app/automations", kind = "first_party", claim_scope = "app automation scheduling support" },
+  { url = "https://developers.openai.com/codex/noninteractive", kind = "first_party", claim_scope = "noninteractive execution support" },
+  { url = "https://developers.openai.com/codex/github-action", kind = "first_party", claim_scope = "GitHub Actions integration" },
+  { url = "https://developers.openai.com/codex/config-reference", kind = "first_party", claim_scope = "configuration and permission surfaces" },
+  { url = "https://github.com/openai/codex/blob/5512b23c95084c39eb4c6bdbfe2e7e665eaf8231/codex-rs/app-server/README.md", kind = "first_party", claim_scope = "app-server API surface" },
+  { url = "https://github.com/openai/codex/blob/5512b23c95084c39eb4c6bdbfe2e7e665eaf8231/docs/config.md", kind = "first_party", claim_scope = "CLI configuration details" },
+]
+uncertainty = "Stable version is anchored to GitHub releases. Prerelease features may be ahead of stable, and app-server and hook details can remain experimental or feature-gated."
+components = [
+  "skills",
+  "plugins",
+  "MCP servers",
+  "hooks",
+  "app and connector surfaces",
+  "subagents",
+  "custom agent profiles",
+  "permission profiles",
+  "app-server APIs",
+  "noninteractive codex exec",
+  "GitHub Action workflows",
+  "automations",
+  "slash commands",
+  "web search",
+  "persisted goals",
+]
+summary_scheduling = "App automations and external schedulers around codex exec; keep stable and prerelease claims separate."
+scheduling = "Codex app automations support project and standalone recurring schedules, including cron-like syntax. Noninteractive codex exec can also run under external schedulers such as GitHub Actions or cron."
+limitations = "Hooks require the relevant hook feature support and should not be treated as a complete enforcement boundary without verification. Some app-server and plugin APIs remain experimental, and unattended automations still run under sandbox and approval constraints."
+refresh_notes = "Refresh from GitHub releases first, then first-party OpenAI Codex docs. Keep stable and prerelease claims separate."
+local_observations = [
+  "No local Codex binary, app profile, or automation configuration was inspected for this seed refresh.",
+]
+
+[harness.claude_code]
+display_name = "Claude Code"
+checked_version = "2.1.126"
+version_basis = "Official Claude Code changelog entry dated 2026-05-01, with first-party documentation for capabilities."
+evidence = "documentation-supported"
+sources = [
+  { url = "https://code.claude.com/docs/en/changelog", kind = "first_party", claim_scope = "latest Claude Code version and release date" },
+  { url = "https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md", kind = "first_party", claim_scope = "first-party changelog mirror" },
+  { url = "https://code.claude.com/docs/en/skills", kind = "first_party", claim_scope = "skill support" },
+  { url = "https://code.claude.com/docs/en/mcp", kind = "first_party", claim_scope = "MCP support" },
+  { url = "https://code.claude.com/docs/en/hooks", kind = "first_party", claim_scope = "hook support" },
+  { url = "https://code.claude.com/docs/en/sub-agents", kind = "first_party", claim_scope = "subagent support" },
+  { url = "https://code.claude.com/docs/en/plugins-reference", kind = "first_party", claim_scope = "plugin support and limits" },
+  { url = "https://code.claude.com/docs/en/settings", kind = "first_party", claim_scope = "settings and permissions" },
+  { url = "https://code.claude.com/docs/en/overview", kind = "first_party", claim_scope = "harness overview" },
+  { url = "https://code.claude.com/docs/en/routines", kind = "first_party", claim_scope = "cloud routine support" },
+  { url = "https://code.claude.com/docs/en/desktop-scheduled-tasks", kind = "first_party", claim_scope = "desktop scheduled task support" },
+  { url = "https://code.claude.com/docs/en/scheduled-tasks", kind = "first_party", claim_scope = "session scheduled task support" },
+]
+uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+components = [
+  "skills",
+  "custom commands",
+  "MCP servers and tools",
+  "hooks",
+  "subagents",
+  "plugins",
+  "settings",
+  "slash commands",
+  "LSP servers",
+  "plugin monitors",
+  "output styles",
+  "themes",
+]
+summary_scheduling = "Routines, Desktop scheduled tasks, and session-scoped scheduled tasks."
+scheduling = "Claude Code supports cloud Routines with scheduled, API, and GitHub triggers; Desktop scheduled tasks; and session-scoped scheduled tasks including loop-style execution."
+limitations = "Session-scoped scheduled tasks require a supporting Claude Code version and expire after a bounded period. Routines are preview-like cloud infrastructure. Desktop scheduled tasks require the Desktop app and an awake machine. Plugin-loaded agents can have restrictions on hooks, MCP servers, and permission modes."
+refresh_notes = "Refresh from the official Claude Code changelog and docs. Treat third-party package metadata as fallback only if official version evidence is unavailable."
+local_observations = [
+  "No local Claude Code binary, Desktop app state, or plugin install was inspected for this seed refresh.",
+]
+
+[harness.cursor]
+display_name = "Cursor"
+checked_version = "3.2 numbered release; changelog state checked through 2026-05-01"
+version_basis = "Official Cursor changelog and first-party docs."
+evidence = "documentation-supported"
+sources = [
+  { url = "https://cursor.com/changelog", kind = "first_party", claim_scope = "latest official changelog state" },
+  { url = "https://cursor.com/changelog/04-24-26", kind = "first_party", claim_scope = "Cursor 3.2 numbered release" },
+  { url = "https://cursor.com/changelog/05-01-26", kind = "first_party", claim_scope = "latest observed unnumbered changelog entry" },
+  { url = "https://cursor.com/docs/rules", kind = "first_party", claim_scope = "rules and AGENTS.md support" },
+  { url = "https://cursor.com/docs/skills", kind = "first_party", claim_scope = "Agent Skills support" },
+  { url = "https://cursor.com/docs/mcp", kind = "first_party", claim_scope = "MCP support" },
+  { url = "https://cursor.com/docs/hooks", kind = "first_party", claim_scope = "hook support" },
+  { url = "https://cursor.com/docs/subagents", kind = "first_party", claim_scope = "subagent support" },
+  { url = "https://cursor.com/docs/plugins", kind = "first_party", claim_scope = "plugin support" },
+  { url = "https://cursor.com/docs/cli/using", kind = "first_party", claim_scope = "CLI agent support" },
+  { url = "https://cursor.com/docs/cloud-agent", kind = "first_party", claim_scope = "Cloud Agent support" },
+  { url = "https://cursor.com/changelog/sdk-release", kind = "first_party", claim_scope = "SDK agent support" },
+  { url = "https://cursor.com/docs/cloud-agent/automations", kind = "first_party", claim_scope = "Cloud Agent automation support" },
+]
+uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+components = [
+  "rules",
+  "AGENTS.md",
+  "Agent Skills",
+  "MCP servers and tools",
+  "hooks",
+  "subagents",
+  "plugins",
+  "CLI configuration",
+  "Cloud Agents",
+  "Automations",
+  "SDK agents",
+]
+summary_scheduling = "Cloud Agent Automations with schedule and event triggers."
+scheduling = "Cursor Automations run Cloud Agents from schedule and event triggers, including cron-style schedules, GitHub, Slack, Sentry, and webhooks."
+limitations = "Cloud Agent execution and some hooks are plan- or environment-dependent. Slack triggers can be limited by channel type. Parallel subagents increase token and cost pressure. Marketplace plugins should be reviewed as third-party code before trusted use."
+refresh_notes = "Refresh from Cursor changelog and docs before relying on version-sensitive behavior. Record local binary version separately when local behavior matters."
+local_observations = [
+  "No local Cursor desktop, CLI, Cloud Agent, or workspace configuration was inspected for this seed refresh.",
+]
+
+[harness.hermes_agent]
+display_name = "Hermes Agent"
+checked_version = "0.12.0 (v2026.4.30)"
+version_basis = "GitHub latest release v2026.4.30 and tag-pinned first-party docs."
+evidence = "source-supported"
+sources = [
+  { url = "https://github.com/NousResearch/hermes-agent/releases/tag/v2026.4.30", kind = "first_party", claim_scope = "release version, date, and release notes" },
+  { url = "https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/pyproject.toml", kind = "first_party", claim_scope = "package version" },
+  { url = "https://hermes-agent.nousresearch.com/docs/llms.txt", kind = "first_party", claim_scope = "documentation index" },
+  { url = "https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/website/docs/user-guide/features/skills.md", kind = "first_party", claim_scope = "skill support" },
+  { url = "https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/website/docs/user-guide/features/mcp.md", kind = "first_party", claim_scope = "MCP support" },
+  { url = "https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/website/docs/user-guide/features/hooks.md", kind = "first_party", claim_scope = "hook support" },
+  { url = "https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/website/docs/user-guide/features/plugins.md", kind = "first_party", claim_scope = "plugin support" },
+  { url = "https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/website/docs/user-guide/profiles.md", kind = "first_party", claim_scope = "profile support" },
+  { url = "https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/website/docs/user-guide/features/delegation.md", kind = "first_party", claim_scope = "subagent and delegation support" },
+  { url = "https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/website/docs/user-guide/features/tools.md", kind = "first_party", claim_scope = "tool support" },
+  { url = "https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/website/docs/reference/toolsets-reference.md", kind = "first_party", claim_scope = "toolset support" },
+  { url = "https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/website/docs/user-guide/features/cron.md", kind = "first_party", claim_scope = "cron scheduling support" },
+  { url = "https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/website/docs/user-guide/features/curator.md", kind = "first_party", claim_scope = "curator background agent support" },
+]
+uncertainty = "The GitHub release name and pyproject version are the version anchors. The repository package.json is not a public package version source for this catalog."
+components = [
+  "AgentSkills-compatible skills",
+  "agent-managed skills",
+  "external read-only skill directories",
+  "Skills Hub installs",
+  "MCP servers",
+  "MCP client toolsets",
+  "Hermes MCP server",
+  "gateway hooks",
+  "plugin hooks",
+  "shell hooks",
+  "opt-in plugins",
+  "memory provider plugins",
+  "context provider plugins",
+  "toolsets",
+  "custom toolsets",
+  "profiles",
+  "subagents",
+  "delegation",
+  "terminal backends",
+  "messaging gateways",
+]
+summary_scheduling = "Cron jobs, gateway cron ticker, curator schedule, hooks, and terminal background processes."
+scheduling = "Hermes supports cron jobs through a cron tool and CLI, a gateway cron ticker, curator scheduling, hooks, and terminal background processes."
+limitations = "Profiles are separate state directories, not hard isolation boundaries. Cron jobs cannot recursively create cron jobs. Some workdir jobs are sequential because process cwd is global. Delegated subagents are synchronous and not durable if the parent is interrupted. Project plugins require explicit enablement."
+refresh_notes = "Refresh from GitHub latest release, pyproject.toml at the release tag, and tag-pinned docs. Do not use unrelated package metadata as the version basis."
+local_observations = [
+  "No local Hermes Agent binary, HERMES_HOME, gateway, cron store, or plugin configuration was inspected for this seed refresh.",
+]
+
+[harness.opencode]
+display_name = "OpenCode"
+checked_version = "1.14.33"
+version_basis = "GitHub latest release for anomalyco/opencode and first-party OpenCode docs."
+evidence = "source-supported"
+sources = [
+  { url = "https://github.com/anomalyco/opencode/releases/tag/v1.14.33", kind = "first_party", claim_scope = "release version, date, and release notes" },
+  { url = "https://github.com/anomalyco/opencode", kind = "first_party", claim_scope = "active repository identity" },
+  { url = "https://opencode.ai/docs/", kind = "first_party", claim_scope = "documentation index" },
+  { url = "https://opencode.ai/docs/cli/", kind = "first_party", claim_scope = "CLI and run support" },
+  { url = "https://opencode.ai/docs/skills/", kind = "first_party", claim_scope = "skill support" },
+  { url = "https://opencode.ai/docs/plugins/", kind = "first_party", claim_scope = "plugin and hook support" },
+  { url = "https://opencode.ai/docs/agents/", kind = "first_party", claim_scope = "agent and subagent support" },
+  { url = "https://opencode.ai/docs/config/", kind = "first_party", claim_scope = "configuration support" },
+  { url = "https://opencode.ai/docs/mcp-servers/", kind = "first_party", claim_scope = "MCP support" },
+  { url = "https://opencode.ai/docs/permissions/", kind = "first_party", claim_scope = "permissions support" },
+  { url = "https://opencode.ai/docs/commands/", kind = "first_party", claim_scope = "command template support" },
+  { url = "https://opencode.ai/docs/github/", kind = "first_party", claim_scope = "GitHub Action integration" },
+  { url = "https://opencode.ai/docs/ecosystem/", kind = "first_party", claim_scope = "ecosystem and third-party integrations index" },
+]
+uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+components = [
+  "skills",
+  "plugins",
+  "plugin hooks",
+  "custom tools",
+  "MCP servers",
+  "primary agents",
+  "subagents",
+  "command templates",
+  "permissions",
+  "LSP integration",
+  "formatters",
+  "instruction files",
+  "snapshots",
+  "TUI",
+  "desktop mode",
+  "web mode",
+  "server mode",
+  "noninteractive opencode run",
+  "GitHub Action integration",
+  "ACP server",
+]
+summary_scheduling = "GitHub Actions cron or external schedulers around opencode run; no verified native durable scheduler."
+scheduling = "OpenCode has first-party GitHub Action integration that can be scheduled through GitHub Actions cron. opencode run can be scripted by external schedulers. No first-party native durable scheduler was verified."
+limitations = "Default permission posture can be broad unless configured. Legacy tools permission is deprecated in favor of permission. MCP servers can create context pressure. npm plugins auto-install with Bun and can define tools and hooks; review plugins as executable third-party code."
+refresh_notes = "Refresh from anomalyco/opencode releases and opencode.ai docs. Use ecosystem scheduler entries only as third-party fallback and label them as such."
+local_observations = [
+  "No local OpenCode binary, opencode.json, plugin directory, or GitHub workflow was inspected for this seed refresh.",
+]
+
+[harness.openclaw]
+display_name = "OpenClaw"
+checked_version = "2026.5.2"
+version_basis = "GitHub latest non-prerelease v2026.5.2 and tag-pinned source/docs."
+evidence = "source-supported"
+sources = [
+  { url = "https://github.com/openclaw/openclaw/releases/tag/v2026.5.2", kind = "first_party", claim_scope = "release version, date, and release notes" },
+  { url = "https://github.com/openclaw/openclaw/blob/v2026.5.2/package.json", kind = "first_party", claim_scope = "package version" },
+  { url = "https://github.com/openclaw/openclaw/releases/tag/v2026.5.2-beta.3", kind = "first_party", claim_scope = "adjacent prerelease context" },
+  { url = "https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/concepts/features.md", kind = "first_party", claim_scope = "feature overview" },
+  { url = "https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/tools/skills.md", kind = "first_party", claim_scope = "skill support" },
+  { url = "https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/tools/plugin.md", kind = "first_party", claim_scope = "plugin support" },
+  { url = "https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/plugins/manifest.md", kind = "first_party", claim_scope = "plugin manifest support" },
+  { url = "https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/plugins/bundles.md", kind = "first_party", claim_scope = "compatible bundle support" },
+  { url = "https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/cli/mcp.md", kind = "first_party", claim_scope = "MCP support" },
+  { url = "https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/concepts/multi-agent.md", kind = "first_party", claim_scope = "multi-agent and profile-like support" },
+  { url = "https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/automation/cron-jobs.md", kind = "first_party", claim_scope = "cron scheduling support" },
+  { url = "https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/gateway/heartbeat.md", kind = "first_party", claim_scope = "heartbeat scheduling support" },
+  { url = "https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/automation/hooks.md", kind = "first_party", claim_scope = "hook and webhook support" },
+]
+uncertainty = "The stable release is v2026.5.2. The nearby beta is context only and should not be treated as current stable behavior unless prerelease tracking is intentional."
+components = [
+  "skills",
+  "plugin-shipped skills",
+  "native plugins",
+  "compatible Codex bundles",
+  "compatible Claude bundles",
+  "compatible Cursor bundles",
+  "MCP client surfaces",
+  "MCP server surfaces",
+  "tools",
+  "hooks",
+  "webhooks",
+  "channels",
+  "model providers",
+  "media providers",
+  "search providers",
+  "multi-agent configs",
+  "per-agent skill allowlists",
+  "CLI commands",
+  "plugin commands",
+  "configuration",
+]
+summary_scheduling = "Cron jobs, heartbeat turns, hooks, webhooks, and plugin background services."
+scheduling = "OpenClaw supports cron jobs with at, every, cron expressions, and time zones; heartbeat-driven periodic turns; hook and webhook triggers; and plugin background services."
+limitations = "Compatible Codex, Claude, and Cursor bundles are partial bridges, not full harness equivalence. MCP bridge behavior has limits around route metadata, live event queues, push/edit/react support, and approval visibility. Multi-agent workspaces are not hard OS sandboxes unless sandboxing is configured. Some plugin changes require Gateway restart."
+refresh_notes = "Refresh from GitHub latest release and tag-pinned docs or source. Avoid main-branch docs for canonical version claims."
+local_observations = [
+  "No local OpenClaw gateway, config, channels, plugin state, or service status was inspected for this seed refresh.",
+]
