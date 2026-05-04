@@ -3,6 +3,7 @@ import json
 import subprocess
 import tempfile
 import unittest
+from unittest import mock
 
 from tools import issue_tracker_ops
 
@@ -162,6 +163,92 @@ class IssueTrackerOpsTests(unittest.TestCase):
             ],
         )
 
+    def test_remove_blocked_by_issue_id_dry_run_previews_delete(self):
+        gh = FakeGh()
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "remove-blocked-by",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "10",
+                "--blocking-issue-id",
+                "98765",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(gh.calls, [])
+        payload = json.loads(stdout)
+        self.assertEqual(payload["mode"], "dry-run")
+        self.assertTrue(payload["policy"]["network_requires_execute"])
+        self.assertEqual(payload["request"]["method"], "DELETE")
+        self.assertEqual(
+            payload["request"]["endpoint"],
+            "repos/OWNER/REPO/issues/10/dependencies/blocked_by/98765",
+        )
+
+    def test_remove_blocked_by_issue_number_resolves_issue_id_before_deleting(self):
+        gh = FakeGh(
+            [
+                subprocess.CompletedProcess(["gh"], 0, stdout='{"id": 98765}', stderr=""),
+                subprocess.CompletedProcess(["gh"], 0, stdout="{}", stderr=""),
+            ]
+        )
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "remove-blocked-by",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "10",
+                "--blocking-issue-number",
+                "11",
+                "--execute",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(len(gh.calls), 2)
+        get_args, get_input = gh.calls[0]
+        delete_args, delete_input = gh.calls[1]
+        self.assertEqual(get_args[:5], ["gh", "api", "-X", "GET", "repos/OWNER/REPO/issues/11"])
+        self.assertIsNone(get_input)
+        self.assertEqual(
+            delete_args[:5],
+            ["gh", "api", "-X", "DELETE", "repos/OWNER/REPO/issues/10/dependencies/blocked_by/98765"],
+        )
+        self.assertIsNone(delete_input)
+        payload = json.loads(stdout)
+        self.assertEqual(payload["operation"], "remove-blocked-by")
+        self.assertEqual(payload["resolved"]["blocking_issue_id"], 98765)
+
+    def test_list_blocking_dry_run_uses_outgoing_dependency_relation(self):
+        gh = FakeGh()
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "list-blocking",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "10",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(gh.calls, [])
+        payload = json.loads(stdout)
+        self.assertEqual(payload["mode"], "dry-run")
+        self.assertTrue(payload["policy"]["network_requires_execute"])
+        self.assertEqual(payload["request"]["method"], "GET")
+        self.assertEqual(payload["request"]["endpoint"], "repos/OWNER/REPO/issues/10/dependencies/blocking")
+
     def test_update_issue_rejects_empty_patch_without_calling_gh(self):
         gh = FakeGh()
 
@@ -231,6 +318,46 @@ class IssueTrackerOpsTests(unittest.TestCase):
         self.assertTrue(stderr.endswith("\n"), stderr)
         self.assertNotIn("Traceback", stderr)
         self.assertEqual(gh.calls, [])
+
+    def test_default_gh_missing_executable_exits_usage_error(self):
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+
+        with mock.patch(
+            "tools.issue_tracker_ops.subprocess.run",
+            side_effect=FileNotFoundError(2, "No such file or directory", "gh"),
+        ):
+            exit_code = issue_tracker_ops.run(
+                [
+                    "comment",
+                    "--repo",
+                    "OWNER/REPO",
+                    "--issue-number",
+                    "11",
+                    "--body",
+                    "Validation note",
+                    "--execute",
+                ],
+                stdout=stdout,
+                stderr=stderr,
+            )
+
+        self.assertEqual(exit_code, 2)
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertIn("could not run gh: No such file or directory", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
+
+    def test_compact_request_preserves_zero_values(self):
+        request = issue_tracker_ops.RequestSpec("GET", "repos/OWNER/REPO/issues/0", jq=0)
+
+        self.assertEqual(
+            issue_tracker_ops.compact_request(request),
+            {
+                "method": "GET",
+                "endpoint": "repos/OWNER/REPO/issues/0",
+                "jq": 0,
+            },
+        )
 
     def test_execute_output_summarizes_issue_response(self):
         gh = FakeGh(

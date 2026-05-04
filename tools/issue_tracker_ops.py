@@ -54,7 +54,11 @@ def read_body(args: argparse.Namespace) -> str | None:
 
 
 def compact_request(request: RequestSpec) -> dict:
-    return {key: value for key, value in asdict(request).items() if value not in (None, False)}
+    return {
+        key: value
+        for key, value in asdict(request).items()
+        if value is not None and value is not False
+    }
 
 
 def gh_api_args(request: RequestSpec, *, api_version: str) -> list[str]:
@@ -79,7 +83,10 @@ def gh_api_args(request: RequestSpec, *, api_version: str) -> list[str]:
 
 
 def default_gh(args: list[str], *, input_text: str | None = None) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(args, input=input_text, text=True, capture_output=True, check=False)
+    try:
+        return subprocess.run(args, input=input_text, text=True, capture_output=True, check=False)
+    except OSError as exc:
+        raise UsageError(f"could not run gh: {exc.strerror or exc}") from exc
 
 
 def call_gh(
