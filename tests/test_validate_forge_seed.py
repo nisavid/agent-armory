@@ -3939,15 +3939,28 @@ class TemplateValidationTests(unittest.TestCase):
             "templates/hook/hook.ts",
             """\
             /**
-             * Side-effect classification: read-only | external disclosure | local write | network write | process execution | privileged operation | irreversible mutation.
+             * Side-effect classification: choose one of read-only, external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation.
              * Approval behavior: require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation.
              * Failure handling: fail closed for unsafe mutations.
              */
+            export type SideEffectClassification =
+              | "read-only"
+              | "external disclosure"
+              | "local write"
+              | "network write"
+              | "process execution"
+              | "privileged operation"
+              | "irreversible mutation";
+
             export const hookContract = {
-              sideEffectClassification: "read-only | external disclosure | local write | network write | process execution | privileged operation | irreversible mutation",
+              sideEffectClassification: "read-only",
               approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
               failureHandling: "fail closed for unsafe mutations",
-            } as const;
+            } as const satisfies {
+              sideEffectClassification: SideEffectClassification;
+              approvalBehavior: string;
+              failureHandling: string;
+            };
 
             export async function handle(event: HookEvent | null | undefined): Promise<{ allow: boolean; reason: string }> {
               if (!event || !event.kind) {
@@ -5096,7 +5109,7 @@ class TemplateValidationTests(unittest.TestCase):
                     results,
                 )
 
-    def test_validate_templates_requires_hook_external_disclosure_classification(self):
+    def test_validate_templates_requires_hook_single_canonical_side_effect_classification(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             self.write_all_templates(root)
@@ -5120,9 +5133,41 @@ class TemplateValidationTests(unittest.TestCase):
 
         self.assertIn(
             CheckResult(
-                "template:hook:templates/hook/hook.ts:external disclosure classification",
+                "template:hook:templates/hook/hook.ts:side-effect classification vocabulary",
                 False,
-                "side-effect classification must include external disclosure",
+                "side-effect classification must be one canonical label",
+                "templates/hook/hook.ts",
+            ),
+            results,
+        )
+
+    def test_validate_templates_requires_hook_side_effect_classification_type(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/hook/hook.ts",
+                """\
+                export const hookContract = {
+                  sideEffectClassification: "read-only",
+                  approvalBehavior: "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
+                  failureHandling: "fail closed for unsafe mutations",
+                } as const;
+
+                export async function handle(event: unknown): Promise<{ allow: boolean; reason: string }> {
+                  return { allow: false, reason: "template requires an explicit allow decision" };
+                }
+                """,
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:hook:templates/hook/hook.ts:side-effect classification type",
+                False,
+                "SideEffectClassification type must list canonical labels",
                 "templates/hook/hook.ts",
             ),
             results,
@@ -6873,6 +6918,15 @@ class TemplateValidationTests(unittest.TestCase):
                 "template:script:templates/script/validate-example.py:cli entry point",
                 False,
                 "missing CLI entry point",
+                "templates/script/validate-example.py",
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                "template:script:templates/script/validate-example.py:cli entry point detail",
+                False,
+                'CLI entry point requires exactly one if __name__ == "__main__" guard',
                 "templates/script/validate-example.py",
             ),
             results,

@@ -903,8 +903,16 @@ HOOK_REQUIRED_CONTRACT_FIELDS = {
     "approval behavior": "approvalBehavior",
     "failure handling": "failureHandling",
 }
+HOOK_SIDE_EFFECT_CLASSIFICATIONS = [
+    "read-only",
+    "external disclosure",
+    "local write",
+    "network write",
+    "process execution",
+    "privileged operation",
+    "irreversible mutation",
+]
 HOOK_REQUIRED_CONTRACT_VALUES = {
-    "sideEffectClassification": "read-only | external disclosure | local write | network write | process execution | privileged operation | irreversible mutation",
     "approvalBehavior": "require explicit approval before external disclosure, local write, network write, process execution, privileged operation, or irreversible mutation",
     "failureHandling": "fail closed for unsafe mutations",
 }
@@ -3632,6 +3640,18 @@ def typescript_object_string_value(object_body: str, field_name: str) -> str | N
     return values[0]
 
 
+def hook_declares_side_effect_classification_type(text: str) -> bool:
+    type_match = re.search(
+        r"export\s+type\s+SideEffectClassification\s*=\s*(?P<body>.*?);",
+        text,
+        flags=re.DOTALL,
+    )
+    if type_match is None:
+        return False
+    type_body = type_match.group("body")
+    return all(f'"{classification}"' in type_body for classification in HOOK_SIDE_EFFECT_CLASSIFICATIONS)
+
+
 def typescript_object_has_literal_false(object_body: str, field_name: str) -> bool:
     allow_field_count = 0
     reason_field_count = 0
@@ -3824,21 +3844,21 @@ def validate_hook_template(root: Path) -> list[CheckResult]:
                 HOOK_TEMPLATE_PATH,
             )
         )
-    if side_effect_classification is None or "external disclosure" not in side_effect_classification.casefold():
-        results.append(
-            CheckResult(
-                f"template:hook:{HOOK_TEMPLATE_PATH}:external disclosure classification",
-                False,
-                "side-effect classification must include external disclosure",
-                HOOK_TEMPLATE_PATH,
-            )
-        )
-    elif side_effect_classification != HOOK_REQUIRED_CONTRACT_VALUES["sideEffectClassification"]:
+    if side_effect_classification not in HOOK_SIDE_EFFECT_CLASSIFICATIONS:
         results.append(
             CheckResult(
                 f"template:hook:{HOOK_TEMPLATE_PATH}:side-effect classification vocabulary",
                 False,
-                "side-effect classification must use canonical labels",
+                "side-effect classification must be one canonical label",
+                HOOK_TEMPLATE_PATH,
+            )
+        )
+    if not hook_declares_side_effect_classification_type(text):
+        results.append(
+            CheckResult(
+                f"template:hook:{HOOK_TEMPLATE_PATH}:side-effect classification type",
+                False,
+                "SideEffectClassification type must list canonical labels",
                 HOOK_TEMPLATE_PATH,
             )
         )
@@ -4265,18 +4285,22 @@ def script_top_level_statement_is_allowed(statement: ast.stmt, guard: ast.If) ->
 
 
 def script_has_cli_entry_point(tree: ast.AST) -> bool:
+    return script_cli_entry_point_failure_detail(tree) is None
+
+
+def script_cli_entry_point_failure_detail(tree: ast.AST) -> str | None:
     if not script_uses_only_allowed_calls(tree):
-        return False
+        return "CLI entry point uses disallowed imports, names, rebindings, or calls"
     main_definitions = [
         (index, node)
         for index, node in enumerate(tree.body)
         if isinstance(node, ast.FunctionDef) and node.name == "main"
     ]
     if len(main_definitions) != 1:
-        return False
+        return "CLI entry point requires exactly one main() definition"
     main_definition_index, main_definition = main_definitions[0]
     if not main_definition_is_plain(main_definition):
-        return False
+        return "main() must have the plain validator entry-point signature"
     matching_guards: list[tuple[int, ast.If]] = []
     for index, node in enumerate(tree.body):
         if not isinstance(node, ast.If):
@@ -4295,15 +4319,17 @@ def script_has_cli_entry_point(tree: ast.AST) -> bool:
             continue
         matching_guards.append((index, node))
     if len(matching_guards) != 1:
-        return False
+        return 'CLI entry point requires exactly one if __name__ == "__main__" guard'
     guard_index, guard = matching_guards[0]
     if guard_index <= main_definition_index:
-        return False
+        return "CLI entry point guard must appear after main()"
     if guard_index != main_definition_index + 1 or guard_index != len(tree.body) - 1:
-        return False
+        return "CLI entry point guard must immediately follow main() and be the final top-level statement"
     if not all(script_top_level_statement_is_allowed(statement, guard) for statement in tree.body):
-        return False
-    return not guard.orelse and len(guard.body) == 1 and statement_invokes_main(guard.body[0])
+        return "CLI entry point has unsupported top-level statements"
+    if guard.orelse or len(guard.body) != 1 or not statement_invokes_main(guard.body[0]):
+        return "CLI entry point guard must contain only raise SystemExit(main())"
+    return None
 
 
 def validate_script_template(root: Path) -> list[CheckResult]:
@@ -4324,7 +4350,8 @@ def validate_script_template(root: Path) -> list[CheckResult]:
             )
         )
         tree = None
-    if tree is None or not script_has_cli_entry_point(tree):
+    cli_failure_detail = "missing CLI entry point" if tree is None else script_cli_entry_point_failure_detail(tree)
+    if cli_failure_detail is not None:
         results.append(
             CheckResult(
                 f"template:script:{SCRIPT_TEMPLATE_PATH}:cli entry point",
@@ -4333,6 +4360,15 @@ def validate_script_template(root: Path) -> list[CheckResult]:
                 SCRIPT_TEMPLATE_PATH,
             )
         )
+        if cli_failure_detail != "missing CLI entry point":
+            results.append(
+                CheckResult(
+                    f"template:script:{SCRIPT_TEMPLATE_PATH}:cli entry point detail",
+                    False,
+                    cli_failure_detail,
+                    SCRIPT_TEMPLATE_PATH,
+                )
+            )
     lowercase_text = text.lower()
     if "deterministic exit-code contract" not in lowercase_text and "exit-code contract" not in lowercase_text:
         results.append(
