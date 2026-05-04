@@ -1,6 +1,6 @@
 # Forge Seed Source Disposition
 
-Status: Source Bearing
+Status: Source Retired
 
 This ledger replaces raw source-handoff preservation after the source-bearing checkpoint. It preserves source manifest evidence, normalized source claim summaries, operator dispositions, and source-retirement stamp fields without relying on raw source files, chat history, host-local scratch artifacts, or Git object reachability.
 
@@ -37,12 +37,12 @@ Allowed source list digest: `2e1198863b18b42b46b0d4661c23737ef12488f26a24d151bcd
 | item_id | source_id | coverage_status | challenge_status | challenge_operator_confirmation_required | arbitration_required | disposition | operator_decision | evidence_target | normalized_claim_summary |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | H001 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | docs/prd/forge-seed.md | Produce the Forge Seed as canonical docs, templates, examples, specs, and validation surfaces. |
-| H002 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | CONTEXT.md | Establish the core Framework vocabulary. |
-| H003 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | docs/agent-equipment-forge.md | Preserve least cognitive privilege as the Framework design rule. |
+| H002 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | CONTEXT.md | Establish the core Forge vocabulary. |
+| H003 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | docs/agent-equipment-forge.md | Preserve least cognitive privilege as the Forge design rule. |
 | H004 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | docs/prd/forge-seed.md | Create the Forge Seed repository surfaces without treating the seed structure as final project law. |
 | H005 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | CONTEXT.md | Define Forge terms and relationships for future Smiths and Forgewrights. |
-| H006 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | docs/evidence-taxonomy.md | Record source and evidence rules for Framework claims and harness facts. |
-| H007 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | docs/agent-equipment-forge.md | Describe Framework components and their responsibilities. |
+| H006 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | docs/evidence-taxonomy.md | Record source and evidence rules for Forge claims and harness facts. |
+| H007 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | docs/agent-equipment-forge.md | Describe Forge components and their responsibilities. |
 | H008 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | docs/interface-decision-guide.md | Provide the interface decision method and runbook guidance. |
 | H009 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | docs/harness-capabilities.md | Refresh and publish the canonical harness capability catalog. |
 | H010 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | templates/ | Ship seed templates and annotated Forge Examples. |
@@ -60,7 +60,7 @@ Allowed source list digest: `2e1198863b18b42b46b0d4661c23737ef12488f26a24d151bcd
 | H020 | SRC006 | adequately_captured | unchallenged | false | false | kept_current |  | docs/agent-equipment-forge.md | Describe responsibilities for capability cards, decisions, components, and specs. |
 | H021 | SRC006 | adequately_captured | unchallenged | false | false | kept_current |  | docs/agent-equipment-forge.md | Define context budget and routing expectations. |
 | H022 | SRC006 | adequately_captured | unchallenged | false | false | kept_current |  | docs/security-and-control.md | Define security and control requirements for equipment surfaces. |
-| H023 | SRC006 | adequately_captured | unchallenged | false | false | kept_current |  | docs/forgewright-runbook.md | Define maintenance and refresh expectations for Framework facts. |
+| H023 | SRC006 | adequately_captured | unchallenged | false | false | kept_current |  | docs/forgewright-runbook.md | Define maintenance and refresh expectations for Forge facts. |
 | H024 | SRC007 | adequately_captured | unchallenged | false | false | kept_current |  | docs/interface-decision-guide.md | Encode least cognitive privilege in the decision method. |
 | H025 | SRC007 | adequately_captured | unchallenged | false | false | kept_current |  | docs/interface-decision-guide.md | Provide placement guidance for equipment interfaces. |
 | H026 | SRC007 | adequately_captured | unchallenged | false | false | kept_current |  | docs/interface-decision-guide.md | Provide the interface decision tree. |
@@ -97,7 +97,7 @@ Allowed source list digest: `2e1198863b18b42b46b0d4661c23737ef12488f26a24d151bcd
 
 ## Challenge Lineage
 
-No unresolved challenge enters source retirement. Rows marked `resolved` carry operator-directed post-Seed deferment decisions. Rows marked `unchallenged` are retained as source-projection coverage already represented by current Forge Seed surfaces.
+No unresolved challenge enters source retirement. Rows marked `resolved` carry operator-directed post-Seed deferment decisions. Rows marked `unchallenged` are retained as disposition coverage already represented by current Forge Seed surfaces.
 
 ## Source-Bearing Stamp
 
@@ -110,6 +110,6 @@ source_bearing_result: passed
 ## Final Source-Retired Stamp
 
 stamp_target: placeholder-normalized canonical tree
-canonical_tree_digest: STAMP_CANONICAL_TREE_DIGEST
+canonical_tree_digest: 35f1c02db166cdf43fbe5c87d6d4ce831047f5c1752237984957933adb686f45
 source_retired: true
 timestamp: 2026-05-04T00:00:00Z

@@ -11,7 +11,7 @@ Status: Repo Draft PRD
 **Success Criteria**:
 
 - **Forge routing coverage**: Root `AGENTS.md` exposes the Forge Conveyor for Smiths, and `README.md` exposes the Forge Tour; Seed Validation confirms all linked target paths exist.
-- **Source projection coverage**: 100% of accepted Source Handoff requirements are recorded in `docs/metasmith/source-projection.md` with disposition `projected` or `deferred`; every accepted source file is listed in the handoff manifest; every projected target path exists; and every deferred requirement has both a reason and a downstream target path.
+- **Source disposition coverage**: 100% of accepted Source Handoff requirements are recorded in `docs/closeout/forge-seed-source-disposition.md`; the ledger records the source manifest, item-level coverage, challenge status, arbitration requirements, operator decisions, evidence targets, source-bearing checkpoint, and final source-retired stamp.
 - **Validation pass rate**: `python3.14 -m unittest` and `python3.14 tools/validate_forge_seed.py` both exit 0 from the repository root.
 - **Harness evidence completeness**: 100% of canonical Harness Capability Catalog claims include evidence category, source URL, checked-at date, checked version or version basis, and uncertainty note when evidence is incomplete or inconsistent.
 - **Promotion-state coverage**: 100% of Forge Examples and downstream Smith specs declare an Equipment Promotion Path state; every Forge Example traces from capability card to interface decision record to projected components.
@@ -46,15 +46,15 @@ Status: Repo Draft PRD
 - Root `AGENTS.md` gives Smiths the Forge Conveyor for understanding the Forge, creating equipment, checking harness facts, using templates, and finding downstream Smith specs.
 - `README.md` gives humans a concise Forge Tour and links to the canonical starting path without exposing agent-only machinery.
 - `CONTEXT.md` defines the Forge Seed language used by canonical docs and specs.
-- `docs/metasmith/handoff/2026-05-02/` preserves the manifest-listed Source Handoff and contains a local provenance wrapper that prevents archived prompts from becoming current instructions.
-- `docs/metasmith/source-projection.md` records accepted Source Handoff requirements with `requirement_id`, `source_file`, `source_anchor`, `summary`, `disposition`, `target_path`, `deferment_reason`, and `validation_status`; Seed Validation checks accepted requirement ids, handoff manifest coverage, source references, projected target paths, and deferred downstream target path syntax.
+- `docs/closeout/forge-seed-source-disposition.md` preserves the Source Handoff inventory and the disposition of accepted source requirements without keeping raw source prompts in the final tree.
+- Seed Validation supports a source-bearing checkpoint mode before raw source retirement and a source-retired final mode after the disposition ledger is stamped.
 - Forge Canon include, at minimum, a Forge overview, Smith runbook, Forgewright runbook, interface decision guide, harness component guide, evidence taxonomy, harness capability catalog, equipment promotion guidance, and security/control guidance.
 - The Smith runbook defines Tooling Request, including trigger conditions, dependency recording, session path selection, handoff contents, and hand-back expectations for current-session, subagent-session, peer-agent-session, forked-session, and new-session Forgewright work.
 - The Forgewright runbook defines Tooling Gap intake, including handoff preservation, requirement refinement, canonical-surface updates, validation/review expectations, dependency updates, deferment handling, and Smith resume guidance.
 - `docs/story-closeout.md` defines Story Closeout gate order, subordinate change-set closeout gates, review sequencing, interdependency rerun rules, recursion boundaries, and completion criteria.
 - Seed templates cover capability cards, interface decision records, skill templates, hooks, Agent Profiles, plugins, scripts, MCP/tool definitions, config, security reviews, and context-budget reviews.
 - Forge Examples demonstrate PR review, documentation research, and observability investigation as annotated examples with promotion state `example`; each example traces from capability card to interface decision record to projected components.
-- Downstream specs exist for Agent Ops, Periodic Actions, and Harness Capability Refresh with promotion state `specified`; each spec projects the substantive requirements from `docs/metasmith/handoff/2026-05-02/08-initial-smith-task-specs.md`, including required harness projections, management behavior, storage expectations, tracked fields, and change-response rules where applicable.
+- Downstream specs exist for Agent Ops, Periodic Actions, and Harness Capability Refresh with promotion state `specified`; each spec projects the substantive requirements captured in the Source Disposition Ledger, including required harness projections, management behavior, storage expectations, tracked fields, and change-response rules where applicable.
 - Seed Validation provides human-readable output by default and machine-readable output with `--json`.
 - `docs/security/threat-model.md` records an initial Repository Threat Model for Agent Armory before the Forge Seed is considered merge-ready.
 - `docs/security/forge-seed-closeout.md` records the Seed security closeout scope, commands, scan artifact disposition, report disposition, findings, fixes, suppressions, deferments, and re-validation status.
@@ -89,7 +89,7 @@ Status: Repo Draft PRD
 
 **Evaluation Strategy**:
 
-- Use Seed Validation to check repository shape, canonical links, Source Handoff provenance, the Source Projection Register, promotion-state labels, and harness catalog required fields.
+- Use Seed Validation to check repository shape, canonical links, source disposition, source-retirement stamp, promotion-state labels, and harness catalog required fields.
 - Use review-until-clean cycles for PRD, plan, canonical docs, and implementation sets.
 - Use live source refresh for canonical harness facts before publishing `docs/harness-capabilities.md` and `docs/harness-capabilities.toml`.
 - Use preloaded-path review to confirm that root `AGENTS.md` routes Smiths to the correct Forge surfaces without scouting.
@@ -120,8 +120,7 @@ The seed separates durable surfaces by role:
 - `docs/closeout/forge-seed-documentation.md`: durable review summary for Forge Seed documentation closeout.
 - `docs/closeout/forge-seed-projection-drafts.md`: reviewable issue, PR, release, and handoff projection drafts for Story Closeout before external publication.
 - `docs/story-closeout.md`: canonical Story Closeout process for gate order, review sequencing, rerun rules, and completion criteria.
-- `docs/metasmith/source-projection.md`: Source Projection Register.
-- `docs/metasmith/handoff/2026-05-02/`: preserved Source Handoff provenance.
+- `docs/closeout/forge-seed-source-disposition.md`: Source Disposition Ledger and source-retirement stamp.
 - `docs/*.md`: Forge Canon.
 - `docs/harness-capabilities.md` and `docs/harness-capabilities.toml`: refreshed Harness Capability Catalog.
 - `templates/`: copyable templates for Smith-created Equipment Candidates.
@@ -141,6 +140,12 @@ docs/
   closeout/
     forge-seed-documentation.md
     forge-seed-projection-drafts.md
+    forge-seed-source-disposition.md
+    forge-seed-workflow-lessons.md
+  follow-ups/
+    portable-agentic-engineering-workflow-equipment.md
+    side-thread-hand-back-workflow.md
+    ephemeral-workflow-opportunity-capture.md
   plans/
     2026-05-03-forge-seed.md
   prd/
@@ -148,9 +153,6 @@ docs/
   security/
     threat-model.md
     forge-seed-closeout.md
-  forgewright/
-    source-projection.md
-    handoff/2026-05-02/
   ubiquitous-language.md
   agent-equipment-forge.md
   smith-runbook.md

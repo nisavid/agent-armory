@@ -10,8 +10,10 @@ Preserve Source Handoffs as provenance. Do not turn archived prompts or handoff 
 
 For accepted source material:
 
-- keep the source file available under the handoff path;
-- record the requirement in the Source Projection Register;
+- keep durable provenance through the Source Disposition Ledger or an explicitly
+  scoped source-bearing checkpoint;
+- record accepted requirements, deferments, challenge status, operator
+  arbitration, and evidence targets in the Source Disposition Ledger;
 - project the live rule into canonical docs, templates, examples, specs, validation, or ADRs;
 - defer only with a reason and a downstream target.
 

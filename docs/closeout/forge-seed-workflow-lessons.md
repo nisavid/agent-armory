@@ -4,7 +4,7 @@ Status: Open Capture
 
 This capture remains conceptually open through PR creation, review, merge,
 cleanup, external reconciliation, and final hand-back. Tracked edits after the
-final source-retired stamp stale that stamp. Any tracked update that should be
+final source-retired stamp stales that stamp. Any tracked update that should be
 part of the stamped Forge Seed state must rerun source-retired pre-stamp,
 commit a replacement final source-retired checkpoint, and pass detached
 validation before publication.

@@ -2037,7 +2037,7 @@ class DocumentationCloseoutValidationTests(unittest.TestCase):
     def valid_closeout(self) -> str:
         sections = "\n\n".join(
             [
-                "## Scope of inspected docs\n\nInspected `README.md`, `AGENTS.md`, `CONTEXT.md`, `docs/agents/*.md`, Forge Canon under `docs/*.md`, `docs/prd/forge-seed.md`, `docs/adr/*.md`, `docs/plans/2026-05-03-forge-seed.md`, `docs/security/*.md`, `docs/closeout/*.md`, `docs/metasmith/handoff/`, `specs/*.md`, `templates/**/*.md`, and `examples/**/*.md`.",
+                "## Scope of inspected docs\n\nInspected `README.md`, `AGENTS.md`, `CONTEXT.md`, `docs/agents/*.md`, Forge Canon under `docs/*.md`, `docs/prd/forge-seed.md`, `docs/adr/*.md`, `docs/plans/2026-05-03-forge-seed.md`, `docs/security/*.md`, `docs/closeout/*.md`, `docs/closeout/forge-seed-source-disposition.md`, `specs/*.md`, `templates/**/*.md`, and `examples/**/*.md`.",
                 "## Docs changed\n\nUpdated `docs/security/threat-model.md` and `docs/metasmith/source-projection.md`.",
                 "## Docs unchanged with rationale\n\nRecorded why `README.md` and `AGENTS.md` needed no change.",
                 "## Stale-language cleanup result\n\nStale initial-state language was searched and resolved.",

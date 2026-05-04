@@ -557,7 +557,7 @@ DOCUMENTATION_CLOSEOUT_REQUIRED_EVIDENCE = [
     "docs/plans/2026-05-03-forge-seed.md",
     "docs/security/*.md",
     "docs/closeout/*.md",
-    "docs/metasmith/handoff/",
+    "docs/closeout/forge-seed-source-disposition.md",
     "specs/*.md",
     "templates/**/*.md",
     "examples/**/*.md",

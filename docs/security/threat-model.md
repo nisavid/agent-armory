@@ -120,11 +120,12 @@ actions.
 
 - Root `AGENTS.md` routes agents through current live Forge surfaces and
   treats archived handoff material as provenance.
-- `docs/metasmith/source-projection.md` maps accepted Source Handoff
-  requirements to live target paths or explicit deferments.
-- `tools/validate_forge_seed.py` checks required paths, source projection
-  coverage, markdown links, promotion-state boundaries, harness catalog fields,
-  and closeout surfaces.
+- `docs/closeout/forge-seed-source-disposition.md` maps accepted Source
+  Handoff requirements to live target paths, operator dispositions, checkpoint
+  evidence, and source-retirement status.
+- `tools/validate_forge_seed.py` checks required paths, source disposition,
+  source retirement, markdown links, promotion-state boundaries, harness
+  catalog fields, and closeout surfaces.
 - The validator rejects symlinked required paths and repository-root escapes for
   required live surfaces.
 - Templates and examples explicitly carry non-installable, non-production seed

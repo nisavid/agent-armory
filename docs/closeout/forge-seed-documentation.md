@@ -18,14 +18,14 @@ Inspected live agent-facing and human-facing surfaces:
 - `docs/prd/forge-seed.md`
 - `docs/adr/*.md`
 - `docs/plans/2026-05-03-forge-seed.md`
-- `docs/metasmith/source-projection.md`
+- `docs/closeout/forge-seed-source-disposition.md`
 - `docs/security/*.md`
 - `docs/closeout/*.md`
 - `specs/*.md`
 - `templates/**/*.md`
 - `examples/**/*.md`
 
-Also inspected archived Source Handoff material under `docs/metasmith/handoff/` for stale-language search results. Those files remain provenance and were not edited as live documentation.
+Also inspected the raw Source Handoff before source retirement. The final tree preserves provenance through the Source Disposition Ledger rather than raw handoff prompts.
 
 ## Docs changed
 
@@ -33,8 +33,8 @@ Also inspected archived Source Handoff material under `docs/metasmith/handoff/` 
 - `docs/security/forge-seed-closeout.md`: added the Forge Seed security closeout with scan scope, artifact durability classification, artifact and report disposition, findings disposition, hardening notes, re-validation status, and deferred-risk tracking.
 - `docs/story-closeout.md`: added the canonical Story Closeout process with gate order, interdependency rules, review gates, Intent Model Refresh, Intent Alignment Check, recursion boundaries, and completion criteria.
 - `docs/closeout/forge-seed-projection-drafts.md`: added reviewable issue, PR, release, and handoff projection drafts for Story Closeout before external publication, using committed security closeout paths for portable external evidence.
-- `docs/metasmith/handoff/2026-05-03-agentic-engineering-workflow-equipment.md`: linked the Seed Closeout Addendum and clarified that the addendum is current captured source material for the future Portable Agentic Engineering Workflow Equipment story, not a placeholder for later first capture.
-- `docs/metasmith/handoff/2026-05-03-agentic-engineering-workflow-seed-closeout-addendum.md`: captured workflow lessons from Seed closeout about subagent review availability, closeout-gate ordering, recursive refresh, evidence freshness, process validation, and plan-state hygiene.
+- `docs/follow-ups/portable-agentic-engineering-workflow-equipment.md`: captured the future Portable Agentic Engineering Workflow Equipment story in a neutral follow-up path.
+- `docs/closeout/forge-seed-workflow-lessons.md`: captured workflow lessons from Seed closeout about subagent review availability, closeout-gate ordering, recursive refresh, evidence freshness, process validation, and plan-state hygiene.
 - `docs/security-and-control.md`: linked the Repository Threat Model from the canonical security/control surface.
 - `AGENTS.md`: added zero-scout pointers from the Forge Conveyor to Tooling Request and Story Closeout, plus story-closeout requirements for Cross-Boundary Coherence and Story Quality Ralph Reviews.
 - `CONTEXT.md`: added Tooling Request, Smith-to-Forgewright Handoff, Forgewright Hand-Back, Story Closeout, Cross-Boundary Coherence Ralph Review, Story Quality Ralph Review, Intent, Effective Intent, Underlying Intent, Intent Model Refresh, and Intent Alignment Check language.
@@ -42,10 +42,10 @@ Also inspected archived Source Handoff material under `docs/metasmith/handoff/` 
 - `docs/smith-runbook.md`: added the Smith-facing Tooling Request trigger, dependency-recording rule, session-path selection, handoff contents, hand-back expectation, Story Closeout route, and story-closeout review gates.
 - `docs/forgewright-runbook.md`: added Forgewright intake and hand-back responsibilities for Smith-discovered Tooling Gaps and linked Story Closeout from Forge change-set closeout.
 - `templates/agents/README.md` and `templates/agents/profile.toml`: tightened remaining Agent Profile terminology after review.
-- `docs/metasmith/source-projection.md`: updated completed Forge Seed projections from `planned` to `validated` where their target surfaces now exist and the Seed Validation Tool checks them or the closeout records their status.
+- `docs/closeout/forge-seed-source-disposition.md`: records the Source Disposition Ledger, source-bearing checkpoint, and final source-retirement stamp.
 - `docs/closeout/forge-seed-documentation.md`: added this documentation closeout summary.
 - `docs/plans/2026-05-03-forge-seed.md`: tracked Task 9 work as it landed, repaired historical completed-step checkboxes, preserved the deferred post-Seed follow-up boundaries, and expanded the deferred Post-Seed Skill Migration capture with ingestion-pipeline design requirements.
-- `tools/validate_forge_seed.py` and `tests/test_validate_forge_seed.py`: added validation for the Repository Threat Model, this documentation closeout summary, the security closeout summary, projection drafts, Source Projection Register status semantics, the Smith-to-Forgewright escalation path, the Story Closeout process, the story-closeout review gates, and strict final-closeout evidence before branch push or external projection.
+- `tools/validate_forge_seed.py` and `tests/test_validate_forge_seed.py`: added validation for the Repository Threat Model, this documentation closeout summary, the security closeout summary, projection drafts, Source Disposition Ledger semantics, the Smith-to-Forgewright escalation path, the Story Closeout process, the story-closeout review gates, and strict final-closeout evidence before branch push or external projection.
 
 ## Docs unchanged with rationale
 
@@ -56,7 +56,7 @@ Also inspected archived Source Handoff material under `docs/metasmith/handoff/` 
 - `specs/*.md`: Task 8 review updated the specs to preserve source requirements and non-implementation boundaries.
 - Remaining `templates/**/*.md` and template payloads: placeholder strings are intentional template fields, not stale project placeholders.
 - `examples/**/*.md`: examples already state Forge Example status, promotion state `example`, trace links, and non-installable boundaries.
-- Archived Source Handoff docs: preserved unchanged as provenance under their local handoff policy.
+- Source Handoff docs: retired from the final tree after disposition was captured in `docs/closeout/forge-seed-source-disposition.md`.
 
 ## Stale-language cleanup result
 
@@ -64,13 +64,13 @@ Searches for stale initial-state and placeholder language found no live docs cla
 
 Reviewed matches were resolved as:
 
-- active status terms in the Equipment Promotion Path, Source Projection Register, and plan fixtures;
+- active status terms in the Equipment Promotion Path, Source Disposition Ledger, and plan fixtures;
 - intentional template placeholders under `templates/`;
 - ADR decision context;
 - PRD acceptance criteria describing the closeout requirement itself;
 - archived handoff or side-thread source material that is explicitly not live Forge Canon.
 
-The Source Projection Register now reflects established Forge Seed precedents by marking landed source requirements as `validated` and leaving only Issue Projection-dependent items planned.
+The Source Disposition Ledger reflects established Forge Seed precedents, source coverage, operator arbitration, source-bearing checkpoint evidence, and final source-retirement requirements.
 
 ## Established precedents added or updated
 
@@ -96,11 +96,11 @@ The Source Projection Register now reflects established Forge Seed precedents by
 
 ## Review cycles and latest clean review
 
-Task-level documentation review has been performed after each cohesive Forge Seed change set. The latest clean review for Task 8 was Ralph Review Cycle 42, covering docs/spec/source-projection/plan changes and validator/security behavior.
+Task-level documentation review has been performed after each cohesive Forge Seed change set. The latest clean review for Task 8 was Ralph Review Cycle 42, covering docs/spec/source-disposition/plan changes and validator/security behavior.
 
-Ralph Review Cycle 43 reviewed the Task 9 documentation closeout and found issues in closeout status, closeout evidence validation, Source Projection Register status validation, the threat model's policy/design asset boundary, and Agent Profile terminology in the `templates/agents/` template. Those findings are addressed in the current change set.
+Ralph Review Cycle 43 reviewed the Task 9 documentation closeout and found issues in closeout status, closeout evidence validation, source-disposition validation, the threat model's policy/design asset boundary, and Agent Profile terminology in the `templates/agents/` template. Those findings are addressed in the current change set.
 
-Ralph Review Cycle 44 reviewed the Cycle 43 fixes and found issues in latest-clean-review field validation, stale `planned` source-projection rows, plan/checklist status, and closeout accounting for Agent Profile template edits. Those findings are addressed in the current change set.
+Ralph Review Cycle 44 reviewed the Cycle 43 fixes and found issues in latest-clean-review field validation, stale `planned` source-disposition rows, plan/checklist status, and closeout accounting for Agent Profile template edits. Those findings are addressed in the current change set.
 
 Ralph Review Cycle 45 reviewed the Cycle 44 fixes and Smith-to-Forgewright escalation path. One reviewer found stale PRD initial-state language, an overbroad unchanged-docs rationale, and a plan expected-result contradiction; another reviewer found no issues. The findings are addressed in the current change set.
 

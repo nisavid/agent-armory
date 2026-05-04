@@ -2935,7 +2935,7 @@ responsible for integration, validation, review, and commit/PR handling.
 ### Portable Agentic Engineering Workflow Equipment
 
 After the Forge Seed, process the side-thread workflow reflection handoff at
-`docs/metasmith/handoff/2026-05-03-agentic-engineering-workflow-equipment.md`
+`docs/follow-ups/portable-agentic-engineering-workflow-equipment.md`
 into rigorously engineered Agent Equipment.
 
 Begin with handoff ingestion and a `grill-with-docs` loop. The grill loop should
@@ -2949,7 +2949,7 @@ skills, provenance notes, side-thread contracts, and progressive-disclosure
 routes as evidence to reconcile rather than decisions to bypass.
 
 Also ingest the linked
-[Seed Closeout Addendum](../metasmith/handoff/2026-05-03-agentic-engineering-workflow-seed-closeout-addendum.md).
+[Seed Closeout Addendum](../closeout/forge-seed-workflow-lessons.md).
 It is the current capture for workflow lessons that emerged after the original
 handoff was written, including subagent review availability, closeout-gate
 ordering, projection drafts versus external publication, security and
@@ -2992,7 +2992,7 @@ skills installed.
 ### Ephemeral Workflow Opportunity Capture
 
 After the Forge Seed, process the side-thread opportunity-capture handoff at
-`docs/metasmith/handoff/2026-05-03-ephemeral-workflow-opportunity-capture.md`
+`docs/follow-ups/ephemeral-workflow-opportunity-capture.md`
 into rigorously engineered Agent Equipment.
 
 Begin with handoff ingestion and a `grill-with-docs` loop. The grill loop should

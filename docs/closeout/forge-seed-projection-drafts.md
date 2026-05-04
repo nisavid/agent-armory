@@ -41,17 +41,16 @@ Repo draft: `docs/prd/forge-seed.md`
   Story Closeout.
 - Templates, examples, and downstream Smith specs exist without implying
   installability, publication, or production readiness.
-- Seed Validation and tests check required files, Source Projection Register
-  semantics, markdown links, templates, examples, specs, Story Closeout,
-  security closeout, and documentation closeout.
+- Seed Validation and tests check required files, source disposition and
+  retirement status, markdown links, templates, examples, specs, Story
+  Closeout, security closeout, and documentation closeout.
 
 ## Implementation Summary
 
 The Forge Seed adds:
 
-- preserved Source Handoff material under `docs/metasmith/handoff/2026-05-02/`;
-- `docs/metasmith/source-projection.md` for requirement disposition and
-  validation status;
+- `docs/closeout/forge-seed-source-disposition.md` for source manifest,
+  requirement disposition, checkpoint evidence, and source-retirement stamp;
 - Forge Canon under `docs/`;
 - ADRs for Seed architectural decisions;
 - templates for skills, hooks, MCP tools, plugins, scripts, configs, security
@@ -92,7 +91,7 @@ closeout docs, specs, templates, examples, and archived handoff material reached
 by stale-language searches.
 
 Material updates include the Repository Threat Model, security closeout, Story
-Closeout, Tooling Request, Source Projection Register status
+Closeout, Tooling Request, Source Disposition Ledger status
 semantics, Agent Profile terminology alignment, and captured post-Seed Portable
 Workflow reflections.
 
@@ -196,8 +195,8 @@ handoff surfaces are:
 - `docs/plans/2026-05-03-forge-seed.md`,
 - `docs/closeout/forge-seed-documentation.md`,
 - `docs/security/forge-seed-closeout.md`,
-- `docs/metasmith/handoff/2026-05-03-agentic-engineering-workflow-equipment.md`,
-- `docs/metasmith/handoff/2026-05-03-agentic-engineering-workflow-seed-closeout-addendum.md`.
+- `docs/follow-ups/portable-agentic-engineering-workflow-equipment.md`,
+- `docs/closeout/forge-seed-workflow-lessons.md`.
 
 The in-chat pause after branch push should report the pushed branch, validation
 state, whether the Published PRD Issue has been created or remains a reviewed
