@@ -34,6 +34,28 @@ A hypothesis is a plausible but unverified claim.
 
 Use it for questions to test, not as guidance to follow. Convert important hypotheses into Harness Fact Refresh tasks, pressure scenarios, experiments, or downstream specs.
 
+## artifact durability
+
+Before committing, publishing, or projecting closeout evidence, classify each
+evidence artifact by durability:
+
+- Durable project evidence belongs in committed docs, issue bodies, PR bodies,
+  release notes, or handoff records when it remains accurate beyond the review
+  instance.
+- Portable review evidence can be summarized or attached to an external review
+  surface when another reviewer can evaluate it without access to the original
+  host, worktree, or scratch directory.
+- Instance-scoped scratch evidence includes raw tool logs, local scan bundles,
+  temporary reports, host-local paths, screenshots, copied diffs, and work
+  directories whose accuracy is limited to one review run.
+
+Do not commit or externally project raw instance-scoped scratch evidence as
+project truth. Summarize the scope, commands, artifact disposition, findings,
+fixes, suppressions, deferred risks, and durable conclusions in the appropriate
+closeout surface. If a scratch artifact later becomes durable project material,
+move it to a neutral project path and update its scope, review status, and
+staleness boundaries.
+
 ## source hygiene
 
 Follow these hygiene rules for Framework claims:
@@ -44,4 +66,5 @@ Follow these hygiene rules for Framework claims:
 - record checked date and version basis for harness claims;
 - record uncertainty when sources disagree or are stale;
 - preserve Source Handoff provenance without treating it as the current canonical surface;
+- classify evidence artifacts by durability before committing, publishing, or projecting them;
 - refresh volatile claims before they drive implementation, validation, or publication.

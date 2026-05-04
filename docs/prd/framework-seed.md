@@ -4,7 +4,7 @@ Status: Repo Draft PRD
 
 ## 1. Executive Summary
 
-**Problem Statement**: Agent Armory has accepted a substantial Source Handoff for an Agent Equipment Framework, but the repository does not yet expose a canonical, validated Framework surface that future Smiths can use without replaying the handoff. Without a seed Framework, future equipment work can drift into unreviewed examples, stale harness claims, oversized skills, or unclear source-of-truth boundaries.
+**Problem Statement**: Agent Armory accepted a substantial Source Handoff for an Agent Equipment Framework. The Framework Seed must turn that source material into canonical, validated Framework surfaces that future Smiths can use without replaying the handoff. Without those surfaces and closeout gates, future equipment work can drift into unreviewed examples, stale harness claims, oversized skills, or unclear source-of-truth boundaries.
 
 **Proposed Solution**: Create the Framework Seed: canonical docs, evidence discipline, harness capability catalog, decision method, templates, demonstrative examples, downstream Smith specs, and Seed Validation. Preserve the Source Handoff as provenance, refresh canonical harness facts, and publish a reviewed PRD summary into GitHub Issues after the repo draft stabilizes.
 
@@ -17,6 +17,8 @@ Status: Repo Draft PRD
 - **Promotion-state coverage**: 100% of Framework Examples and downstream Smith specs declare an Equipment Promotion Path state; every Framework Example traces from capability card to interface decision record to projected components.
 - **Security closeout coverage**: The Framework Seed has a repository threat model, a Codex Security scan of the Seed change set, a durable security closeout summary, and recorded disposition for every reportable finding before the change set is treated as merge-ready.
 - **Documentation closeout coverage**: Every agent-facing and human-facing doc plausibly affected by the Framework Seed is inspected and either updated or explicitly left unchanged with rationale; doc changes complete review-until-clean with audience-appropriate doc-writing guidance.
+- **Story closeout review coverage**: Before closeout, the Framework Seed completes separate Cross-Boundary Coherence and Story Quality Ralph Reviews so scoped process outputs agree at system level and the story satisfies holistic quality criteria.
+- **Framework requirement escalation coverage**: The Smith and Metasmith runbooks define how a Smith records a newly discovered unsatisfied Framework requirement as a dependency, preempts the current equipment task, selects a harness-appropriate Metasmith session path, and resumes from a Metasmith hand-back.
 
 ## 2. User Experience & Functionality
 
@@ -37,6 +39,7 @@ Status: Repo Draft PRD
 - As a Metasmith, I want a refreshed Harness Capability Catalog so that framework guidance does not start from stale harness facts.
 - As a maintainer, I want Seed Validation so that required docs, links, provenance, projection decisions, promotion states, and catalog fields are checked by a repeatable tool.
 - As a human operator, I want GitHub Issues to remain the tracking surface after PRD review so that durable project work is visible in the issue tracker without creating draft churn.
+- As a Smith, I want a built-in path for unsatisfied Framework requirements so that I can stop unsafe equipment work, hand the Framework dependency to a Metasmith, and resume with a clear hand-back.
 
 **Acceptance Criteria**:
 
@@ -46,16 +49,22 @@ Status: Repo Draft PRD
 - `docs/metasmith/handoff/2026-05-02/` preserves the manifest-listed Source Handoff and contains a local provenance wrapper that prevents archived prompts from becoming current instructions.
 - `docs/metasmith/source-projection.md` records accepted Source Handoff requirements with `requirement_id`, `source_file`, `source_anchor`, `summary`, `disposition`, `target_path`, `deferment_reason`, and `validation_status`; Seed Validation checks accepted requirement ids, handoff manifest coverage, source references, projected target paths, and deferred downstream target path syntax.
 - Canonical Framework docs include, at minimum, a Framework overview, Smith runbook, Metasmith runbook, interface decision guide, harness component guide, evidence taxonomy, harness capability catalog, equipment promotion guidance, and security/control guidance.
+- The Smith runbook defines Framework requirement escalation, including trigger conditions, dependency recording, session path selection, handoff contents, and hand-back expectations for current-session, subagent-session, peer-agent-session, forked-session, and new-session Metasmith work.
+- The Metasmith runbook defines Framework requirement intake, including handoff preservation, requirement refinement, canonical-surface updates, validation/review expectations, dependency updates, deferment handling, and Smith resume guidance.
+- `docs/story-closeout.md` defines Story Closeout gate order, subordinate change-set closeout gates, review sequencing, interdependency rerun rules, recursion boundaries, and completion criteria.
 - Seed templates cover capability cards, interface decision records, skill templates, hooks, Agent Profiles, plugins, scripts, MCP/tool definitions, config, security reviews, and context-budget reviews.
 - Framework Examples demonstrate PR review, documentation research, and observability investigation as annotated examples with promotion state `example`; each example traces from capability card to interface decision record to projected components.
 - Downstream specs exist for Agent Ops, Periodic Actions, and Harness Capability Refresh with promotion state `specified`; each spec projects the substantive requirements from `docs/metasmith/handoff/2026-05-02/08-initial-smith-task-specs.md`, including required harness projections, management behavior, storage expectations, tracked fields, and change-response rules where applicable.
 - Seed Validation provides human-readable output by default and machine-readable output with `--json`.
 - `docs/security/threat-model.md` records an initial Repository Threat Model for Agent Armory before the Framework Seed is considered merge-ready.
-- `docs/security/framework-seed-closeout.md` records the Seed security closeout scope, commands, scan artifact directory, final report path, findings, fixes, suppressions, deferments, and re-validation status.
+- `docs/security/framework-seed-closeout.md` records the Seed security closeout scope, commands, scan artifact disposition, report disposition, findings, fixes, suppressions, deferments, and re-validation status.
 - `docs/closeout/framework-seed-documentation.md` records affected docs inspected, docs changed, docs left unchanged with rationale, stale-language cleanup results, doc review cycles, and residual documentation risk.
-- The Framework Seed closeout runs Codex Security's threat modeling, finding discovery, validation, attack-path analysis, and final reporting phases against the Seed change set; reportable findings are fixed, suppressed with evidence, or explicitly deferred with stakeholder approval and a tracking issue.
+- The Framework Seed closeout follows the Codex Security phase sequence against the Seed change set. Threat modeling and finding discovery always run; validation and attack-path analysis run when discovery promotes technically plausible candidates or another security workflow rule requires them. When validation or attack-path analysis is not applicable, the security closeout records the reason. Reportable findings are fixed, suppressed with evidence, or explicitly deferred with stakeholder approval and a tracking issue.
 - Framework Seed closeout includes a Change Set Documentation Closeout. At minimum, inspect `README.md`, `AGENTS.md`, `CONTEXT.md`, canonical Framework docs, specs, templates, examples, issue-tracker docs, security docs, closeout docs, ADRs, PRDs, and plan docs for stale initial-state language, inaccurate claims, missing established precedents, misplaced maintainer policy, and appropriate deliverable mentions.
 - Documentation closeout removes or revises early language that says nothing is established or everything is up in the air when the Framework Seed has established a precedent, while preserving explicit uncertainty for unresolved ambiguities.
+- Framework Seed closeout follows `docs/story-closeout.md`: security and documentation closeout finish before projection drafts; projection drafts are checked during Cross-Boundary Coherence review; Cross-Boundary Coherence review finishes before Story Quality review; final validation, including strict final-closeout validation, confirms the evidence; issue, PR, release, and handoff publication follows clean final story evidence.
+- Framework Seed closeout includes a Cross-Boundary Coherence Ralph Review that verifies PRD, specs, plan, implementation, validation, security, docs, issue or PR projection, and release or handoff surfaces agree on current behavior and evidence.
+- Framework Seed closeout includes a Story Quality Ralph Review that verifies DX, UX, code quality, clean architecture, robustness against unspecified interactions, user personas, and attack paths, mitigations for pathological dev/ops cycles, and alignment with a coherent strategic vision.
 - Issue Projection happens only after the Repo Draft PRD has completed review-until-clean; closeout creates or updates the Published PRD Issue or records why projection remains pending.
 
 **Non-Goals**:
@@ -86,8 +95,11 @@ Status: Repo Draft PRD
 - Use preloaded-path review to confirm that root `AGENTS.md` routes Smiths to the correct Framework surfaces without scouting.
 - Use README-path review to confirm that the human-facing README explains the Framework and links to the canonical starting path.
 - Use TDD for the Seed Validation Tool: write failing `unittest` tests before implementation, verify red, implement, verify green, and refactor while green.
-- Use Codex Security at Seed closeout to create or update the repository threat model, scan the Seed change set, validate plausible findings, analyze attack paths, and drive hardening fixes before merge-readiness.
+- Use Codex Security at Seed closeout to create or update the repository threat model, scan the Seed change set, validate plausible findings, analyze attack paths when candidates require it, and drive hardening fixes before merge-readiness.
 - Use Change Set Documentation Closeout at Seed closeout to inspect affected agent-facing and human-facing docs, apply the appropriate doc-honing standards, and Ralph-review doc changes with guidance from `honing-agent-facing-docs`, `honing-human-facing-docs`, `writing-skills`, `documentation-writer`, and `writing-clearly-and-concisely` as applicable.
+- Use `docs/story-closeout.md` to order closeout gates and rerun affected upstream gates when security, documentation, validation, PRD/spec/plan scope, or issue/PR projection changes during review.
+- Use a Cross-Boundary Coherence Ralph Review near story closeout to verify scoped process outputs cohere across their boundaries.
+- Use a Story Quality Ralph Review near story closeout to verify holistic DX, UX, code quality, architecture, robustness, strategic alignment, and lessons from prior pathological development or operations cycles.
 
 ## 4. Technical Specifications
 
@@ -106,6 +118,8 @@ The seed separates durable surfaces by role:
 - `docs/security/threat-model.md`: persistent Repository Threat Model for security closeout and future scans.
 - `docs/security/framework-seed-closeout.md`: durable review summary for the Framework Seed security closeout.
 - `docs/closeout/framework-seed-documentation.md`: durable review summary for Framework Seed documentation closeout.
+- `docs/closeout/framework-seed-projection-drafts.md`: reviewable issue, PR, release, and handoff projection drafts for Story Closeout before external publication.
+- `docs/story-closeout.md`: canonical Story Closeout process for gate order, review sequencing, rerun rules, and completion criteria.
 - `docs/metasmith/source-projection.md`: Source Projection Register.
 - `docs/metasmith/handoff/2026-05-02/`: preserved Source Handoff provenance.
 - `docs/*.md`: canonical Framework docs.
@@ -126,6 +140,7 @@ docs/
   adr/
   closeout/
     framework-seed-documentation.md
+    framework-seed-projection-drafts.md
   plans/
     2026-05-03-framework-seed.md
   prd/
@@ -147,6 +162,7 @@ docs/
   evidence-taxonomy.md
   security-and-control.md
   equipment-promotion.md
+  story-closeout.md
 templates/
   capability-card.md
   interface-decision-record.md
@@ -194,7 +210,7 @@ tests/
 - **Context7**: current documentation for any library, API, SDK, CLI, or cloud-service implementation questions.
 - **Python 3.14**: Seed Validation runtime and `unittest` test runner.
 - **Git**: branch, commit, review, and closeout flow in the persistent worktree.
-- **Codex Security**: repository threat model, change-set scan, validation, attack-path analysis, and final report/hardening workflow. Transient scan bundles may live under the tool's scan artifact directory, but merge-readiness evidence must be summarized in the change-set closeout.
+- **Codex Security**: repository threat model, change-set scan, validation, attack-path analysis, and final report/hardening workflow. Transient scan bundles are instance-scoped scratch evidence; merge-readiness evidence must be summarized in the change-set closeout with artifact and report disposition.
 
 **Security & Privacy**:
 

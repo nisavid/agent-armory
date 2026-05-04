@@ -1,0 +1,112 @@
+# Framework Seed Security Closeout
+
+Status: Completed Security Closeout
+
+## Scan scope
+
+Codex Security scanned the merge-base-to-working-tree Framework Seed diff from
+baseline `470f2b31a9c71d0676617fc11e6fd3810e7128f7` to the working tree on
+branch `metasmith-framework`, including committed branch changes, staged diff,
+unstaged worktree edits, and untracked intended files.
+
+The scan covered:
+
+- active agent instructions and vocabulary,
+- canonical Framework docs, specs, templates, examples, and source projection,
+- the repository threat model,
+- security and documentation closeout surfaces,
+- Story Closeout, projection draft, and workflow closeout addendum surfaces,
+- local Python validation tooling and tests,
+- non-runtime hook, MCP/tool, plugin, script, config, and Agent Profile
+  templates.
+
+## Commands
+
+- `python3.14 -m unittest tests.test_validate_framework_seed.SecurityCloseoutValidationTests`
+- `python3.14 -m unittest tests/test_validate_framework_seed.py`
+- `python3.14 tools/validate_framework_seed.py`
+- `python3.14 tools/validate_framework_seed.py --json`
+- `git diff --check`
+- Targeted Codex Security discovery searches for dangerous sinks, secret-like
+  terms, promotion-state claims, installability claims, and external path or
+  URL surfaces.
+- Codex Security phase sequence: threat modeling, finding discovery,
+  validation, attack-path analysis, final report.
+
+Validation and attack-path analysis were not separately run because finding
+discovery produced no technically plausible candidates. That follows the Codex
+Security diff-scan workflow.
+
+## Scan artifact disposition
+
+Codex Security generated an instance-scoped scan bundle outside the repository
+during this review. The raw bundle is ephemeral scratch evidence, not a tracked
+project artifact, not portable review evidence, and not a standing source of
+project truth.
+
+Artifact durability classification: instance-scoped scratch evidence. Durable
+security evidence is this closeout summary, the repository threat model, and the
+validation results recorded below.
+
+The transient scan bundle contained:
+
+- `artifacts/threat_model.md`,
+- `artifacts/runtime_inventory.md`,
+- `artifacts/finding_discovery_report.md`,
+- captured git diff, worktree diff, staged diff, and untracked-file evidence,
+- targeted discovery search outputs.
+
+## Report disposition
+
+The final Codex Security report was scoped to this review instance: the
+Framework Seed diff, the working tree at review time, and the scan commands
+listed above. Its durable conclusions are summarized in this closeout. The raw
+report is not committed and should not be cited as reusable project doctrine.
+
+## Findings disposition
+
+No reportable findings.
+
+Suppressed findings: none.
+
+Finding discovery promoted no technically plausible candidate to validation.
+Search hits were traced to test fixtures, validator deny-list strings,
+standard-library read-only parsing, explicit security guidance, non-installable
+example boundaries, or documentation source URLs that Seed runtime code does
+not fetch.
+
+## Hardening changes
+
+No finding-driven hardening changes were required.
+
+Preventive hardening added during the Framework Seed closeout includes:
+
+- a durable Repository Threat Model at `docs/security/threat-model.md`,
+- a required change-set security closeout artifact at this path,
+- validator coverage for threat model and security closeout requirements,
+- Story Closeout ordering and rerun rules for security-dependent changes,
+- strict final-closeout validation for unresolved story-review evidence and
+  host-local scan paths in external projection drafts,
+- TDD coverage for missing closeout paths, required sections, completed status,
+  and closeout evidence.
+
+## Re-validation status
+
+Re-validation passed after this closeout file was populated.
+
+- `python3.14 -m unittest tests/test_validate_framework_seed.py`: 264 tests
+  passed.
+- `python3.14 tools/validate_framework_seed.py`: 0 failed, 174 passed.
+- `python3.14 tools/validate_framework_seed.py --json`: 174 passing result
+  objects.
+- `git diff --check`: passed.
+
+## Deferred-risk tracking
+
+Deferred risks: none.
+
+No reportable security finding was deferred. Future change sets that introduce
+or materially change executable code, hooks, MCP/tool definitions, permissions,
+secrets handling, network/file/process side effects, package metadata, security
+policy, or published Agent Equipment require their own applicable security
+analysis and closeout.

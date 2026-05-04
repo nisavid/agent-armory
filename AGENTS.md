@@ -26,6 +26,8 @@ Smiths creating or modifying Agent Equipment should start with:
 
 - `docs/equipment-framework.md` for the Framework overview.
 - `docs/smith-runbook.md` for the equipment creation workflow.
+- `docs/story-closeout.md` for closeout gate order, review sequencing, and rerun rules.
+- If the current equipment task reveals an unsatisfied Framework requirement, use `docs/smith-runbook.md` for Framework requirement escalation before continuing.
 - `docs/interface-decision-guide.md` for choosing skills, MCP/tools, hooks, Agent Profiles, plugins, scripts, docs, and config.
 - `docs/harness-capabilities.md` before making harness-specific claims.
 - `templates/` for seed templates.
@@ -53,6 +55,7 @@ Use single-context domain docs. See `docs/agents/domain.md`.
 - Nested slash-separated scopes are welcome when they communicate the change more precisely, for example `docs/readme` or `skills/install`.
 - Before pushing changes to repo content, ensure any related or referencing repo content is updated accordingly.
 - Before treating a change set as merge-ready, perform the security analyses applicable to that change set and record the commands, artifacts, findings, fixes, suppressions, or explicit non-applicability in the closeout.
+- Before committing or externally projecting closeout evidence, classify each evidence artifact by durability. Commit or publish durable project evidence and portable review summaries; summarize instance-scoped scratch artifacts by scope, disposition, and durable conclusions instead of treating raw logs, reports, local paths, or tool work directories as project truth.
 - Security closeout evidence belongs in the PR body, final change summary, issue tracker, or a neutral committed security document when the evidence is durable project material. Do not bury it in transient tool logs.
 - Use Codex Security workflows when they apply. A change set that introduces or materially changes executable code, hooks, MCP/tool definitions, permissions, secrets handling, network/file/process side effects, package metadata, or security policy must receive a Codex Security scan or a documented reason why a narrower security action is sufficient.
 - Resolve reportable security findings before merge-readiness, or record a stakeholder-approved deferment with the tracking issue and risk rationale.
@@ -61,6 +64,9 @@ Use single-context domain docs. See `docs/agents/domain.md`.
 - If the inspection changes no docs, record the rationale in the PR body, final change summary, issue tracker, or neutral committed closeout document.
 - Documentation closeout evidence belongs in the PR body, final change summary, issue tracker, or a neutral committed closeout document when the evidence is durable project material.
 - Ralph-review documentation closeout changes with reviewer guidance that includes the applicable doc-writing standards: `honing-agent-facing-docs` for agent-facing docs, `honing-human-facing-docs` for human-facing docs, `writing-skills` for skill docs or skill-like instructions, `documentation-writer` for Diataxis structure, and `writing-clearly-and-concisely` for clear prose.
+- Follow `docs/story-closeout.md` for closeout gate order, interdependency rules, review sequencing, and rerun rules.
+- Before story closeout, run a Cross-Boundary Coherence Ralph Review that checks behavior and evidence across PRD, specs, plan, implementation, validation, security, docs, issue/PR projection, and release or handoff surfaces.
+- Before story closeout, run a Story Quality Ralph Review that checks DX, UX, code quality, architecture, robustness against unspecified interactions and attack paths, lessons from prior pathological dev/ops cycles, and alignment with the strategic vision.
 - Once work is underway, agents may stage, commit, push, open PRs, update issues, and perform closeout steps when those actions advance the assigned work and respect the repository's current review, verification, and stakeholder boundaries.
 - Do not force-push or perform destructive history operations unless the user explicitly asks for that action.
 

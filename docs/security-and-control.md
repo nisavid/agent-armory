@@ -4,6 +4,8 @@ Status: Framework Seed
 
 Security and control decisions belong in the equipment design, not only in final review. Smiths classify authority, side effects, and gates before implementation.
 
+The persistent [Repository Threat Model](security/threat-model.md) is the baseline for Framework Seed security closeout and future security scans.
+
 ## least privilege
 
 Use least privilege across model context, tools, credentials, filesystem access, network access, and mutation authority.

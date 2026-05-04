@@ -176,6 +176,50 @@ _Avoid_: target-specific finding list, one-off scan report
 The end-of-change documentation activity that inspects affected agent-facing and human-facing docs, updates stale or incomplete claims, and reviews the result with audience-appropriate doc-writing standards.
 _Avoid_: README-only cleanup, indiscriminate doc churn, stale initial-state language
 
+**Story Closeout**:
+The story-level activity that assembles validation, security, documentation, review, projection, and handoff evidence before a story is treated as complete.
+_Avoid_: treating one clean subprocess as proof that the whole story is complete
+
+**Cross-Boundary Coherence Ralph Review**:
+A Review Until Clean gate that checks whether process outputs agree across PRD, specs, plans, implementation, validation, security, documentation, projection, and release or handoff surfaces.
+_Avoid_: local-only consistency check
+
+**Story Quality Ralph Review**:
+A Review Until Clean gate that checks holistic quality after coherence is established, including DX, UX, architecture, robustness, strategic alignment, and lessons from prior development or operations failures.
+_Avoid_: style-only review, generic correctness pass
+
+**Intent**:
+A direction that an intent-capable actor, declaration, specification, tool, or workflow imposes or attempts to impose. Intent is usually goal-oriented, or at least directionally so.
+_Avoid_: treating intent as only stakeholder purpose or only written specification
+
+**Effective Intent**:
+The Intent actually imposed by ADRs, PRDs, specs, plans, acceptance criteria, review dispositions, and other declarative project surfaces; this is the direction the project would take if agents followed those declarations literally.
+_Avoid_: assuming declarations always capture the operator's full purpose
+
+**Underlying Intent**:
+The stakeholder's actual current Intent: the direction they would want the project to move if a mismatch were brought to their attention. An agent does not directly know a stakeholder's or other intent-capable actor's Underlying Intent; it maintains an evidence-backed model that can be tested through questions, experiments, and observed corrections.
+_Avoid_: confusing the agent's model of intent with the intent itself
+
+**Intent Model Refresh**:
+The first Story Closeout gate, where the agent updates its evidence-backed model of Underlying Intent from current operator input, accepted decisions, review dispositions, handoffs, and observed corrections before running downstream closeout gates.
+_Avoid_: validating against stale assumptions
+
+**Intent Alignment Check**:
+A Story Quality check that compares Effective Intent with the refreshed model of Underlying Intent after Cross-Boundary Coherence has made Effective Intent legible. Refresh the model again if closeout evidence introduced new intent signals.
+_Avoid_: silent reinterpretation, mind-reading, unexamined literalism
+
+**Framework Requirement Escalation**:
+A Smith workflow for pausing an equipment task when an unsatisfied Framework requirement blocks or materially weakens the task, recording that dependency, and handing the Framework work to a Metasmith session before continuing.
+_Avoid_: ad hoc workaround, continuing with an underspecified Framework
+
+**Smith-to-Metasmith Handoff**:
+The context package a Smith gives to a Metasmith for Framework Requirement Escalation.
+_Avoid_: vague note, unstructured context dump
+
+**Metasmith Hand-Back**:
+The return note a Metasmith gives a Smith after resolving or deferring a Framework requirement.
+_Avoid_: chat-only conclusion, undocumented resume instruction
+
 ## Relationships
 
 - The **Agent Armory** contains **Agent Equipment** and the **Agent Equipment Framework**.
@@ -207,6 +251,11 @@ _Avoid_: README-only cleanup, indiscriminate doc churn, stale initial-state lang
 - **Seed Validation** checks the **Source Projection Register** and Source Handoff manifest coverage so accepted requirements are auditable.
 - A **Change Set Security Closeout** uses the **Repository Threat Model** when deciding which security analyses and fixes are required before merge-readiness.
 - A **Change Set Documentation Closeout** updates affected **Canonical Framework Docs**, agent-facing policy, and human-facing orientation so established precedents and remaining ambiguities are represented accurately.
+- **Story Closeout** depends on current change-set validation, **Change Set Security Closeout**, **Change Set Documentation Closeout**, **Cross-Boundary Coherence Ralph Review**, and **Story Quality Ralph Review**.
+- **Intent Model Refresh** is the first **Story Closeout** gate so every downstream closeout check uses the current model of **Underlying Intent**.
+- **Cross-Boundary Coherence Ralph Review** precedes **Story Quality Ralph Review** because quality review depends on coherent process evidence.
+- A **Story Quality Ralph Review** includes an **Intent Alignment Check** that compares **Effective Intent** with the refreshed model of **Underlying Intent** before final story closeout.
+- A **Framework Requirement Escalation** turns an unsatisfied Framework need into a task dependency, moves Framework work to a **Metasmith**, and returns a **Metasmith Hand-Back** that lets the **Smith** resume safely.
 
 ## Example dialogue
 
@@ -234,5 +283,9 @@ _Avoid_: README-only cleanup, indiscriminate doc churn, stale initial-state lang
 - "Skill surface" can mean a template for Smiths or a real equipped skill. Resolution: use **Skill Template** for seed guidance and create repo-local skills only after **Pressure Scenario Validation**.
 - "Security review" can mean a repository threat model, a diff-focused scan, a repository-wide scan, a secret scan, or a hardening task. Resolution: use **Change Set Security Closeout** for the merge-readiness gate and name the specific analysis performed.
 - "Doc closeout" can mean updating one touched file or reassessing every affected doc audience. Resolution: use **Change Set Documentation Closeout** for the affected-doc sweep and review gate.
+- "Closeout" can mean story completion, subordinate security or documentation gates, or publication cleanup. Resolution: use **Story Closeout** for the story-level gate and name subordinate gates explicitly.
+- "Coherence review" can mean local module consistency or cross-process consistency. Resolution: use **Cross-Boundary Coherence Ralph Review** for the story-closeout gate that checks PRD, specs, plan, implementation, validation, security, docs, issue/PR projection, and release or handoff surfaces together.
+- "Quality review" can mean style, correctness, architecture, UX, DX, or strategic fit. Resolution: use **Story Quality Ralph Review** for the story-closeout gate that checks holistic quality criteria after scoped process-specific reviews have done their work.
+- "Intent" can mean a direction imposed by an intent-capable actor, the stakeholder's current intent, the project's declaration-imposed direction, or the agent's uncertain model of stakeholder intent. Resolution: use **Intent** for the general direction, **Underlying Intent** for actual current stakeholder intent, **Effective Intent** for the direction imposed by declarations, **Intent Model Refresh** for the first Story Closeout gate that updates the agent's evidence-backed model, and **Intent Alignment Check** for the Story Quality gate that compares Effective Intent against that refreshed model.
 - "Framework discovery" can mean preloaded agent routing or human README discovery. Resolution: use **Preloaded Framework Path** for Smiths and **Human Framework Entry** for human readers.
 - "Handoff coverage" can mean informal confidence or auditable projection. Resolution: use a **Source Projection Register** for accepted requirements and deferments.

@@ -13,15 +13,21 @@ from tools.validate_framework_seed import (
     load_toml,
     render_human,
     run,
+    validate_final_closeout,
     validate_canonical_docs,
+    validate_documentation_closeout,
     validate_examples,
     validate_framework_routes,
     validate_harness_catalog,
     validate_markdown_links,
+    validate_projection_drafts,
     validate_specs,
     validate_source_handoff_provenance,
     validate_source_projection,
+    SOURCE_PROJECTION_PLANNED_REQUIREMENTS,
     validate_required_paths,
+    validate_security_closeout,
+    validate_threat_model,
 )
 
 
@@ -225,7 +231,7 @@ class SourceProjectionTests(unittest.TestCase):
             self.write_source_handoff_fixture(root)
             (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
             rows = [
-                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | planned |"
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | {'planned' if requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS else 'validated'} |"
                 for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
             ]
             self.write_register(root, rows)
@@ -264,7 +270,7 @@ class SourceProjectionTests(unittest.TestCase):
             self.write_source_handoff_fixture(root)
             (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
             rows = [
-                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | planned |"
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | {'planned' if requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS else 'validated'} |"
                 for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
             ]
             rows[0] = rows[0].replace("00-metasmith-handoff-prompt.md", "wrong-source.md")
@@ -293,7 +299,7 @@ class SourceProjectionTests(unittest.TestCase):
             )
             (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
             rows = [
-                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | planned |"
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | {'planned' if requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS else 'validated'} |"
                 for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
             ]
             self.write_register(root, rows)
@@ -317,7 +323,7 @@ class SourceProjectionTests(unittest.TestCase):
             self.write_source_handoff_fixture(root, omit={"00-metasmith-handoff-prompt.md"})
             (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
             rows = [
-                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | planned |"
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | {'planned' if requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS else 'validated'} |"
                 for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
             ]
             self.write_register(root, rows)
@@ -347,7 +353,7 @@ class SourceProjectionTests(unittest.TestCase):
             self.write_register(
                 root,
                 [
-                    "| H001 | 00-metasmith-handoff-prompt.md | Your objective | Summary | projected | docs/target.md |  | planned |"
+                    "| H001 | 00-metasmith-handoff-prompt.md | Your objective | Summary | projected | docs/target.md |  | validated |"
                 ],
             )
 
@@ -376,7 +382,7 @@ class SourceProjectionTests(unittest.TestCase):
             self.write_register(
                 root,
                 [
-                    "| H001 | 00-metasmith-handoff-prompt.md | Your objective | Summary | projected | docs/target.md |  | planned |"
+                    "| H001 | 00-metasmith-handoff-prompt.md | Your objective | Summary | projected | docs/target.md |  | validated |"
                 ],
             )
 
@@ -402,7 +408,7 @@ class SourceProjectionTests(unittest.TestCase):
             outside.write_text("# Target\n", encoding="utf-8")
             target.symlink_to(outside)
             rows = [
-                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/target.md |  | planned |"
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/target.md |  | {'planned' if requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS else 'validated'} |"
                 for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
             ]
             self.write_register(root, rows)
@@ -424,7 +430,7 @@ class SourceProjectionTests(unittest.TestCase):
             root = Path(tmpdir)
             self.write_source_handoff_fixture(root)
             rows = [
-                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/missing.md |  | planned |"
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/missing.md |  | {'planned' if requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS else 'validated'} |"
                 for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
             ]
             self.write_register(root, rows)
@@ -448,7 +454,7 @@ class SourceProjectionTests(unittest.TestCase):
             self.write_source_handoff_fixture(root)
             (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
             rows = [
-                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | planned |"
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | {'planned' if requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS else 'validated'} |"
                 for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
             ]
             rows[0] = "| H001 | 00-metasmith-handoff-prompt.md | Your objective | Defer seed objective | deferred | specs/future-work.md | Deferred until follow-up. | planned |"
@@ -457,6 +463,85 @@ class SourceProjectionTests(unittest.TestCase):
             results = validate_source_projection(root)
 
         self.assertTrue(all(result.ok for result in results), results)
+
+    def test_validate_source_projection_rejects_unknown_validation_status(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs").mkdir()
+            self.write_source_handoff_fixture(root)
+            (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
+            rows = [
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | {'planned' if requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS else 'validated'} |"
+                for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
+            ]
+            rows[0] = rows[0].replace(" | validated |", " | done |")
+            self.write_register(root, rows)
+
+            results = validate_source_projection(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_projection:H001",
+                ok=False,
+                detail="validation_status must be planned or validated",
+                path="docs/metasmith/source-projection.md",
+            ),
+            results,
+        )
+
+    def test_validate_source_projection_rejects_premature_validated_status(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs").mkdir()
+            self.write_source_handoff_fixture(root)
+            (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
+            rows = []
+            for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items():
+                status = "validated" if requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS else "planned"
+                rows.append(
+                    f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | {status} |"
+                )
+            self.write_register(root, rows)
+
+            results = validate_source_projection(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_projection:H012",
+                ok=False,
+                detail="validation_status must remain planned until closeout evidence lands",
+                path="docs/metasmith/source-projection.md",
+            ),
+            results,
+        )
+
+    def test_validate_source_projection_rejects_stale_planned_status(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs").mkdir()
+            self.write_source_handoff_fixture(root)
+            (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
+            rows = []
+            for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items():
+                status = "planned" if requirement_id == "H001" else "validated"
+                if requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS:
+                    status = "planned"
+                rows.append(
+                    f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | {status} |"
+                )
+            self.write_register(root, rows)
+
+            results = validate_source_projection(root)
+
+        self.assertIn(
+            CheckResult(
+                name="source_projection:H001",
+                ok=False,
+                detail="validation_status must be validated for completed projected requirement",
+                path="docs/metasmith/source-projection.md",
+            ),
+            results,
+        )
 
     def test_validate_source_projection_rejects_deferred_url_target(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -558,7 +643,7 @@ class SourceProjectionTests(unittest.TestCase):
             self.write_source_handoff_fixture(root)
             (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
             rows = [
-                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | planned |"
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | {'planned' if requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS else 'validated'} |"
                 for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
             ]
             rows.append(rows[0])
@@ -1205,6 +1290,7 @@ class CanonicalDocTests(unittest.TestCase):
             "Docs/config/scripts/hooks/skills/agents/plugins",
             "Pressure Scenario Validation",
             "Equipment Promotion Path",
+            "Framework requirement escalation",
             "Closeout",
         ],
         "docs/metasmith-runbook.md": [
@@ -1215,6 +1301,7 @@ class CanonicalDocTests(unittest.TestCase):
             "Change set closeout",
             "Issue Projection",
             "downstream Smith specs",
+            "Framework requirement intake",
         ],
         "docs/interface-decision-guide.md": ["Decision tree", "placement guide"],
         "docs/harness-components.md": [
@@ -1241,6 +1328,7 @@ class CanonicalDocTests(unittest.TestCase):
             "implementation inference",
             "practitioner wisdom",
             "hypothesis",
+            "artifact durability",
             "source hygiene",
         ],
         "docs/security-and-control.md": [
@@ -1260,17 +1348,95 @@ class CanonicalDocTests(unittest.TestCase):
             "published",
             "entry/exit criteria",
         ],
+        "docs/story-closeout.md": [
+            "Purpose",
+            "Gate order",
+            "Interdependency rules",
+            "Review gates",
+            "Recursion and bookkeeping",
+            "Completion criteria",
+        ],
     }
     canonical_doc_required_text = {
         "docs/smith-runbook.md": [
+            "When a Smith finds an unsatisfied Framework requirement that blocks or materially weakens the current equipment task, treat the Framework work as a dependency and escalate to a Metasmith before continuing.",
+            "Choose the least disruptive Metasmith path supported by the harness and operator policy: current session, subagent session, peer agent session, forked session, or new session.",
+            "The handoff must include the blocked task, unsatisfied Framework requirement, dependency impact, evidence checked, requested Metasmith deliverable, selected session path, and hand-back expectation.",
             "docs, config, scripts, hooks, skills, Agent Profiles, plugins, and templates are discoverable from the Framework path",
+            "Run a Cross-Boundary Coherence Ralph Review before story closeout.",
+            "Run a Story Quality Ralph Review before story closeout.",
+        ],
+        "docs/metasmith-runbook.md": [
+            "A Metasmith intake from a Smith starts by preserving the Smith handoff, refining the Framework requirement, updating canonical surfaces and validation, and returning a hand-back note.",
+            "The hand-back note names files changed, validation and review results, dependency updates, remaining risks, and the context the Smith needs to resume.",
+        ],
+        "docs/story-closeout.md": [
+            "Story Closeout is the story-level gate; Change Set Security Closeout and Change Set Documentation Closeout are subordinate gates.",
+            "Refresh the Intent Model before downstream closeout gates.",
+            "Before committing or externally projecting closeout evidence, classify evidence artifacts by durability.",
+            "Durable project evidence and portable review summaries may be committed or projected.",
+            "Instance-scoped scratch artifacts, including raw tool reports, local scan bundles, copied diffs, host-local paths, screenshots, or work directories, should be summarized by scope, disposition, and durable conclusions instead of treated as project truth.",
+            "Run Cross-Boundary Coherence before Story Quality because quality review depends on coherent process evidence.",
+            "Intent Model Refresh is the first closeout gate.",
+            "Update the agent's model of Underlying Intent by reviewing recent operator input, accepted ADR/PRD/spec/plan changes, review dispositions, handoff notes, and observed corrections relevant to the story before running downstream closeout gates.",
+            "Story Quality also runs an Intent Alignment Check.",
+            "Compare Effective Intent, meaning the Intent actually imposed by ADRs, PRDs, specs, plans, acceptance criteria, review dispositions, and other declarations, with the refreshed model of Underlying Intent after Cross-Boundary Coherence has made Effective Intent legible.",
+            "Refresh the model again if closeout evidence introduced new intent signals.",
+            "An agent does not directly know a stakeholder's or other intent-capable actor's Underlying Intent; it maintains an evidence-backed model that can be tested through questions, experiments, and observed corrections.",
+            "Hypotheses about emotion, belief state, attention, engagement, discipline, or other internal disposition can explain why a mismatch might exist, but they are not evidence by themselves and must not justify unilateral realignment.",
+            "When observable evidence shows misalignment beyond reasonable doubt, realign the affected declarations and reproject downstream implications.",
+            "When the model remains uncertain, the case depends on internal-state inference, or the evidence otherwise creates a non-dismissible likelihood of misalignment without certainty, raise a concise question to the operator, using an interactive question tool when available.",
+            "If a revision changes security, documentation, validation, PRD/spec/plan scope, or issue/PR projection, rerun the affected upstream gate before the next closeout review.",
+            "Evidence-artifact durability changes rerun the closeout gate that owns the artifact and any projection surface that carries its claims.",
+            "Recording the latest clean review result is bookkeeping and does not reopen the full review loop unless it changes substantive claims.",
+            "Published issue, PR, release, or handoff corrections rerun a projection consistency check and a narrow Cross-Boundary Coherence review for the corrected surface.",
+            "closeout evidence artifacts are classified by durability",
+            "instance-scoped scratch artifacts are summarized rather than committed or externally projected as project truth",
         ],
     }
 
     def write_canonical_doc(self, root: Path, relative_path: str, sections: list[str] | None = None) -> None:
         path = root / relative_path
         path.parent.mkdir(parents=True, exist_ok=True)
-        section_markdown = "\n".join(f"## {section}\n\nContent.\n" for section in (sections or self.canonical_docs[relative_path]))
+        if relative_path == "docs/story-closeout.md" and sections is None:
+            section_markdown = textwrap.dedent(
+                """
+                ## Purpose
+
+                Content.
+
+                ## Gate order
+
+                1. Refresh the Intent Model before downstream closeout gates.
+                2. Confirm the implementation, specs, plans, and deterministic validation reflect the same scope.
+                3. Complete Change Set Security Closeout for the current change set.
+                4. Complete Change Set Documentation Closeout for affected human-facing and agent-facing docs.
+                5. Prepare projection drafts for issues, PR bodies, handoff notes, and release summaries from the current story evidence.
+                6. Run Cross-Boundary Coherence before Story Quality because quality review depends on coherent process evidence.
+                7. Run Story Quality Ralph Review after coherence findings are fixed or soundly rejected.
+                8. Run final validation and publication-readiness checks required by the active plan or repository policy.
+                9. Publish or update issue, PR, release, and handoff surfaces from the clean final story evidence.
+                10. Perform publication actions that remain in scope.
+
+                ## Interdependency rules
+
+                Content.
+
+                ## Review gates
+
+                Content.
+
+                ## Recursion and bookkeeping
+
+                Content.
+
+                ## Completion criteria
+
+                Content.
+                """
+            )
+        else:
+            section_markdown = "\n".join(f"## {section}\n\nContent.\n" for section in (sections or self.canonical_docs[relative_path]))
         required_text = "\n".join(self.canonical_doc_required_text.get(relative_path, []))
         path.write_text(f"# {path.stem}\n\nStatus: Framework Seed\n\n{section_markdown}\n{required_text}\n", encoding="utf-8")
 
@@ -1290,6 +1456,72 @@ class CanonicalDocTests(unittest.TestCase):
                 False,
                 "missing",
                 "docs/equipment-framework.md",
+            ),
+            results,
+        )
+
+    def test_validate_canonical_docs_requires_story_closeout_doc(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            for relative_path in self.canonical_docs:
+                if relative_path != "docs/story-closeout.md":
+                    self.write_canonical_doc(root, relative_path)
+
+            results = validate_canonical_docs(root)
+
+        self.assertIn(
+            CheckResult(
+                "canonical_doc:docs/story-closeout.md",
+                False,
+                "missing",
+                "docs/story-closeout.md",
+            ),
+            results,
+        )
+
+    def test_validate_canonical_docs_rejects_story_closeout_gate_order(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_canonical_docs(root)
+            story_path = root / "docs/story-closeout.md"
+            story_text = story_path.read_text(encoding="utf-8")
+            story_text = story_text.replace(
+                "5. Prepare projection drafts for issues, PR bodies, handoff notes, and release summaries from the current story evidence.",
+                "5. Run Cross-Boundary Coherence before Story Quality because quality review depends on coherent process evidence.",
+            ).replace(
+                "6. Run Cross-Boundary Coherence before Story Quality because quality review depends on coherent process evidence.",
+                "6. Prepare projection drafts for issues, PR bodies, handoff notes, and release summaries from the current story evidence.",
+            )
+            story_path.write_text(story_text, encoding="utf-8")
+
+            results = validate_canonical_docs(root)
+
+        self.assertIn(
+            CheckResult(
+                "canonical_doc:story_closeout_gate_order:docs/story-closeout.md",
+                False,
+                "gate order must include required items in order",
+                "docs/story-closeout.md",
+            ),
+            results,
+        )
+
+    def test_validate_canonical_docs_requires_story_closeout_publication_correction_rule(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_canonical_docs(root)
+            story_path = root / "docs/story-closeout.md"
+            missing_text = "Published issue, PR, release, or handoff corrections rerun a projection consistency check and a narrow Cross-Boundary Coherence review for the corrected surface."
+            story_path.write_text(story_path.read_text(encoding="utf-8").replace(missing_text, ""), encoding="utf-8")
+
+            results = validate_canonical_docs(root)
+
+        self.assertIn(
+            CheckResult(
+                f"canonical_doc:text:docs/story-closeout.md:{missing_text}",
+                False,
+                f"missing text: {missing_text}",
+                "docs/story-closeout.md",
             ),
             results,
         )
@@ -1411,6 +1643,29 @@ class CanonicalDocTests(unittest.TestCase):
             results,
         )
 
+    def test_validate_canonical_docs_requires_story_closeout_review_gates(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_canonical_docs(root)
+            self.write_canonical_doc(root, "docs/smith-runbook.md")
+            missing_text = "Run a Cross-Boundary Coherence Ralph Review before story closeout."
+            (root / "docs/smith-runbook.md").write_text(
+                (root / "docs/smith-runbook.md").read_text(encoding="utf-8").replace(missing_text, ""),
+                encoding="utf-8",
+            )
+
+            results = validate_canonical_docs(root)
+
+        self.assertIn(
+            CheckResult(
+                f"canonical_doc:text:docs/smith-runbook.md:{missing_text}",
+                False,
+                f"missing text: {missing_text}",
+                "docs/smith-runbook.md",
+            ),
+            results,
+        )
+
     def test_run_reports_missing_canonical_docs(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -1470,6 +1725,822 @@ class CanonicalDocTests(unittest.TestCase):
                 "missing section: Maintenance",
                 "docs/equipment-framework.md",
             ),
+            results,
+        )
+
+
+class ThreatModelValidationTests(unittest.TestCase):
+    threat_model_path = "docs/security/threat-model.md"
+    security_surface_path = "docs/security-and-control.md"
+    required_sections = [
+        "Assets",
+        "Trust boundaries",
+        "Attacker-controlled inputs",
+        "Invariants",
+        "Assumptions",
+        "High-impact failure modes",
+    ]
+
+    def valid_threat_model(self) -> str:
+        sections = "\n".join(f"## {section}\n\nContent.\n" for section in self.required_sections)
+        return f"# Agent Armory Repository Threat Model\n\nStatus: Repository Threat Model\n\n{sections}"
+
+    def write_valid_threat_model_surface(self, root: Path) -> None:
+        threat_model = root / self.threat_model_path
+        threat_model.parent.mkdir(parents=True, exist_ok=True)
+        threat_model.write_text(self.valid_threat_model(), encoding="utf-8")
+        security_surface = root / self.security_surface_path
+        security_surface.parent.mkdir(parents=True, exist_ok=True)
+        security_surface.write_text(
+            "# Security and Control\n\nSee [Repository Threat Model](security/threat-model.md).\n",
+            encoding="utf-8",
+        )
+
+    def test_validate_threat_model_reports_missing_surface(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = validate_threat_model(root)
+
+        self.assertIn(
+            CheckResult(
+                f"threat_model:path:{self.threat_model_path}",
+                False,
+                "missing",
+                self.threat_model_path,
+            ),
+            results,
+        )
+
+    def test_validate_threat_model_accepts_complete_surface(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_valid_threat_model_surface(root)
+
+            results = validate_threat_model(root)
+
+        self.assertTrue(all(result.ok for result in results), results)
+
+    def test_validate_threat_model_requires_sections(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_valid_threat_model_surface(root)
+            path = root / self.threat_model_path
+            path.write_text(self.valid_threat_model().replace("## Invariants\n\nContent.\n", ""), encoding="utf-8")
+
+            results = validate_threat_model(root)
+
+        self.assertIn(
+            CheckResult(
+                f"threat_model:section:{self.threat_model_path}:Invariants",
+                False,
+                "missing section: Invariants",
+                self.threat_model_path,
+            ),
+            results,
+        )
+
+    def test_validate_threat_model_requires_canonical_reference(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_valid_threat_model_surface(root)
+            (root / self.security_surface_path).write_text("# Security and Control\n", encoding="utf-8")
+
+            results = validate_threat_model(root)
+
+        self.assertIn(
+            CheckResult(
+                f"threat_model:reference:{self.security_surface_path}",
+                False,
+                "missing threat model reference",
+                self.security_surface_path,
+            ),
+            results,
+        )
+
+    def test_run_requires_threat_model_path(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(f"required_path:{self.threat_model_path}", False, "missing", self.threat_model_path),
+            results,
+        )
+
+
+class DocumentationCloseoutValidationTests(unittest.TestCase):
+    closeout_path = "docs/closeout/framework-seed-documentation.md"
+    required_sections = [
+        "Scope of inspected docs",
+        "Docs changed",
+        "Docs unchanged with rationale",
+        "Stale-language cleanup result",
+        "Established precedents added or updated",
+        "Review cycles and latest clean review",
+        "Residual documentation risk",
+    ]
+
+    def valid_closeout(self) -> str:
+        sections = "\n\n".join(
+            [
+                "## Scope of inspected docs\n\nInspected `README.md`, `AGENTS.md`, `CONTEXT.md`, `docs/agents/*.md`, canonical Framework docs under `docs/*.md`, `docs/prd/framework-seed.md`, `docs/adr/*.md`, `docs/plans/2026-05-03-framework-seed.md`, `docs/security/*.md`, `docs/closeout/*.md`, `docs/metasmith/handoff/`, `specs/*.md`, `templates/**/*.md`, and `examples/**/*.md`.",
+                "## Docs changed\n\nUpdated `docs/security/threat-model.md` and `docs/metasmith/source-projection.md`.",
+                "## Docs unchanged with rationale\n\nRecorded why `README.md` and `AGENTS.md` needed no change.",
+                "## Stale-language cleanup result\n\nStale initial-state language was searched and resolved.",
+                "## Established precedents added or updated\n\nRecorded Framework Seed precedents. Portable workflow capture says a branch-push pause does not close the capture. Full Seed completion requires a merged Seed. An explicit hold or cancellation continues capture through an unmerged-state hand-back and should record the unmerged state directly.",
+                "## Review cycles and latest clean review\n\nLatest clean documentation closeout review: Ralph Review Cycle 99.",
+                "## Residual documentation risk\n\nResidual documentation risk is tracked for pending security closeout.",
+            ]
+        )
+        return f"# Framework Seed Documentation Closeout\n\nStatus: Completed Closeout\n\n{sections}"
+
+    def write_closeout(self, root: Path, content: str | None = None) -> None:
+        path = root / self.closeout_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content or self.valid_closeout(), encoding="utf-8")
+
+    def test_validate_documentation_closeout_reports_missing_surface(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = validate_documentation_closeout(root)
+
+        self.assertIn(
+            CheckResult(
+                f"documentation_closeout:path:{self.closeout_path}",
+                False,
+                "missing",
+                self.closeout_path,
+            ),
+            results,
+        )
+
+    def test_validate_documentation_closeout_accepts_complete_surface(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_closeout(root)
+
+            results = validate_documentation_closeout(root)
+
+        self.assertTrue(all(result.ok for result in results), results)
+
+    def test_validate_documentation_closeout_requires_sections(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_closeout(
+                root,
+                self.valid_closeout().replace(
+                    "## Stale-language cleanup result\n\nStale initial-state language was searched and resolved.\n\n",
+                    "",
+                ),
+            )
+
+            results = validate_documentation_closeout(root)
+
+        self.assertIn(
+            CheckResult(
+                f"documentation_closeout:section:{self.closeout_path}:Stale-language cleanup result",
+                False,
+                "missing section: Stale-language cleanup result",
+                self.closeout_path,
+            ),
+            results,
+        )
+
+    def test_validate_documentation_closeout_rejects_incomplete_review_status(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_closeout(root, self.valid_closeout().replace("Status: Completed Closeout", "Status: In Progress"))
+
+            results = validate_documentation_closeout(root)
+
+        self.assertIn(
+            CheckResult(
+                f"documentation_closeout:status:{self.closeout_path}",
+                False,
+                "missing completed closeout status",
+                self.closeout_path,
+            ),
+            results,
+        )
+
+    def test_validate_documentation_closeout_rejects_unresolved_review_placeholder(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_closeout(
+                root,
+                self.valid_closeout()
+                + "\n\nThis final documentation closeout summary still requires review. Record that review result here after it completes.\n",
+            )
+
+            results = validate_documentation_closeout(root)
+
+        self.assertIn(
+            CheckResult(
+                f"documentation_closeout:review:{self.closeout_path}",
+                False,
+                "contains unresolved review placeholder",
+                self.closeout_path,
+            ),
+            results,
+        )
+
+    def test_validate_documentation_closeout_rejects_pending_latest_clean_review(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_closeout(
+                root,
+                self.valid_closeout().replace(
+                    "Latest clean documentation closeout review: Ralph Review Cycle 99.",
+                    "Prior review: Ralph Review Cycle 42.\n\nLatest clean documentation closeout review: pending.",
+                ),
+            )
+
+            results = validate_documentation_closeout(root)
+
+        self.assertIn(
+            CheckResult(
+                f"documentation_closeout:review:{self.closeout_path}",
+                False,
+                "latest clean review must name a Ralph Review Cycle",
+                self.closeout_path,
+            ),
+            results,
+        )
+
+    def test_validate_documentation_closeout_requires_closeout_evidence(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            sections = "\n".join(f"## {section}\n\nContent.\n" for section in self.required_sections)
+            self.write_closeout(root, f"# Framework Seed Documentation Closeout\n\nStatus: Completed Closeout\n\n{sections}")
+
+            results = validate_documentation_closeout(root)
+
+        self.assertIn(
+            CheckResult(
+                f"documentation_closeout:evidence:{self.closeout_path}:Latest clean documentation closeout review",
+                False,
+                "missing evidence: Latest clean documentation closeout review",
+                self.closeout_path,
+            ),
+            results,
+        )
+
+    def test_validate_documentation_closeout_requires_full_scope_evidence(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_closeout(root, self.valid_closeout().replace("`specs/*.md`, ", ""))
+
+            results = validate_documentation_closeout(root)
+
+        self.assertIn(
+            CheckResult(
+                f"documentation_closeout:evidence:{self.closeout_path}:specs/*.md",
+                False,
+                "missing evidence: specs/*.md",
+                self.closeout_path,
+            ),
+            results,
+        )
+
+    def test_validate_documentation_closeout_requires_completion_window_evidence(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_closeout(
+                root,
+                self.valid_closeout().replace(
+                    "Portable workflow capture says a branch-push pause does not close the capture. Full Seed completion requires a merged Seed. An explicit hold or cancellation continues capture through an unmerged-state hand-back and should record the unmerged state directly.",
+                    "Portable workflow capture is recorded.",
+                ),
+            )
+
+            results = validate_documentation_closeout(root)
+
+        self.assertIn(
+            CheckResult(
+                f"documentation_closeout:evidence:{self.closeout_path}:branch-push pause does not close the capture",
+                False,
+                "missing evidence: branch-push pause does not close the capture",
+                self.closeout_path,
+            ),
+            results,
+        )
+
+    def test_validate_documentation_closeout_requires_hold_cancel_condition(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_closeout(
+                root,
+                self.valid_closeout().replace(
+                    "An explicit hold or cancellation continues capture through an unmerged-state hand-back and should record the unmerged state directly.",
+                    "A stopped Seed keeps an unmerged-state hand-back.",
+                ),
+            )
+
+            results = validate_documentation_closeout(root)
+
+        self.assertIn(
+            CheckResult(
+                f"documentation_closeout:evidence:{self.closeout_path}:An explicit hold or cancellation continues",
+                False,
+                "missing evidence: An explicit hold or cancellation continues",
+                self.closeout_path,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                f"documentation_closeout:evidence:{self.closeout_path}:record the unmerged state directly",
+                False,
+                "missing evidence: record the unmerged state directly",
+                self.closeout_path,
+            ),
+            results,
+        )
+
+    def test_validate_documentation_closeout_accepts_wrapped_completion_window_evidence(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_closeout(
+                root,
+                self.valid_closeout()
+                .replace("Full Seed completion requires a merged Seed.", "Full Seed completion\nrequires a merged Seed.")
+                .replace("unmerged-state hand-back and should record", "unmerged-state\nhand-back and should record"),
+            )
+
+            results = validate_documentation_closeout(root)
+
+        self.assertTrue(all(result.ok for result in results), results)
+
+    def test_run_requires_documentation_closeout_path(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(f"required_path:{self.closeout_path}", False, "missing", self.closeout_path),
+            results,
+        )
+
+
+class SecurityCloseoutValidationTests(unittest.TestCase):
+    closeout_path = "docs/security/framework-seed-closeout.md"
+    required_sections = [
+        "Scan scope",
+        "Commands",
+        "Scan artifact disposition",
+        "Report disposition",
+        "Findings disposition",
+        "Hardening changes",
+        "Re-validation status",
+        "Deferred-risk tracking",
+    ]
+
+    def valid_closeout(self) -> str:
+        sections = "\n\n".join(
+            [
+                "## Scan scope\n\nMerge-base-to-working-tree Framework Seed diff, including committed, staged, unstaged, and untracked intended files.",
+                "## Commands\n\n- `python3.14 -m unittest tests/test_validate_framework_seed.py`\n- `python3.14 tools/validate_framework_seed.py`\n- Codex Security phase sequence: threat modeling, finding discovery, validation, attack-path analysis, final report.\n\nValidation and attack-path analysis were not separately run because finding discovery produced no technically plausible candidates.",
+                "## Scan artifact disposition\n\nThe raw bundle is ephemeral scratch evidence, not a tracked project artifact, not portable review evidence, and not a standing source of project truth.\n\nArtifact durability classification: instance-scoped scratch evidence. Durable security evidence is this closeout summary.",
+                "## Report disposition\n\nThe raw report is not committed and should not be cited as reusable project doctrine.",
+                "## Findings disposition\n\nNo reportable findings. Suppressed findings: none.",
+                "## Hardening changes\n\nNo hardening changes required.",
+                "## Re-validation status\n\nRe-validation passed for unit tests, seed validator, and security closeout checks.",
+                "## Deferred-risk tracking\n\nDeferred risks: none.",
+            ]
+        )
+        return f"# Framework Seed Security Closeout\n\nStatus: Completed Security Closeout\n\n{sections}"
+
+    def write_closeout(self, root: Path, content: str | None = None) -> None:
+        path = root / self.closeout_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content or self.valid_closeout(), encoding="utf-8")
+
+    def test_validate_security_closeout_reports_missing_surface(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = validate_security_closeout(root)
+
+        self.assertIn(
+            CheckResult(
+                f"security_closeout:path:{self.closeout_path}",
+                False,
+                "missing",
+                self.closeout_path,
+            ),
+            results,
+        )
+
+    def test_validate_security_closeout_accepts_complete_surface(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_closeout(root)
+
+            results = validate_security_closeout(root)
+
+        self.assertTrue(all(result.ok for result in results), results)
+
+    def test_validate_security_closeout_requires_sections(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_closeout(
+                root,
+                self.valid_closeout().replace("## Findings disposition\n\nNo reportable findings. Suppressed findings: none.\n\n", ""),
+            )
+
+            results = validate_security_closeout(root)
+
+        self.assertIn(
+            CheckResult(
+                f"security_closeout:section:{self.closeout_path}:Findings disposition",
+                False,
+                "missing section: Findings disposition",
+                self.closeout_path,
+            ),
+            results,
+        )
+
+    def test_validate_security_closeout_requires_completed_status(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_closeout(root, self.valid_closeout().replace("Status: Completed Security Closeout", "Status: In Progress"))
+
+            results = validate_security_closeout(root)
+
+        self.assertIn(
+            CheckResult(
+                f"security_closeout:status:{self.closeout_path}",
+                False,
+                "missing completed security closeout status",
+                self.closeout_path,
+            ),
+            results,
+        )
+
+    def test_validate_security_closeout_requires_evidence(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            sections = "\n".join(f"## {section}\n\nContent.\n" for section in self.required_sections)
+            self.write_closeout(root, f"# Framework Seed Security Closeout\n\nStatus: Completed Security Closeout\n\n{sections}")
+
+            results = validate_security_closeout(root)
+
+        self.assertIn(
+            CheckResult(
+                f"security_closeout:evidence:{self.closeout_path}:not a tracked project artifact",
+                False,
+                "missing evidence: not a tracked project artifact",
+                self.closeout_path,
+            ),
+            results,
+        )
+
+    def test_validate_security_closeout_accepts_completed_phase_disposition(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_closeout(
+                root,
+                self.valid_closeout().replace(
+                    "Validation and attack-path analysis were not separately run because finding discovery produced no technically plausible candidates.",
+                    "Validation phase completed. Attack-path analysis completed.",
+                ),
+            )
+
+            results = validate_security_closeout(root)
+
+        self.assertTrue(all(result.ok for result in results), results)
+
+    def test_validate_security_closeout_requires_phase_disposition(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_closeout(
+                root,
+                self.valid_closeout().replace(
+                    "\n\nValidation and attack-path analysis were not separately run because finding discovery produced no technically plausible candidates.",
+                    "",
+                ),
+            )
+
+            results = validate_security_closeout(root)
+
+        self.assertIn(
+            CheckResult(
+                f"security_closeout:evidence:{self.closeout_path}:validation and attack-path disposition",
+                False,
+                "missing validation and attack-path disposition",
+                self.closeout_path,
+            ),
+            results,
+        )
+
+    def test_run_requires_security_closeout_path(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(f"required_path:{self.closeout_path}", False, "missing", self.closeout_path),
+            results,
+        )
+
+
+class ProjectionDraftValidationTests(unittest.TestCase):
+    projection_path = "docs/closeout/framework-seed-projection-drafts.md"
+    plan_path = "docs/plans/2026-05-03-framework-seed.md"
+
+    def valid_projection_drafts(self) -> str:
+        return textwrap.dedent(
+            """
+            # Framework Seed Projection Drafts
+
+            Status: Review Draft
+
+            ## Published PRD Issue Draft
+
+            Projected commit SHA: `TO_CAPTURE_IMMEDIATELY_BEFORE_ISSUE_PUBLICATION`
+
+            Report disposition: recorded in `docs/security/framework-seed-closeout.md`.
+
+            Documentation closeout review: Ralph Review Cycle 99.
+
+            Cross-Boundary Coherence review: `TO_FILL_AFTER_CLEAN_REVIEW`
+
+            Story Quality review: `TO_FILL_AFTER_CLEAN_REVIEW`
+
+            ## Pull Request Draft
+
+            PR creation is intentionally paused after branch push in this session.
+
+            Documentation closeout: Ralph Review Cycle 99.
+
+            ## Release Draft
+
+            No release publication is planned for the Framework Seed.
+
+            ## Handoff Draft
+
+            No separate handoff publication is required before PR creation.
+
+            The Seed Closeout Addendum remains open through PR creation, PR review orchestration, merge, merge cleanup, external surface reconciliation, and final hand-back.
+            """
+        ).strip()
+
+    def write_projection_drafts(self, root: Path, content: str | None = None) -> None:
+        path = root / self.projection_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content or self.valid_projection_drafts(), encoding="utf-8")
+
+    def write_plan_with_step7(self, root: Path, checked: bool) -> None:
+        path = root / self.plan_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        checkbox = "x" if checked else " "
+        path.write_text(
+            f"# Plan\n\n- [{checkbox}] **Step 7: Ralph-review closeout coherence and quality**\n",
+            encoding="utf-8",
+        )
+
+    def test_validate_projection_drafts_reports_missing_surface(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = validate_projection_drafts(root)
+
+        self.assertIn(
+            CheckResult(
+                f"projection_drafts:path:{self.projection_path}",
+                False,
+                "missing",
+                self.projection_path,
+            ),
+            results,
+        )
+
+    def test_validate_projection_drafts_accepts_complete_surface(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_projection_drafts(root)
+
+            results = validate_projection_drafts(root)
+
+        self.assertTrue(all(result.ok for result in results), results)
+
+    def test_validate_projection_drafts_accepts_final_story_review_cycles_after_step7(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_plan_with_step7(root, checked=True)
+            self.write_projection_drafts(
+                root,
+                self.valid_projection_drafts()
+                .replace("Cross-Boundary Coherence review: `TO_FILL_AFTER_CLEAN_REVIEW`", "Cross-Boundary Coherence review: Ralph Review Cycle 53.")
+                .replace("Story Quality review: `TO_FILL_AFTER_CLEAN_REVIEW`", "Story Quality review: Ralph Review Cycle 54."),
+            )
+
+            results = validate_projection_drafts(root)
+
+        self.assertTrue(all(result.ok for result in results), results)
+
+    def test_validate_projection_drafts_requires_sections(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_projection_drafts(
+                root,
+                self.valid_projection_drafts().replace(
+                    "\n\n## Pull Request Draft\n\nPR creation is intentionally paused after branch push in this session.\n\nDocumentation closeout: Ralph Review Cycle 99.",
+                    "",
+                ),
+            )
+
+            results = validate_projection_drafts(root)
+
+        self.assertIn(
+            CheckResult(
+                f"projection_drafts:section:{self.projection_path}:Pull Request Draft",
+                False,
+                "missing section: Pull Request Draft",
+                self.projection_path,
+            ),
+            results,
+        )
+
+    def test_validate_projection_drafts_requires_security_report_disposition_field(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_projection_drafts(
+                root,
+                self.valid_projection_drafts().replace(
+                    "\nReport disposition: recorded in `docs/security/framework-seed-closeout.md`.\n",
+                    "",
+                ),
+            )
+
+            results = validate_projection_drafts(root)
+
+        self.assertIn(
+            CheckResult(
+                f"projection_drafts:evidence:{self.projection_path}:Report disposition: recorded in `docs/security/framework-seed-closeout.md`",
+                False,
+                "missing evidence: Report disposition: recorded in `docs/security/framework-seed-closeout.md`",
+                self.projection_path,
+            ),
+            results,
+        )
+
+    def test_validate_projection_drafts_rejects_unresolved_documentation_closeout_placeholder(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_projection_drafts(
+                root,
+                self.valid_projection_drafts().replace(
+                    "Documentation closeout review: Ralph Review Cycle 99.",
+                    "Review result: `TO_FILL_AFTER_FINAL_CLEAN_DOCUMENTATION_CLOSEOUT_REVIEW`",
+                ),
+            )
+
+            results = validate_projection_drafts(root)
+
+        self.assertIn(
+            CheckResult(
+                f"projection_drafts:evidence:{self.projection_path}:documentation closeout review",
+                False,
+                "documentation closeout review must name a Ralph Review Cycle",
+                self.projection_path,
+            ),
+            results,
+        )
+
+    def test_validate_projection_drafts_rejects_pending_story_review_placeholders_after_step7(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_plan_with_step7(root, checked=True)
+            self.write_projection_drafts(root)
+
+            results = validate_projection_drafts(root)
+
+        self.assertIn(
+            CheckResult(
+                f"projection_drafts:evidence:{self.projection_path}:story closeout reviews",
+                False,
+                "completed story closeout must name Cross-Boundary Coherence and Story Quality Ralph Review cycles",
+                self.projection_path,
+            ),
+            results,
+        )
+
+    def test_validate_final_closeout_rejects_pending_story_review_placeholders_without_step7_dependency(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_plan_with_step7(root, checked=False)
+            self.write_projection_drafts(root)
+
+            results = validate_final_closeout(root)
+
+        self.assertIn(
+            CheckResult(
+                f"final_closeout:evidence:{self.projection_path}:story closeout reviews",
+                False,
+                "final closeout must name Cross-Boundary Coherence and Story Quality Ralph Review cycles",
+                self.projection_path,
+            ),
+            results,
+        )
+
+    def test_validate_final_closeout_rejects_host_local_artifact_paths_in_projection_drafts(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_projection_drafts(
+                root,
+                self.valid_projection_drafts()
+                .replace("Cross-Boundary Coherence review: `TO_FILL_AFTER_CLEAN_REVIEW`", "Cross-Boundary Coherence review: Ralph Review Cycle 53.")
+                .replace("Story Quality review: `TO_FILL_AFTER_CLEAN_REVIEW`", "Story Quality review: Ralph Review Cycle 54.")
+                + "\n\nScan report: `/tmp/codex-security-scans/metasmith-framework/report.md`\n",
+            )
+
+            results = validate_final_closeout(root)
+
+        self.assertIn(
+            CheckResult(
+                f"final_closeout:evidence:{self.projection_path}:portable evidence",
+                False,
+                "external projection drafts must not publish host-local or scratch artifact paths",
+                self.projection_path,
+            ),
+            results,
+        )
+
+    def test_validate_final_closeout_rejects_generic_scratch_artifact_paths_in_projection_drafts(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_projection_drafts(
+                root,
+                self.valid_projection_drafts()
+                .replace("Cross-Boundary Coherence review: `TO_FILL_AFTER_CLEAN_REVIEW`", "Cross-Boundary Coherence review: Ralph Review Cycle 53.")
+                .replace("Story Quality review: `TO_FILL_AFTER_CLEAN_REVIEW`", "Story Quality review: Ralph Review Cycle 54.")
+                + "\n\nScratch report: `/home/example/project/security-scan/report.md`\n",
+            )
+
+            results = validate_final_closeout(root)
+
+        self.assertIn(
+            CheckResult(
+                f"final_closeout:evidence:{self.projection_path}:portable evidence",
+                False,
+                "external projection drafts must not publish host-local or scratch artifact paths",
+                self.projection_path,
+            ),
+            results,
+        )
+
+    def test_validate_final_closeout_accepts_clean_story_review_evidence(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_projection_drafts(
+                root,
+                self.valid_projection_drafts()
+                .replace("Cross-Boundary Coherence review: `TO_FILL_AFTER_CLEAN_REVIEW`", "Cross-Boundary Coherence review: Ralph Review Cycle 53.")
+                .replace("Story Quality review: `TO_FILL_AFTER_CLEAN_REVIEW`", "Story Quality review: Ralph Review Cycle 54."),
+            )
+
+            results = validate_final_closeout(root)
+
+        self.assertEqual([], [result for result in results if not result.ok])
+        self.assertIn(CheckResult("final_closeout:framework-seed", True, "ready", self.projection_path), results)
+
+    def test_validate_projection_drafts_requires_open_capture_pause_handoff(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_projection_drafts(
+                root,
+                self.valid_projection_drafts().replace(
+                    "The Seed Closeout Addendum remains open through PR creation, PR review orchestration, merge, merge cleanup, external surface reconciliation, and final hand-back.",
+                    "The Seed Closeout Addendum remains open through PR creation, PR review orchestration, merge, and merge cleanup.",
+                ),
+            )
+
+            results = validate_projection_drafts(root)
+
+        self.assertIn(
+            CheckResult(
+                f"projection_drafts:evidence:{self.projection_path}:Seed Closeout Addendum remains open through PR creation, PR review orchestration, merge, merge cleanup, external surface reconciliation, and final hand-back",
+                False,
+                "missing evidence: Seed Closeout Addendum remains open through PR creation, PR review orchestration, merge, merge cleanup, external surface reconciliation, and final hand-back",
+                self.projection_path,
+            ),
+            results,
+        )
+
+    def test_run_requires_projection_drafts_path(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(f"required_path:{self.projection_path}", False, "missing", self.projection_path),
             results,
         )
 

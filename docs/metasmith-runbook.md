@@ -41,6 +41,8 @@ Use first-party docs, releases, source, or schemas where available. Label third-
 
 ## Change set closeout
 
+Use `docs/story-closeout.md` for story-level closeout order, interdependency rules, and review sequencing.
+
 Near the end of each cohesive Framework change set, inspect every agent-facing and human-facing doc the change could plausibly affect. Update stale claims, gaps, inaccurate initial-state language, and appropriate deliverable mentions. If no doc edits are needed, record the rationale in the closeout.
 
 Run the security analyses applicable to the change-set scope before merge-readiness. Resolve reportable findings, or record stakeholder-approved deferment with risk rationale and tracking.
@@ -58,3 +60,20 @@ After a Repo Draft PRD stabilizes and review is clean, create or update the corr
 Downstream Smith specs describe future Agent Equipment without implementing it in the Framework Seed.
 
 Each spec names its promotion state, target harness assumptions, required Framework inputs, expected surfaces, validation needs, security boundaries, and open questions. When Metasmith decisions change the Framework, inspect downstream specs for drift and update or explicitly leave them unchanged with rationale.
+
+## Framework requirement intake
+
+A Metasmith intake from a Smith starts by preserving the Smith handoff, refining the Framework requirement, updating canonical surfaces and validation, and returning a hand-back note.
+
+Treat the Smith handoff as active task context, not as durable doctrine. Project only accepted Framework decisions into the narrowest live surface. If the requirement is not accepted, record the deferment reason, tracking surface, and Smith resume guidance.
+
+Before editing, identify:
+
+- the blocked Smith task and tracking surface;
+- the unsatisfied Framework requirement;
+- the dependency impact on the current equipment work;
+- the selected session path: current session, subagent session, peer agent session, forked session, or new session;
+- harness and operator constraints that affect the Metasmith path;
+- the expected hand-back format.
+
+After resolving or deferring the requirement, update affected Framework docs, validation, source projection, PRD/specs/issues, and closeout evidence as applicable. The hand-back note names files changed, validation and review results, dependency updates, remaining risks, and the context the Smith needs to resume.

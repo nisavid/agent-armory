@@ -282,6 +282,8 @@ SOURCE_PROJECTION_FIELDS = [
     "deferment_reason",
     "validation_status",
 ]
+SOURCE_PROJECTION_VALIDATION_STATUSES = {"planned", "validated"}
+SOURCE_PROJECTION_PLANNED_REQUIREMENTS = {"H012", "H053"}
 
 ACCEPTED_SOURCE_REQUIREMENTS = {
     "H001": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Your objective"},
@@ -346,6 +348,7 @@ SOURCE_HANDOFF_PROVENANCE_NOTICE = f"{SOURCE_HANDOFF_DIR}/AGENTS.md"
 REQUIRED_PRELOADED_ROUTES = [
     "docs/equipment-framework.md",
     "docs/smith-runbook.md",
+    "docs/story-closeout.md",
     "docs/interface-decision-guide.md",
     "docs/harness-capabilities.md",
     "templates/",
@@ -368,6 +371,7 @@ CANONICAL_DOC_REQUIRED_SECTIONS = {
         "Docs/config/scripts/hooks/skills/agents/plugins",
         "Pressure Scenario Validation",
         "Equipment Promotion Path",
+        "Framework requirement escalation",
         "Closeout",
     ],
     "docs/metasmith-runbook.md": [
@@ -378,6 +382,7 @@ CANONICAL_DOC_REQUIRED_SECTIONS = {
         "Change set closeout",
         "Issue Projection",
         "downstream Smith specs",
+        "Framework requirement intake",
     ],
     "docs/interface-decision-guide.md": ["Decision tree", "placement guide"],
     "docs/harness-components.md": [
@@ -404,6 +409,7 @@ CANONICAL_DOC_REQUIRED_SECTIONS = {
         "implementation inference",
         "practitioner wisdom",
         "hypothesis",
+        "artifact durability",
         "source hygiene",
     ],
     "docs/security-and-control.md": [
@@ -423,12 +429,176 @@ CANONICAL_DOC_REQUIRED_SECTIONS = {
         "published",
         "entry/exit criteria",
     ],
+    "docs/story-closeout.md": [
+        "Purpose",
+        "Gate order",
+        "Interdependency rules",
+        "Review gates",
+        "Recursion and bookkeeping",
+        "Completion criteria",
+    ],
 }
 CANONICAL_DOC_REQUIRED_TEXT = {
     "docs/smith-runbook.md": [
+        "When a Smith finds an unsatisfied Framework requirement that blocks or materially weakens the current equipment task, treat the Framework work as a dependency and escalate to a Metasmith before continuing.",
+        "Choose the least disruptive Metasmith path supported by the harness and operator policy: current session, subagent session, peer agent session, forked session, or new session.",
+        "The handoff must include the blocked task, unsatisfied Framework requirement, dependency impact, evidence checked, requested Metasmith deliverable, selected session path, and hand-back expectation.",
         "docs, config, scripts, hooks, skills, Agent Profiles, plugins, and templates are discoverable from the Framework path",
+        "Run a Cross-Boundary Coherence Ralph Review before story closeout.",
+        "Run a Story Quality Ralph Review before story closeout.",
+    ],
+    "docs/metasmith-runbook.md": [
+        "A Metasmith intake from a Smith starts by preserving the Smith handoff, refining the Framework requirement, updating canonical surfaces and validation, and returning a hand-back note.",
+        "The hand-back note names files changed, validation and review results, dependency updates, remaining risks, and the context the Smith needs to resume.",
+    ],
+    "docs/story-closeout.md": [
+        "Story Closeout is the story-level gate; Change Set Security Closeout and Change Set Documentation Closeout are subordinate gates.",
+        "Refresh the Intent Model before downstream closeout gates.",
+        "Before committing or externally projecting closeout evidence, classify evidence artifacts by durability.",
+        "Durable project evidence and portable review summaries may be committed or projected.",
+        "Instance-scoped scratch artifacts, including raw tool reports, local scan bundles, copied diffs, host-local paths, screenshots, or work directories, should be summarized by scope, disposition, and durable conclusions instead of treated as project truth.",
+        "Run Cross-Boundary Coherence before Story Quality because quality review depends on coherent process evidence.",
+        "Intent Model Refresh is the first closeout gate.",
+        "Update the agent's model of Underlying Intent by reviewing recent operator input, accepted ADR/PRD/spec/plan changes, review dispositions, handoff notes, and observed corrections relevant to the story before running downstream closeout gates.",
+        "Story Quality also runs an Intent Alignment Check.",
+        "Compare Effective Intent, meaning the Intent actually imposed by ADRs, PRDs, specs, plans, acceptance criteria, review dispositions, and other declarations, with the refreshed model of Underlying Intent after Cross-Boundary Coherence has made Effective Intent legible.",
+        "Refresh the model again if closeout evidence introduced new intent signals.",
+        "An agent does not directly know a stakeholder's or other intent-capable actor's Underlying Intent; it maintains an evidence-backed model that can be tested through questions, experiments, and observed corrections.",
+        "Hypotheses about emotion, belief state, attention, engagement, discipline, or other internal disposition can explain why a mismatch might exist, but they are not evidence by themselves and must not justify unilateral realignment.",
+        "When observable evidence shows misalignment beyond reasonable doubt, realign the affected declarations and reproject downstream implications.",
+        "When the model remains uncertain, the case depends on internal-state inference, or the evidence otherwise creates a non-dismissible likelihood of misalignment without certainty, raise a concise question to the operator, using an interactive question tool when available.",
+        "If a revision changes security, documentation, validation, PRD/spec/plan scope, or issue/PR projection, rerun the affected upstream gate before the next closeout review.",
+        "Evidence-artifact durability changes rerun the closeout gate that owns the artifact and any projection surface that carries its claims.",
+        "Recording the latest clean review result is bookkeeping and does not reopen the full review loop unless it changes substantive claims.",
+        "Published issue, PR, release, or handoff corrections rerun a projection consistency check and a narrow Cross-Boundary Coherence review for the corrected surface.",
+        "closeout evidence artifacts are classified by durability",
+        "instance-scoped scratch artifacts are summarized rather than committed or externally projected as project truth",
     ],
 }
+STORY_CLOSEOUT_PATH = "docs/story-closeout.md"
+STORY_CLOSEOUT_GATE_ORDER_TOKENS = [
+    "refresh the intent model",
+    "confirm the implementation",
+    "complete change set security closeout",
+    "complete change set documentation closeout",
+    "prepare projection drafts",
+    "run cross-boundary coherence",
+    "run story quality ralph review",
+    "run final validation",
+    "publish or update issue",
+    "perform publication actions",
+]
+THREAT_MODEL_PATH = "docs/security/threat-model.md"
+THREAT_MODEL_REFERENCE_PATHS = ["docs/security-and-control.md"]
+THREAT_MODEL_REQUIRED_SECTIONS = [
+    "Assets",
+    "Trust boundaries",
+    "Attacker-controlled inputs",
+    "Invariants",
+    "Assumptions",
+    "High-impact failure modes",
+]
+DOCUMENTATION_CLOSEOUT_PATH = "docs/closeout/framework-seed-documentation.md"
+DOCUMENTATION_CLOSEOUT_REQUIRED_SECTIONS = [
+    "Scope of inspected docs",
+    "Docs changed",
+    "Docs unchanged with rationale",
+    "Stale-language cleanup result",
+    "Established precedents added or updated",
+    "Review cycles and latest clean review",
+    "Residual documentation risk",
+]
+DOCUMENTATION_CLOSEOUT_REQUIRED_EVIDENCE = [
+    "README.md",
+    "AGENTS.md",
+    "CONTEXT.md",
+    "docs/agents/*.md",
+    "canonical Framework docs",
+    "docs/prd/framework-seed.md",
+    "docs/adr/*.md",
+    "docs/plans/2026-05-03-framework-seed.md",
+    "docs/security/*.md",
+    "docs/closeout/*.md",
+    "docs/metasmith/handoff/",
+    "specs/*.md",
+    "templates/**/*.md",
+    "examples/**/*.md",
+    "branch-push pause does not close the capture",
+    "Full Seed completion requires a merged Seed",
+    "An explicit hold or cancellation continues",
+    "unmerged-state hand-back",
+    "record the unmerged state directly",
+    "Latest clean documentation closeout review",
+    "Ralph Review Cycle",
+]
+DOCUMENTATION_CLOSEOUT_FORBIDDEN_INCOMPLETE_TEXT = [
+    "still requires",
+    "record that review result here after it completes",
+]
+SECURITY_CLOSEOUT_PATH = "docs/security/framework-seed-closeout.md"
+SECURITY_CLOSEOUT_REQUIRED_SECTIONS = [
+    "Scan scope",
+    "Commands",
+    "Scan artifact disposition",
+    "Report disposition",
+    "Findings disposition",
+    "Hardening changes",
+    "Re-validation status",
+    "Deferred-risk tracking",
+]
+SECURITY_CLOSEOUT_REQUIRED_EVIDENCE = [
+    "ephemeral scratch evidence",
+    "not a tracked project artifact",
+    "not portable review evidence",
+    "not a standing source of project truth",
+    "Artifact durability classification: instance-scoped scratch evidence.",
+    "Durable security evidence is this closeout summary",
+    "The raw report is not committed and should not be cited as reusable project doctrine.",
+    "Codex Security phase sequence",
+    "python3.14 -m unittest tests/test_validate_framework_seed.py",
+    "python3.14 tools/validate_framework_seed.py",
+    "No reportable findings",
+    "Suppressed findings",
+    "Re-validation passed",
+    "Deferred risks",
+]
+SECURITY_CLOSEOUT_SKIPPED_PHASE_DISPOSITION = (
+    "Validation and attack-path analysis were not separately run because finding discovery produced no technically plausible candidates"
+)
+SECURITY_CLOSEOUT_COMPLETED_PHASE_EVIDENCE = [
+    "Validation phase completed",
+    "Attack-path analysis completed",
+]
+PLAN_PATH = "docs/plans/2026-05-03-framework-seed.md"
+STORY_REVIEW_STEP_LABEL = "Step 7: Ralph-review closeout coherence and quality"
+PROJECTION_DRAFTS_PATH = "docs/closeout/framework-seed-projection-drafts.md"
+PROJECTION_DRAFTS_REQUIRED_SECTIONS = [
+    "Published PRD Issue Draft",
+    "Pull Request Draft",
+    "Release Draft",
+    "Handoff Draft",
+]
+PROJECTION_DRAFTS_REQUIRED_EVIDENCE = [
+    "Projected commit SHA",
+    "TO_CAPTURE_IMMEDIATELY_BEFORE_ISSUE_PUBLICATION",
+    "Report disposition: recorded in `docs/security/framework-seed-closeout.md`",
+    "PR creation is intentionally paused after branch push",
+    "Seed Closeout Addendum remains open through PR creation, PR review orchestration, merge, merge cleanup, external surface reconciliation, and final hand-back",
+    "No release publication is planned",
+    "No separate handoff publication is required",
+]
+PROJECTION_DRAFTS_FORBIDDEN_UNRESOLVED_TEXT = [
+    "TO_FILL_AFTER_FINAL_CLEAN_DOCUMENTATION_CLOSEOUT_REVIEW",
+]
+PROJECTION_DRAFTS_PENDING_STORY_REVIEW_PLACEHOLDER = "TO_FILL_AFTER_CLEAN_REVIEW"
+PROJECTION_DRAFTS_SCRATCH_ARTIFACT_MARKERS = [
+    "/tmp/",
+    "/var/tmp/",
+    "/home/",
+    "file:///tmp/",
+    "file:///var/tmp/",
+    "codex-security-scans/",
+]
 HARNESS_CATALOG_MARKDOWN_PATH = "docs/harness-capabilities.md"
 HARNESS_CATALOG_PATH = "docs/harness-capabilities.toml"
 REQUIRED_HARNESSES = [
@@ -875,6 +1045,26 @@ def markdown_heading_texts(markdown: str) -> set[str]:
     return headings
 
 
+def story_closeout_gate_order_valid(markdown: str) -> bool:
+    section = markdown_section(markdown_visible_text(markdown), "## Gate order")
+    if section is None:
+        return False
+    numbered_items: list[str] = []
+    for line in section.splitlines():
+        match = re.match(r"^\s*\d+\.\s+(.+)$", line)
+        if match:
+            numbered_items.append(match.group(1).casefold())
+    if not numbered_items:
+        return False
+    token_index = 0
+    for item in numbered_items:
+        if STORY_CLOSEOUT_GATE_ORDER_TOKENS[token_index] in item:
+            token_index += 1
+            if token_index == len(STORY_CLOSEOUT_GATE_ORDER_TOKENS):
+                return True
+    return False
+
+
 def has_framework_seed_status(markdown: str) -> bool:
     visible_markdown = markdown_visible_text(markdown)
     nonblank_lines = [line.strip() for line in visible_markdown.splitlines() if line.strip()]
@@ -1064,6 +1254,38 @@ def validate_source_projection(root: Path) -> list[CheckResult]:
                     )
                 )
         disposition = row["disposition"]
+        validation_status = row["validation_status"].strip()
+        if validation_status not in SOURCE_PROJECTION_VALIDATION_STATUSES:
+            results.append(
+                CheckResult(
+                    name=f"source_projection:{requirement_id}",
+                    ok=False,
+                    detail="validation_status must be planned or validated",
+                    path=SOURCE_PROJECTION_PATH,
+                )
+            )
+        elif validation_status == "validated" and requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS:
+            results.append(
+                CheckResult(
+                    name=f"source_projection:{requirement_id}",
+                    ok=False,
+                    detail="validation_status must remain planned until closeout evidence lands",
+                    path=SOURCE_PROJECTION_PATH,
+                )
+            )
+        elif (
+            disposition == "projected"
+            and validation_status == "planned"
+            and requirement_id not in SOURCE_PROJECTION_PLANNED_REQUIREMENTS
+        ):
+            results.append(
+                CheckResult(
+                    name=f"source_projection:{requirement_id}",
+                    ok=False,
+                    detail="validation_status must be validated for completed projected requirement",
+                    path=SOURCE_PROJECTION_PATH,
+                )
+            )
         if disposition not in {"projected", "deferred"}:
             results.append(
                 CheckResult(
@@ -1380,8 +1602,353 @@ def validate_canonical_docs(root: Path) -> list[CheckResult]:
                         relative_path,
                     )
                 )
+        if relative_path == STORY_CLOSEOUT_PATH and not story_closeout_gate_order_valid(markdown):
+            results.append(
+                CheckResult(
+                    f"canonical_doc:story_closeout_gate_order:{relative_path}",
+                    False,
+                    "gate order must include required items in order",
+                    relative_path,
+                )
+            )
         if not any(result.name.startswith(f"canonical_doc:") and result.path == relative_path and not result.ok for result in results):
             results.append(CheckResult(f"canonical_doc:{relative_path}", True, "present", relative_path))
+    return results
+
+
+def validate_threat_model(root: Path) -> list[CheckResult]:
+    results: list[CheckResult] = []
+    ok, detail, path = repo_relative_path_status(root, THREAT_MODEL_PATH, "file")
+    if not ok:
+        if detail == "path contains symlink":
+            detail = "threat model path contains symlink"
+        results.append(CheckResult(f"threat_model:path:{THREAT_MODEL_PATH}", False, detail, THREAT_MODEL_PATH))
+    else:
+        markdown = path.read_text(encoding="utf-8")
+        headings = markdown_heading_texts(markdown)
+        for required_section in THREAT_MODEL_REQUIRED_SECTIONS:
+            if normalize_reference_label(required_section) not in headings:
+                results.append(
+                    CheckResult(
+                        f"threat_model:section:{THREAT_MODEL_PATH}:{required_section}",
+                        False,
+                        f"missing section: {required_section}",
+                        THREAT_MODEL_PATH,
+                    )
+                )
+    referenced = False
+    reference_missing = False
+    for relative_path in THREAT_MODEL_REFERENCE_PATHS:
+        ref_ok, ref_detail, ref_path = repo_relative_path_status(root, relative_path, "file")
+        if not ref_ok:
+            reference_missing = True
+            continue
+        markdown = ref_path.read_text(encoding="utf-8")
+        visible = markdown_visible_text(markdown).casefold()
+        links = find_markdown_links(markdown)
+        if "repository threat model" in visible or THREAT_MODEL_PATH in links or "security/threat-model.md" in links:
+            referenced = True
+            break
+    if not referenced:
+        detail = "reference surface missing" if reference_missing else "missing threat model reference"
+        results.append(
+            CheckResult(
+                f"threat_model:reference:{THREAT_MODEL_REFERENCE_PATHS[0]}",
+                False,
+                detail,
+                THREAT_MODEL_REFERENCE_PATHS[0],
+            )
+        )
+    if not any(result.name.startswith("threat_model:") and not result.ok for result in results):
+        results.append(CheckResult("threat_model:repository", True, "present", THREAT_MODEL_PATH))
+    return results
+
+
+def validate_documentation_closeout(root: Path) -> list[CheckResult]:
+    results: list[CheckResult] = []
+    ok, detail, path = repo_relative_path_status(root, DOCUMENTATION_CLOSEOUT_PATH, "file")
+    if not ok:
+        if detail == "path contains symlink":
+            detail = "documentation closeout path contains symlink"
+        results.append(
+            CheckResult(
+                f"documentation_closeout:path:{DOCUMENTATION_CLOSEOUT_PATH}",
+                False,
+                detail,
+                DOCUMENTATION_CLOSEOUT_PATH,
+            )
+        )
+        return results
+    markdown = path.read_text(encoding="utf-8")
+    visible = markdown_visible_text(markdown)
+    visible_folded = visible.casefold()
+    visible_folded_normalized = " ".join(visible_folded.split())
+    nonblank_lines = [line.strip() for line in visible.splitlines() if line.strip()]
+    if "Status: Completed Closeout" not in nonblank_lines[:8]:
+        results.append(
+            CheckResult(
+                f"documentation_closeout:status:{DOCUMENTATION_CLOSEOUT_PATH}",
+                False,
+                "missing completed closeout status",
+                DOCUMENTATION_CLOSEOUT_PATH,
+            )
+        )
+    headings = markdown_heading_texts(markdown)
+    for required_section in DOCUMENTATION_CLOSEOUT_REQUIRED_SECTIONS:
+        if normalize_reference_label(required_section) not in headings:
+            results.append(
+                CheckResult(
+                    f"documentation_closeout:section:{DOCUMENTATION_CLOSEOUT_PATH}:{required_section}",
+                    False,
+                    f"missing section: {required_section}",
+                    DOCUMENTATION_CLOSEOUT_PATH,
+                )
+            )
+    for forbidden_text in DOCUMENTATION_CLOSEOUT_FORBIDDEN_INCOMPLETE_TEXT:
+        if forbidden_text.casefold() in visible_folded:
+            results.append(
+                CheckResult(
+                    f"documentation_closeout:review:{DOCUMENTATION_CLOSEOUT_PATH}",
+                    False,
+                    "contains unresolved review placeholder",
+                    DOCUMENTATION_CLOSEOUT_PATH,
+                )
+            )
+            break
+    for required_text in DOCUMENTATION_CLOSEOUT_REQUIRED_EVIDENCE:
+        if " ".join(required_text.casefold().split()) not in visible_folded_normalized:
+            results.append(
+                CheckResult(
+                    f"documentation_closeout:evidence:{DOCUMENTATION_CLOSEOUT_PATH}:{required_text}",
+                    False,
+                    f"missing evidence: {required_text}",
+                    DOCUMENTATION_CLOSEOUT_PATH,
+                )
+            )
+    latest_clean_match = re.search(r"(?im)^Latest clean documentation closeout review:\s*(.+)$", visible)
+    if latest_clean_match is None or not re.search(r"\bRalph Review Cycle \d+\b", latest_clean_match.group(1)):
+        results.append(
+            CheckResult(
+                f"documentation_closeout:review:{DOCUMENTATION_CLOSEOUT_PATH}",
+                False,
+                "latest clean review must name a Ralph Review Cycle",
+                DOCUMENTATION_CLOSEOUT_PATH,
+            )
+        )
+    if not any(result.name.startswith("documentation_closeout:") and not result.ok for result in results):
+        results.append(CheckResult("documentation_closeout:framework-seed", True, "present", DOCUMENTATION_CLOSEOUT_PATH))
+    return results
+
+
+def validate_security_closeout(root: Path) -> list[CheckResult]:
+    results: list[CheckResult] = []
+    ok, detail, path = repo_relative_path_status(root, SECURITY_CLOSEOUT_PATH, "file")
+    if not ok:
+        if detail == "path contains symlink":
+            detail = "security closeout path contains symlink"
+        results.append(
+            CheckResult(
+                f"security_closeout:path:{SECURITY_CLOSEOUT_PATH}",
+                False,
+                detail,
+                SECURITY_CLOSEOUT_PATH,
+            )
+        )
+        return results
+    markdown = path.read_text(encoding="utf-8")
+    visible = markdown_visible_text(markdown)
+    visible_folded = visible.casefold()
+    visible_normalized = " ".join(visible_folded.split())
+    nonblank_lines = [line.strip() for line in visible.splitlines() if line.strip()]
+    if "Status: Completed Security Closeout" not in nonblank_lines[:8]:
+        results.append(
+            CheckResult(
+                f"security_closeout:status:{SECURITY_CLOSEOUT_PATH}",
+                False,
+                "missing completed security closeout status",
+                SECURITY_CLOSEOUT_PATH,
+            )
+        )
+    headings = markdown_heading_texts(markdown)
+    for required_section in SECURITY_CLOSEOUT_REQUIRED_SECTIONS:
+        if normalize_reference_label(required_section) not in headings:
+            results.append(
+                CheckResult(
+                    f"security_closeout:section:{SECURITY_CLOSEOUT_PATH}:{required_section}",
+                    False,
+                    f"missing section: {required_section}",
+                    SECURITY_CLOSEOUT_PATH,
+                )
+            )
+    for required_text in SECURITY_CLOSEOUT_REQUIRED_EVIDENCE:
+        required_text_normalized = " ".join(required_text.casefold().split())
+        if required_text_normalized not in visible_normalized:
+            results.append(
+                CheckResult(
+                    f"security_closeout:evidence:{SECURITY_CLOSEOUT_PATH}:{required_text}",
+                    False,
+                    f"missing evidence: {required_text}",
+                    SECURITY_CLOSEOUT_PATH,
+                )
+            )
+    skipped_phase_normalized = " ".join(SECURITY_CLOSEOUT_SKIPPED_PHASE_DISPOSITION.casefold().split())
+    completed_phase_evidence_present = all(
+        " ".join(required_text.casefold().split()) in visible_normalized
+        for required_text in SECURITY_CLOSEOUT_COMPLETED_PHASE_EVIDENCE
+    )
+    if skipped_phase_normalized not in visible_normalized and not completed_phase_evidence_present:
+        results.append(
+            CheckResult(
+                f"security_closeout:evidence:{SECURITY_CLOSEOUT_PATH}:validation and attack-path disposition",
+                False,
+                "missing validation and attack-path disposition",
+                SECURITY_CLOSEOUT_PATH,
+            )
+        )
+    if not any(result.name.startswith("security_closeout:") and not result.ok for result in results):
+        results.append(CheckResult("security_closeout:framework-seed", True, "present", SECURITY_CLOSEOUT_PATH))
+    return results
+
+
+def plan_step_is_checked(root: Path, step_label: str) -> bool:
+    ok, _detail, path = repo_relative_path_status(root, PLAN_PATH, "file")
+    if not ok:
+        return False
+    pattern = re.compile(rf"(?m)^-\s*\[x\]\s+\*\*{re.escape(step_label)}\*\*")
+    return bool(pattern.search(path.read_text(encoding="utf-8")))
+
+
+def validate_projection_drafts(root: Path) -> list[CheckResult]:
+    results: list[CheckResult] = []
+    ok, detail, path = repo_relative_path_status(root, PROJECTION_DRAFTS_PATH, "file")
+    if not ok:
+        if detail == "path contains symlink":
+            detail = "projection drafts path contains symlink"
+        results.append(
+            CheckResult(
+                f"projection_drafts:path:{PROJECTION_DRAFTS_PATH}",
+                False,
+                detail,
+                PROJECTION_DRAFTS_PATH,
+            )
+        )
+        return results
+    markdown = path.read_text(encoding="utf-8")
+    visible = markdown_visible_text(markdown)
+    raw_folded = markdown.casefold()
+    raw_folded_normalized = " ".join(raw_folded.split())
+    nonblank_lines = [line.strip() for line in visible.splitlines() if line.strip()]
+    if "Status: Review Draft" not in nonblank_lines[:8]:
+        results.append(
+            CheckResult(
+                f"projection_drafts:status:{PROJECTION_DRAFTS_PATH}",
+                False,
+                "missing review draft status",
+                PROJECTION_DRAFTS_PATH,
+            )
+        )
+    headings = markdown_heading_texts(markdown)
+    for required_section in PROJECTION_DRAFTS_REQUIRED_SECTIONS:
+        if normalize_reference_label(required_section) not in headings:
+            results.append(
+                CheckResult(
+                    f"projection_drafts:section:{PROJECTION_DRAFTS_PATH}:{required_section}",
+                    False,
+                    f"missing section: {required_section}",
+                    PROJECTION_DRAFTS_PATH,
+                )
+            )
+    for required_text in PROJECTION_DRAFTS_REQUIRED_EVIDENCE:
+        if " ".join(required_text.casefold().split()) not in raw_folded_normalized:
+            results.append(
+                CheckResult(
+                    f"projection_drafts:evidence:{PROJECTION_DRAFTS_PATH}:{required_text}",
+                    False,
+                    f"missing evidence: {required_text}",
+                    PROJECTION_DRAFTS_PATH,
+                )
+            )
+    documentation_closeout_review_ok = re.search(
+        r"(?im)^documentation closeout(?: review)?:\s*(?:`?Ralph Review Cycle \d+`?|Ralph Review Cycle \d+\.?)\s*$",
+        markdown,
+    )
+    if any(forbidden.casefold() in raw_folded for forbidden in PROJECTION_DRAFTS_FORBIDDEN_UNRESOLVED_TEXT) or (
+        documentation_closeout_review_ok is None
+    ):
+        results.append(
+            CheckResult(
+                f"projection_drafts:evidence:{PROJECTION_DRAFTS_PATH}:documentation closeout review",
+                False,
+                "documentation closeout review must name a Ralph Review Cycle",
+                PROJECTION_DRAFTS_PATH,
+            )
+        )
+    story_review_step_complete = plan_step_is_checked(root, STORY_REVIEW_STEP_LABEL)
+    cross_boundary_review_ok = re.search(
+        r"(?im)^(?:-\s*)?cross-boundary coherence(?: review)?:\s*(?:`?Ralph Review Cycle \d+`?|Ralph Review Cycle \d+\.?)\s*$",
+        markdown,
+    )
+    story_quality_review_ok = re.search(
+        r"(?im)^(?:-\s*)?story quality(?: review)?:\s*(?:`?Ralph Review Cycle \d+`?|Ralph Review Cycle \d+\.?)\s*$",
+        markdown,
+    )
+    if story_review_step_complete and (
+        PROJECTION_DRAFTS_PENDING_STORY_REVIEW_PLACEHOLDER.casefold() in raw_folded
+        or cross_boundary_review_ok is None
+        or story_quality_review_ok is None
+    ):
+        results.append(
+            CheckResult(
+                f"projection_drafts:evidence:{PROJECTION_DRAFTS_PATH}:story closeout reviews",
+                False,
+                "completed story closeout must name Cross-Boundary Coherence and Story Quality Ralph Review cycles",
+                PROJECTION_DRAFTS_PATH,
+            )
+        )
+    if not any(result.name.startswith("projection_drafts:") and not result.ok for result in results):
+        results.append(CheckResult("projection_drafts:framework-seed", True, "present", PROJECTION_DRAFTS_PATH))
+    return results
+
+
+def validate_final_closeout(root: Path) -> list[CheckResult]:
+    results: list[CheckResult] = []
+    ok, detail, path = repo_relative_path_status(root, PROJECTION_DRAFTS_PATH, "file")
+    if not ok:
+        return [CheckResult(f"final_closeout:path:{PROJECTION_DRAFTS_PATH}", False, detail, PROJECTION_DRAFTS_PATH)]
+    markdown = path.read_text(encoding="utf-8")
+    raw_folded = markdown.casefold()
+    cross_boundary_review_ok = re.search(
+        r"(?im)^(?:-\s*)?cross-boundary coherence(?: review)?:\s*(?:`?Ralph Review Cycle \d+`?|Ralph Review Cycle \d+\.?)\s*$",
+        markdown,
+    )
+    story_quality_review_ok = re.search(
+        r"(?im)^(?:-\s*)?story quality(?: review)?:\s*(?:`?Ralph Review Cycle \d+`?|Ralph Review Cycle \d+\.?)\s*$",
+        markdown,
+    )
+    if (
+        PROJECTION_DRAFTS_PENDING_STORY_REVIEW_PLACEHOLDER.casefold() in raw_folded
+        or cross_boundary_review_ok is None
+        or story_quality_review_ok is None
+    ):
+        results.append(
+            CheckResult(
+                f"final_closeout:evidence:{PROJECTION_DRAFTS_PATH}:story closeout reviews",
+                False,
+                "final closeout must name Cross-Boundary Coherence and Story Quality Ralph Review cycles",
+                PROJECTION_DRAFTS_PATH,
+            )
+        )
+    if any(marker in raw_folded for marker in PROJECTION_DRAFTS_SCRATCH_ARTIFACT_MARKERS):
+        results.append(
+            CheckResult(
+                f"final_closeout:evidence:{PROJECTION_DRAFTS_PATH}:portable evidence",
+                False,
+                "external projection drafts must not publish host-local or scratch artifact paths",
+                PROJECTION_DRAFTS_PATH,
+            )
+        )
+    if not any(result.name.startswith("final_closeout:") and not result.ok for result in results):
+        results.append(CheckResult("final_closeout:framework-seed", True, "ready", PROJECTION_DRAFTS_PATH))
     return results
 
 
@@ -3445,40 +4012,56 @@ def render_json(results: list[CheckResult]) -> str:
     return json.dumps([asdict(result) for result in results], indent=2, sort_keys=True)
 
 
-def run(root: Path) -> list[CheckResult]:
+def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
     required_paths = [
         "README.md",
         "AGENTS.md",
         "CONTEXT.md",
         "docs/prd/framework-seed.md",
         "docs/metasmith/source-projection.md",
+        THREAT_MODEL_PATH,
+        DOCUMENTATION_CLOSEOUT_PATH,
+        SECURITY_CLOSEOUT_PATH,
+        PROJECTION_DRAFTS_PATH,
         "docs/harness-capabilities.toml",
         *CANONICAL_DOC_REQUIRED_SECTIONS,
         *TEMPLATE_REQUIRED_PATHS,
         *EXAMPLE_REQUIRED_PATHS,
         *SPEC_REQUIRED_PATHS,
     ]
-    return [
+    results = [
         *validate_required_paths(root, required_paths),
         *validate_source_handoff_provenance(root),
         *validate_source_projection(root),
         *validate_framework_routes(root),
         *validate_canonical_docs(root),
+        *validate_threat_model(root),
+        *validate_documentation_closeout(root),
+        *validate_security_closeout(root),
+        *validate_projection_drafts(root),
         *validate_harness_catalog(root),
         *validate_templates(root),
         *validate_examples(root),
         *validate_specs(root),
         *validate_markdown_links(root),
     ]
+    if final_closeout:
+        results.extend(validate_final_closeout(root))
+    return results
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Validate the Agent Armory Framework Seed.")
     parser.add_argument("--root", default=".", help="Repository root to validate.")
     parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON.")
+    parser.add_argument(
+        "--final-closeout",
+        action="store_true",
+        help="Require final closeout evidence before branch push or external projection.",
+    )
     args = parser.parse_args(argv)
 
-    results = run(Path(args.root).resolve())
+    results = run(Path(args.root).resolve(), final_closeout=args.final_closeout)
     output = render_json(results) if args.json else render_human(results)
     print(output)
     return 0 if all(result.ok for result in results) else 1

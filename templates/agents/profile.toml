@@ -1,6 +1,6 @@
 [identity]
 name = "<agent-name>"
-description = "Describe the bounded role."
+description = "Describe the bounded Agent Profile."
 nickname_candidates = ["<short-name>"]
 mission = "State the agent mission in one sentence."
 
@@ -17,7 +17,7 @@ preference = "inherit"
 reasoning_effort = "inherit"
 
 [config]
-placeholder = "replace with role-specific settings"
+placeholder = "replace with profile-specific settings"
 
 [output]
 contract = "Describe the deliverable, return shape, and handoff expectations."

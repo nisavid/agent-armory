@@ -118,6 +118,34 @@ requirement: this discipline should not depend on a future agent reading a long
 chat transcript or guessing the operator's expectations from memory. The
 workflow needs to become repo equipment with progressive disclosure.
 
+## Seed Closeout Reflection Addendum
+
+Use the
+[Seed Closeout Addendum](2026-05-03-agentic-engineering-workflow-seed-closeout-addendum.md)
+as linked source material for workflow lessons that emerged after this handoff
+was first captured. The addendum is current capture for those lessons, not a
+placeholder to be filled only after the post-Seed story starts.
+
+Keep the addendum current through full Framework Seed completion. For this
+capture, full completion means the Seed branch has been pushed, the PR lifecycle
+has run, the Seed has been merged, external issue and PR surfaces have been
+reconciled with repo-file projections, merge cleanup has completed or been
+explicitly deferred, and the final hand-back records that state. The capture
+window includes final local validation, closeout reviews, issue projection,
+branch push, PR creation, PR review orchestration, merge, and merge cleanup. If
+those steps expose new insights, guardrails, policies, techniques, failure
+modes, or harness-specific constraints, append them before treating the Seed as
+fully closed.
+
+If the operator explicitly holds or cancels the Seed instead of merging it,
+continue capture through the hold or cancellation hand-back. Record the
+unmerged state directly; do not describe it as full Seed completion.
+
+If the Seed work pauses after branch push and before PR creation, the pause
+handoff should say that the addendum remains open through the PR, merge, and
+cleanup lifecycle. Treat the addendum as source material for the future grill
+loop, not as finished design.
+
 The reflection also showed that the method should not be copied as a maximal
 ritual. Its portable form needs a right-sizing rule: apply the same discipline,
 but scale the ceremony to the risk, blast radius, reversibility, stakeholder

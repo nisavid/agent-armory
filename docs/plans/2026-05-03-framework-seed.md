@@ -75,7 +75,7 @@ Create or modify these files:
 - Create: `tests/__init__.py`
 - Create: `tests/test_validate_framework_seed.py`
 
-- [ ] **Step 1: Write failing tests for validator primitives**
+- [x] **Step 1: Write failing tests for validator primitives**
 
 Add `tests/test_validate_framework_seed.py` with these tests:
 
@@ -179,7 +179,7 @@ if __name__ == "__main__":
     unittest.main()
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run:
 
@@ -189,7 +189,7 @@ python3.14 -m unittest tests/test_validate_framework_seed.py
 
 Expected: FAIL or ERROR because `tools.validate_framework_seed` does not exist.
 
-- [ ] **Step 3: Implement validator primitives**
+- [x] **Step 3: Implement validator primitives**
 
 Create `tools/validate_framework_seed.py`:
 
@@ -321,7 +321,7 @@ if __name__ == "__main__":
     sys.exit(main())
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run:
 
@@ -351,7 +351,7 @@ git commit -m "test(framework): add seed validator primitives" -m "Co-authored-b
 - Create: `docs/metasmith/source-projection.md`
 - Validate existing archived handoff files under `docs/metasmith/handoff/2026-05-02/`.
 
-- [ ] **Step 1: Write failing tests for source projection validation**
+- [x] **Step 1: Write failing tests for source projection validation**
 
 Append to `tests/test_validate_framework_seed.py`:
 
@@ -1213,7 +1213,7 @@ class SourceProjectionTests(unittest.TestCase):
         )
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run:
 
@@ -1223,7 +1223,7 @@ python3.14 -m unittest tests/test_validate_framework_seed.py
 
 Expected: ERROR because `validate_source_projection` and `validate_source_handoff_provenance` are missing.
 
-- [ ] **Step 3: Implement source projection validation**
+- [x] **Step 3: Implement source projection validation**
 
 Add to `tools/validate_framework_seed.py`:
 
@@ -1687,7 +1687,7 @@ def validate_source_handoff_provenance(root: Path) -> list[CheckResult]:
 
 Update `run()` to include `validate_source_handoff_provenance(root)` and `validate_source_projection(root)`.
 
-- [ ] **Step 4: Create the Source Projection Register**
+- [x] **Step 4: Create the Source Projection Register**
 
 Create `docs/metasmith/source-projection.md` with this shape. The table must include exactly one row for every id in `ACCEPTED_SOURCE_REQUIREMENTS`; do not stop at the examples below.
 
@@ -1715,7 +1715,7 @@ Projection target guidance:
 - Agent Ops, Periodic Actions, and Harness Capability Refresh implementation requirements project to `specs/`.
 - Remaining uncertainties may be `deferred`, but every deferred row must have a concrete reason and downstream `target_path` for the follow-up surface or tracking note.
 
-- [ ] **Step 5: Run tests and validator**
+- [x] **Step 5: Run tests and validator**
 
 Run:
 
@@ -1726,7 +1726,7 @@ python3.14 tools/validate_framework_seed.py
 
 Expected: tests PASS. The full validator may still FAIL for seed surfaces and projected targets not yet created.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 Run:
 
@@ -1743,7 +1743,7 @@ git commit -m "feat(framework): validate source projection register" -m "Co-auth
 - Modify: `tools/validate_framework_seed.py`
 - Modify: `tests/test_validate_framework_seed.py`
 
-- [ ] **Step 1: Write failing tests for routing links**
+- [x] **Step 1: Write failing tests for routing links**
 
 Add tests that create fixture `AGENTS.md` and `README.md` files, then assert validator failures when required links are absent:
 
@@ -1904,7 +1904,7 @@ class MarkdownLinkTests(unittest.TestCase):
         )
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run:
 
@@ -1914,7 +1914,7 @@ python3.14 -m unittest tests/test_validate_framework_seed.py
 
 Expected: ERROR because `validate_framework_routes` and `validate_markdown_links` are missing.
 
-- [ ] **Step 3: Implement route validation**
+- [x] **Step 3: Implement route validation**
 
 Add `validate_framework_routes(root: Path)` that checks:
 
@@ -1935,7 +1935,7 @@ Add `validate_markdown_links(root: Path)` that checks all repository Markdown fi
 
 Update `run()` to include route validation and Markdown link validation.
 
-- [ ] **Step 4: Update root routing docs**
+- [x] **Step 4: Update root routing docs**
 
 In `AGENTS.md`, add:
 
@@ -1963,7 +1963,7 @@ The first public shape of this repository is the Agent Equipment Framework: a wa
 Start with [docs/equipment-framework.md](docs/equipment-framework.md).
 ```
 
-- [ ] **Step 5: Run tests and validator**
+- [x] **Step 5: Run tests and validator**
 
 Run:
 
@@ -1974,7 +1974,7 @@ python3.14 tools/validate_framework_seed.py
 
 Expected: route tests PASS; validator may still FAIL for seed surfaces not yet created.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 Run:
 
@@ -1996,7 +1996,7 @@ git commit -m "docs(framework): add canonical reading paths" -m "Co-authored-by:
 - Create: `docs/security-and-control.md`
 - Create: `docs/equipment-promotion.md`
 
-- [ ] **Step 1: Write failing canonical doc validation tests**
+- [x] **Step 1: Write failing canonical doc validation tests**
 
 Extend `tests/test_validate_framework_seed.py` to assert `run(root)` fails when:
 
@@ -2004,7 +2004,7 @@ Extend `tests/test_validate_framework_seed.py` to assert `run(root)` fails when:
 - a canonical doc omits `Status: Framework Seed`,
 - a canonical doc omits one of its required sections.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run:
 
@@ -2014,7 +2014,7 @@ python3.14 -m unittest tests/test_validate_framework_seed.py
 
 Expected: FAIL because canonical doc paths and content are not all checked or not present.
 
-- [ ] **Step 3: Update required path and content validation**
+- [x] **Step 3: Update required path and content validation**
 
 Update `run()` required paths to include every canonical doc path listed for this task.
 
@@ -2024,7 +2024,7 @@ Add `validate_canonical_docs(root: Path)` so `run()` checks:
 - each canonical document contains the required sections listed below,
 - missing sections report the document path and section name.
 
-- [ ] **Step 4: Create canonical docs**
+- [x] **Step 4: Create canonical docs**
 
 Each document must include `Status: Framework Seed` near the top.
 
@@ -2040,7 +2040,7 @@ Required sections:
 - `docs/security-and-control.md`: least privilege, mutation gates, secrets, hooks, MCP/tool side effects, examples caveat.
 - `docs/equipment-promotion.md`: states `example`, `specified`, `planned`, `implemented`, `validated`, `published`, entry/exit criteria.
 
-- [ ] **Step 5: Run validation**
+- [x] **Step 5: Run validation**
 
 Run:
 
@@ -2051,7 +2051,7 @@ python3.14 tools/validate_framework_seed.py
 
 Expected: canonical doc path and content checks PASS; later template/example/spec/catalog checks may still FAIL.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 Run:
 
@@ -2068,7 +2068,7 @@ git commit -m "docs(framework): add canonical framework docs" -m "Co-authored-by
 - Modify: `tools/validate_framework_seed.py`
 - Modify: `tests/test_validate_framework_seed.py`
 
-- [ ] **Step 1: Write failing catalog validation tests**
+- [x] **Step 1: Write failing catalog validation tests**
 
 Add tests that validate required TOML fields for each harness:
 
@@ -2170,7 +2170,7 @@ Add table-driven companion failing tests for every validation branch:
 - a `sources` entry with `kind = "third_party_fallback"` whose fallback status is not called out in `uncertainty` or `refresh_notes`,
 - a `sources` entry with `kind = "local_observation"` instead of a separate `local_observations` entry.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run:
 
@@ -2180,7 +2180,7 @@ python3.14 -m unittest tests/test_validate_framework_seed.py
 
 Expected: ERROR because `validate_harness_catalog` is missing.
 
-- [ ] **Step 3: Refresh harness facts**
+- [x] **Step 3: Refresh harness facts**
 
 Use Firecrawl or equivalent web retrieval to refresh first-party evidence for:
 
@@ -2200,7 +2200,7 @@ Preferred source types:
 
 Use third-party metadata only when first-party version evidence is unavailable or inconsistent, and label it as fallback.
 
-- [ ] **Step 4: Implement catalog validation**
+- [x] **Step 4: Implement catalog validation**
 
 `validate_harness_catalog(root)` must check each harness entry has:
 
@@ -2229,7 +2229,7 @@ The validator must also reject:
 
 Update `run()` to include catalog validation.
 
-- [ ] **Step 5: Create refreshed catalog docs**
+- [x] **Step 5: Create refreshed catalog docs**
 
 Create `docs/harness-capabilities.toml` and `docs/harness-capabilities.md`.
 
@@ -2244,7 +2244,7 @@ Required harnesses:
 
 Each entry must include checked-at date, version or version basis, source URLs, evidence level, supported component types, scheduling mechanisms, limitations, uncertainty, and refresh notes.
 
-- [ ] **Step 6: Run validation**
+- [x] **Step 6: Run validation**
 
 Run:
 
@@ -2255,7 +2255,7 @@ python3.14 tools/validate_framework_seed.py
 
 Expected: catalog tests PASS; validator may still FAIL for templates/examples/specs not yet created.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 Run:
 
@@ -2271,7 +2271,7 @@ git commit -m "docs(framework): refresh harness capability catalog" -m "Co-autho
 - Modify: `tools/validate_framework_seed.py`
 - Modify: `tests/test_validate_framework_seed.py`
 
-- [ ] **Step 1: Write failing template path and content tests**
+- [x] **Step 1: Write failing template path and content tests**
 
 Add tests that require every template path in the File Structure section. Also add tests that fail when:
 
@@ -2292,7 +2292,7 @@ Add tests that require every template path in the File Structure section. Also a
 - `templates/config/example.toml` allows continuation or initiative defaults, enables equipment by default, omits review/security/doc closeout flags, or omits canonical approval-gated labels,
 - root safety templates omit visible, section-scoped external-disclosure prompts or visible capability promotion state in the template preamble.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run:
 
@@ -2302,7 +2302,7 @@ python3.14 -m unittest tests/test_validate_framework_seed.py
 
 Expected: FAIL for missing template paths or content checks.
 
-- [ ] **Step 3: Create templates**
+- [x] **Step 3: Create templates**
 
 Each template README must include:
 
@@ -2316,7 +2316,7 @@ Each root template file must include `Status: Template`.
 
 Update `tools/validate_framework_seed.py` with `validate_templates(root: Path)` so `run()` checks every required template path and template content rule from this task, including nested template bodies.
 
-- [ ] **Step 4: Run validation**
+- [x] **Step 4: Run validation**
 
 Run:
 
@@ -2327,7 +2327,7 @@ python3.14 tools/validate_framework_seed.py
 
 Expected: template path and content checks PASS; examples/spec checks may still FAIL.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Run:
 
@@ -2346,7 +2346,7 @@ git commit -m "docs(templates): add framework seed templates" -m "Co-authored-by
 - Modify: `tools/validate_framework_seed.py`
 - Modify: `tests/test_validate_framework_seed.py`
 
-- [ ] **Step 1: Write failing example validation tests**
+- [x] **Step 1: Write failing example validation tests**
 
 Add tests that require each example directory to contain:
 
@@ -2356,7 +2356,7 @@ Add tests that require each example directory to contain:
 
 The tests must also check each example file includes `Promotion state: example`.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run:
 
@@ -2366,7 +2366,7 @@ python3.14 -m unittest tests/test_validate_framework_seed.py
 
 Expected: FAIL for missing example paths and promotion states.
 
-- [ ] **Step 3: Create examples**
+- [x] **Step 3: Create examples**
 
 Create PR review, docs research, and observability investigation examples. Each example must:
 
@@ -2375,7 +2375,7 @@ Create PR review, docs research, and observability investigation examples. Each 
 - trace from capability card to interface decision record to projected components,
 - avoid claiming installability or production readiness.
 
-- [ ] **Step 4: Run validation**
+- [x] **Step 4: Run validation**
 
 Run:
 
@@ -2386,7 +2386,7 @@ python3.14 tools/validate_framework_seed.py
 
 Expected: example checks PASS; specs may still FAIL.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Run:
 
@@ -2471,7 +2471,7 @@ python3.14 tools/validate_framework_seed.py
 
 Expected: spec checks PASS. The full repository validator may still report the final closeout surfaces from Task 9 as missing until that task lands.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Run:
 
@@ -2484,13 +2484,19 @@ git commit -m "docs(specs): add initial smith task specs" -m "Co-authored-by: Co
 
 **Files:**
 - Modify: `docs/metasmith/source-projection.md`
+- Modify: `AGENTS.md`
+- Modify: `CONTEXT.md`
+- Modify: `docs/prd/framework-seed.md`
+- Modify: `docs/smith-runbook.md`
+- Modify: `docs/metasmith-runbook.md`
 - Create or modify: `docs/security/threat-model.md`
 - Create or modify: `docs/security/framework-seed-closeout.md`
 - Create or modify: `docs/closeout/framework-seed-documentation.md`
+- Create or modify: `docs/story-closeout.md`
 - Modify: affected agent-facing or human-facing docs as documentation closeout requires.
 - Modify: any canonical docs, templates, examples, specs, or validation files needed by final review.
 
-- [ ] **Step 1: Write failing tests for the Repository Threat Model surface**
+- [x] **Step 1: Write failing tests for the Repository Threat Model surface**
 
 Extend `tests/test_validate_framework_seed.py` with failing tests that require:
 
@@ -2506,13 +2512,13 @@ python3.14 -m unittest tests/test_validate_framework_seed.py
 
 Expected: FAIL because the threat model surface or validator checks are missing.
 
-- [ ] **Step 2: Create the Repository Threat Model and validator**
+- [x] **Step 2: Create the Repository Threat Model and validator**
 
 Use Codex Security threat-model workflow to create or update `docs/security/threat-model.md` as the persistent Repository Threat Model for Agent Armory.
 
 Update `tools/validate_framework_seed.py` so `run()` validates the threat model requirements from Step 1.
 
-- [ ] **Step 2a: Write failing tests for the completed documentation closeout summary**
+- [x] **Step 2a: Write failing tests for the completed documentation closeout summary**
 
 Extend `tests/test_validate_framework_seed.py` with failing tests that require `docs/closeout/framework-seed-documentation.md` to exist and contain these sections:
 
@@ -2532,7 +2538,14 @@ python3.14 -m unittest tests/test_validate_framework_seed.py
 
 Expected: FAIL because the completed documentation closeout summary is not populated yet.
 
-- [ ] **Step 3: Perform Change Set Documentation Closeout**
+- [x] **Step 3: Perform Change Set Documentation Closeout**
+
+Completed: documentation inventory, stale-language cleanup, closeout draft,
+Repository Threat Model linkage, Agent Profile template terminology cleanup, and
+Smith-to-Metasmith Framework requirement escalation docs have landed in the
+worktree. `docs/closeout/framework-seed-documentation.md` records
+`Status: Completed Closeout` and is the source of truth for the latest clean
+documentation closeout review.
 
 Inspect every agent-facing and human-facing doc that the Framework Seed could plausibly affect:
 
@@ -2583,9 +2596,12 @@ python3.14 -m unittest tests/test_validate_framework_seed.py
 python3.14 tools/validate_framework_seed.py
 ```
 
-Expected: documentation closeout checks PASS.
+Expected: documentation closeout structure and evidence checks are populated.
+Before Step 4 records a clean review, the full repository validator is expected
+to remain red on `docs/closeout/framework-seed-documentation.md` status and
+latest-clean-review fields.
 
-- [ ] **Step 4: Ralph-review documentation closeout**
+- [x] **Step 4: Ralph-review documentation closeout**
 
 Dispatch an xhigh reviewer for documentation closeout. Give the reviewer the updated docs, `docs/closeout/framework-seed-documentation.md`, and the applicable guidance from honing-agent-facing-docs, honing-human-facing-docs, documentation-writer, writing-clearly-and-concisely, and writing-skills when skill or agent-facing policy is involved.
 
@@ -2601,14 +2617,14 @@ Require review for:
 
 Repeat until the latest documentation closeout review has no findings.
 
-- [ ] **Step 5: Write failing tests for the completed security closeout summary**
+- [x] **Step 5: Write failing tests for the completed security closeout summary**
 
 Extend `tests/test_validate_framework_seed.py` with failing tests that require `docs/security/framework-seed-closeout.md` to contain:
 
 - scan scope,
 - commands,
-- scan artifact directory,
-- final report path,
+- scan artifact disposition,
+- report disposition,
 - findings disposition,
 - hardening changes,
 - re-validation status,
@@ -2622,20 +2638,49 @@ python3.14 -m unittest tests/test_validate_framework_seed.py
 
 Expected: FAIL because the completed security closeout summary is not populated yet.
 
-- [ ] **Step 6: Perform Codex Security scan and hardening**
+- [x] **Step 6: Perform Codex Security scan and hardening**
 
 Use Codex Security workflows before the Framework Seed is considered merge-ready:
 
-1. Run Codex Security's phase sequence against the Seed change set: threat modeling, finding discovery, validation, attack-path analysis, and final report assembly.
+1. Run Codex Security's phase sequence against the Seed change set: threat modeling, finding discovery, validation when candidates or workflow rules require it, attack-path analysis when validation leaves reportable candidates or workflow rules require it, and final report assembly.
 2. Scope the scan to the full merge-base-to-working-tree diff, including committed changes, staged changes, unstaged changes, and untracked intended files. Capture untracked files with `git ls-files --others --exclude-standard` and include their contents in the scan context, or stage all intended files before scanning. The final scan target must include `docs/closeout/framework-seed-documentation.md`, hardening changes, and review fixes that have not yet been committed. Keep the Repository Threat Model repository-scoped.
-3. Record the scan scope, commands, scan artifact directory, final report path, findings dispositions, hardening changes, re-validation status, and deferred-risk tracking in `docs/security/framework-seed-closeout.md`. Do not commit transient `/tmp/codex-security-scans/...` artifacts unless a later policy explicitly makes them repo artifacts.
+3. Classify every scan artifact by durability before commit or external projection. Record the scan scope, commands, scan artifact disposition, report disposition, findings dispositions, hardening changes, re-validation status, and deferred-risk tracking in `docs/security/framework-seed-closeout.md`. Do not commit or externally project raw instance-scoped scratch artifacts unless a later policy explicitly makes them durable repo artifacts in a neutral project path with scope, review status, and staleness boundaries.
 4. Fix reportable findings, suppress false positives with evidence, or escalate deferment requests to the human operator with risk rationale and tracking issue.
 5. After hardening changes, rerun or update the applicable Codex Security phases so the final security report and closeout summary describe the current repo state. At minimum, rerun validation and final report assembly for fixed findings; rerun finding discovery when the fix changes trust boundaries, side effects, or exposed inputs.
 6. Update `tools/validate_framework_seed.py` so `run()` validates the completed security closeout summary requirements from Step 5.
 
-- [ ] **Step 6a: Refresh documentation closeout after security closeout**
+- [x] **Step 6a: Define story closeout order and interdependency rules**
 
-Update `docs/closeout/framework-seed-documentation.md` for the populated `docs/security/framework-seed-closeout.md` and any security hardening changes. Run a narrow xhigh documentation closeout review for the updated security docs and closeout summary using the same doc-writing guidance as Step 4.
+Create `docs/story-closeout.md` as the canonical Story Closeout process. It must define:
+
+- Story Closeout as the story-level gate;
+- Change Set Security Closeout and Change Set Documentation Closeout as subordinate gates;
+- gate order from validation through security, documentation, projection drafts, Cross-Boundary Coherence review, Story Quality review, final validation, projection publication, and final publication actions;
+- rerun rules for security, documentation, validation, PRD/spec/plan scope, and issue/PR projection changes;
+- recursion boundaries and bookkeeping-only updates;
+- completion criteria.
+
+Wire the process through `AGENTS.md`, `CONTEXT.md`, `docs/smith-runbook.md`, `docs/metasmith-runbook.md`, `docs/prd/framework-seed.md`, `tools/validate_framework_seed.py`, and `tests/test_validate_framework_seed.py`.
+
+Run:
+
+```bash
+python3.14 -m unittest tests.test_validate_framework_seed.CanonicalDocTests.test_validate_canonical_docs_requires_story_closeout_doc
+python3.14 -m unittest tests/test_validate_framework_seed.py
+python3.14 tools/validate_framework_seed.py
+git diff --check
+```
+
+Expected: the targeted test fails before the validator and doc are updated, then passes with the full test suite and validator after the closeout process is wired.
+
+- [x] **Step 6b: Refresh security and documentation closeout after closeout-process changes**
+
+Defining `docs/story-closeout.md` changes agent-facing policy, documentation closeout claims, validator behavior, and the final closeout order. Treat that as a substantive upstream change:
+
+1. Rerun or update the Codex Security scan so `docs/security/framework-seed-closeout.md` describes the current final diff, including `docs/story-closeout.md`, Story Closeout wiring, validator changes, tests, closeout documents, and untracked intended files.
+2. Update `docs/security/framework-seed-closeout.md` with the current scan artifact disposition, report disposition, findings disposition, phase applicability, hardening changes, and re-validation counts.
+3. Update `docs/closeout/framework-seed-documentation.md` for Story Closeout, the refreshed security closeout, and any closeout-process review fixes.
+4. Run a narrow xhigh documentation closeout review for the updated security docs, closeout docs, Story Closeout process, and referenced agent-facing docs using the same doc-writing guidance as Step 4.
 
 After the security closeout summary is populated and any hardening changes are complete, rerun:
 
@@ -2646,21 +2691,51 @@ python3.14 tools/validate_framework_seed.py --json
 git diff --check
 ```
 
-- [ ] **Step 7: Ralph-review the full Framework Seed**
+Ralph Review Cycle 52 verified the Cycle 51 fixes and found no remaining
+Step 6b closeout-process issues.
+
+- [x] **Step 6c: Prepare projection drafts for closeout review**
+
+Before Cross-Boundary Coherence review, prepare the projection surfaces that the reviewer must check:
+
+- a draft Published PRD Issue body for `docs/prd/framework-seed.md`, including the intended issue action and all fields listed in Step 11;
+- a draft PR body or explicit note that PR creation is intentionally paused after branch push in this session;
+- any release or handoff summary needed for the active closeout, or an explicit non-applicability note;
+- a pending-projection rationale if an external surface cannot be drafted yet.
+
+Store the draft in the plan, a closeout note, or another neutral project surface if it must be reviewable before publication. If the draft is intentionally kept outside committed files, include it in the reviewer context and record where it was reviewed.
+
+- [ ] **Step 7: Ralph-review closeout coherence and quality**
 
 Dispatch an xhigh reviewer with the full merge-base-to-working-tree diff, including committed changes, staged changes, unstaged changes, and untracked intended files. Capture untracked files with `git ls-files --others --exclude-standard` and include their contents in the review context, or stage all intended files before review. Require review for:
 
-- PRD compliance,
-- source projection completeness,
-- AGENTS/README boundary,
-- harness evidence quality,
-- validation coverage,
-- templates/examples/spec promotion states,
-- downstream-equipment non-goals,
-- documentation closeout evidence and latest clean documentation closeout review,
-- security threat model and closeout evidence,
-- Codex Security findings disposition,
-- security/privacy issues.
+1. Cross-Boundary Coherence Ralph Review:
+   - PRD/spec/plan/implementation agreement,
+   - source projection completeness,
+   - AGENTS/README boundary,
+   - harness evidence quality,
+   - validation coverage,
+   - templates/examples/spec promotion states,
+   - downstream-equipment non-goals,
+   - documentation closeout evidence and latest clean documentation closeout review,
+   - security threat model and closeout evidence,
+   - Codex Security findings disposition,
+   - prepared issue/PR projection drafts or pending-projection rationale,
+   - release/handoff draft surface consistency.
+
+2. Story Quality Ralph Review:
+   - confirmation that Intent Model Refresh ran before downstream closeout gates,
+   - general and specific DX,
+   - general and specific UX,
+   - code quality,
+   - clean architecture and cohesive module boundaries,
+   - robustness against unspecified situations, interactions, user personas, and attack vectors,
+   - mitigations implemented or planned for pathological dev/ops cycles observed in prior sessions,
+   - coherent and plausibly realizable strategic vision,
+   - direct or indirect alignment of current and planned work toward that vision,
+   - alignment between Effective Intent actually imposed by ADRs, PRDs, specs, plans, acceptance criteria, review dispositions, and other declarations, and the agent's refreshed evidence-backed model of Underlying Intent after Cross-Boundary Coherence has made Effective Intent legible,
+   - escalation of any non-dismissible likelihood of Effective Intent and Underlying Intent misalignment unless observable evidence supports realigning and reprojecting the affected declarations beyond reasonable doubt,
+   - treatment of internal-state hypotheses as reasons to ask sharper questions, not as evidence that can justify unilateral realignment.
 
 Expected: latest review cycle has no findings.
 
@@ -2671,28 +2746,68 @@ If review finds issues, fix them, rerun:
 ```bash
 python3.14 -m unittest
 python3.14 tools/validate_framework_seed.py
+python3.14 tools/validate_framework_seed.py --json
 git diff --check
 ```
 
 Repeat review until clean.
 
+After clean Cross-Boundary Coherence and Story Quality review cycles are
+recorded in the projection draft, rerun:
+
+```bash
+python3.14 tools/validate_framework_seed.py --final-closeout
+```
+
+Expected: PASS. This strict final-closeout mode rejects unresolved story-review
+placeholders and host-local or scratch artifact paths in external projection
+drafts.
+
 If review fixes affect security policy, side effects, exposed inputs, trust boundaries, MCP/tool behavior, hooks, executable code, or the threat model, rerun or update the applicable Codex Security phases and `docs/security/framework-seed-closeout.md` before the next review cycle.
 If review fixes affect agent-facing or human-facing docs, rerun documentation closeout review with the applicable doc-writing guidance before the next full Framework Seed review cycle.
+If review fixes affect PRD, spec, or plan scope, rerun the affected source-projection, acceptance-criteria, and Cross-Boundary Coherence checks before the next review cycle.
+If review fixes affect issue/PR projection drafts, release drafts, or handoff drafts, rerun projection consistency checks and include the corrected draft in the next Cross-Boundary Coherence review cycle.
+If final validation or publication-readiness checks change evidence carried by a projection surface, update the draft before publishing and rerun projection consistency checks.
 
 - [ ] **Step 9: Commit final adjustments**
 
 Run:
 
 ```bash
-git add README.md AGENTS.md CONTEXT.md docs templates examples specs tools tests
+git add .gitignore README.md AGENTS.md CONTEXT.md docs templates examples specs tools tests
 git commit -m "feat(framework): implement framework seed" -m "Co-authored-by: Codex <noreply@openai.com>"
 ```
 
 If no changes remain after prior task commits, skip this commit and record that the branch is clean.
 
-- [ ] **Step 10: Issue Projection**
+- [ ] **Step 10: Push branch and pause point**
+
+After the final commit and validation, run the strict final closeout check and
+push the Seed-completed branch:
+
+```bash
+python3.14 tools/validate_framework_seed.py --final-closeout
+```
+
+```bash
+git push -u origin metasmith-framework
+```
+
+Pause the session after the branch is pushed and before PR creation. Report the
+pushed branch, validation state, and whether the Published PRD Issue has been
+created or remains a reviewed draft.
+
+The operator has requested a side quest at this point. Do not create the PR
+before the operator resumes or explicitly redirects this session.
+
+- [ ] **Step 11: Issue Projection**
 
 Use GitHub MCP or `gh` to create or update the Published PRD Issue for `docs/prd/framework-seed.md`.
+
+Issue Projection is an external projection action and should use a pushed branch
+or pushed commit reference. If the session pauses immediately after branch push,
+leave `docs/closeout/framework-seed-projection-drafts.md` as the reviewed
+projection draft and keep Issue Projection pending until work resumes.
 
 The issue body must include:
 
@@ -2702,8 +2817,9 @@ The issue body must include:
 - success criteria,
 - implementation summary,
 - validation commands and results,
-- security closeout summary, including threat model path, scan report path, findings disposition, and deferred-risk tracking,
+- security closeout summary, including threat model path, report disposition, findings disposition, and deferred-risk tracking,
 - documentation closeout summary, including affected docs inspected, material updates, and review result,
+- Cross-Boundary Coherence and Story Quality review results,
 - current commit SHA,
 - note that repo draft remains the detailed review artifact while the issue is the tracking surface.
 
@@ -2715,6 +2831,8 @@ git rev-parse HEAD
 
 Use that SHA in the issue body. If GitHub issue creation is unavailable, update `docs/metasmith/source-projection.md` or a closeout note with `Issue Projection pending`, the reason, and the attempted projection SHA captured immediately before the fallback note. Then rerun validation, Ralph-review that repo-file adjustment, and commit it before closeout.
 
+After creating or updating the Published PRD Issue, verify the published issue body matches the reviewed projection draft and the projected SHA. If the published issue differs materially from the reviewed draft, correct the issue and run a narrow Cross-Boundary Coherence review for the corrected projection surface.
+
 After any fallback commit, rerun:
 
 ```bash
@@ -2723,13 +2841,13 @@ git rev-parse HEAD
 
 Report that post-fallback final SHA only in external closeout surfaces, such as the final response, PR body, or a later issue update. Do not require a committed file to contain the SHA of the commit that contains that file.
 
-- [ ] **Step 11: Rollback and recovery paths**
+- [ ] **Step 12: Rollback and recovery paths**
 
 - If final review or security closeout finds a blocking flaw, keep the branch open, fix forward in the worktree, rerun validation and applicable security phases, and restart Ralph review.
 - If Issue Projection targets the wrong issue or publishes stale content, update the issue with a correction that names the superseded SHA and current SHA; if a repo fallback note was committed, amend it with the correction in a new commit.
 - Do not rewrite public history or force-push to hide a failed projection or security finding. Preserve the audit trail and fix forward unless the human operator explicitly requests a destructive history operation.
 
-- [ ] **Step 12: Verify branch closeout state**
+- [ ] **Step 13: Verify branch closeout state**
 
 Run:
 
@@ -2758,6 +2876,50 @@ imported skills. Preserve source/provenance and licensing context, identify
 global-installation assumptions, and classify each migrated skill as an example,
 candidate, internal repo workflow, or publishable/bundleable equipment.
 
+Before importing the operator's current equipment, run a dedicated engineering
+story for the ingestion pipeline itself. Start with a `grill-with-docs` session
+to resolve ambiguities with the operator and produce any warranted ADRs, then
+proceed through the full engineering flow: PRD, specs, implementation plan, TDD,
+SDD, security analysis, documentation review, Ralph review, projection, and
+closeout.
+
+Scope that pipeline as generic reusable Agent Equipment. The operator's
+immediate import source is mostly skills, but the pipeline must support any kind
+of equipment and must be usable in other compatible harnesses and repositories,
+not only in this repository.
+
+Before planning imports item by item, inspect the candidate source set and the
+target repository's existing equipment as one system. Catalog group relations:
+overlap, integration points, conflicts, implicit dependencies, indirect
+relationships, containment or inclusion relationships such as plugin contents,
+and candidate bundles that should be planned or reviewed together. When the best
+planning granularity is uncertain, escalate to the operator before committing to
+per-item or group-level import planning.
+
+Treat source materials as evidence about the source's intended capability, not
+as authority over the user's current Underlying Intent or the final equipment
+form. They are instructive or advisory on concrete techniques and details, and
+only suggestive on names, structure, and phrasing. Critically evaluate each
+piece or cohesive bundle according to the criteria a Smith would use to build
+the intended capability. If the source-projected capability appears to diverge
+from the agent's current model of Underlying Intent, resolve that ambiguity with
+the operator.
+
+Design the ingestion UX and configuration model for progressive policy choice.
+The importer should offer best-practice defaults while allowing the invoking user
+to choose different ingestion policies for a source, bundle, function, facet, or
+aspect when useful. The goal is to render the best possible equipment from the
+available material under the selected policy, not merely to copy source files.
+
+Handle externally sourced or upstream-maintained materials explicitly. Preserve
+provenance, licensing context, update channels, and local adaptation choices.
+For each material or bundle, support strategies such as ingesting as-is,
+dropping/rejecting it, wrapping it, extending it, adding modification hooks,
+overlaying or forking it, or rebuilding from captured intent. Account for cases
+where upstream material is useful but misaligned with this repository's
+standards, and escalate when the strategy depends on operator preference rather
+than established project policy.
+
 ### Side-Thread Hand-Back Workflow
 
 After the Framework Seed, specify the Agent Ops workflow for side conversations
@@ -2785,6 +2947,34 @@ If the Post-Seed Skill Migration or Side-Thread Hand-Back Workflow tasks have
 already landed, ingest their outputs as source material. Treat their repo-local
 skills, provenance notes, side-thread contracts, and progressive-disclosure
 routes as evidence to reconcile rather than decisions to bypass.
+
+Also ingest the linked
+[Seed Closeout Addendum](../metasmith/handoff/2026-05-03-agentic-engineering-workflow-seed-closeout-addendum.md).
+It is the current capture for workflow lessons that emerged after the original
+handoff was written, including subagent review availability, closeout-gate
+ordering, projection drafts versus external publication, security and
+documentation evidence freshness, review recursion, process-validation
+semantics, and plan-state hygiene.
+
+Keep the addendum current through full Framework Seed completion. For this
+capture, full completion means the Seed branch has been pushed, the PR lifecycle
+has run, the Seed has been merged, external issue and PR surfaces have been
+reconciled with repo-file projections, merge cleanup has completed or been
+explicitly deferred, and the final hand-back records that state. The capture
+window includes final local validation, closeout reviews, issue projection,
+branch push, PR creation, PR review orchestration, merge, and merge cleanup. If
+those steps expose new insights, guardrails, policies, techniques, failure
+modes, or harness-specific constraints, append them before treating the Seed as
+fully closed.
+
+If the operator explicitly holds or cancels the Seed instead of merging it,
+continue capture through the hold or cancellation hand-back. Record the
+unmerged state directly; do not describe it as full Seed completion.
+
+If the Seed work pauses after branch push and before PR creation, the pause
+handoff must say that the addendum remains open through the PR, merge, and
+cleanup lifecycle. The later post-Seed story should ingest the captured
+material, not defer first capture until its own start.
 
 The resulting story should define the minimal repo equipment needed for future
 agents to recover the agent-operated engineering workflow from repo files alone.
