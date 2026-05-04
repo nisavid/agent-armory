@@ -9,6 +9,10 @@ This ledger replaces raw source-handoff preservation after the source-bearing ch
 Source-bearing snapshot tree id: `589bf626ffc5e9cdfffc7ee5983022adc1f7a1e2`
 Allowed source list digest: `2e1198863b18b42b46b0d4661c23737ef12488f26a24d151bcd0a4847cbcbdcd`
 
+`durable_payload` stores a durable digest or identifier, not raw source content.
+This ledger preserves source identity evidence and normalized claim summaries
+through digests and stamps.
+
 | source_id | source_kind | original_path | git_blob_id | sha256 | normalized_payload_digest | durable_payload |
 | --- | --- | --- | --- | --- | --- | --- |
 | SRC001 | file | docs/metasmith/source-projection.md | 77ff23d422f33f7d6e220efe8cd406739266f466 | a97d84987af91c404bdbae3b3e05bbf9c29b6fcb07c1ca5fbd3c31767f4b079e | a97d84987af91c404bdbae3b3e05bbf9c29b6fcb07c1ca5fbd3c31767f4b079e | retired source file; digest and normalized claim summaries are preserved in this ledger |
@@ -33,6 +37,12 @@ Allowed source list digest: `2e1198863b18b42b46b0d4661c23737ef12488f26a24d151bcd
 | SYN001 | synthetic | tools/validate_framework_seed.py | 387528b54440abe560cd4d8d8e859e05df620347 | d1369a5d1a1c77524dbf4f8c5006b348de36d61e0617340e5c58037758329ad3 | 84909b97e7c53567ae1a02750da0e2ae33550b0b2544c01ee849a636a9359466 | ACCEPTED_SOURCE_REQUIREMENTS and source-projection validation expectations from tools/validate_framework_seed.py before Forge route migration. |
 
 ## Disposition Items
+
+Table legend: `operator_decision` is intentionally blank for
+`challenge_status=unchallenged` / `disposition=kept_current` rows because no
+operator arbitration decision was required. `normalized_claim_summary` remains
+populated with retained claim coverage. Deferred/resolved rows record the
+operator-directed decision and durable follow-up target.
 
 | item_id | source_id | coverage_status | challenge_status | challenge_operator_confirmation_required | arbitration_required | disposition | operator_decision | evidence_target | normalized_claim_summary |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -110,6 +120,6 @@ source_bearing_result: passed
 ## Final Source-Retired Stamp
 
 stamp_target: placeholder-normalized canonical tree
-canonical_tree_digest: 323086ab1e717a1957db6dc08c2f81e28ad26f6b37c7ddb866184f103af3e0f6
+canonical_tree_digest: a59b7ee6ce2f1c11d64b2bf83d63d263e6bb0e629e8d549dad6367a1030f9c52
 source_retired: true
-timestamp: 2026-05-04T15:25:18Z
+timestamp: 2026-05-04T15:42:25Z
