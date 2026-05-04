@@ -2769,7 +2769,7 @@ drafts.
 
 If review fixes affect security policy, side effects, exposed inputs, trust boundaries, MCP/tool behavior, hooks, executable code, or the threat model, rerun or update the applicable Codex Security phases and `docs/security/forge-seed-closeout.md` before the next review cycle.
 If review fixes affect agent-facing or human-facing docs, rerun documentation closeout review with the applicable doc-writing guidance before the next full Forge Seed review cycle.
-If review fixes affect PRD, spec, or plan scope, rerun the affected source-projection, acceptance-criteria, and Cross-Boundary Coherence checks before the next review cycle.
+If review fixes affect PRD, spec, or plan scope, rerun the affected source-disposition, acceptance-criteria, and Cross-Boundary Coherence checks before the next review cycle.
 If review fixes affect issue/PR projection drafts, release drafts, or handoff drafts, rerun projection consistency checks and include the corrected draft in the next Cross-Boundary Coherence review cycle.
 If final validation or publication-readiness checks change evidence carried by a projection surface, update the draft before publishing and rerun projection consistency checks.
 

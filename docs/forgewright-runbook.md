@@ -25,7 +25,7 @@ Project durable decisions into the narrowest live surface that future Smiths or 
 - Current Smith procedure belongs in Forge Canon and templates.
 - Architecture or policy choices that need rationale belong in ADRs.
 - Repeatable checks belong in validation tools or tests.
-- Bulky provenance stays in the Source Handoff.
+- Bulky provenance stays in a source-disposition or provenance surface with an explicit durability contract.
 
 Keep the current rule direct. Use historical contrast only when the history is the subject.
 

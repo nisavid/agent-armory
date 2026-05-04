@@ -5,7 +5,7 @@
 Use this template to define a bounded Agent Profile with explicit mission, tools,
 permissions, model preferences, and configuration placeholders.
 
-The Framework calls this reusable configuration an Agent Profile. Harness and
+The Forge calls this reusable configuration an Agent Profile. Harness and
 plugin source paths commonly call the same component `agents`, so this template
 uses `templates/agents/`.
 

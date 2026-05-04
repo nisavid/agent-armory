@@ -331,7 +331,6 @@ SOURCE_BEARING_STAMP_FIELDS = [
     "source_disposition_digest",
     "source_bearing_result",
 ]
-
 ACCEPTED_SOURCE_REQUIREMENTS = {
     "H001": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Your objective"},
     "H002": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Terms you must use"},
@@ -388,6 +387,9 @@ ACCEPTED_SOURCE_REQUIREMENTS = {
     "H051": {"source_file": "10-gap-resolution-and-design-notes.md", "source_anchor": "Remaining uncertainties"},
     "H054": {"source_file": "harness-capabilities.seed.toml", "source_anchor": "[harness.codex]"},
 }
+SOURCE_DISPOSITION_FINAL_REQUIRED_ITEM_IDS = set(ACCEPTED_SOURCE_REQUIREMENTS) | {"F001", "F002", "F003", "F004"}
+HEX40_RE = re.compile(r"^[0-9a-f]{40}$")
+HEX64_RE = re.compile(r"^[0-9a-f]{64}$")
 
 SOURCE_HANDOFF_DIR = "docs/metasmith/handoff/2026-05-02"
 SOURCE_HANDOFF_MANIFEST = f"{SOURCE_HANDOFF_DIR}/manifest.json"
@@ -1020,7 +1022,7 @@ def parse_bool_cell(value: str) -> bool | None:
     return None
 
 
-def validate_source_disposition(root: Path) -> list[CheckResult]:
+def validate_source_disposition(root: Path, *, required_item_ids: set[str] | None = None) -> list[CheckResult]:
     ok, detail, path = repo_relative_path_status(root, SOURCE_DISPOSITION_PATH, "file")
     if not ok:
         if detail == "path contains symlink":
@@ -1071,6 +1073,26 @@ def validate_source_disposition(root: Path) -> list[CheckResult]:
                     SOURCE_DISPOSITION_PATH,
                 )
             )
+        if row["source_kind"] == "file":
+            if not HEX40_RE.match(row["git_blob_id"]):
+                results.append(
+                    CheckResult(
+                        f"source_disposition:source:{source_id}",
+                        False,
+                        "file source git_blob_id must be a 40-character hex object id",
+                        SOURCE_DISPOSITION_PATH,
+                    )
+                )
+            for field in ("sha256", "normalized_payload_digest"):
+                if not HEX64_RE.match(row[field]):
+                    results.append(
+                        CheckResult(
+                            f"source_disposition:source:{source_id}",
+                            False,
+                            f"file source {field} must be a 64-character hex digest",
+                            SOURCE_DISPOSITION_PATH,
+                        )
+                    )
         if row["source_kind"] == "synthetic" and not row["durable_payload"].strip():
             results.append(
                 CheckResult(
@@ -1086,6 +1108,19 @@ def validate_source_disposition(root: Path) -> list[CheckResult]:
                     f"source_disposition:source:{source_id}",
                     False,
                     "synthetic source missing normalized payload digest",
+                    SOURCE_DISPOSITION_PATH,
+                )
+            )
+
+    item_ids = {row.get("item_id", "") for row in item_rows}
+    if required_item_ids is not None:
+        missing_required_ids = sorted(required_item_ids - item_ids)
+        if missing_required_ids:
+            results.append(
+                CheckResult(
+                    "source_disposition:required_items",
+                    False,
+                    f"missing required item ids: {', '.join(missing_required_ids)}",
                     SOURCE_DISPOSITION_PATH,
                 )
             )
@@ -1264,13 +1299,13 @@ def validate_source_disposition(root: Path) -> list[CheckResult]:
             )
         evidence_target = row["evidence_target"].strip()
         if evidence_target and not invalid_repo_relative_target(evidence_target):
-            target = root / evidence_target
-            if not target.exists():
+            ok, detail, _target = repo_relative_path_status(root, evidence_target, "any")
+            if not ok:
                 results.append(
                     CheckResult(
                         f"source_disposition:item:{item_id}:target:{evidence_target}",
                         False,
-                        "evidence target missing",
+                        f"evidence target {detail}",
                         SOURCE_DISPOSITION_PATH,
                     )
                 )
@@ -1300,7 +1335,7 @@ def validate_source_retired_tree(root: Path) -> list[CheckResult]:
                 "docs/metasmith",
             )
         )
-    results.extend(validate_source_disposition(root))
+    results.extend(validate_source_disposition(root, required_item_ids=SOURCE_DISPOSITION_FINAL_REQUIRED_ITEM_IDS))
     if not any(result.name.startswith("source_retired:") and not result.ok for result in results):
         results.append(CheckResult("source_retired:tree", True, "raw sources removed", "docs"))
     return results
@@ -2401,6 +2436,15 @@ def validate_final_closeout(root: Path) -> list[CheckResult]:
         r"(?im)^(?:-\s*)?story quality(?: review)?:\s*(?:`?Ralph Review Cycle \d+`?|Ralph Review Cycle \d+\.?)\s*$",
         markdown,
     )
+    if not plan_step_is_checked(root, STORY_REVIEW_STEP_LABEL):
+        results.append(
+            CheckResult(
+                f"final_closeout:evidence:{PLAN_PATH}:story closeout reviews",
+                False,
+                "final closeout requires completed story closeout review step in the plan",
+                PLAN_PATH,
+            )
+        )
     if (
         PROJECTION_DRAFTS_PENDING_STORY_REVIEW_PLACEHOLDER.casefold() in raw_folded
         or cross_boundary_review_ok is None

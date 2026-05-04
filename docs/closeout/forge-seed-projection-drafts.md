@@ -23,7 +23,7 @@ Draft body:
 ```markdown
 # Forge Seed PRD
 
-Status: Implemented on the branch intended to be pushed as `forge-seed`; pending PR publication.
+Status: Implemented on branch `forge-seed`; pending PR publication.
 
 Repo draft: `docs/prd/forge-seed.md`
 
@@ -109,18 +109,14 @@ closeout issues.
 
 ## Story Closeout Reviews
 
-Cross-Boundary Coherence review: Ralph Review Cycle 71. Cycle 69 found the
-Forge Seed coherent across PRD, plan, canonical docs, validation, security,
-documentation closeout, projection drafts, deferred follow-ups, and the
-branch-push pause. Cycle 71 reran the affected boundary after the final staging
-plan was fixed to include `.gitignore`; it found no remaining coherence issues.
+Cross-Boundary Coherence review: `TO_FILL_AFTER_CLEAN_REVIEW`
 
-Story Quality review: Ralph Review Cycle 72. Cycle 70 found that the final
-staging plan omitted `.gitignore`; that finding was fixed and narrow
-Cross-Boundary Cycle 71 verified the fix. Cycle 72 refreshed the Intent Model,
-ran the Intent Alignment Check, reviewed DX, UX, architecture, maintainability,
-security robustness, pathological-cycle mitigations, and strategic alignment,
-and found no remaining Story Quality issues.
+Story Quality review: `TO_FILL_AFTER_CLEAN_REVIEW`
+
+The current review cycle found fix-forward items in source-retirement evidence,
+Forge terminology, and plan/projection consistency. This draft must be updated
+with the latest clean Cross-Boundary Coherence and Story Quality review cycles
+before final closeout or external projection.
 
 ## Commit
 

@@ -1258,6 +1258,31 @@ class SourceDispositionTests(unittest.TestCase):
             results,
         )
 
+    def test_validate_source_disposition_rejects_malformed_file_source_identity(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_source_disposition(root)
+            path = root / SOURCE_DISPOSITION_PATH
+            path.write_text(
+                path.read_text(encoding="utf-8").replace(
+                    "| SYN001 | synthetic | tools/validate_forge_seed.py | abc123 | def456 | 789abc | accepted requirement constants H001 H002 |",
+                    "| SYN001 | file | docs/metasmith/source-projection.md |  | def456 | 789abc | retired source file |",
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_source_disposition(root)
+
+        self.assertIn(
+            CheckResult(
+                "source_disposition:source:SYN001",
+                False,
+                "file source git_blob_id must be a 40-character hex object id",
+                SOURCE_DISPOSITION_PATH,
+            ),
+            results,
+        )
+
     def test_validate_source_disposition_rejects_integrated_item_without_arbitration(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -1376,6 +1401,61 @@ class SourceDispositionTests(unittest.TestCase):
                 "source_disposition:stamp:source_bearing_result",
                 False,
                 "missing source_bearing_result",
+                SOURCE_DISPOSITION_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_source_retired_tree_requires_final_source_item_coverage(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs").mkdir()
+            (root / "docs/agent-equipment-forge.md").write_text("# Forge\n", encoding="utf-8")
+            (root / "docs/follow-ups").mkdir()
+            (root / "docs/follow-ups/portable-agentic-engineering-workflow-equipment.md").write_text(
+                "# Follow-up\n",
+                encoding="utf-8",
+            )
+            self.write_source_disposition(root)
+
+            results = validate_source_retired_tree(root)
+
+        self.assertTrue(
+            any(
+                result
+                == CheckResult(
+                    "source_disposition:required_items",
+                    False,
+                    result.detail,
+                    SOURCE_DISPOSITION_PATH,
+                )
+                and "H001" in result.detail
+                for result in results
+            ),
+            results,
+        )
+
+    def test_validate_source_disposition_rejects_symlink_evidence_target(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            outside = root / "outside.md"
+            outside.write_text("# Outside\n", encoding="utf-8")
+            (root / "docs").mkdir()
+            (root / "docs/agent-equipment-forge.md").symlink_to(outside)
+            (root / "docs/follow-ups").mkdir()
+            (root / "docs/follow-ups/portable-agentic-engineering-workflow-equipment.md").write_text(
+                "# Follow-up\n",
+                encoding="utf-8",
+            )
+            self.write_source_disposition(root)
+
+            results = validate_source_disposition(root)
+
+        self.assertIn(
+            CheckResult(
+                "source_disposition:item:I001:target:docs/agent-equipment-forge.md",
+                False,
+                "evidence target path contains symlink",
                 SOURCE_DISPOSITION_PATH,
             ),
             results,
@@ -2805,6 +2885,29 @@ class ProjectionDraftValidationTests(unittest.TestCase):
             results,
         )
 
+    def test_validate_final_closeout_rejects_clean_story_review_evidence_when_plan_step_open(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_plan_with_step7(root, checked=False)
+            self.write_projection_drafts(
+                root,
+                self.valid_projection_drafts()
+                .replace("Cross-Boundary Coherence review: `TO_FILL_AFTER_CLEAN_REVIEW`", "Cross-Boundary Coherence review: Ralph Review Cycle 53.")
+                .replace("Story Quality review: `TO_FILL_AFTER_CLEAN_REVIEW`", "Story Quality review: Ralph Review Cycle 54."),
+            )
+
+            results = validate_final_closeout(root)
+
+        self.assertIn(
+            CheckResult(
+                f"final_closeout:evidence:{self.plan_path}:story closeout reviews",
+                False,
+                "final closeout requires completed story closeout review step in the plan",
+                self.plan_path,
+            ),
+            results,
+        )
+
     def test_validate_final_closeout_rejects_host_local_artifact_paths_in_projection_drafts(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -2877,6 +2980,7 @@ class ProjectionDraftValidationTests(unittest.TestCase):
     def test_validate_final_closeout_accepts_clean_story_review_evidence(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
+            self.write_plan_with_step7(root, checked=True)
             self.write_projection_drafts(
                 root,
                 self.valid_projection_drafts()

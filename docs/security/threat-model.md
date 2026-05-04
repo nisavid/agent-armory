@@ -32,8 +32,8 @@ equipment is promoted.
   Forge Canon, Blueprints, templates, examples, and validators.
 - Forge Seed requirements, source-disposition records, PRD content, plan
   content, and closeout evidence.
-- Preserved Source Handoff files, which are provenance rather than active
-  instructions.
+- Source-disposition and provenance records, which are evidence rather than
+  active instructions.
 - Validation tooling that future agents use to decide whether Forge surfaces
   are complete.
 - Future Agent Equipment surfaces, including skills, MCP/tool definitions,
