@@ -88,6 +88,31 @@ class IssueTrackerOpsTests(unittest.TestCase):
         self.assertEqual(payload["operation"], "comment")
         self.assertEqual(payload["result"], {"id": 44})
 
+    def test_execute_error_omits_resolved_when_no_resolution_occurred(self):
+        gh = FakeGh([subprocess.CompletedProcess(["gh"], 1, stdout="", stderr="boom")])
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "comment",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "11",
+                "--body",
+                "Validation note",
+                "--execute",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(stderr, "")
+        payload = json.loads(stdout)
+        self.assertEqual(payload["mode"], "execute")
+        self.assertEqual(payload["operation"], "comment")
+        self.assertEqual(payload["error"], {"returncode": 1, "stderr": "boom"})
+        self.assertNotIn("resolved", payload)
+
     def test_add_blocked_by_issue_number_resolves_issue_id_before_posting(self):
         gh = FakeGh(
             [
