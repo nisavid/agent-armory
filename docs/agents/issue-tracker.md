@@ -14,8 +14,8 @@ Each follow-up capture should include:
 - `Status: Follow-Up Capture`
 - a `## Purpose` section,
 - a `## Captured Requirements` section,
-- a `## Pending Projection` section that explains why the GitHub issue is not
-  created or updated yet.
+- a `## GitHub Issue Projection` section that explains why the GitHub issue is
+  not created or updated yet.
 
 Keep these captures narrow. They are not a general Inventory; they are the local
 governing surface until Issue Projection validates the corresponding GitHub
