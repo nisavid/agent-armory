@@ -8,8 +8,8 @@ These drafts are review surfaces for Story Closeout. The pull request surface
 has been published as <https://github.com/nisavid/agent-armory/pull/1>. The
 Published PRD Issue remains pending.
 
-External projection happens only after final validation, clean Cross-Boundary
-Coherence review, clean Story Quality review, final commit, and branch push. If
+External projection happens only after clean Cross-Boundary Coherence review,
+clean Story Quality review, final validation, final commit, and branch push. If
 the session pauses before Publishing the PRD Issue, this reviewed draft remains
 the source of truth for that issue until work resumes.
 
