@@ -2709,7 +2709,7 @@ Before Cross-Boundary Coherence review, prepare the projection surfaces that the
 
 Store the draft in the plan, a closeout note, or another neutral project surface if it must be reviewable before publication. If the draft is intentionally kept outside committed files, include it in the reviewer context and record where it was reviewed.
 
-- [ ] **Step 7: Ralph-review closeout coherence and quality**
+- [x] **Step 7: Ralph-review closeout coherence and quality**
 
 Dispatch an xhigh reviewer with the full merge-base-to-working-tree diff, including committed changes, staged changes, unstaged changes, and untracked intended files. Capture untracked files with `git ls-files --others --exclude-standard` and include their contents in the review context, or stage all intended files before review. Require review for:
 
@@ -2743,7 +2743,15 @@ Dispatch an xhigh reviewer with the full merge-base-to-working-tree diff, includ
 
 Expected: latest review cycle has no findings.
 
-- [ ] **Step 8: Apply fixes and rerun validation**
+Clean closeout review cycles:
+
+- Source-retirement and Projection Consistency Ralph Review Cycle 74 found no
+  findings.
+- Cross-Boundary Coherence Ralph Review Cycle 75 found no findings.
+- Story Quality Ralph Review Cycle 76 found no findings and raised no
+  intent-alignment question.
+
+- [x] **Step 8: Apply fixes and rerun validation**
 
 If review finds issues, fix them, rerun:
 
@@ -2773,7 +2781,7 @@ If review fixes affect PRD, spec, or plan scope, rerun the affected source-dispo
 If review fixes affect issue/PR projection drafts, release drafts, or handoff drafts, rerun projection consistency checks and include the corrected draft in the next Cross-Boundary Coherence review cycle.
 If final validation or publication-readiness checks change evidence carried by a projection surface, update the draft before publishing and rerun projection consistency checks.
 
-- [ ] **Step 9: Commit final adjustments**
+- [x] **Step 9: Commit final adjustments**
 
 Run:
 
@@ -2783,6 +2791,10 @@ git commit -m "feat(forge): implement forge seed" -m "Co-authored-by: Codex <nor
 ```
 
 If no changes remain after prior task commits, skip this commit and record that the branch is clean.
+
+The final evidence update records the clean closeout review cycles and final
+validation state before branch push. No further implementation changes are
+planned before Step 10.
 
 - [ ] **Step 10: Push branch and pause point**
 

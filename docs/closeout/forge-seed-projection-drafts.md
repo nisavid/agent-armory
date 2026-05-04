@@ -67,7 +67,7 @@ The Forge Seed adds:
 - `python3.14 -m unittest tests/test_validate_forge_seed.py`: passed.
 - `python3.14 tools/validate_forge_seed.py`: passed.
 - `python3.14 tools/validate_forge_seed.py --json`: passed.
-- `python3.14 tools/validate_forge_seed.py --final-closeout`: pending clean story-review cycles.
+- `python3.14 tools/validate_forge_seed.py --final-closeout`: passed.
 - `git diff --check`: passed.
 
 ## Security Closeout
@@ -109,14 +109,20 @@ closeout issues.
 
 ## Story Closeout Reviews
 
-Cross-Boundary Coherence review: `TO_FILL_AFTER_CLEAN_REVIEW`
+Source-retirement and projection consistency review: Ralph Review Cycle 74.
 
-Story Quality review: `TO_FILL_AFTER_CLEAN_REVIEW`
+Cross-Boundary Coherence review: Ralph Review Cycle 75.
 
-The current review cycle found fix-forward items in source-retirement evidence,
-Forge terminology, and plan/projection consistency. This draft must be updated
-with the latest clean Cross-Boundary Coherence and Story Quality review cycles
-before final closeout or external projection.
+Story Quality review: Ralph Review Cycle 76.
+
+Ralph Review Cycle 74 verified source-retirement evidence, source-disposition
+durability, symlink/path hardening, projection evidence, final-closeout checks,
+security closeout, and Forge nomenclature, and found no remaining issues.
+Ralph Review Cycle 75 verified cross-boundary coherence across PRD, ADRs, plan,
+Forge Canon, runbooks, specs, templates, examples, validator/tests, closeout
+evidence, and projection surfaces, and found no remaining issues. Ralph Review
+Cycle 76 verified story quality, DX/UX, architecture, robustness, strategic
+alignment, and intent-alignment posture, and found no remaining issues.
 
 ## Commit
 
@@ -170,8 +176,9 @@ Draft PR body:
 ## Reviews
 
 - Documentation closeout: Ralph Review Cycle 68.
-- Cross-Boundary Coherence: `TO_FILL_AFTER_CLEAN_REVIEW`
-- Story Quality: `TO_FILL_AFTER_CLEAN_REVIEW`
+- Source-retirement and projection consistency: Ralph Review Cycle 74.
+- Cross-Boundary Coherence: Ralph Review Cycle 75.
+- Story Quality: Ralph Review Cycle 76.
 ```
 
 ## Release Draft
