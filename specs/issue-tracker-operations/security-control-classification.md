@@ -43,7 +43,8 @@ extension.
 - `--execute` is required for every bootstrap network operation.
 - The script uses argument lists and JSON stdin for `gh api`; it does not invoke
   a shell.
-- The API version and Accept headers are explicit and overridable.
+- The API version header is explicit and overridable; the Accept header is
+  explicit.
 - The adapter emits JSON audit output for request shape, result, resolved IDs,
   and failure.
 - Missing or uncertain auth, policy, adapter behavior, or tracker state fails
