@@ -3,22 +3,22 @@
 Status: Repository Threat Model
 
 This threat model covers the Agent Armory repository, not one task or one diff.
-It is the durable baseline for Framework Seed security closeout and future
+It is the durable baseline for Forge Seed security closeout and future
 change-set scans.
 
 ## Overview
 
 Agent Armory is a repository for Agent Equipment and the Agent Equipment
-Framework. The Framework Seed currently contains documentation, source
+Forge. The Forge Seed currently contains documentation, source
 projection records, templates, examples, specs, a harness capability catalog,
 and standard-library validation tooling. It does not expose a network service,
 authentication boundary, tenant boundary, remote request path, installed hook,
 installed MCP server, or published skill.
 
 The primary security concern in the Seed is integrity of guidance and
-validation. Future Smiths and Metasmiths may use these files to decide what
+validation. Future Smiths and Forgewrights may use these files to decide what
 equipment to build, promote, install, publish, or grant authority. A misleading
-Framework surface can therefore become a downstream execution, credential,
+Forge surface can therefore become a downstream execution, credential,
 filesystem, network, scheduling, or repository-control risk when future
 equipment is promoted.
 
@@ -28,14 +28,14 @@ equipment is promoted.
 
 - Active repository policy in `AGENTS.md` and project vocabulary in
   `CONTEXT.md`.
-- Framework design, validation, and teaching surfaces in ADRs, canonical
-  Framework docs, specs, templates, examples, and validators.
-- Framework Seed requirements, source projection records, PRD content, plan
+- Forge design, validation, and teaching surfaces in ADRs, canonical
+  Forge Canon, specs, templates, examples, and validators.
+- Forge Seed requirements, source projection records, PRD content, plan
   content, and closeout evidence.
 - Preserved Source Handoff files, which are provenance rather than active
   instructions.
-- Validation tooling that future agents use to decide whether Framework
-  surfaces are complete.
+- Validation tooling that future agents use to decide whether Forge surfaces
+  are complete.
 - Future Agent Equipment surfaces, including skills, MCP/tool definitions,
   hooks, scripts, config, Agent Profiles, and plugin manifests.
 - Security and documentation closeout records that carry merge-readiness claims
@@ -51,7 +51,7 @@ equipment is promoted.
 - Documentation to executable equipment: specs, templates, and examples may
   influence future code, hooks, MCPs, scripts, or plugins, but are not
   themselves installable equipment.
-- Local validation tooling to filesystem: `tools/validate_framework_seed.py`
+- Local validation tooling to filesystem: `tools/validate_forge_seed.py`
   reads repo files and reports validation status for the operator or agent.
 - Repo content to external control surfaces: issue projection, PR bodies, and
   review comments can publish project status and security claims outside the
@@ -62,7 +62,7 @@ equipment is promoted.
 
 ### Assumptions
 
-- The current Framework Seed has no network service, authentication boundary,
+- The current Forge Seed has no network service, authentication boundary,
   tenant boundary, or remote request path.
 - The Seed Validation Tool is a local standard-library Python tool that reads
   repository files and writes only process output.
@@ -78,7 +78,7 @@ equipment is promoted.
 ### Invariants
 
 - Archived handoff content remains provenance and does not become active
-  instruction unless projected into a live Framework surface.
+  instruction unless projected into a live Forge surface.
 - Examples and specs must not claim to be installable, loadable,
   production-ready, published, or validated Agent Equipment.
 - Harness-specific claims stay source-backed with checked dates, version basis,
@@ -99,7 +99,7 @@ equipment is promoted.
 
 ### Attacker-controlled inputs
 
-Current Framework Seed inputs are primarily repository files in the checked-out
+Current Forge Seed inputs are primarily repository files in the checked-out
 worktree. A malicious branch, compromised dependency source, or misleading
 handoff note can attempt to alter:
 
@@ -118,11 +118,11 @@ actions.
 
 ### Existing mitigations
 
-- Root `AGENTS.md` routes agents through current live Framework surfaces and
+- Root `AGENTS.md` routes agents through current live Forge surfaces and
   treats archived handoff material as provenance.
 - `docs/metasmith/source-projection.md` maps accepted Source Handoff
   requirements to live target paths or explicit deferments.
-- `tools/validate_framework_seed.py` checks required paths, source projection
+- `tools/validate_forge_seed.py` checks required paths, source projection
   coverage, markdown links, promotion-state boundaries, harness catalog fields,
   and closeout surfaces.
 - The validator rejects symlinked required paths and repository-root escapes for
@@ -159,7 +159,7 @@ actions.
   future agents do not reliably load.
 - A spec, template, or example is mistaken for installed, validated, or
   production-ready equipment.
-- A validator gap marks incomplete, stale, or misleading Framework surfaces as
+- A validator gap marks incomplete, stale, or misleading Forge surfaces as
   ready.
 - A hook, MCP/tool definition, script, Agent Profile, or plugin template omits
   side-effect, permission, approval, secret, or rollback boundaries.

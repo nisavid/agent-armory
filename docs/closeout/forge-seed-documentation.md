@@ -1,9 +1,9 @@
-# Framework Seed Documentation Closeout
+# Forge Seed Documentation Closeout
 
 Status: Completed Closeout
 
-This closeout records the documentation sweep for the Framework Seed after
-security closeout and before Issue Projection. It distinguishes live Framework
+This closeout records the documentation sweep for the Forge Seed after
+security closeout and before Issue Projection. It distinguishes live Forge
 surfaces from archived provenance and leaves post-Seed follow-ups deferred.
 
 ## Scope of inspected docs
@@ -14,10 +14,10 @@ Inspected live agent-facing and human-facing surfaces:
 - `AGENTS.md`
 - `CONTEXT.md`
 - `docs/agents/*.md`
-- canonical Framework docs under `docs/*.md`
-- `docs/prd/framework-seed.md`
+- Forge Canon under `docs/*.md`
+- `docs/prd/forge-seed.md`
 - `docs/adr/*.md`
-- `docs/plans/2026-05-03-framework-seed.md`
+- `docs/plans/2026-05-03-forge-seed.md`
 - `docs/metasmith/source-projection.md`
 - `docs/security/*.md`
 - `docs/closeout/*.md`
@@ -30,37 +30,37 @@ Also inspected archived Source Handoff material under `docs/metasmith/handoff/` 
 ## Docs changed
 
 - `docs/security/threat-model.md`: added the persistent Repository Threat Model with assets, trust boundaries, attacker-controlled inputs, invariants, assumptions, and high-impact failure modes.
-- `docs/security/framework-seed-closeout.md`: added the Framework Seed security closeout with scan scope, artifact durability classification, artifact and report disposition, findings disposition, hardening notes, re-validation status, and deferred-risk tracking.
+- `docs/security/forge-seed-closeout.md`: added the Forge Seed security closeout with scan scope, artifact durability classification, artifact and report disposition, findings disposition, hardening notes, re-validation status, and deferred-risk tracking.
 - `docs/story-closeout.md`: added the canonical Story Closeout process with gate order, interdependency rules, review gates, Intent Model Refresh, Intent Alignment Check, recursion boundaries, and completion criteria.
-- `docs/closeout/framework-seed-projection-drafts.md`: added reviewable issue, PR, release, and handoff projection drafts for Story Closeout before external publication, using committed security closeout paths for portable external evidence.
+- `docs/closeout/forge-seed-projection-drafts.md`: added reviewable issue, PR, release, and handoff projection drafts for Story Closeout before external publication, using committed security closeout paths for portable external evidence.
 - `docs/metasmith/handoff/2026-05-03-agentic-engineering-workflow-equipment.md`: linked the Seed Closeout Addendum and clarified that the addendum is current captured source material for the future Portable Agentic Engineering Workflow Equipment story, not a placeholder for later first capture.
 - `docs/metasmith/handoff/2026-05-03-agentic-engineering-workflow-seed-closeout-addendum.md`: captured workflow lessons from Seed closeout about subagent review availability, closeout-gate ordering, recursive refresh, evidence freshness, process validation, and plan-state hygiene.
 - `docs/security-and-control.md`: linked the Repository Threat Model from the canonical security/control surface.
-- `AGENTS.md`: added zero-scout pointers from the Framework Path to Framework requirement escalation and Story Closeout, plus story-closeout requirements for Cross-Boundary Coherence and Story Quality Ralph Reviews.
-- `CONTEXT.md`: added Framework Requirement Escalation, Smith-to-Metasmith Handoff, Metasmith Hand-Back, Story Closeout, Cross-Boundary Coherence Ralph Review, Story Quality Ralph Review, Intent, Effective Intent, Underlying Intent, Intent Model Refresh, and Intent Alignment Check language.
-- `docs/prd/framework-seed.md`: added Framework requirement escalation success criteria, user story, acceptance criteria, story-closeout review criteria, and the Story Closeout process surface.
-- `docs/smith-runbook.md`: added the Smith-facing Framework requirement escalation trigger, dependency-recording rule, session-path selection, handoff contents, hand-back expectation, Story Closeout route, and story-closeout review gates.
-- `docs/metasmith-runbook.md`: added Metasmith intake and hand-back responsibilities for Smith-discovered Framework requirements and linked Story Closeout from Framework change-set closeout.
+- `AGENTS.md`: added zero-scout pointers from the Forge Conveyor to Tooling Request and Story Closeout, plus story-closeout requirements for Cross-Boundary Coherence and Story Quality Ralph Reviews.
+- `CONTEXT.md`: added Tooling Request, Smith-to-Forgewright Handoff, Forgewright Hand-Back, Story Closeout, Cross-Boundary Coherence Ralph Review, Story Quality Ralph Review, Intent, Effective Intent, Underlying Intent, Intent Model Refresh, and Intent Alignment Check language.
+- `docs/prd/forge-seed.md`: added Tooling Request success criteria, user story, acceptance criteria, story-closeout review criteria, and the Story Closeout process surface.
+- `docs/smith-runbook.md`: added the Smith-facing Tooling Request trigger, dependency-recording rule, session-path selection, handoff contents, hand-back expectation, Story Closeout route, and story-closeout review gates.
+- `docs/forgewright-runbook.md`: added Forgewright intake and hand-back responsibilities for Smith-discovered Tooling Gaps and linked Story Closeout from Forge change-set closeout.
 - `templates/agents/README.md` and `templates/agents/profile.toml`: tightened remaining Agent Profile terminology after review.
-- `docs/metasmith/source-projection.md`: updated completed Framework Seed projections from `planned` to `validated` where their target surfaces now exist and the Seed Validation Tool checks them or the closeout records their status.
-- `docs/closeout/framework-seed-documentation.md`: added this documentation closeout summary.
-- `docs/plans/2026-05-03-framework-seed.md`: tracked Task 9 work as it landed, repaired historical completed-step checkboxes, preserved the deferred post-Seed follow-up boundaries, and expanded the deferred Post-Seed Skill Migration capture with ingestion-pipeline design requirements.
-- `tools/validate_framework_seed.py` and `tests/test_validate_framework_seed.py`: added validation for the Repository Threat Model, this documentation closeout summary, the security closeout summary, projection drafts, Source Projection Register status semantics, the Smith-to-Metasmith escalation path, the Story Closeout process, the story-closeout review gates, and strict final-closeout evidence before branch push or external projection.
+- `docs/metasmith/source-projection.md`: updated completed Forge Seed projections from `planned` to `validated` where their target surfaces now exist and the Seed Validation Tool checks them or the closeout records their status.
+- `docs/closeout/forge-seed-documentation.md`: added this documentation closeout summary.
+- `docs/plans/2026-05-03-forge-seed.md`: tracked Task 9 work as it landed, repaired historical completed-step checkboxes, preserved the deferred post-Seed follow-up boundaries, and expanded the deferred Post-Seed Skill Migration capture with ingestion-pipeline design requirements.
+- `tools/validate_forge_seed.py` and `tests/test_validate_forge_seed.py`: added validation for the Repository Threat Model, this documentation closeout summary, the security closeout summary, projection drafts, Source Projection Register status semantics, the Smith-to-Forgewright escalation path, the Story Closeout process, the story-closeout review gates, and strict final-closeout evidence before branch push or external projection.
 
 ## Docs unchanged with rationale
 
-- `README.md`: already provides a concise Human Framework Entry and does not expose maintainer-only machinery.
-- `docs/agents/*.md`: issue tracker, triage labels, and domain-doc guidance were not changed by the Framework Seed deliverables.
-- Canonical Framework docs not listed under "Docs changed" already describe the current seed surfaces, promotion boundaries, Framework Examples, downstream specs, and remaining uncertainties without saying that no Framework exists.
+- `README.md`: already provides a concise Forge Tour and does not expose maintainer-only machinery.
+- `docs/agents/*.md`: issue tracker, triage labels, and domain-doc guidance were not changed by the Forge Seed deliverables.
+- Forge Canon not listed under "Docs changed" already describe the current seed surfaces, promotion boundaries, Forge Examples, downstream specs, and remaining uncertainties without saying that no Forge exists.
 - `docs/adr/*.md`: ADRs are historical decision records; their future-tense decision language is appropriate to their decision context.
 - `specs/*.md`: Task 8 review updated the specs to preserve source requirements and non-implementation boundaries.
 - Remaining `templates/**/*.md` and template payloads: placeholder strings are intentional template fields, not stale project placeholders.
-- `examples/**/*.md`: examples already state Framework Example status, promotion state `example`, trace links, and non-installable boundaries.
+- `examples/**/*.md`: examples already state Forge Example status, promotion state `example`, trace links, and non-installable boundaries.
 - Archived Source Handoff docs: preserved unchanged as provenance under their local handoff policy.
 
 ## Stale-language cleanup result
 
-Searches for stale initial-state and placeholder language found no live docs claiming that the repository has no established Framework shape or that all decisions remain open.
+Searches for stale initial-state and placeholder language found no live docs claiming that the repository has no established Forge shape or that all decisions remain open.
 
 Reviewed matches were resolved as:
 
@@ -68,21 +68,21 @@ Reviewed matches were resolved as:
 - intentional template placeholders under `templates/`;
 - ADR decision context;
 - PRD acceptance criteria describing the closeout requirement itself;
-- archived handoff or side-thread source material that is explicitly not live Framework doctrine.
+- archived handoff or side-thread source material that is explicitly not live Forge Canon.
 
-The Source Projection Register now reflects established Framework Seed precedents by marking landed source requirements as `validated` and leaving only Issue Projection-dependent items planned.
+The Source Projection Register now reflects established Forge Seed precedents by marking landed source requirements as `validated` and leaving only Issue Projection-dependent items planned.
 
 ## Established precedents added or updated
 
-- The Framework Seed now has a persistent Repository Threat Model in `docs/security/threat-model.md`.
-- The Framework Seed has canonical docs, refreshed harness catalog, templates, Framework Examples, downstream Smith specs, and Seed Validation.
-- Root `AGENTS.md` is the zero-scout Preloaded Framework Path for Smiths.
-- `README.md` is the Human Framework Entry, not an agent policy surface.
+- The Forge Seed now has a persistent Repository Threat Model in `docs/security/threat-model.md`.
+- The Forge Seed has canonical docs, refreshed harness catalog, templates, Forge Examples, downstream Smith specs, and Seed Validation.
+- Root `AGENTS.md` is the zero-scout Forge Conveyor for Smiths.
+- `README.md` is the Forge Tour, not an agent policy surface.
 - Durable committed docs use neutral project paths unless intrinsically tied to a specific skill, plugin, tool, or workflow.
 - Agent Profiles are described in prose while source paths use the harness/plugin term `agents`.
-- Smiths have a zero-inquiry Framework requirement escalation path for recording a discovered Framework dependency, preempting unsafe equipment work, selecting a harness-appropriate Metasmith session path, and resuming from a Metasmith hand-back.
+- Smiths have a zero-inquiry Tooling Request path for recording a discovered Tooling Gap, preempting unsafe equipment work, selecting a harness-appropriate Forgewright session path, and resuming from a Forgewright hand-back.
 - Agent Ops, Periodic Actions, and Harness Capability Refresh are specified downstream equipment, not implemented Seed equipment.
-- Framework Examples and specs must not imply installability, loadability, production readiness, or publication.
+- Forge Examples and specs must not imply installability, loadability, production readiness, or publication.
 - Security and documentation closeout are required change-set gates before merge-readiness.
 - Story Closeout is the story-level gate. Change Set Security Closeout and Change Set Documentation Closeout are subordinate gates.
 - Story closeout requires separate Cross-Boundary Coherence and Story Quality Ralph Reviews before a story is treated as complete.
@@ -96,13 +96,13 @@ The Source Projection Register now reflects established Framework Seed precedent
 
 ## Review cycles and latest clean review
 
-Task-level documentation review has been performed after each cohesive Framework Seed change set. The latest clean review for Task 8 was Ralph Review Cycle 42, covering docs/spec/source-projection/plan changes and validator/security behavior.
+Task-level documentation review has been performed after each cohesive Forge Seed change set. The latest clean review for Task 8 was Ralph Review Cycle 42, covering docs/spec/source-projection/plan changes and validator/security behavior.
 
 Ralph Review Cycle 43 reviewed the Task 9 documentation closeout and found issues in closeout status, closeout evidence validation, Source Projection Register status validation, the threat model's policy/design asset boundary, and Agent Profile terminology in the `templates/agents/` template. Those findings are addressed in the current change set.
 
 Ralph Review Cycle 44 reviewed the Cycle 43 fixes and found issues in latest-clean-review field validation, stale `planned` source-projection rows, plan/checklist status, and closeout accounting for Agent Profile template edits. Those findings are addressed in the current change set.
 
-Ralph Review Cycle 45 reviewed the Cycle 44 fixes and Smith-to-Metasmith escalation path. One reviewer found stale PRD initial-state language, an overbroad unchanged-docs rationale, and a plan expected-result contradiction; another reviewer found no issues. The findings are addressed in the current change set.
+Ralph Review Cycle 45 reviewed the Cycle 44 fixes and Smith-to-Forgewright escalation path. One reviewer found stale PRD initial-state language, an overbroad unchanged-docs rationale, and a plan expected-result contradiction; another reviewer found no issues. The findings are addressed in the current change set.
 
 Ralph Review Cycles 47 through 50 reviewed security closeout, documentation closeout, and the Story Closeout process itself. They found issues in stale scan evidence, validation counts, closeout gate ordering, projection timing, rerun rules, closeout status consistency, and brittle process validation. Those findings are addressed in the current change set.
 

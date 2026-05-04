@@ -1,12 +1,12 @@
-# Limit First Pass to the Framework Seed
+# Limit First Pass to the Forge Seed
 
-The first PRD and implementation plan will cover the Framework Seed: canonical docs, decision method, evidence discipline, harness catalog, templates, examples, initial Smith task specs, and Seed Validation. Agent Ops, Periodic Actions, and Harness Capability Refresh remain downstream Smith specs until the Framework can guide their design and validation.
+The first PRD and implementation plan will cover the Forge Seed: canonical docs, decision method, evidence discipline, harness catalog, templates, examples, initial Smith task specs, and Seed Validation. Agent Ops, Periodic Actions, and Harness Capability Refresh remain downstream Smith specs until the Framework can guide their design and validation.
 
 ## Considered Options
 
-- Build only the Framework Seed and specify downstream equipment.
-- Build the Framework Seed plus first implementations of Agent Ops and Periodic Actions.
-- Skip the Framework Seed and start directly with equipment implementations.
+- Build only the Forge Seed and specify downstream equipment.
+- Build the Forge Seed plus first implementations of Agent Ops and Periodic Actions.
+- Skip the Forge Seed and start directly with equipment implementations.
 
 ## Consequences
 

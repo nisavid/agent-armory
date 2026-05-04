@@ -1,12 +1,12 @@
-# Include a Slim Metasmith Runbook
+# Include a Slim Forgewright Runbook
 
-The Framework Seed will include `docs/metasmith-runbook.md` as a concise canonical workflow for maintaining the Agent Equipment Framework. The runbook will cover repeatable Metasmith duties without absorbing ADRs, PRDs, implementation plans, or review transcripts.
+The Forge Seed will include `docs/forgewright-runbook.md` as a concise canonical workflow for maintaining the Agent Equipment Forge. The runbook will cover repeatable Forgewright duties without absorbing ADRs, PRDs, implementation plans, or review transcripts.
 
 ## Considered Options
 
-- Include a slim Metasmith runbook as a canonical workflow surface.
-- Keep Metasmith behavior only in ADRs, PRDs, and implementation plans.
-- Put detailed Metasmith process directly into root `AGENTS.md`.
+- Include a slim Forgewright runbook as a canonical workflow surface.
+- Keep Forgewright behavior only in ADRs, PRDs, and implementation plans.
+- Put detailed Forgewright process directly into root `AGENTS.md`.
 
 ## Consequences
 

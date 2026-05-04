@@ -1,12 +1,12 @@
 # Refresh Canonical Harness Catalog in the Seed
 
-The handoff's 2026-05-02 harness facts remain preserved as source provenance, but the Framework Seed will refresh the canonical Harness Capability Catalog before publishing it. Harness capabilities are volatile, and the canonical catalog should not knowingly start stale when source refresh is available.
+The handoff's 2026-05-02 harness facts remain preserved as source provenance, but the Forge Seed will refresh the canonical Harness Capability Catalog before publishing it. Harness capabilities are volatile, and the canonical catalog should not knowingly start stale when source refresh is available.
 
 ## Considered Options
 
 - Preserve the handoff snapshot only and defer all refresh work.
-- Refresh the canonical catalog during the Framework Seed and preserve the handoff snapshot as provenance.
-- Build the full recurring Harness Capability Refresh equipment during the Framework Seed.
+- Refresh the canonical catalog during the Forge Seed and preserve the handoff snapshot as provenance.
+- Build the full recurring Harness Capability Refresh equipment during the Forge Seed.
 
 ## Consequences
 

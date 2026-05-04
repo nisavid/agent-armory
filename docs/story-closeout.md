@@ -1,6 +1,6 @@
 # Story Closeout
 
-Status: Framework Seed
+Status: Forge Seed
 
 ## Purpose
 
@@ -19,7 +19,7 @@ Run closeout gates in this order:
 5. Prepare projection drafts for issues, PR bodies, handoff notes, and release summaries from the current story evidence, or record the explicit pending-projection rationale.
 6. Run Cross-Boundary Coherence before Story Quality because quality review depends on coherent process evidence.
 7. Run Story Quality Ralph Review after coherence findings are fixed or soundly rejected.
-8. Run final validation and publication-readiness checks required by the active plan or repository policy. For the Framework Seed, `python3.14 tools/validate_framework_seed.py --final-closeout` is the branch-push and external-projection readiness check.
+8. Run final validation and publication-readiness checks required by the active plan or repository policy. For the Forge Seed, `python3.14 tools/validate_forge_seed.py --final-closeout` is the branch-push and external-projection readiness check.
 9. Publish or update issue, PR, release, and handoff surfaces from the clean final story evidence.
 10. Perform publication actions that remain in scope, respecting repository policy and stated human pause points.
 
@@ -32,7 +32,7 @@ Before committing or externally projecting closeout evidence, classify evidence 
 Rerun the gate that owns any surface changed by a review fix.
 
 - Security changes rerun or update Change Set Security Closeout when the change touches trust boundaries, executable code, hooks, MCP/tool definitions, permissions, secrets handling, network/file/process side effects, package metadata, or security policy.
-- Documentation changes rerun or update Change Set Documentation Closeout when they change agent-facing policy, human-facing orientation, canonical Framework docs, examples, templates, specs, closeout claims, or issue/PR projection text that is derived from repo docs.
+- Documentation changes rerun or update Change Set Documentation Closeout when they change agent-facing policy, human-facing orientation, Forge Canon, examples, templates, specs, closeout claims, or issue/PR projection text that is derived from repo docs.
 - Validation changes rerun deterministic tests and Seed Validation. Treat validator logic as security-relevant when it gates merge-readiness evidence or suppresses risks.
 - PRD, spec, or plan changes rerun source projection, acceptance-criteria checks, and Cross-Boundary Coherence review for the affected scope.
 - Issue or PR projection draft changes rerun the checks that prove the draft matches the current repo source of truth before external publication.

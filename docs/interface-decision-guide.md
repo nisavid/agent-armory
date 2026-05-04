@@ -1,6 +1,6 @@
 # Interface Decision Guide
 
-Status: Framework Seed
+Status: Forge Seed
 
 Use this guide after the capability card identifies what the equipment must do. The goal is to put each requirement in the lowest reliable surface.
 

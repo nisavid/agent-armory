@@ -1,6 +1,6 @@
 # Treat Repo Structure as Target, Not Mandate
 
-The Framework Seed PRD will define the target repository structure, but implementation will create only files and directories with clear seed responsibilities. The handoff's proposed tree is an architectural target, not an unconditional directory mandate.
+The Forge Seed PRD will define the target repository structure, but implementation will create only files and directories with clear seed responsibilities. The handoff's proposed tree is an architectural target, not an unconditional directory mandate.
 
 ## Considered Options
 

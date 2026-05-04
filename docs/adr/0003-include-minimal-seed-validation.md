@@ -1,12 +1,12 @@
 # Include Minimal Seed Validation
 
-The Framework Seed will include minimal runnable validation for its own repository shape, documentation links, preserved handoff provenance, accepted-handoff projection or explicit deferment, and structured harness catalog fields. It will not include harness-specific behavior validators until downstream Smiths implement concrete equipment.
+The Forge Seed will include minimal runnable validation for its own repository shape, documentation links, preserved handoff provenance, accepted-handoff projection or explicit deferment, and structured harness catalog fields. It will not include harness-specific behavior validators until downstream Smiths implement concrete equipment.
 
 ## Considered Options
 
 - Include minimal Seed Validation now.
 - Specify validation expectations only in prose.
-- Build harness-specific validators during the Framework Seed.
+- Build harness-specific validators during the Forge Seed.
 
 ## Consequences
 

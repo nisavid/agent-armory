@@ -1,6 +1,6 @@
-# Use Preloaded Framework Path as Agent Discovery Criterion
+# Use Forge Conveyor as Agent Discovery Criterion
 
-The Framework Seed measures agent discovery success by whether a Smith receives the canonical Framework path from preloaded root `AGENTS.md`, without scouting. The README remains human-facing and provides a concise Human Framework Entry that explains the Framework and links to the canonical starting path.
+The Forge Seed measures agent discovery success by whether a Smith receives the canonical Framework path from preloaded root `AGENTS.md`, without scouting. The README remains human-facing and provides a concise Forge Tour that explains the Framework and links to the canonical starting path.
 
 ## Considered Options
 

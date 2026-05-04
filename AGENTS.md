@@ -20,18 +20,18 @@ Do not narrow that purpose into a specific content model, methodology, directory
 - "Equipment for agents" means skills, MCPs, plugins, scripts, policy frameworks, workflows, agent roles, and other tools that an agent or agentic system can equip.
 - Treat future terms of art as project vocabulary only after they appear in committed content or the user defines them.
 
-## Framework Path
+## Forge Conveyor
 
 Smiths creating or modifying Agent Equipment should start with:
 
-- `docs/equipment-framework.md` for the Framework overview.
+- `docs/agent-equipment-forge.md` for the Forge overview.
 - `docs/smith-runbook.md` for the equipment creation workflow.
 - `docs/story-closeout.md` for closeout gate order, review sequencing, and rerun rules.
-- If the current equipment task reveals an unsatisfied Framework requirement, use `docs/smith-runbook.md` for Framework requirement escalation before continuing.
+- If the current equipment task reveals an unsatisfied Tooling Gap, use `docs/smith-runbook.md` for Tooling Request before continuing.
 - `docs/interface-decision-guide.md` for choosing skills, MCP/tools, hooks, Agent Profiles, plugins, scripts, docs, and config.
 - `docs/harness-capabilities.md` before making harness-specific claims.
 - `templates/` for seed templates.
-- `examples/` for annotated Framework Examples.
+- `examples/` for annotated Forge Examples.
 - `specs/` for downstream Smith specs.
 
 ## Agent skills

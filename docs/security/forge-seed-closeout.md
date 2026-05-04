@@ -1,18 +1,18 @@
-# Framework Seed Security Closeout
+# Forge Seed Security Closeout
 
 Status: Completed Security Closeout
 
 ## Scan scope
 
-Codex Security scanned the merge-base-to-working-tree Framework Seed diff from
+Codex Security scanned the merge-base-to-working-tree Forge Seed diff from
 baseline `470f2b31a9c71d0676617fc11e6fd3810e7128f7` to the working tree on
-branch `metasmith-framework`, including committed branch changes, staged diff,
+branch `forge-seed`, including committed branch changes, staged diff,
 unstaged worktree edits, and untracked intended files.
 
 The scan covered:
 
 - active agent instructions and vocabulary,
-- canonical Framework docs, specs, templates, examples, and source projection,
+- Forge Canon, specs, templates, examples, and source projection,
 - the repository threat model,
 - security and documentation closeout surfaces,
 - Story Closeout, projection draft, and workflow closeout addendum surfaces,
@@ -22,10 +22,10 @@ The scan covered:
 
 ## Commands
 
-- `python3.14 -m unittest tests.test_validate_framework_seed.SecurityCloseoutValidationTests`
-- `python3.14 -m unittest tests/test_validate_framework_seed.py`
-- `python3.14 tools/validate_framework_seed.py`
-- `python3.14 tools/validate_framework_seed.py --json`
+- `python3.14 -m unittest tests.test_validate_forge_seed.SecurityCloseoutValidationTests`
+- `python3.14 -m unittest tests/test_validate_forge_seed.py`
+- `python3.14 tools/validate_forge_seed.py`
+- `python3.14 tools/validate_forge_seed.py --json`
 - `git diff --check`
 - Targeted Codex Security discovery searches for dangerous sinks, secret-like
   terms, promotion-state claims, installability claims, and external path or
@@ -59,7 +59,7 @@ The transient scan bundle contained:
 ## Report disposition
 
 The final Codex Security report was scoped to this review instance: the
-Framework Seed diff, the working tree at review time, and the scan commands
+Forge Seed diff, the working tree at review time, and the scan commands
 listed above. Its durable conclusions are summarized in this closeout. The raw
 report is not committed and should not be cited as reusable project doctrine.
 
@@ -79,7 +79,7 @@ not fetch.
 
 No finding-driven hardening changes were required.
 
-Preventive hardening added during the Framework Seed closeout includes:
+Preventive hardening added during the Forge Seed closeout includes:
 
 - a durable Repository Threat Model at `docs/security/threat-model.md`,
 - a required change-set security closeout artifact at this path,
@@ -94,10 +94,10 @@ Preventive hardening added during the Framework Seed closeout includes:
 
 Re-validation passed after this closeout file was populated.
 
-- `python3.14 -m unittest tests/test_validate_framework_seed.py`: 264 tests
+- `python3.14 -m unittest tests/test_validate_forge_seed.py`: 264 tests
   passed.
-- `python3.14 tools/validate_framework_seed.py`: 0 failed, 174 passed.
-- `python3.14 tools/validate_framework_seed.py --json`: 174 passing result
+- `python3.14 tools/validate_forge_seed.py`: 0 failed, 174 passed.
+- `python3.14 tools/validate_forge_seed.py --json`: 174 passing result
   objects.
 - `git diff --check`: passed.
 

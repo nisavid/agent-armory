@@ -1,6 +1,6 @@
 # Ship Skill Templates, Not Repo Skills, in the Seed
 
-The Framework Seed will include skill templates and runbook guidance, but it will not ship first-class repo-local skills. Real repo-local skills require a concrete recurring workflow and Pressure Scenario Validation before they become Published Agent Equipment.
+The Forge Seed will include skill templates and runbook guidance, but it will not ship first-class repo-local skills. Real repo-local skills require a concrete recurring workflow and Pressure Scenario Validation before they become Published Agent Equipment.
 
 ## Considered Options
 

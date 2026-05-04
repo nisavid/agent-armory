@@ -4,24 +4,29 @@ import textwrap
 import unittest
 from pathlib import Path
 
-from tools.validate_framework_seed import (
+from tools.validate_forge_seed import (
     ACCEPTED_SOURCE_REQUIREMENTS,
     CheckResult,
+    FINAL_STAMP_CANONICAL_TREE_DIGEST_PLACEHOLDER,
     REQUIRED_HARNESSES,
+    SOURCE_DISPOSITION_PATH,
     find_markdown_links,
     harness_matrix_rows,
     load_toml,
     render_human,
     run,
+    validate_final_source_retired_stamp,
     validate_final_closeout,
     validate_canonical_docs,
     validate_documentation_closeout,
     validate_examples,
-    validate_framework_routes,
+    validate_forge_routes,
     validate_harness_catalog,
     validate_markdown_links,
     validate_projection_drafts,
     validate_specs,
+    validate_source_disposition,
+    validate_source_retired_tree,
     validate_source_handoff_provenance,
     validate_source_projection,
     SOURCE_PROJECTION_PLANNED_REQUIREMENTS,
@@ -1120,25 +1125,212 @@ class SourceProjectionTests(unittest.TestCase):
         )
 
 
-class FrameworkRouteTests(unittest.TestCase):
-    def test_validate_framework_routes_requires_agent_and_human_paths(self):
+class SourceDispositionTests(unittest.TestCase):
+    def write_source_disposition(
+        self,
+        root: Path,
+        *,
+        synthetic_payload: str = "accepted requirement constants H001 H002",
+        digest: str | None = None,
+    ) -> None:
+        path = root / SOURCE_DISPOSITION_PATH
+        path.parent.mkdir(parents=True, exist_ok=True)
+        digest_value = digest or FINAL_STAMP_CANONICAL_TREE_DIGEST_PLACEHOLDER
+        path.write_text(
+            textwrap.dedent(
+                f"""
+                # Forge Seed Source Disposition
+
+                Status: Source Bearing
+
+                ## Source Manifest
+
+                | source_id | source_kind | original_path | git_blob_id | sha256 | normalized_payload_digest | durable_payload |
+                | --- | --- | --- | --- | --- | --- | --- |
+                | SYN001 | synthetic | tools/validate_forge_seed.py | abc123 | def456 | 789abc | {synthetic_payload} |
+
+                ## Disposition Items
+
+                | item_id | source_id | coverage_status | challenge_status | challenge_operator_confirmation_required | arbitration_required | disposition | operator_decision | evidence_target |
+                | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+                | I001 | SYN001 | adequately_captured | unchallenged | false | false | kept_current |  | docs/agent-equipment-forge.md |
+                | I002 | SYN001 | partially_captured | resolved | true | true | integrated | Operator accepted integration. | docs/follow-ups/portable-agentic-engineering-workflow-equipment.md |
+
+                ## Source-Bearing Stamp
+
+                source_bearing_snapshot_tree_id: source-tree
+                source_bearing_stamp_id: source-bearing-1
+
+                ## Final Source-Retired Stamp
+
+                stamp_target: placeholder-normalized canonical tree
+                canonical_tree_digest: {digest_value}
+                source_retired: true
+                timestamp: 2026-05-04T00:00:00Z
+                """
+            ).strip()
+            + "\n",
+            encoding="utf-8",
+        )
+
+    def test_validate_source_disposition_accepts_self_contained_synthetic_payload(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs").mkdir()
+            (root / "docs/agent-equipment-forge.md").write_text("# Forge\n", encoding="utf-8")
+            (root / "docs/follow-ups").mkdir()
+            (root / "docs/follow-ups/portable-agentic-engineering-workflow-equipment.md").write_text(
+                "# Follow-up\n",
+                encoding="utf-8",
+            )
+            self.write_source_disposition(root)
+
+            results = validate_source_disposition(root)
+
+        self.assertTrue(all(result.ok for result in results), results)
+
+    def test_validate_source_disposition_rejects_synthetic_source_without_durable_payload(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_source_disposition(root, synthetic_payload="")
+
+            results = validate_source_disposition(root)
+
+        self.assertIn(
+            CheckResult(
+                "source_disposition:source:SYN001",
+                False,
+                "synthetic source missing durable payload",
+                SOURCE_DISPOSITION_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_source_disposition_rejects_integrated_item_without_arbitration(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_source_disposition(root)
+            path = root / SOURCE_DISPOSITION_PATH
+            path.write_text(
+                path.read_text(encoding="utf-8").replace(
+                    "| I002 | SYN001 | partially_captured | resolved | true | true | integrated | Operator accepted integration. | docs/follow-ups/portable-agentic-engineering-workflow-equipment.md |",
+                    "| I002 | SYN001 | partially_captured | resolved | false | false | integrated |  | docs/follow-ups/portable-agentic-engineering-workflow-equipment.md |",
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_source_disposition(root)
+
+        self.assertIn(
+            CheckResult(
+                "source_disposition:item:I002",
+                False,
+                "integrated disposition requires arbitration and operator_decision",
+                SOURCE_DISPOSITION_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_source_retired_tree_rejects_raw_forgewright_sources(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs/metasmith/handoff").mkdir(parents=True)
+            self.write_source_disposition(root)
+
+            results = validate_source_retired_tree(root)
+
+        self.assertIn(
+            CheckResult(
+                "source_retired:raw_sources",
+                False,
+                "docs/metasmith must be removed after source disposition",
+                "docs/metasmith",
+            ),
+            results,
+        )
+
+    def test_validate_final_source_retired_stamp_accepts_placeholder_normalized_digest(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_source_disposition(root)
+            actual_digest = validate_final_source_retired_stamp(root, pre_stamp=True)[0].detail
+            self.write_source_disposition(root, digest=actual_digest)
+
+            results = validate_final_source_retired_stamp(root)
+
+        self.assertTrue(all(result.ok for result in results), results)
+
+    def test_run_source_bearing_requires_raw_source_inputs(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = run(root, source_mode="source-bearing")
+
+        self.assertIn(
+            CheckResult(
+                "required_path:docs/metasmith/source-projection.md",
+                False,
+                "missing",
+                "docs/metasmith/source-projection.md",
+            ),
+            results,
+        )
+        self.assertTrue(any(result.name.startswith("source_handoff:") for result in results), results)
+
+    def test_run_source_retired_pre_stamp_skips_raw_source_inputs(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs").mkdir()
+            (root / "docs/agent-equipment-forge.md").write_text("# Forge\n", encoding="utf-8")
+            (root / "docs/follow-ups").mkdir()
+            (root / "docs/follow-ups/portable-agentic-engineering-workflow-equipment.md").write_text(
+                "# Follow-up\n",
+                encoding="utf-8",
+            )
+            self.write_source_disposition(root)
+            expected_digest = validate_final_source_retired_stamp(root, pre_stamp=True)[0].detail
+
+            results = run(root, source_mode="source-retired-pre-stamp")
+
+        self.assertNotIn(
+            CheckResult(
+                "required_path:docs/metasmith/source-projection.md",
+                False,
+                "missing",
+                "docs/metasmith/source-projection.md",
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                "source_retired_stamp:canonical_tree_digest",
+                True,
+                expected_digest,
+                SOURCE_DISPOSITION_PATH,
+            ),
+            results,
+        )
+
+
+class ForgeRouteTests(unittest.TestCase):
+    def test_validate_forge_routes_requires_agent_and_human_paths(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             (root / "AGENTS.md").write_text("# AGENTS\n", encoding="utf-8")
             (root / "README.md").write_text("# README\n", encoding="utf-8")
 
-            results = validate_framework_routes(root)
+            results = validate_forge_routes(root)
 
         self.assertIn(
-            CheckResult("framework_route:agent", False, "missing Preloaded Framework Path", "AGENTS.md"),
+            CheckResult("forge_route:agent", False, "missing Forge Conveyor", "AGENTS.md"),
             results,
         )
         self.assertIn(
-            CheckResult("framework_route:human", False, "missing Human Framework Entry", "README.md"),
+            CheckResult("forge_route:human", False, "missing Forge Tour", "README.md"),
             results,
         )
 
-    def test_validate_framework_routes_requires_all_preloaded_links(self):
+    def test_validate_forge_routes_requires_all_preloaded_links(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             (root / "AGENTS.md").write_text(
@@ -1146,9 +1338,9 @@ class FrameworkRouteTests(unittest.TestCase):
                     """
                     # AGENTS
 
-                    ## Framework Path
+                    ## Forge Conveyor
 
-                    - `docs/equipment-framework.md`
+                    - `docs/agent-equipment-forge.md`
                     - `docs/smith-runbook.md`
                     - `docs/harness-capabilities.md`
                     - `templates/`
@@ -1158,15 +1350,15 @@ class FrameworkRouteTests(unittest.TestCase):
                 encoding="utf-8",
             )
             (root / "README.md").write_text(
-                "## Framework\n\nStart with [docs/equipment-framework.md](docs/equipment-framework.md).\n",
+                "## Forge\n\nStart with [Forge Tour](docs/forge-tour.md).\n",
                 encoding="utf-8",
             )
 
-            results = validate_framework_routes(root)
+            results = validate_forge_routes(root)
 
         self.assertIn(
             CheckResult(
-                "framework_route:agent:docs/interface-decision-guide.md",
+                "forge_route:agent:docs/interface-decision-guide.md",
                 False,
                 "missing required preloaded route",
                 "AGENTS.md",
@@ -1174,14 +1366,14 @@ class FrameworkRouteTests(unittest.TestCase):
             results,
         )
 
-    def test_validate_framework_routes_rejects_unresolved_route_targets(self):
+    def test_validate_forge_routes_rejects_unresolved_route_targets(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             (root / "docs").mkdir()
             (root / "templates").mkdir()
             (root / "specs").mkdir()
             for path in [
-                "docs/equipment-framework.md",
+                "docs/agent-equipment-forge.md",
                 "docs/smith-runbook.md",
                 "docs/interface-decision-guide.md",
             ]:
@@ -1191,9 +1383,9 @@ class FrameworkRouteTests(unittest.TestCase):
                     """
                     # AGENTS
 
-                    ## Framework Path
+                    ## Forge Conveyor
 
-                    - `docs/equipment-framework.md`
+                    - `docs/agent-equipment-forge.md`
                     - `docs/smith-runbook.md`
                     - `docs/interface-decision-guide.md`
                     - `docs/harness-capabilities.md`
@@ -1204,15 +1396,15 @@ class FrameworkRouteTests(unittest.TestCase):
                 encoding="utf-8",
             )
             (root / "README.md").write_text(
-                "## Framework\n\nStart with [docs/equipment-framework.md](docs/equipment-framework.md).\n",
+                "## Forge\n\nStart with [Forge Tour](docs/forge-tour.md).\n",
                 encoding="utf-8",
             )
 
-            results = validate_framework_routes(root)
+            results = validate_forge_routes(root)
 
         self.assertIn(
             CheckResult(
-                "framework_route:target:docs/harness-capabilities.md",
+                "forge_route:target:docs/harness-capabilities.md",
                 False,
                 "route target missing",
                 "AGENTS.md",
@@ -1220,10 +1412,10 @@ class FrameworkRouteTests(unittest.TestCase):
             results,
         )
 
-    def test_validate_framework_routes_rejects_wrong_route_target_kind(self):
+    def test_validate_forge_routes_rejects_wrong_route_target_kind(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
-            (root / "docs/equipment-framework.md").mkdir(parents=True)
+            (root / "docs/agent-equipment-forge.md").mkdir(parents=True)
             (root / "docs/smith-runbook.md").write_text("# Fixture\n", encoding="utf-8")
             (root / "docs/interface-decision-guide.md").write_text("# Fixture\n", encoding="utf-8")
             (root / "docs/harness-capabilities.md").write_text("# Fixture\n", encoding="utf-8")
@@ -1234,9 +1426,9 @@ class FrameworkRouteTests(unittest.TestCase):
                     """
                     # AGENTS
 
-                    ## Framework Path
+                    ## Forge Conveyor
 
-                    - `docs/equipment-framework.md`
+                    - `docs/agent-equipment-forge.md`
                     - `docs/smith-runbook.md`
                     - `docs/interface-decision-guide.md`
                     - `docs/harness-capabilities.md`
@@ -1247,15 +1439,15 @@ class FrameworkRouteTests(unittest.TestCase):
                 encoding="utf-8",
             )
             (root / "README.md").write_text(
-                "## Framework\n\nStart with [docs/equipment-framework.md](docs/equipment-framework.md).\n",
+                "## Forge\n\nStart with [Forge Tour](docs/forge-tour.md).\n",
                 encoding="utf-8",
             )
 
-            results = validate_framework_routes(root)
+            results = validate_forge_routes(root)
 
         self.assertIn(
             CheckResult(
-                "framework_route:target:docs/equipment-framework.md",
+                "forge_route:target:docs/agent-equipment-forge.md",
                 False,
                 "route target not a file",
                 "AGENTS.md",
@@ -1264,7 +1456,7 @@ class FrameworkRouteTests(unittest.TestCase):
         )
         self.assertIn(
             CheckResult(
-                "framework_route:target:templates/",
+                "forge_route:target:templates/",
                 False,
                 "route target not a directory",
                 "AGENTS.md",
@@ -1276,7 +1468,7 @@ class FrameworkRouteTests(unittest.TestCase):
 class CanonicalDocTests(unittest.TestCase):
     canonical_docs = {
         "docs/ubiquitous-language.md": ["Language", "Relationships", "Precision rules"],
-        "docs/equipment-framework.md": [
+        "docs/agent-equipment-forge.md": [
             "Purpose",
             "Least cognitive privilege",
             "Component model",
@@ -1290,10 +1482,10 @@ class CanonicalDocTests(unittest.TestCase):
             "Docs/config/scripts/hooks/skills/agents/plugins",
             "Pressure Scenario Validation",
             "Equipment Promotion Path",
-            "Framework requirement escalation",
+            "Tooling Request",
             "Closeout",
         ],
-        "docs/metasmith-runbook.md": [
+        "docs/forgewright-runbook.md": [
             "Source handoff preservation",
             "decision projection",
             "Review Until Clean",
@@ -1301,7 +1493,7 @@ class CanonicalDocTests(unittest.TestCase):
             "Change set closeout",
             "Issue Projection",
             "downstream Smith specs",
-            "Framework requirement intake",
+            "Tooling Gap intake",
         ],
         "docs/interface-decision-guide.md": ["Decision tree", "placement guide"],
         "docs/harness-components.md": [
@@ -1359,15 +1551,15 @@ class CanonicalDocTests(unittest.TestCase):
     }
     canonical_doc_required_text = {
         "docs/smith-runbook.md": [
-            "When a Smith finds an unsatisfied Framework requirement that blocks or materially weakens the current equipment task, treat the Framework work as a dependency and escalate to a Metasmith before continuing.",
-            "Choose the least disruptive Metasmith path supported by the harness and operator policy: current session, subagent session, peer agent session, forked session, or new session.",
-            "The handoff must include the blocked task, unsatisfied Framework requirement, dependency impact, evidence checked, requested Metasmith deliverable, selected session path, and hand-back expectation.",
-            "docs, config, scripts, hooks, skills, Agent Profiles, plugins, and templates are discoverable from the Framework path",
+            "When a Smith finds an unsatisfied Tooling Gap that blocks or materially weakens the current equipment task, treat the Tooling Work as a dependency and escalate to a Forgewright before continuing.",
+            "Choose the least disruptive Forgewright path supported by the harness and operator policy: current session, subagent session, peer agent session, forked session, or new session.",
+            "The handoff must include the blocked task, unsatisfied Tooling Gap, dependency impact, evidence checked, requested Forgewright deliverable, selected session path, and hand-back expectation.",
+            "docs, config, scripts, hooks, skills, MCP/tools, Agent Profiles, plugins, and templates are discoverable from the Forge Conveyor",
             "Run a Cross-Boundary Coherence Ralph Review before story closeout.",
             "Run a Story Quality Ralph Review before story closeout.",
         ],
-        "docs/metasmith-runbook.md": [
-            "A Metasmith intake from a Smith starts by preserving the Smith handoff, refining the Framework requirement, updating canonical surfaces and validation, and returning a hand-back note.",
+        "docs/forgewright-runbook.md": [
+            "A Forgewright intake from a Smith starts by preserving the Smith handoff, refining the Tooling Gap, updating canonical surfaces and validation, and returning a hand-back note.",
             "The hand-back note names files changed, validation and review results, dependency updates, remaining risks, and the context the Smith needs to resume.",
         ],
         "docs/story-closeout.md": [
@@ -1438,7 +1630,7 @@ class CanonicalDocTests(unittest.TestCase):
         else:
             section_markdown = "\n".join(f"## {section}\n\nContent.\n" for section in (sections or self.canonical_docs[relative_path]))
         required_text = "\n".join(self.canonical_doc_required_text.get(relative_path, []))
-        path.write_text(f"# {path.stem}\n\nStatus: Framework Seed\n\n{section_markdown}\n{required_text}\n", encoding="utf-8")
+        path.write_text(f"# {path.stem}\n\nStatus: Forge Seed\n\n{section_markdown}\n{required_text}\n", encoding="utf-8")
 
     def write_all_canonical_docs(self, root: Path) -> None:
         for relative_path in self.canonical_docs:
@@ -1452,10 +1644,10 @@ class CanonicalDocTests(unittest.TestCase):
 
         self.assertIn(
             CheckResult(
-                "canonical_doc:docs/equipment-framework.md",
+                "canonical_doc:docs/agent-equipment-forge.md",
                 False,
                 "missing",
-                "docs/equipment-framework.md",
+                "docs/agent-equipment-forge.md",
             ),
             results,
         )
@@ -1530,7 +1722,7 @@ class CanonicalDocTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             self.write_all_canonical_docs(root)
-            (root / "docs/equipment-framework.md").write_text(
+            (root / "docs/agent-equipment-forge.md").write_text(
                 "# Equipment Framework\n\n## Purpose\n\nContent.\n",
                 encoding="utf-8",
             )
@@ -1539,10 +1731,10 @@ class CanonicalDocTests(unittest.TestCase):
 
         self.assertIn(
             CheckResult(
-                "canonical_doc:status:docs/equipment-framework.md",
+                "canonical_doc:status:docs/agent-equipment-forge.md",
                 False,
-                "missing Status: Framework Seed",
-                "docs/equipment-framework.md",
+                "missing Status: Forge Seed",
+                "docs/agent-equipment-forge.md",
             ),
             results,
         )
@@ -1552,8 +1744,8 @@ class CanonicalDocTests(unittest.TestCase):
             root = Path(tmpdir)
             self.write_all_canonical_docs(root)
             fence = "`" * 3
-            (root / "docs/equipment-framework.md").write_text(
-                f"# Equipment Framework\n\n{fence}\nStatus: Framework Seed\n{fence}\n\n## Purpose\n\nContent.\n",
+            (root / "docs/agent-equipment-forge.md").write_text(
+                f"# Equipment Framework\n\n{fence}\nStatus: Forge Seed\n{fence}\n\n## Purpose\n\nContent.\n",
                 encoding="utf-8",
             )
 
@@ -1561,10 +1753,10 @@ class CanonicalDocTests(unittest.TestCase):
 
         self.assertIn(
             CheckResult(
-                "canonical_doc:status:docs/equipment-framework.md",
+                "canonical_doc:status:docs/agent-equipment-forge.md",
                 False,
-                "missing Status: Framework Seed",
-                "docs/equipment-framework.md",
+                "missing Status: Forge Seed",
+                "docs/agent-equipment-forge.md",
             ),
             results,
         )
@@ -1573,16 +1765,16 @@ class CanonicalDocTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             self.write_all_canonical_docs(root)
-            self.write_canonical_doc(root, "docs/equipment-framework.md", sections=["Purpose"])
+            self.write_canonical_doc(root, "docs/agent-equipment-forge.md", sections=["Purpose"])
 
             results = validate_canonical_docs(root)
 
         self.assertIn(
             CheckResult(
-                "canonical_doc:section:docs/equipment-framework.md:Maintenance",
+                "canonical_doc:section:docs/agent-equipment-forge.md:Maintenance",
                 False,
                 "missing section: Maintenance",
-                "docs/equipment-framework.md",
+                "docs/agent-equipment-forge.md",
             ),
             results,
         )
@@ -1591,12 +1783,12 @@ class CanonicalDocTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             self.write_all_canonical_docs(root)
-            (root / "docs/equipment-framework.md").write_text(
+            (root / "docs/agent-equipment-forge.md").write_text(
                 textwrap.dedent(
                     """
                     # Equipment Framework
 
-                    Status: Framework Seed
+                    Status: Forge Seed
 
                     ## Purpose
 
@@ -1612,10 +1804,10 @@ class CanonicalDocTests(unittest.TestCase):
 
         self.assertIn(
             CheckResult(
-                "canonical_doc:section:docs/equipment-framework.md:Maintenance",
+                "canonical_doc:section:docs/agent-equipment-forge.md:Maintenance",
                 False,
                 "missing section: Maintenance",
-                "docs/equipment-framework.md",
+                "docs/agent-equipment-forge.md",
             ),
             results,
         )
@@ -1674,10 +1866,10 @@ class CanonicalDocTests(unittest.TestCase):
 
         self.assertIn(
             CheckResult(
-                "required_path:docs/equipment-framework.md",
+                "required_path:docs/agent-equipment-forge.md",
                 False,
                 "missing",
-                "docs/equipment-framework.md",
+                "docs/agent-equipment-forge.md",
             ),
             results,
         )
@@ -1702,7 +1894,7 @@ class CanonicalDocTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             self.write_all_canonical_docs(root)
-            (root / "docs/equipment-framework.md").write_text(
+            (root / "docs/agent-equipment-forge.md").write_text(
                 "# Equipment Framework\n\n## Purpose\n\nContent.\n",
                 encoding="utf-8",
             )
@@ -1711,19 +1903,19 @@ class CanonicalDocTests(unittest.TestCase):
 
         self.assertIn(
             CheckResult(
-                "canonical_doc:status:docs/equipment-framework.md",
+                "canonical_doc:status:docs/agent-equipment-forge.md",
                 False,
-                "missing Status: Framework Seed",
-                "docs/equipment-framework.md",
+                "missing Status: Forge Seed",
+                "docs/agent-equipment-forge.md",
             ),
             results,
         )
         self.assertIn(
             CheckResult(
-                "canonical_doc:section:docs/equipment-framework.md:Maintenance",
+                "canonical_doc:section:docs/agent-equipment-forge.md:Maintenance",
                 False,
                 "missing section: Maintenance",
-                "docs/equipment-framework.md",
+                "docs/agent-equipment-forge.md",
             ),
             results,
         )
@@ -1831,7 +2023,7 @@ class ThreatModelValidationTests(unittest.TestCase):
 
 
 class DocumentationCloseoutValidationTests(unittest.TestCase):
-    closeout_path = "docs/closeout/framework-seed-documentation.md"
+    closeout_path = "docs/closeout/forge-seed-documentation.md"
     required_sections = [
         "Scope of inspected docs",
         "Docs changed",
@@ -1845,16 +2037,16 @@ class DocumentationCloseoutValidationTests(unittest.TestCase):
     def valid_closeout(self) -> str:
         sections = "\n\n".join(
             [
-                "## Scope of inspected docs\n\nInspected `README.md`, `AGENTS.md`, `CONTEXT.md`, `docs/agents/*.md`, canonical Framework docs under `docs/*.md`, `docs/prd/framework-seed.md`, `docs/adr/*.md`, `docs/plans/2026-05-03-framework-seed.md`, `docs/security/*.md`, `docs/closeout/*.md`, `docs/metasmith/handoff/`, `specs/*.md`, `templates/**/*.md`, and `examples/**/*.md`.",
+                "## Scope of inspected docs\n\nInspected `README.md`, `AGENTS.md`, `CONTEXT.md`, `docs/agents/*.md`, Forge Canon under `docs/*.md`, `docs/prd/forge-seed.md`, `docs/adr/*.md`, `docs/plans/2026-05-03-forge-seed.md`, `docs/security/*.md`, `docs/closeout/*.md`, `docs/metasmith/handoff/`, `specs/*.md`, `templates/**/*.md`, and `examples/**/*.md`.",
                 "## Docs changed\n\nUpdated `docs/security/threat-model.md` and `docs/metasmith/source-projection.md`.",
                 "## Docs unchanged with rationale\n\nRecorded why `README.md` and `AGENTS.md` needed no change.",
                 "## Stale-language cleanup result\n\nStale initial-state language was searched and resolved.",
-                "## Established precedents added or updated\n\nRecorded Framework Seed precedents. Portable workflow capture says a branch-push pause does not close the capture. Full Seed completion requires a merged Seed. An explicit hold or cancellation continues capture through an unmerged-state hand-back and should record the unmerged state directly.",
+                "## Established precedents added or updated\n\nRecorded Forge Seed precedents. Portable workflow capture says a branch-push pause does not close the capture. Full Seed completion requires a merged Seed. An explicit hold or cancellation continues capture through an unmerged-state hand-back and should record the unmerged state directly.",
                 "## Review cycles and latest clean review\n\nLatest clean documentation closeout review: Ralph Review Cycle 99.",
                 "## Residual documentation risk\n\nResidual documentation risk is tracked for pending security closeout.",
             ]
         )
-        return f"# Framework Seed Documentation Closeout\n\nStatus: Completed Closeout\n\n{sections}"
+        return f"# Forge Seed Documentation Closeout\n\nStatus: Completed Closeout\n\n{sections}"
 
     def write_closeout(self, root: Path, content: str | None = None) -> None:
         path = root / self.closeout_path
@@ -1974,7 +2166,7 @@ class DocumentationCloseoutValidationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             sections = "\n".join(f"## {section}\n\nContent.\n" for section in self.required_sections)
-            self.write_closeout(root, f"# Framework Seed Documentation Closeout\n\nStatus: Completed Closeout\n\n{sections}")
+            self.write_closeout(root, f"# Forge Seed Documentation Closeout\n\nStatus: Completed Closeout\n\n{sections}")
 
             results = validate_documentation_closeout(root)
 
@@ -2087,7 +2279,7 @@ class DocumentationCloseoutValidationTests(unittest.TestCase):
 
 
 class SecurityCloseoutValidationTests(unittest.TestCase):
-    closeout_path = "docs/security/framework-seed-closeout.md"
+    closeout_path = "docs/security/forge-seed-closeout.md"
     required_sections = [
         "Scan scope",
         "Commands",
@@ -2102,8 +2294,8 @@ class SecurityCloseoutValidationTests(unittest.TestCase):
     def valid_closeout(self) -> str:
         sections = "\n\n".join(
             [
-                "## Scan scope\n\nMerge-base-to-working-tree Framework Seed diff, including committed, staged, unstaged, and untracked intended files.",
-                "## Commands\n\n- `python3.14 -m unittest tests/test_validate_framework_seed.py`\n- `python3.14 tools/validate_framework_seed.py`\n- Codex Security phase sequence: threat modeling, finding discovery, validation, attack-path analysis, final report.\n\nValidation and attack-path analysis were not separately run because finding discovery produced no technically plausible candidates.",
+                "## Scan scope\n\nMerge-base-to-working-tree Forge Seed diff, including committed, staged, unstaged, and untracked intended files.",
+                "## Commands\n\n- `python3.14 -m unittest tests/test_validate_forge_seed.py`\n- `python3.14 tools/validate_forge_seed.py`\n- Codex Security phase sequence: threat modeling, finding discovery, validation, attack-path analysis, final report.\n\nValidation and attack-path analysis were not separately run because finding discovery produced no technically plausible candidates.",
                 "## Scan artifact disposition\n\nThe raw bundle is ephemeral scratch evidence, not a tracked project artifact, not portable review evidence, and not a standing source of project truth.\n\nArtifact durability classification: instance-scoped scratch evidence. Durable security evidence is this closeout summary.",
                 "## Report disposition\n\nThe raw report is not committed and should not be cited as reusable project doctrine.",
                 "## Findings disposition\n\nNo reportable findings. Suppressed findings: none.",
@@ -2112,7 +2304,7 @@ class SecurityCloseoutValidationTests(unittest.TestCase):
                 "## Deferred-risk tracking\n\nDeferred risks: none.",
             ]
         )
-        return f"# Framework Seed Security Closeout\n\nStatus: Completed Security Closeout\n\n{sections}"
+        return f"# Forge Seed Security Closeout\n\nStatus: Completed Security Closeout\n\n{sections}"
 
     def write_closeout(self, root: Path, content: str | None = None) -> None:
         path = root / self.closeout_path
@@ -2185,7 +2377,7 @@ class SecurityCloseoutValidationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             sections = "\n".join(f"## {section}\n\nContent.\n" for section in self.required_sections)
-            self.write_closeout(root, f"# Framework Seed Security Closeout\n\nStatus: Completed Security Closeout\n\n{sections}")
+            self.write_closeout(root, f"# Forge Seed Security Closeout\n\nStatus: Completed Security Closeout\n\n{sections}")
 
             results = validate_security_closeout(root)
 
@@ -2250,13 +2442,13 @@ class SecurityCloseoutValidationTests(unittest.TestCase):
 
 
 class ProjectionDraftValidationTests(unittest.TestCase):
-    projection_path = "docs/closeout/framework-seed-projection-drafts.md"
-    plan_path = "docs/plans/2026-05-03-framework-seed.md"
+    projection_path = "docs/closeout/forge-seed-projection-drafts.md"
+    plan_path = "docs/plans/2026-05-03-forge-seed.md"
 
     def valid_projection_drafts(self) -> str:
         return textwrap.dedent(
             """
-            # Framework Seed Projection Drafts
+            # Forge Seed Projection Drafts
 
             Status: Review Draft
 
@@ -2264,7 +2456,7 @@ class ProjectionDraftValidationTests(unittest.TestCase):
 
             Projected commit SHA: `TO_CAPTURE_IMMEDIATELY_BEFORE_ISSUE_PUBLICATION`
 
-            Report disposition: recorded in `docs/security/framework-seed-closeout.md`.
+            Report disposition: recorded in `docs/security/forge-seed-closeout.md`.
 
             Documentation closeout review: Ralph Review Cycle 99.
 
@@ -2280,7 +2472,7 @@ class ProjectionDraftValidationTests(unittest.TestCase):
 
             ## Release Draft
 
-            No release publication is planned for the Framework Seed.
+            No release publication is planned for the Forge Seed.
 
             ## Handoff Draft
 
@@ -2373,7 +2565,7 @@ class ProjectionDraftValidationTests(unittest.TestCase):
             self.write_projection_drafts(
                 root,
                 self.valid_projection_drafts().replace(
-                    "\nReport disposition: recorded in `docs/security/framework-seed-closeout.md`.\n",
+                    "\nReport disposition: recorded in `docs/security/forge-seed-closeout.md`.\n",
                     "",
                 ),
             )
@@ -2382,9 +2574,9 @@ class ProjectionDraftValidationTests(unittest.TestCase):
 
         self.assertIn(
             CheckResult(
-                f"projection_drafts:evidence:{self.projection_path}:Report disposition: recorded in `docs/security/framework-seed-closeout.md`",
+                f"projection_drafts:evidence:{self.projection_path}:Report disposition: recorded in `docs/security/forge-seed-closeout.md`",
                 False,
-                "missing evidence: Report disposition: recorded in `docs/security/framework-seed-closeout.md`",
+                "missing evidence: Report disposition: recorded in `docs/security/forge-seed-closeout.md`",
                 self.projection_path,
             ),
             results,
@@ -2457,7 +2649,7 @@ class ProjectionDraftValidationTests(unittest.TestCase):
                 self.valid_projection_drafts()
                 .replace("Cross-Boundary Coherence review: `TO_FILL_AFTER_CLEAN_REVIEW`", "Cross-Boundary Coherence review: Ralph Review Cycle 53.")
                 .replace("Story Quality review: `TO_FILL_AFTER_CLEAN_REVIEW`", "Story Quality review: Ralph Review Cycle 54.")
-                + "\n\nScan report: `/tmp/codex-security-scans/metasmith-framework/report.md`\n",
+                + "\n\nScan report: `/tmp/codex-security-scans/forge-seed/report.md`\n",
             )
 
             results = validate_final_closeout(root)
@@ -2508,7 +2700,7 @@ class ProjectionDraftValidationTests(unittest.TestCase):
             results = validate_final_closeout(root)
 
         self.assertEqual([], [result for result in results if not result.ok])
-        self.assertIn(CheckResult("final_closeout:framework-seed", True, "ready", self.projection_path), results)
+        self.assertIn(CheckResult("final_closeout:forge-seed", True, "ready", self.projection_path), results)
 
     def test_validate_projection_drafts_requires_open_capture_pause_handoff(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -7437,28 +7629,28 @@ class ExampleValidationTests(unittest.TestCase):
             "capability-card.md": """\
                 # Capability Card: Example capability
 
-                Status: Framework Example
+                Status: Forge Example
                 Promotion state: example
 
-                This Framework Example is not Published Agent Equipment and is not installable.
+                This Forge Example is not Published Agent Equipment and is not installable.
                 Trace: capability card -> [interface decision record](interface-decision-record.md) -> projected components.
                 """,
             "interface-decision-record.md": """\
                 # Interface Decision Record: Example capability
 
-                Status: Framework Example
+                Status: Forge Example
                 Promotion state: example
 
-                This Framework Example is not Published Agent Equipment and is not installable.
+                This Forge Example is not Published Agent Equipment and is not installable.
                 Trace: [capability card](capability-card.md) -> interface decision record -> [projected components](projected-components.md).
                 """,
             "projected-components.md": """\
                 # Projected Components: Example capability
 
-                Status: Framework Example
+                Status: Forge Example
                 Promotion state: example
 
-                This Framework Example is not Published Agent Equipment and is not installable.
+                This Forge Example is not Published Agent Equipment and is not installable.
                 Trace: [capability card](capability-card.md) -> [interface decision record](interface-decision-record.md) -> projected components.
                 """,
         }
@@ -7505,7 +7697,7 @@ class ExampleValidationTests(unittest.TestCase):
 
                             Promotion state: example
 
-                            This Framework Example is not Published Agent Equipment and is not installable.
+                            This Forge Example is not Published Agent Equipment and is not installable.
                             Trace: capability card -> [interface decision record](interface-decision-record.md) -> projected components.
                             """
                     }
@@ -7518,7 +7710,7 @@ class ExampleValidationTests(unittest.TestCase):
             CheckResult(
                 "example:status:examples/pr-review/capability-card.md",
                 False,
-                "missing Status: Framework Example",
+                "missing Status: Forge Example",
                 "examples/pr-review/capability-card.md",
             ),
             results,
@@ -7534,9 +7726,9 @@ class ExampleValidationTests(unittest.TestCase):
                         "interface-decision-record.md": """\
                             # Interface Decision Record: Docs research
 
-                            Status: Framework Example
+                            Status: Forge Example
 
-                            This Framework Example is not Published Agent Equipment and is not installable.
+                            This Forge Example is not Published Agent Equipment and is not installable.
                             Trace: [capability card](capability-card.md) -> interface decision record -> [projected components](projected-components.md).
                             """
                     }
@@ -7565,7 +7757,7 @@ class ExampleValidationTests(unittest.TestCase):
                         "projected-components.md": """\
                             # Projected Components: Observability investigation
 
-                            Status: Framework Example
+                            Status: Forge Example
                             Promotion state: example
 
                             Trace: [capability card](capability-card.md) -> [interface decision record](interface-decision-record.md) -> projected components.
@@ -7596,10 +7788,10 @@ class ExampleValidationTests(unittest.TestCase):
                         "projected-components.md": """\
                             # Projected Components: Documentation research
 
-                            Status: Framework Example
+                            Status: Forge Example
                             Promotion state: example
 
-                            This Framework Example is not Published Agent Equipment.
+                            This Forge Example is not Published Agent Equipment.
                             Trace: [capability card](capability-card.md) -> [interface decision record](interface-decision-record.md) -> projected components.
                             """
                     }
@@ -7628,10 +7820,10 @@ class ExampleValidationTests(unittest.TestCase):
                         "interface-decision-record.md": """\
                             # Interface Decision Record: PR review
 
-                            Status: Framework Example
+                            Status: Forge Example
                             Promotion state: example
 
-                            This Framework Example is not Published Agent Equipment and is not installable.
+                            This Forge Example is not Published Agent Equipment and is not installable.
                             Trace: capability card -> interface decision record -> projected components.
                             """
                     }
@@ -7669,10 +7861,10 @@ class ExampleValidationTests(unittest.TestCase):
                         "capability-card.md": """\
                             # Capability Card: Docs research
 
-                            Status: Framework Example
+                            Status: Forge Example
                             Promotion state: example
 
-                            This Framework Example is not Published Agent Equipment and is not installable.
+                            This Forge Example is not Published Agent Equipment and is not installable.
                             This example is production-ready.
                             Trace: capability card -> [interface decision record](interface-decision-record.md) -> projected components.
                             """
@@ -7702,10 +7894,10 @@ class ExampleValidationTests(unittest.TestCase):
                         "interface-decision-record.md": """\
                             # Interface Decision Record: Observability investigation
 
-                            Status: Framework Example
+                            Status: Forge Example
                             Promotion state: example
 
-                            This Framework Example is not Published Agent Equipment and is not installable.
+                            This Forge Example is not Published Agent Equipment and is not installable.
                             This example is installable.
                             Trace: [capability card](capability-card.md) -> interface decision record -> [projected components](projected-components.md).
                             """

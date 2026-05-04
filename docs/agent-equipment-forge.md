@@ -1,19 +1,19 @@
-# Agent Equipment Framework
+# Agent Equipment Forge
 
-Status: Framework Seed
+Status: Forge Seed
 
-The Agent Equipment Framework helps Smiths design reusable Agent Equipment without overloading model context, hiding hard policy in prose, or treating harness-specific guesses as facts.
+The Agent Equipment Forge helps Smiths design reusable Agent Equipment without overloading model context, hiding hard policy in prose, or treating harness-specific guesses as facts.
 
 ## Purpose
 
-The Framework answers four questions for each equipment idea:
+The Forge answers four questions for each equipment idea:
 
 - What capability is the equipment meant to provide?
 - Which harness surfaces should carry each part of that capability?
 - What evidence supports the harness and security claims?
 - What validation is required before the equipment can be promoted?
 
-The Framework Seed supplies the first canonical docs, templates, examples, specs, and validation checks. It does not implement downstream equipment such as Agent Ops, Periodic Actions, or Harness Capability Refresh.
+The Forge Seed supplies the first canonical docs, templates, examples, specs, and validation checks. It does not implement downstream equipment such as Agent Ops, Periodic Actions, or Harness Capability Refresh.
 
 ## Least cognitive privilege
 
@@ -61,4 +61,4 @@ Smiths classify read/write behavior, side effects, secrets, approval requirement
 
 Harness facts are volatile. Canonical guidance records evidence category, source, checked date, version basis, and uncertainty where the source is incomplete or inconsistent.
 
-Metasmiths keep source handoffs as provenance, project accepted decisions into canonical surfaces, refresh harness facts before relying on moving affordances, and update downstream specs when Framework decisions change.
+Forgewrights keep source handoffs as provenance, project accepted decisions into canonical surfaces, refresh harness facts before relying on moving affordances, and update downstream specs when Forge decisions change.

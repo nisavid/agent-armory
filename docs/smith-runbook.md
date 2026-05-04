@@ -1,8 +1,8 @@
 # Smith Runbook
 
-Status: Framework Seed
+Status: Forge Seed
 
-This runbook is the canonical workflow for Smiths creating Agent Equipment with the Framework Seed.
+This runbook is the canonical workflow for Smiths creating Agent Equipment with the Forge Seed.
 
 ## Capability card
 
@@ -75,39 +75,39 @@ Pressure validation is not a read-through. It tests whether an Agent actually us
 
 ## Equipment Promotion Path
 
-Assign and maintain a promotion state for every Framework Example, spec, and Equipment Candidate.
+Assign and maintain a promotion state for every Forge Example, spec, and Equipment Candidate.
 
 Use `example` for teaching artifacts, `specified` for accepted behavior without an implementation plan, `planned` for implementation-ready work, `implemented` for built equipment, `validated` for equipment with passing evidence, and `published` for equipment intended to be equipped.
 
 Do not present an example, spec, or unvalidated implementation as Published Agent Equipment.
 
-## Framework requirement escalation
+## Tooling Request
 
-When a Smith finds an unsatisfied Framework requirement that blocks or materially weakens the current equipment task, treat the Framework work as a dependency and escalate to a Metasmith before continuing.
+When a Smith finds an unsatisfied Tooling Gap that blocks or materially weakens the current equipment task, treat the Tooling Work as a dependency and escalate to a Forgewright before continuing.
 
 Use this path without asking whether the capability exists. Ask only when the harness or stakeholder policy leaves a concrete choice unresolved.
 
-1. State the blocking requirement in the current task, issue, project, or local plan. If the Smith cannot update the tracking surface, put the dependency in the handoff and make tracking part of the Metasmith request.
+1. State the blocking requirement in the current task, issue, project, or local plan. If the Smith cannot update the tracking surface, put the dependency in the handoff and make tracking part of the Forgewright request.
 2. Preserve a Smith resume note before switching context. Include the current objective, completed work, open files, validation state, pending decisions, and the exact condition for resuming.
-3. Choose the least disruptive Metasmith path supported by the harness and operator policy: current session, subagent session, peer agent session, forked session, or new session.
-4. Hand off only the context needed for Framework work, plus source links for anything the Metasmith must verify.
-5. Stop Smith implementation until the Metasmith returns a hand-back, explicitly defers the requirement with tracking, or the operator chooses a different path.
+3. Choose the least disruptive Forgewright path supported by the harness and operator policy: current session, subagent session, peer agent session, forked session, or new session.
+4. Hand off only the context needed for Tooling Work, plus source links for anything the Forgewright must verify.
+5. Stop Smith implementation until the Forgewright returns a hand-back, explicitly defers the requirement with tracking, or the operator chooses a different path.
 
 Session path selection:
 
 | Path | Use when | Smith duty |
 | --- | --- | --- |
-| Current session | The harness supports role switching and context retention, and the operator allows the same session to become Metasmith temporarily. | Record a resume note, switch to Metasmith, then use the Metasmith hand-back to restore Smith state before implementation resumes. |
+| Current session | The harness supports role switching and context retention, and the operator allows the same session to become Forgewright temporarily. | Record a resume note, switch to Forgewright, then use the Forgewright hand-back to restore Smith state before implementation resumes. |
 | Subagent session | The harness can start a bounded subordinate Agent with a clear task and return contract. | Provide a self-contained handoff because subagents usually start with little or no parent context. |
 | Peer agent session | The harness can hand work to another Agent with comparable authority or workspace access. | Provide the same handoff as for a subagent, plus coordination rules for shared files and review ownership. |
 | Forked session | The harness can fork the current conversation or workspace context. | Output a copyable handoff prompt, state how to fork, and define the hand-back note the user should return. |
-| New session | Forking is unavailable or inappropriate. | Output a standalone handoff prompt with repo path, branch, current SHA when available, relevant files, and the requested Metasmith deliverable. |
+| New session | Forking is unavailable or inappropriate. | Output a standalone handoff prompt with repo path, branch, current SHA when available, relevant files, and the requested Forgewright deliverable. |
 
-The handoff must include the blocked task, unsatisfied Framework requirement, dependency impact, evidence checked, requested Metasmith deliverable, selected session path, and hand-back expectation.
+The handoff must include the blocked task, unsatisfied Tooling Gap, dependency impact, evidence checked, requested Forgewright deliverable, selected session path, and hand-back expectation.
 
 The hand-back expectation should require:
 
-- Framework decision or deferment;
+- Forge decision or deferment;
 - files changed or issue/project tracking updated;
 - validation and review results;
 - remaining risks or open questions;
@@ -126,7 +126,7 @@ Before closeout, verify:
 - harness claims name their evidence and refresh basis;
 - affected agent-facing and human-facing docs are inspected and updated, or unchanged rationale is recorded;
 - applicable security closeout evidence is recorded;
-- docs, config, scripts, hooks, skills, Agent Profiles, plugins, and templates are discoverable from the Framework path;
+- docs, config, scripts, hooks, skills, MCP/tools, Agent Profiles, plugins, and templates are discoverable from the Forge Conveyor;
 - promotion state and next validation step are recorded.
 
 Run a Cross-Boundary Coherence Ralph Review before story closeout.

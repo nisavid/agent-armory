@@ -1,10 +1,10 @@
 # Security and Control
 
-Status: Framework Seed
+Status: Forge Seed
 
 Security and control decisions belong in the equipment design, not only in final review. Smiths classify authority, side effects, and gates before implementation.
 
-The persistent [Repository Threat Model](security/threat-model.md) is the baseline for Framework Seed security closeout and future security scans.
+The persistent [Repository Threat Model](security/threat-model.md) is the baseline for Forge Seed security closeout and future security scans.
 
 ## least privilege
 
@@ -38,6 +38,6 @@ Mutation-capable tools need control surfaces outside model memory. Use permissio
 
 ## examples caveat
 
-Framework Examples demonstrate the decision method. They are not installable, validated, or published equipment unless they move through the Equipment Promotion Path.
+Forge Examples demonstrate the decision method. They are not installable, validated, or published equipment unless they move through the Equipment Promotion Path.
 
 Examples must avoid production-looking authority, fake secrets, real credential paths, and claims that imply a harness feature was validated when it was only illustrated.

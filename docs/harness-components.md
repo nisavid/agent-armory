@@ -1,6 +1,6 @@
 # Harness Components
 
-Status: Framework Seed
+Status: Forge Seed
 
 Harness Components are reusable behavior integrated into an Agent Harness. Smiths choose components by required behavior, evidence, context cost, control needs, and target harness support.
 

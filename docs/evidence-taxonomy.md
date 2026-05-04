@@ -1,8 +1,8 @@
 # Evidence Taxonomy
 
-Status: Framework Seed
+Status: Forge Seed
 
-Smiths and Metasmiths label evidence so plausible guidance does not become an unlabeled fact. Use the strongest available category and record uncertainty when evidence is incomplete, inconsistent, or volatile.
+Smiths and Forgewrights label evidence so plausible guidance does not become an unlabeled fact. Use the strongest available category and record uncertainty when evidence is incomplete, inconsistent, or volatile.
 
 ## documentation-supported
 

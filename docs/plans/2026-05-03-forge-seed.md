@@ -1,10 +1,10 @@
-# Framework Seed Implementation Plan
+# Forge Seed Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the Framework Seed defined in `docs/prd/framework-seed.md`.
+**Goal:** Build the Forge Seed defined in `docs/prd/forge-seed.md`.
 
-**Architecture:** The seed is documentation- and validation-first. Canonical docs, templates, examples, specs, and refreshed harness facts are created as Seed Surfaces, while `tools/validate_framework_seed.py` and `tests/test_validate_framework_seed.py` enforce the repository shape, link paths, source projection register, promotion-state labels, and catalog metadata.
+**Architecture:** The seed is documentation- and validation-first. Canonical docs, templates, examples, specs, and refreshed harness facts are created as Seed Surfaces, while `tools/validate_forge_seed.py` and `tests/test_validate_forge_seed.py` enforce the repository shape, link paths, source projection register, promotion-state labels, and catalog metadata.
 
 **Tech Stack:** Markdown, TOML, Python 3.14 standard library, `unittest`, Git, Firecrawl or equivalent first-party web source retrieval, GitHub issue tooling for post-review Issue Projection.
 
@@ -14,19 +14,19 @@
 
 Create or modify these files:
 
-- Modify: `README.md` for the Human Framework Entry.
-- Modify: `AGENTS.md` for the Preloaded Framework Path, durable file-placement policy, and change-set security closeout policy.
+- Modify: `README.md` for the Forge Tour.
+- Modify: `AGENTS.md` for the Forge Conveyor, durable file-placement policy, and change-set security closeout policy.
 - Modify: `CONTEXT.md` for any new durable term exposed by implementation or closeout policy.
-- Modify: `docs/prd/framework-seed.md` if security closeout or seed-surface requirements are refined during implementation.
+- Modify: `docs/prd/forge-seed.md` if security closeout or seed-surface requirements are refined during implementation.
 - Create: ADRs for new durable policy decisions.
 - Create: `docs/metasmith/source-projection.md` for the Source Projection Register.
 - Create: `docs/security/threat-model.md` for the persistent Repository Threat Model.
-- Create: `docs/security/framework-seed-closeout.md` for Framework Seed security closeout evidence.
-- Create: `docs/closeout/framework-seed-documentation.md` for Framework Seed documentation closeout evidence.
+- Create: `docs/security/forge-seed-closeout.md` for Forge Seed security closeout evidence.
+- Create: `docs/closeout/forge-seed-documentation.md` for Forge Seed documentation closeout evidence.
 - Create: `docs/ubiquitous-language.md`.
-- Create: `docs/equipment-framework.md`.
+- Create: `docs/agent-equipment-forge.md`.
 - Create: `docs/smith-runbook.md`.
-- Create: `docs/metasmith-runbook.md`.
+- Create: `docs/forgewright-runbook.md`.
 - Create: `docs/interface-decision-guide.md`.
 - Create: `docs/harness-components.md`.
 - Create: `docs/harness-capabilities.md`.
@@ -64,20 +64,20 @@ Create or modify these files:
 - Create: `specs/agent-ops.md`.
 - Create: `specs/periodic-actions.md`.
 - Create: `specs/harness-capability-refresh.md`.
-- Create: `tools/validate_framework_seed.py`.
+- Create: `tools/validate_forge_seed.py`.
 - Create: `tests/__init__.py`.
-- Create: `tests/test_validate_framework_seed.py`.
+- Create: `tests/test_validate_forge_seed.py`.
 
 ## Task 1: Seed Validation Tool Core
 
 **Files:**
-- Create: `tools/validate_framework_seed.py`
+- Create: `tools/validate_forge_seed.py`
 - Create: `tests/__init__.py`
-- Create: `tests/test_validate_framework_seed.py`
+- Create: `tests/test_validate_forge_seed.py`
 
 - [x] **Step 1: Write failing tests for validator primitives**
 
-Add `tests/test_validate_framework_seed.py` with these tests:
+Add `tests/test_validate_forge_seed.py` with these tests:
 
 ```python
 import json
@@ -86,7 +86,7 @@ import textwrap
 import unittest
 from pathlib import Path
 
-from tools.validate_framework_seed import (
+from tools.validate_forge_seed import (
     CheckResult,
     find_markdown_links,
     load_toml,
@@ -184,14 +184,14 @@ if __name__ == "__main__":
 Run:
 
 ```bash
-python3.14 -m unittest tests/test_validate_framework_seed.py
+python3.14 -m unittest tests/test_validate_forge_seed.py
 ```
 
-Expected: FAIL or ERROR because `tools.validate_framework_seed` does not exist.
+Expected: FAIL or ERROR because `tools.validate_forge_seed` does not exist.
 
 - [x] **Step 3: Implement validator primitives**
 
-Create `tools/validate_framework_seed.py`:
+Create `tools/validate_forge_seed.py`:
 
 ```python
 #!/usr/bin/env python3.14
@@ -298,7 +298,7 @@ def run(root: Path) -> list[CheckResult]:
         "README.md",
         "AGENTS.md",
         "CONTEXT.md",
-        "docs/prd/framework-seed.md",
+        "docs/prd/forge-seed.md",
         "docs/metasmith/source-projection.md",
         "docs/harness-capabilities.toml",
     ]
@@ -306,7 +306,7 @@ def run(root: Path) -> list[CheckResult]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Validate the Agent Armory Framework Seed.")
+    parser = argparse.ArgumentParser(description="Validate the Agent Armory Forge Seed.")
     parser.add_argument("--root", default=".", help="Repository root to validate.")
     parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON.")
     args = parser.parse_args(argv)
@@ -326,7 +326,7 @@ if __name__ == "__main__":
 Run:
 
 ```bash
-python3.14 -m unittest tests/test_validate_framework_seed.py
+python3.14 -m unittest tests/test_validate_forge_seed.py
 ```
 
 Expected: PASS.
@@ -336,27 +336,27 @@ Expected: PASS.
 Run:
 
 ```bash
-git add tools/validate_framework_seed.py tests/__init__.py tests/test_validate_framework_seed.py
-git commit -m "test(framework): add seed validator primitives" -m "Co-authored-by: Codex <noreply@openai.com>"
+git add tools/validate_forge_seed.py tests/__init__.py tests/test_validate_forge_seed.py
+git commit -m "test(forge): add seed validator primitives" -m "Co-authored-by: Codex <noreply@openai.com>"
 ```
 
 ## Task 2: Source Projection Register and Handoff Provenance
 
 **Files:**
-- Modify: `tools/validate_framework_seed.py`
-- Modify: `tests/test_validate_framework_seed.py`
+- Modify: `tools/validate_forge_seed.py`
+- Modify: `tests/test_validate_forge_seed.py`
 - Modify: `CONTEXT.md`
-- Modify: `docs/prd/framework-seed.md`
+- Modify: `docs/prd/forge-seed.md`
 - Modify: `docs/adr/0015-require-source-projection-register.md`
 - Create: `docs/metasmith/source-projection.md`
 - Validate existing archived handoff files under `docs/metasmith/handoff/2026-05-02/`.
 
 - [x] **Step 1: Write failing tests for source projection validation**
 
-Append to `tests/test_validate_framework_seed.py`:
+Append to `tests/test_validate_forge_seed.py`:
 
 ```python
-from tools.validate_framework_seed import (
+from tools.validate_forge_seed import (
     ACCEPTED_SOURCE_REQUIREMENTS,
     validate_source_handoff_provenance,
     validate_source_projection,
@@ -1218,14 +1218,14 @@ class SourceProjectionTests(unittest.TestCase):
 Run:
 
 ```bash
-python3.14 -m unittest tests/test_validate_framework_seed.py
+python3.14 -m unittest tests/test_validate_forge_seed.py
 ```
 
 Expected: ERROR because `validate_source_projection` and `validate_source_handoff_provenance` are missing.
 
 - [x] **Step 3: Implement source projection validation**
 
-Add to `tools/validate_framework_seed.py`:
+Add to `tools/validate_forge_seed.py`:
 
 ```python
 SOURCE_PROJECTION_PATH = "docs/metasmith/source-projection.md"
@@ -1247,7 +1247,7 @@ ACCEPTED_SOURCE_REQUIREMENTS = {
     "H004": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Required repository shape"},
     "H005": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "1. Ubiquitous Language"},
     "H006": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "2. Evidence discipline"},
-    "H007": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "3. Framework architecture"},
+    "H007": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "3. Forge architecture"},
     "H008": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "4. Decision method"},
     "H009": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "5. Harness capability catalog"},
     "H010": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "6. Templates and examples"},
@@ -1255,7 +1255,7 @@ ACCEPTED_SOURCE_REQUIREMENTS = {
     "H012": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Acceptance criteria"},
     "H052": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Constraints"},
     "H053": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Final report"},
-    "H013": {"source_file": "01-executive-brief.md", "source_anchor": "What the Framework must solve"},
+    "H013": {"source_file": "01-executive-brief.md", "source_anchor": "What the Forge must solve"},
     "H014": {"source_file": "01-executive-brief.md", "source_anchor": "Core decomposition"},
     "H015": {"source_file": "01-executive-brief.md", "source_anchor": "What the Metasmith should produce"},
     "H016": {"source_file": "02-ubiquitous-language.md", "source_anchor": "Agent Armory"},
@@ -1694,20 +1694,20 @@ Create `docs/metasmith/source-projection.md` with this shape. The table must inc
 ```markdown
 # Source Projection Register
 
-This register maps accepted Source Handoff requirements to canonical Framework Seed surfaces or explicit deferments.
+This register maps accepted Source Handoff requirements to canonical Forge Seed surfaces or explicit deferments.
 
 | requirement_id | source_file | source_anchor | summary | disposition | target_path | deferment_reason | validation_status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| H001 | 00-metasmith-handoff-prompt.md | Your objective | Produce the Framework Seed as canonical docs, templates, examples, specs, and validation surfaces. | projected | docs/prd/framework-seed.md |  | planned |
-| H002 | 00-metasmith-handoff-prompt.md | Terms you must use | Establish the core Framework vocabulary. | projected | docs/ubiquitous-language.md |  | planned |
-| H003 | 00-metasmith-handoff-prompt.md | Core principle | Preserve least cognitive privilege as the Framework's central design rule. | projected | docs/equipment-framework.md |  | planned |
+| H001 | 00-metasmith-handoff-prompt.md | Your objective | Produce the Forge Seed as canonical docs, templates, examples, specs, and validation surfaces. | projected | docs/prd/forge-seed.md |  | planned |
+| H002 | 00-metasmith-handoff-prompt.md | Terms you must use | Establish the core Forge vocabulary. | projected | docs/ubiquitous-language.md |  | planned |
+| H003 | 00-metasmith-handoff-prompt.md | Core principle | Preserve least cognitive privilege as the Forge's central design rule. | projected | docs/agent-equipment-forge.md |  | planned |
 | ... | ... | ... | ... | ... | ... | ... | ... |
 ```
 
 Projection target guidance:
 
 - `target_path` uses comma-separated repo-relative paths for projected requirements. Absolute paths, URLs, and parent traversal are invalid.
-- Framework architecture, component model, context, security, and maintenance requirements project to canonical docs under `docs/`.
+- Forge architecture, component model, context, security, and maintenance requirements project to canonical docs under `docs/`.
 - Decision method and Smith runbook requirements project to `docs/smith-runbook.md` and `docs/interface-decision-guide.md`.
 - Harness fact requirements project to `docs/harness-capabilities.md`, `docs/harness-capabilities.toml`, and `specs/harness-capability-refresh.md`.
 - The archived structured seed `harness-capabilities.seed.toml` must have an explicit projection row into the refreshed TOML catalog.
@@ -1720,8 +1720,8 @@ Projection target guidance:
 Run:
 
 ```bash
-python3.14 -m unittest tests/test_validate_framework_seed.py
-python3.14 tools/validate_framework_seed.py
+python3.14 -m unittest tests/test_validate_forge_seed.py
+python3.14 tools/validate_forge_seed.py
 ```
 
 Expected: tests PASS. The full validator may still FAIL for seed surfaces and projected targets not yet created.
@@ -1731,45 +1731,45 @@ Expected: tests PASS. The full validator may still FAIL for seed surfaces and pr
 Run:
 
 ```bash
-git add CONTEXT.md docs/adr/0015-require-source-projection-register.md docs/prd/framework-seed.md docs/plans/2026-05-03-framework-seed.md tools/validate_framework_seed.py tests/test_validate_framework_seed.py docs/metasmith/source-projection.md
-git commit -m "feat(framework): validate source projection register" -m "Co-authored-by: Codex <noreply@openai.com>"
+git add CONTEXT.md docs/adr/0015-require-source-projection-register.md docs/prd/forge-seed.md docs/plans/2026-05-03-forge-seed.md tools/validate_forge_seed.py tests/test_validate_forge_seed.py docs/metasmith/source-projection.md
+git commit -m "feat(forge): validate source projection register" -m "Co-authored-by: Codex <noreply@openai.com>"
 ```
 
-## Task 3: Preloaded and Human Framework Paths
+## Task 3: Preloaded and Human Forge Conveyors
 
 **Files:**
 - Modify: `AGENTS.md`
 - Modify: `README.md`
-- Modify: `tools/validate_framework_seed.py`
-- Modify: `tests/test_validate_framework_seed.py`
+- Modify: `tools/validate_forge_seed.py`
+- Modify: `tests/test_validate_forge_seed.py`
 
 - [x] **Step 1: Write failing tests for routing links**
 
 Add tests that create fixture `AGENTS.md` and `README.md` files, then assert validator failures when required links are absent:
 
 ```python
-from tools.validate_framework_seed import validate_framework_routes, validate_markdown_links
+from tools.validate_forge_seed import validate_forge_routes, validate_markdown_links
 
 
-class FrameworkRouteTests(unittest.TestCase):
-    def test_validate_framework_routes_requires_agent_and_human_paths(self):
+class ForgeRouteTests(unittest.TestCase):
+    def test_validate_forge_routes_requires_agent_and_human_paths(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             (root / "AGENTS.md").write_text("# AGENTS\n", encoding="utf-8")
             (root / "README.md").write_text("# README\n", encoding="utf-8")
 
-            results = validate_framework_routes(root)
+            results = validate_forge_routes(root)
 
         self.assertIn(
-            CheckResult("framework_route:agent", False, "missing Preloaded Framework Path", "AGENTS.md"),
+            CheckResult("forge_route:agent", False, "missing Forge Conveyor", "AGENTS.md"),
             results,
         )
         self.assertIn(
-            CheckResult("framework_route:human", False, "missing Human Framework Entry", "README.md"),
+            CheckResult("forge_route:human", False, "missing Forge Tour", "README.md"),
             results,
         )
 
-    def test_validate_framework_routes_requires_all_preloaded_links(self):
+    def test_validate_forge_routes_requires_all_preloaded_links(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             (root / "AGENTS.md").write_text(
@@ -1777,9 +1777,9 @@ class FrameworkRouteTests(unittest.TestCase):
                     """
                     # AGENTS
 
-                    ## Framework Path
+                    ## Forge Conveyor
 
-                    - `docs/equipment-framework.md`
+                    - `docs/agent-equipment-forge.md`
                     - `docs/smith-runbook.md`
                     - `docs/harness-capabilities.md`
                     - `templates/`
@@ -1790,15 +1790,15 @@ class FrameworkRouteTests(unittest.TestCase):
                 encoding="utf-8",
             )
             (root / "README.md").write_text(
-                "## Framework\n\nStart with [docs/equipment-framework.md](docs/equipment-framework.md).\n",
+                "## Forge\n\nStart with [Forge Tour](docs/forge-tour.md).\n",
                 encoding="utf-8",
             )
 
-            results = validate_framework_routes(root)
+            results = validate_forge_routes(root)
 
         self.assertIn(
             CheckResult(
-                "framework_route:agent:docs/interface-decision-guide.md",
+                "forge_route:agent:docs/interface-decision-guide.md",
                 False,
                 "missing required preloaded route",
                 "AGENTS.md",
@@ -1806,7 +1806,7 @@ class FrameworkRouteTests(unittest.TestCase):
             results,
         )
 
-    def test_validate_framework_routes_rejects_unresolved_route_targets(self):
+    def test_validate_forge_routes_rejects_unresolved_route_targets(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             (root / "docs").mkdir()
@@ -1814,7 +1814,7 @@ class FrameworkRouteTests(unittest.TestCase):
             (root / "examples").mkdir()
             (root / "specs").mkdir()
             for path in [
-                "docs/equipment-framework.md",
+                "docs/agent-equipment-forge.md",
                 "docs/smith-runbook.md",
                 "docs/interface-decision-guide.md",
             ]:
@@ -1824,9 +1824,9 @@ class FrameworkRouteTests(unittest.TestCase):
                     """
                     # AGENTS
 
-                    ## Framework Path
+                    ## Forge Conveyor
 
-                    - `docs/equipment-framework.md`
+                    - `docs/agent-equipment-forge.md`
                     - `docs/smith-runbook.md`
                     - `docs/interface-decision-guide.md`
                     - `docs/harness-capabilities.md`
@@ -1838,15 +1838,15 @@ class FrameworkRouteTests(unittest.TestCase):
                 encoding="utf-8",
             )
             (root / "README.md").write_text(
-                "## Framework\n\nStart with [docs/equipment-framework.md](docs/equipment-framework.md).\n",
+                "## Forge\n\nStart with [Forge Tour](docs/forge-tour.md).\n",
                 encoding="utf-8",
             )
 
-            results = validate_framework_routes(root)
+            results = validate_forge_routes(root)
 
         self.assertIn(
             CheckResult(
-                "framework_route:target:docs/harness-capabilities.md",
+                "forge_route:target:docs/harness-capabilities.md",
                 False,
                 "route target missing",
                 "AGENTS.md",
@@ -1909,20 +1909,20 @@ class MarkdownLinkTests(unittest.TestCase):
 Run:
 
 ```bash
-python3.14 -m unittest tests/test_validate_framework_seed.py
+python3.14 -m unittest tests/test_validate_forge_seed.py
 ```
 
-Expected: ERROR because `validate_framework_routes` and `validate_markdown_links` are missing.
+Expected: ERROR because `validate_forge_routes` and `validate_markdown_links` are missing.
 
 - [x] **Step 3: Implement route validation**
 
-Add `validate_framework_routes(root: Path)` that checks:
+Add `validate_forge_routes(root: Path)` that checks:
 
-- `AGENTS.md` contains `## Framework Path`.
-- `AGENTS.md` links to `docs/equipment-framework.md`, `docs/smith-runbook.md`, `docs/interface-decision-guide.md`, `docs/harness-capabilities.md`, `templates/`, `examples/`, and `specs/`.
-- `README.md` contains `## Framework`.
-- `README.md` links to `docs/equipment-framework.md` with a real Markdown link in the Framework section.
-- Every local Markdown or directory target named in the `AGENTS.md` Framework Path and `README.md` Framework entry resolves from the repository root. Backticked path strings count as route targets for agent-facing docs; Markdown links are also accepted.
+- `AGENTS.md` contains `## Forge Conveyor`.
+- `AGENTS.md` links to `docs/agent-equipment-forge.md`, `docs/smith-runbook.md`, `docs/interface-decision-guide.md`, `docs/harness-capabilities.md`, `templates/`, `examples/`, and `specs/`.
+- `README.md` contains `## Forge`.
+- `README.md` links to `docs/agent-equipment-forge.md` with a real Markdown link in the Forge section.
+- Every local Markdown or directory target named in the `AGENTS.md` Forge Conveyor and `README.md` Forge Tour resolves from the repository root. Backticked path strings count as route targets for agent-facing docs; Markdown links are also accepted.
 - Route target checks must run after the route text checks, so early tasks can distinguish "route missing" from "target not created yet".
 
 Add `validate_markdown_links(root: Path)` that checks all repository Markdown files for broken local Markdown links:
@@ -1940,27 +1940,27 @@ Update `run()` to include route validation and Markdown link validation.
 In `AGENTS.md`, add:
 
 ```markdown
-## Framework Path
+## Forge Conveyor
 
 Smiths creating or modifying Agent Equipment should start with:
 
-- `docs/equipment-framework.md` for the Framework overview.
+- `docs/agent-equipment-forge.md` for the Forge overview.
 - `docs/smith-runbook.md` for the equipment creation workflow.
 - `docs/interface-decision-guide.md` for choosing skills, MCP/tools, hooks, Agent Profiles, plugins, scripts, docs, and config.
 - `docs/harness-capabilities.md` before making harness-specific claims.
 - `templates/` for seed templates.
-- `examples/` for annotated Framework Examples.
+- `examples/` for annotated Forge Examples.
 - `specs/` for downstream Smith specs.
 ```
 
-In `README.md`, add a concise human-facing `## Framework` section that says:
+In `README.md`, add a concise human-facing `## Forge` section that says:
 
 ```markdown
-## Framework
+## Forge
 
-The first public shape of this repository is the Agent Equipment Framework: a way to decide what kind of equipment an agent needs, where that equipment should live, and how to keep harness-specific claims source-backed.
+The first public shape of this repository is the Agent Equipment Forge: a way to decide what kind of equipment an agent needs, where that equipment should live, and how to keep harness-specific claims source-backed.
 
-Start with [docs/equipment-framework.md](docs/equipment-framework.md).
+Start with [docs/agent-equipment-forge.md](docs/agent-equipment-forge.md).
 ```
 
 - [x] **Step 5: Run tests and validator**
@@ -1968,8 +1968,8 @@ Start with [docs/equipment-framework.md](docs/equipment-framework.md).
 Run:
 
 ```bash
-python3.14 -m unittest tests/test_validate_framework_seed.py
-python3.14 tools/validate_framework_seed.py
+python3.14 -m unittest tests/test_validate_forge_seed.py
+python3.14 tools/validate_forge_seed.py
 ```
 
 Expected: route tests PASS; validator may still FAIL for seed surfaces not yet created.
@@ -1979,17 +1979,17 @@ Expected: route tests PASS; validator may still FAIL for seed surfaces not yet c
 Run:
 
 ```bash
-git add AGENTS.md README.md tools/validate_framework_seed.py tests/test_validate_framework_seed.py
-git commit -m "docs(framework): add canonical reading paths" -m "Co-authored-by: Codex <noreply@openai.com>"
+git add AGENTS.md README.md tools/validate_forge_seed.py tests/test_validate_forge_seed.py
+git commit -m "docs(forge): add canonical reading paths" -m "Co-authored-by: Codex <noreply@openai.com>"
 ```
 
-## Task 4: Canonical Framework Docs
+## Task 4: Forge Canon
 
 **Files:**
 - Create: `docs/ubiquitous-language.md`
-- Create: `docs/equipment-framework.md`
+- Create: `docs/agent-equipment-forge.md`
 - Create: `docs/smith-runbook.md`
-- Create: `docs/metasmith-runbook.md`
+- Create: `docs/forgewright-runbook.md`
 - Create: `docs/interface-decision-guide.md`
 - Create: `docs/harness-components.md`
 - Create: `docs/evidence-taxonomy.md`
@@ -1998,10 +1998,10 @@ git commit -m "docs(framework): add canonical reading paths" -m "Co-authored-by:
 
 - [x] **Step 1: Write failing canonical doc validation tests**
 
-Extend `tests/test_validate_framework_seed.py` to assert `run(root)` fails when:
+Extend `tests/test_validate_forge_seed.py` to assert `run(root)` fails when:
 
 - any canonical doc path is missing from a fixture root,
-- a canonical doc omits `Status: Framework Seed`,
+- a canonical doc omits `Status: Forge Seed`,
 - a canonical doc omits one of its required sections.
 
 - [x] **Step 2: Run tests to verify they fail**
@@ -2009,7 +2009,7 @@ Extend `tests/test_validate_framework_seed.py` to assert `run(root)` fails when:
 Run:
 
 ```bash
-python3.14 -m unittest tests/test_validate_framework_seed.py
+python3.14 -m unittest tests/test_validate_forge_seed.py
 ```
 
 Expected: FAIL because canonical doc paths and content are not all checked or not present.
@@ -2020,20 +2020,20 @@ Update `run()` required paths to include every canonical doc path listed for thi
 
 Add `validate_canonical_docs(root: Path)` so `run()` checks:
 
-- each canonical document contains `Status: Framework Seed` near the top,
+- each canonical document contains `Status: Forge Seed` near the top,
 - each canonical document contains the required sections listed below,
 - missing sections report the document path and section name.
 
 - [x] **Step 4: Create canonical docs**
 
-Each document must include `Status: Framework Seed` near the top.
+Each document must include `Status: Forge Seed` near the top.
 
 Required sections:
 
 - `docs/ubiquitous-language.md`: Language, Relationships, Precision rules.
-- `docs/equipment-framework.md`: Purpose, Least cognitive privilege, Component model, Context management, Security, Maintenance.
+- `docs/agent-equipment-forge.md`: Purpose, Least cognitive privilege, Component model, Context management, Security, Maintenance.
 - `docs/smith-runbook.md`: Capability card, Interface decision record, Docs/config/scripts/hooks/skills/agents/plugins, Pressure Scenario Validation, Equipment Promotion Path, Closeout.
-- `docs/metasmith-runbook.md`: Source handoff preservation, decision projection, Review Until Clean, Harness Fact Refresh, Issue Projection, downstream Smith specs.
+- `docs/forgewright-runbook.md`: Source handoff preservation, decision projection, Review Until Clean, Harness Fact Refresh, Issue Projection, downstream Smith specs.
 - `docs/interface-decision-guide.md`: Decision tree and placement guide.
 - `docs/harness-components.md`: Skills, MCP/tools, hooks, Agent Profiles, Harness Plugins, scripts, local docs, config.
 - `docs/evidence-taxonomy.md`: documentation-supported, source-supported, implementation inference, practitioner wisdom, hypothesis, source hygiene.
@@ -2045,8 +2045,8 @@ Required sections:
 Run:
 
 ```bash
-python3.14 -m unittest tests/test_validate_framework_seed.py
-python3.14 tools/validate_framework_seed.py
+python3.14 -m unittest tests/test_validate_forge_seed.py
+python3.14 tools/validate_forge_seed.py
 ```
 
 Expected: canonical doc path and content checks PASS; later template/example/spec/catalog checks may still FAIL.
@@ -2056,8 +2056,8 @@ Expected: canonical doc path and content checks PASS; later template/example/spe
 Run:
 
 ```bash
-git add docs/ubiquitous-language.md docs/equipment-framework.md docs/smith-runbook.md docs/metasmith-runbook.md docs/interface-decision-guide.md docs/harness-components.md docs/evidence-taxonomy.md docs/security-and-control.md docs/equipment-promotion.md tools/validate_framework_seed.py tests/test_validate_framework_seed.py
-git commit -m "docs(framework): add canonical framework docs" -m "Co-authored-by: Codex <noreply@openai.com>"
+git add docs/ubiquitous-language.md docs/agent-equipment-forge.md docs/smith-runbook.md docs/forgewright-runbook.md docs/interface-decision-guide.md docs/harness-components.md docs/evidence-taxonomy.md docs/security-and-control.md docs/equipment-promotion.md tools/validate_forge_seed.py tests/test_validate_forge_seed.py
+git commit -m "docs(forge): add forge canon" -m "Co-authored-by: Codex <noreply@openai.com>"
 ```
 
 ## Task 5: Harness Capability Catalog Refresh
@@ -2065,15 +2065,15 @@ git commit -m "docs(framework): add canonical framework docs" -m "Co-authored-by
 **Files:**
 - Create: `docs/harness-capabilities.md`
 - Create: `docs/harness-capabilities.toml`
-- Modify: `tools/validate_framework_seed.py`
-- Modify: `tests/test_validate_framework_seed.py`
+- Modify: `tools/validate_forge_seed.py`
+- Modify: `tests/test_validate_forge_seed.py`
 
 - [x] **Step 1: Write failing catalog validation tests**
 
 Add tests that validate required TOML fields for each harness:
 
 ```python
-from tools.validate_framework_seed import REQUIRED_HARNESSES, validate_harness_catalog
+from tools.validate_forge_seed import REQUIRED_HARNESSES, validate_harness_catalog
 
 
 class HarnessCatalogTests(unittest.TestCase):
@@ -2175,7 +2175,7 @@ Add table-driven companion failing tests for every validation branch:
 Run:
 
 ```bash
-python3.14 -m unittest tests/test_validate_framework_seed.py
+python3.14 -m unittest tests/test_validate_forge_seed.py
 ```
 
 Expected: ERROR because `validate_harness_catalog` is missing.
@@ -2249,8 +2249,8 @@ Each entry must include checked-at date, version or version basis, source URLs, 
 Run:
 
 ```bash
-python3.14 -m unittest tests/test_validate_framework_seed.py
-python3.14 tools/validate_framework_seed.py
+python3.14 -m unittest tests/test_validate_forge_seed.py
+python3.14 tools/validate_forge_seed.py
 ```
 
 Expected: catalog tests PASS; validator may still FAIL for templates/examples/specs not yet created.
@@ -2260,16 +2260,16 @@ Expected: catalog tests PASS; validator may still FAIL for templates/examples/sp
 Run:
 
 ```bash
-git add docs/harness-capabilities.md docs/harness-capabilities.toml tools/validate_framework_seed.py tests/test_validate_framework_seed.py
-git commit -m "docs(framework): refresh harness capability catalog" -m "Co-authored-by: Codex <noreply@openai.com>"
+git add docs/harness-capabilities.md docs/harness-capabilities.toml tools/validate_forge_seed.py tests/test_validate_forge_seed.py
+git commit -m "docs(forge): refresh harness capability catalog" -m "Co-authored-by: Codex <noreply@openai.com>"
 ```
 
 ## Task 6: Templates
 
 **Files:**
 - Create every `templates/` path listed in the File Structure section.
-- Modify: `tools/validate_framework_seed.py`
-- Modify: `tests/test_validate_framework_seed.py`
+- Modify: `tools/validate_forge_seed.py`
+- Modify: `tests/test_validate_forge_seed.py`
 
 - [x] **Step 1: Write failing template path and content tests**
 
@@ -2297,7 +2297,7 @@ Add tests that require every template path in the File Structure section. Also a
 Run:
 
 ```bash
-python3.14 -m unittest tests/test_validate_framework_seed.py
+python3.14 -m unittest tests/test_validate_forge_seed.py
 ```
 
 Expected: FAIL for missing template paths or content checks.
@@ -2314,15 +2314,15 @@ Each template README must include:
 
 Each root template file must include `Status: Template`.
 
-Update `tools/validate_framework_seed.py` with `validate_templates(root: Path)` so `run()` checks every required template path and template content rule from this task, including nested template bodies.
+Update `tools/validate_forge_seed.py` with `validate_templates(root: Path)` so `run()` checks every required template path and template content rule from this task, including nested template bodies.
 
 - [x] **Step 4: Run validation**
 
 Run:
 
 ```bash
-python3.14 -m unittest tests/test_validate_framework_seed.py
-python3.14 tools/validate_framework_seed.py
+python3.14 -m unittest tests/test_validate_forge_seed.py
+python3.14 tools/validate_forge_seed.py
 ```
 
 Expected: template path and content checks PASS; examples/spec checks may still FAIL.
@@ -2332,19 +2332,19 @@ Expected: template path and content checks PASS; examples/spec checks may still 
 Run:
 
 ```bash
-git add templates tools/validate_framework_seed.py tests/test_validate_framework_seed.py
-git commit -m "docs(templates): add framework seed templates" -m "Co-authored-by: Codex <noreply@openai.com>"
+git add templates tools/validate_forge_seed.py tests/test_validate_forge_seed.py
+git commit -m "docs(templates): add Forge Seed templates" -m "Co-authored-by: Codex <noreply@openai.com>"
 ```
 
-## Task 7: Framework Examples
+## Task 7: Forge Examples
 
 **Files:**
 - Create every `examples/` path listed in the File Structure section.
 - Modify: `AGENTS.md`
 - Modify: `docs/metasmith/source-projection.md`
-- Modify: `docs/plans/2026-05-03-framework-seed.md`
-- Modify: `tools/validate_framework_seed.py`
-- Modify: `tests/test_validate_framework_seed.py`
+- Modify: `docs/plans/2026-05-03-forge-seed.md`
+- Modify: `tools/validate_forge_seed.py`
+- Modify: `tests/test_validate_forge_seed.py`
 
 - [x] **Step 1: Write failing example validation tests**
 
@@ -2361,7 +2361,7 @@ The tests must also check each example file includes `Promotion state: example`.
 Run:
 
 ```bash
-python3.14 -m unittest tests/test_validate_framework_seed.py
+python3.14 -m unittest tests/test_validate_forge_seed.py
 ```
 
 Expected: FAIL for missing example paths and promotion states.
@@ -2380,8 +2380,8 @@ Create PR review, docs research, and observability investigation examples. Each 
 Run:
 
 ```bash
-python3.14 -m unittest tests/test_validate_framework_seed.py
-python3.14 tools/validate_framework_seed.py
+python3.14 -m unittest tests/test_validate_forge_seed.py
+python3.14 tools/validate_forge_seed.py
 ```
 
 Expected: example checks PASS; specs may still FAIL.
@@ -2391,8 +2391,8 @@ Expected: example checks PASS; specs may still FAIL.
 Run:
 
 ```bash
-git add AGENTS.md docs/metasmith/source-projection.md docs/plans/2026-05-03-framework-seed.md examples tools/validate_framework_seed.py tests/test_validate_framework_seed.py
-git commit -m "docs(examples): add framework method examples" -m "Co-authored-by: Codex <noreply@openai.com>"
+git add AGENTS.md docs/metasmith/source-projection.md docs/plans/2026-05-03-forge-seed.md examples tools/validate_forge_seed.py tests/test_validate_forge_seed.py
+git commit -m "docs(examples): add Forge method examples" -m "Co-authored-by: Codex <noreply@openai.com>"
 ```
 
 ## Task 8: Downstream Smith Specs
@@ -2402,9 +2402,9 @@ git commit -m "docs(examples): add framework method examples" -m "Co-authored-by
 - Create: `specs/periodic-actions.md`
 - Create: `specs/harness-capability-refresh.md`
 - Modify: `docs/metasmith/source-projection.md`
-- Modify: `docs/plans/2026-05-03-framework-seed.md`
-- Modify: `tools/validate_framework_seed.py`
-- Modify: `tests/test_validate_framework_seed.py`
+- Modify: `docs/plans/2026-05-03-forge-seed.md`
+- Modify: `tools/validate_forge_seed.py`
+- Modify: `tests/test_validate_forge_seed.py`
 
 - [x] **Step 1: Write failing spec validation tests**
 
@@ -2422,7 +2422,7 @@ Add tests that require each spec to include:
 Run:
 
 ```bash
-python3.14 -m unittest tests/test_validate_framework_seed.py
+python3.14 -m unittest tests/test_validate_forge_seed.py
 ```
 
 Expected: FAIL for missing specs and required sections.
@@ -2465,8 +2465,8 @@ Create specs from `docs/metasmith/handoff/2026-05-02/08-initial-smith-task-specs
 Run:
 
 ```bash
-python3.14 -m unittest tests/test_validate_framework_seed.py
-python3.14 tools/validate_framework_seed.py
+python3.14 -m unittest tests/test_validate_forge_seed.py
+python3.14 tools/validate_forge_seed.py
 ```
 
 Expected: spec checks PASS. The full repository validator may still report the final closeout surfaces from Task 9 as missing until that task lands.
@@ -2476,7 +2476,7 @@ Expected: spec checks PASS. The full repository validator may still report the f
 Run:
 
 ```bash
-git add docs/metasmith/source-projection.md docs/plans/2026-05-03-framework-seed.md specs tools/validate_framework_seed.py tests/test_validate_framework_seed.py
+git add docs/metasmith/source-projection.md docs/plans/2026-05-03-forge-seed.md specs tools/validate_forge_seed.py tests/test_validate_forge_seed.py
 git commit -m "docs(specs): add initial smith task specs" -m "Co-authored-by: Codex <noreply@openai.com>"
 ```
 
@@ -2486,19 +2486,19 @@ git commit -m "docs(specs): add initial smith task specs" -m "Co-authored-by: Co
 - Modify: `docs/metasmith/source-projection.md`
 - Modify: `AGENTS.md`
 - Modify: `CONTEXT.md`
-- Modify: `docs/prd/framework-seed.md`
+- Modify: `docs/prd/forge-seed.md`
 - Modify: `docs/smith-runbook.md`
-- Modify: `docs/metasmith-runbook.md`
+- Modify: `docs/forgewright-runbook.md`
 - Create or modify: `docs/security/threat-model.md`
-- Create or modify: `docs/security/framework-seed-closeout.md`
-- Create or modify: `docs/closeout/framework-seed-documentation.md`
+- Create or modify: `docs/security/forge-seed-closeout.md`
+- Create or modify: `docs/closeout/forge-seed-documentation.md`
 - Create or modify: `docs/story-closeout.md`
 - Modify: affected agent-facing or human-facing docs as documentation closeout requires.
 - Modify: any canonical docs, templates, examples, specs, or validation files needed by final review.
 
 - [x] **Step 1: Write failing tests for the Repository Threat Model surface**
 
-Extend `tests/test_validate_framework_seed.py` with failing tests that require:
+Extend `tests/test_validate_forge_seed.py` with failing tests that require:
 
 - `docs/security/threat-model.md` exists,
 - the threat model contains sections for assets, trust boundaries, attacker-controlled inputs, invariants, assumptions, and high-impact failure modes,
@@ -2507,7 +2507,7 @@ Extend `tests/test_validate_framework_seed.py` with failing tests that require:
 Run:
 
 ```bash
-python3.14 -m unittest tests/test_validate_framework_seed.py
+python3.14 -m unittest tests/test_validate_forge_seed.py
 ```
 
 Expected: FAIL because the threat model surface or validator checks are missing.
@@ -2516,11 +2516,11 @@ Expected: FAIL because the threat model surface or validator checks are missing.
 
 Use Codex Security threat-model workflow to create or update `docs/security/threat-model.md` as the persistent Repository Threat Model for Agent Armory.
 
-Update `tools/validate_framework_seed.py` so `run()` validates the threat model requirements from Step 1.
+Update `tools/validate_forge_seed.py` so `run()` validates the threat model requirements from Step 1.
 
 - [x] **Step 2a: Write failing tests for the completed documentation closeout summary**
 
-Extend `tests/test_validate_framework_seed.py` with failing tests that require `docs/closeout/framework-seed-documentation.md` to exist and contain these sections:
+Extend `tests/test_validate_forge_seed.py` with failing tests that require `docs/closeout/forge-seed-documentation.md` to exist and contain these sections:
 
 - scope of inspected docs,
 - docs changed,
@@ -2533,7 +2533,7 @@ Extend `tests/test_validate_framework_seed.py` with failing tests that require `
 Run:
 
 ```bash
-python3.14 -m unittest tests/test_validate_framework_seed.py
+python3.14 -m unittest tests/test_validate_forge_seed.py
 ```
 
 Expected: FAIL because the completed documentation closeout summary is not populated yet.
@@ -2542,21 +2542,21 @@ Expected: FAIL because the completed documentation closeout summary is not popul
 
 Completed: documentation inventory, stale-language cleanup, closeout draft,
 Repository Threat Model linkage, Agent Profile template terminology cleanup, and
-Smith-to-Metasmith Framework requirement escalation docs have landed in the
-worktree. `docs/closeout/framework-seed-documentation.md` records
+Smith-to-Forgewright Tooling Request docs have landed in the
+worktree. `docs/closeout/forge-seed-documentation.md` records
 `Status: Completed Closeout` and is the source of truth for the latest clean
 documentation closeout review.
 
-Inspect every agent-facing and human-facing doc that the Framework Seed could plausibly affect:
+Inspect every agent-facing and human-facing doc that the Forge Seed could plausibly affect:
 
 - `README.md`,
 - `AGENTS.md`,
 - `CONTEXT.md`,
 - `docs/agents/*.md`,
-- canonical Framework docs,
+- Forge Canon,
 - `docs/security/*.md`,
 - `docs/closeout/*.md`,
-- `docs/prd/framework-seed.md`,
+- `docs/prd/forge-seed.md`,
 - `docs/adr/*.md`,
 - `docs/plans/*.md`,
 - `specs/*.md`,
@@ -2566,12 +2566,12 @@ Inspect every agent-facing and human-facing doc that the Framework Seed could pl
 For each doc, either update it or record why no change is needed in the closeout summary. Check for:
 
 - stale initial-state language that says no structure, concepts, or precedents are established,
-- missing or inaccurate mentions of Framework Seed deliverables when the doc's audience should see them,
+- missing or inaccurate mentions of Forge Seed deliverables when the doc's audience should see them,
 - agent-facing policy that belongs in `AGENTS.md`, `docs/agents/`, or triggered workflow docs rather than human-facing README prose,
 - human-facing docs that expose maintainer-only or agent-only machinery without a reader need,
 - unresolved ambiguities that should still reserve judgment rather than overstate the Seed's precedent.
 
-Record documentation closeout evidence in `docs/closeout/framework-seed-documentation.md` with these fields:
+Record documentation closeout evidence in `docs/closeout/forge-seed-documentation.md` with these fields:
 
 - scope of inspected docs,
 - docs changed,
@@ -2587,23 +2587,23 @@ Apply the appropriate doc-writing guidance during edits:
 - human-facing docs: honing-human-facing-docs and documentation-writer guidance,
 - all prose: writing-clearly-and-concisely guidance.
 
-Update `tools/validate_framework_seed.py` so `run()` validates the completed documentation closeout summary requirements from Step 2a.
+Update `tools/validate_forge_seed.py` so `run()` validates the completed documentation closeout summary requirements from Step 2a.
 
 Run:
 
 ```bash
-python3.14 -m unittest tests/test_validate_framework_seed.py
-python3.14 tools/validate_framework_seed.py
+python3.14 -m unittest tests/test_validate_forge_seed.py
+python3.14 tools/validate_forge_seed.py
 ```
 
 Expected: documentation closeout structure and evidence checks are populated.
 Before Step 4 records a clean review, the full repository validator is expected
-to remain red on `docs/closeout/framework-seed-documentation.md` status and
+to remain red on `docs/closeout/forge-seed-documentation.md` status and
 latest-clean-review fields.
 
 - [x] **Step 4: Ralph-review documentation closeout**
 
-Dispatch an xhigh reviewer for documentation closeout. Give the reviewer the updated docs, `docs/closeout/framework-seed-documentation.md`, and the applicable guidance from honing-agent-facing-docs, honing-human-facing-docs, documentation-writer, writing-clearly-and-concisely, and writing-skills when skill or agent-facing policy is involved.
+Dispatch an xhigh reviewer for documentation closeout. Give the reviewer the updated docs, `docs/closeout/forge-seed-documentation.md`, and the applicable guidance from honing-agent-facing-docs, honing-human-facing-docs, documentation-writer, writing-clearly-and-concisely, and writing-skills when skill or agent-facing policy is involved.
 
 Require review for:
 
@@ -2619,7 +2619,7 @@ Repeat until the latest documentation closeout review has no findings.
 
 - [x] **Step 5: Write failing tests for the completed security closeout summary**
 
-Extend `tests/test_validate_framework_seed.py` with failing tests that require `docs/security/framework-seed-closeout.md` to contain:
+Extend `tests/test_validate_forge_seed.py` with failing tests that require `docs/security/forge-seed-closeout.md` to contain:
 
 - scan scope,
 - commands,
@@ -2633,21 +2633,21 @@ Extend `tests/test_validate_framework_seed.py` with failing tests that require `
 Run:
 
 ```bash
-python3.14 -m unittest tests/test_validate_framework_seed.py
+python3.14 -m unittest tests/test_validate_forge_seed.py
 ```
 
 Expected: FAIL because the completed security closeout summary is not populated yet.
 
 - [x] **Step 6: Perform Codex Security scan and hardening**
 
-Use Codex Security workflows before the Framework Seed is considered merge-ready:
+Use Codex Security workflows before the Forge Seed is considered merge-ready:
 
 1. Run Codex Security's phase sequence against the Seed change set: threat modeling, finding discovery, validation when candidates or workflow rules require it, attack-path analysis when validation leaves reportable candidates or workflow rules require it, and final report assembly.
-2. Scope the scan to the full merge-base-to-working-tree diff, including committed changes, staged changes, unstaged changes, and untracked intended files. Capture untracked files with `git ls-files --others --exclude-standard` and include their contents in the scan context, or stage all intended files before scanning. The final scan target must include `docs/closeout/framework-seed-documentation.md`, hardening changes, and review fixes that have not yet been committed. Keep the Repository Threat Model repository-scoped.
-3. Classify every scan artifact by durability before commit or external projection. Record the scan scope, commands, scan artifact disposition, report disposition, findings dispositions, hardening changes, re-validation status, and deferred-risk tracking in `docs/security/framework-seed-closeout.md`. Do not commit or externally project raw instance-scoped scratch artifacts unless a later policy explicitly makes them durable repo artifacts in a neutral project path with scope, review status, and staleness boundaries.
+2. Scope the scan to the full merge-base-to-working-tree diff, including committed changes, staged changes, unstaged changes, and untracked intended files. Capture untracked files with `git ls-files --others --exclude-standard` and include their contents in the scan context, or stage all intended files before scanning. The final scan target must include `docs/closeout/forge-seed-documentation.md`, hardening changes, and review fixes that have not yet been committed. Keep the Repository Threat Model repository-scoped.
+3. Classify every scan artifact by durability before commit or external projection. Record the scan scope, commands, scan artifact disposition, report disposition, findings dispositions, hardening changes, re-validation status, and deferred-risk tracking in `docs/security/forge-seed-closeout.md`. Do not commit or externally project raw instance-scoped scratch artifacts unless a later policy explicitly makes them durable repo artifacts in a neutral project path with scope, review status, and staleness boundaries.
 4. Fix reportable findings, suppress false positives with evidence, or escalate deferment requests to the human operator with risk rationale and tracking issue.
 5. After hardening changes, rerun or update the applicable Codex Security phases so the final security report and closeout summary describe the current repo state. At minimum, rerun validation and final report assembly for fixed findings; rerun finding discovery when the fix changes trust boundaries, side effects, or exposed inputs.
-6. Update `tools/validate_framework_seed.py` so `run()` validates the completed security closeout summary requirements from Step 5.
+6. Update `tools/validate_forge_seed.py` so `run()` validates the completed security closeout summary requirements from Step 5.
 
 - [x] **Step 6a: Define story closeout order and interdependency rules**
 
@@ -2660,14 +2660,14 @@ Create `docs/story-closeout.md` as the canonical Story Closeout process. It must
 - recursion boundaries and bookkeeping-only updates;
 - completion criteria.
 
-Wire the process through `AGENTS.md`, `CONTEXT.md`, `docs/smith-runbook.md`, `docs/metasmith-runbook.md`, `docs/prd/framework-seed.md`, `tools/validate_framework_seed.py`, and `tests/test_validate_framework_seed.py`.
+Wire the process through `AGENTS.md`, `CONTEXT.md`, `docs/smith-runbook.md`, `docs/forgewright-runbook.md`, `docs/prd/forge-seed.md`, `tools/validate_forge_seed.py`, and `tests/test_validate_forge_seed.py`.
 
 Run:
 
 ```bash
-python3.14 -m unittest tests.test_validate_framework_seed.CanonicalDocTests.test_validate_canonical_docs_requires_story_closeout_doc
-python3.14 -m unittest tests/test_validate_framework_seed.py
-python3.14 tools/validate_framework_seed.py
+python3.14 -m unittest tests.test_validate_forge_seed.CanonicalDocTests.test_validate_canonical_docs_requires_story_closeout_doc
+python3.14 -m unittest tests/test_validate_forge_seed.py
+python3.14 tools/validate_forge_seed.py
 git diff --check
 ```
 
@@ -2677,17 +2677,17 @@ Expected: the targeted test fails before the validator and doc are updated, then
 
 Defining `docs/story-closeout.md` changes agent-facing policy, documentation closeout claims, validator behavior, and the final closeout order. Treat that as a substantive upstream change:
 
-1. Rerun or update the Codex Security scan so `docs/security/framework-seed-closeout.md` describes the current final diff, including `docs/story-closeout.md`, Story Closeout wiring, validator changes, tests, closeout documents, and untracked intended files.
-2. Update `docs/security/framework-seed-closeout.md` with the current scan artifact disposition, report disposition, findings disposition, phase applicability, hardening changes, and re-validation counts.
-3. Update `docs/closeout/framework-seed-documentation.md` for Story Closeout, the refreshed security closeout, and any closeout-process review fixes.
+1. Rerun or update the Codex Security scan so `docs/security/forge-seed-closeout.md` describes the current final diff, including `docs/story-closeout.md`, Story Closeout wiring, validator changes, tests, closeout documents, and untracked intended files.
+2. Update `docs/security/forge-seed-closeout.md` with the current scan artifact disposition, report disposition, findings disposition, phase applicability, hardening changes, and re-validation counts.
+3. Update `docs/closeout/forge-seed-documentation.md` for Story Closeout, the refreshed security closeout, and any closeout-process review fixes.
 4. Run a narrow xhigh documentation closeout review for the updated security docs, closeout docs, Story Closeout process, and referenced agent-facing docs using the same doc-writing guidance as Step 4.
 
 After the security closeout summary is populated and any hardening changes are complete, rerun:
 
 ```bash
 python3.14 -m unittest
-python3.14 tools/validate_framework_seed.py
-python3.14 tools/validate_framework_seed.py --json
+python3.14 tools/validate_forge_seed.py
+python3.14 tools/validate_forge_seed.py --json
 git diff --check
 ```
 
@@ -2698,7 +2698,7 @@ Step 6b closeout-process issues.
 
 Before Cross-Boundary Coherence review, prepare the projection surfaces that the reviewer must check:
 
-- a draft Published PRD Issue body for `docs/prd/framework-seed.md`, including the intended issue action and all fields listed in Step 11;
+- a draft Published PRD Issue body for `docs/prd/forge-seed.md`, including the intended issue action and all fields listed in Step 11;
 - a draft PR body or explicit note that PR creation is intentionally paused after branch push in this session;
 - any release or handoff summary needed for the active closeout, or an explicit non-applicability note;
 - a pending-projection rationale if an external surface cannot be drafted yet.
@@ -2745,8 +2745,8 @@ If review finds issues, fix them, rerun:
 
 ```bash
 python3.14 -m unittest
-python3.14 tools/validate_framework_seed.py
-python3.14 tools/validate_framework_seed.py --json
+python3.14 tools/validate_forge_seed.py
+python3.14 tools/validate_forge_seed.py --json
 git diff --check
 ```
 
@@ -2756,15 +2756,15 @@ After clean Cross-Boundary Coherence and Story Quality review cycles are
 recorded in the projection draft, rerun:
 
 ```bash
-python3.14 tools/validate_framework_seed.py --final-closeout
+python3.14 tools/validate_forge_seed.py --final-closeout
 ```
 
 Expected: PASS. This strict final-closeout mode rejects unresolved story-review
 placeholders and host-local or scratch artifact paths in external projection
 drafts.
 
-If review fixes affect security policy, side effects, exposed inputs, trust boundaries, MCP/tool behavior, hooks, executable code, or the threat model, rerun or update the applicable Codex Security phases and `docs/security/framework-seed-closeout.md` before the next review cycle.
-If review fixes affect agent-facing or human-facing docs, rerun documentation closeout review with the applicable doc-writing guidance before the next full Framework Seed review cycle.
+If review fixes affect security policy, side effects, exposed inputs, trust boundaries, MCP/tool behavior, hooks, executable code, or the threat model, rerun or update the applicable Codex Security phases and `docs/security/forge-seed-closeout.md` before the next review cycle.
+If review fixes affect agent-facing or human-facing docs, rerun documentation closeout review with the applicable doc-writing guidance before the next full Forge Seed review cycle.
 If review fixes affect PRD, spec, or plan scope, rerun the affected source-projection, acceptance-criteria, and Cross-Boundary Coherence checks before the next review cycle.
 If review fixes affect issue/PR projection drafts, release drafts, or handoff drafts, rerun projection consistency checks and include the corrected draft in the next Cross-Boundary Coherence review cycle.
 If final validation or publication-readiness checks change evidence carried by a projection surface, update the draft before publishing and rerun projection consistency checks.
@@ -2775,7 +2775,7 @@ Run:
 
 ```bash
 git add .gitignore README.md AGENTS.md CONTEXT.md docs templates examples specs tools tests
-git commit -m "feat(framework): implement framework seed" -m "Co-authored-by: Codex <noreply@openai.com>"
+git commit -m "feat(forge): implement forge seed" -m "Co-authored-by: Codex <noreply@openai.com>"
 ```
 
 If no changes remain after prior task commits, skip this commit and record that the branch is clean.
@@ -2786,11 +2786,11 @@ After the final commit and validation, run the strict final closeout check and
 push the Seed-completed branch:
 
 ```bash
-python3.14 tools/validate_framework_seed.py --final-closeout
+python3.14 tools/validate_forge_seed.py --final-closeout
 ```
 
 ```bash
-git push -u origin metasmith-framework
+git push -u origin forge-seed
 ```
 
 Pause the session after the branch is pushed and before PR creation. Report the
@@ -2802,18 +2802,18 @@ before the operator resumes or explicitly redirects this session.
 
 - [ ] **Step 11: Issue Projection**
 
-Use GitHub MCP or `gh` to create or update the Published PRD Issue for `docs/prd/framework-seed.md`.
+Use GitHub MCP or `gh` to create or update the Published PRD Issue for `docs/prd/forge-seed.md`.
 
 Issue Projection is an external projection action and should use a pushed branch
 or pushed commit reference. If the session pauses immediately after branch push,
-leave `docs/closeout/framework-seed-projection-drafts.md` as the reviewed
+leave `docs/closeout/forge-seed-projection-drafts.md` as the reviewed
 projection draft and keep Issue Projection pending until work resumes.
 
 The issue body must include:
 
 - PRD title,
 - status,
-- link or branch/path reference to `docs/prd/framework-seed.md`,
+- link or branch/path reference to `docs/prd/forge-seed.md`,
 - success criteria,
 - implementation summary,
 - validation commands and results,
@@ -2859,14 +2859,14 @@ Expected: branch is clean after final commit or documented issue-projection fall
 
 ## Post-Seed Follow-Ups
 
-These notes are deferred follow-ups. They are not Framework Seed acceptance
+These notes are deferred follow-ups. They are not Forge Seed acceptance
 criteria and should not be promoted into `AGENTS.md`, `README.md`, PRD success
-criteria, or canonical Framework docs until the corresponding post-Seed task is
+criteria, or Forge Canon until the corresponding post-Seed task is
 actively designed.
 
 ### Post-Seed Skill Migration
 
-After the initial Framework Seed is merged, migrate the operator's current
+After the initial Forge Seed is merged, migrate the operator's current
 engineering workflow skills into repo-local Agent Equipment so local repo use,
 Smith references, and future equipment bundles do not depend on global user
 installation state.
@@ -2922,7 +2922,7 @@ than established project policy.
 
 ### Side-Thread Hand-Back Workflow
 
-After the Framework Seed, specify the Agent Ops workflow for side conversations
+After the Forge Seed, specify the Agent Ops workflow for side conversations
 that inspect, advise, or make narrow operator-requested edits while a main worker
 owns the active change set.
 
@@ -2934,13 +2934,13 @@ responsible for integration, validation, review, and commit/PR handling.
 
 ### Portable Agentic Engineering Workflow Equipment
 
-After the Framework Seed, process the side-thread workflow reflection handoff at
+After the Forge Seed, process the side-thread workflow reflection handoff at
 `docs/metasmith/handoff/2026-05-03-agentic-engineering-workflow-equipment.md`
 into rigorously engineered Agent Equipment.
 
 Begin with handoff ingestion and a `grill-with-docs` loop. The grill loop should
 challenge terminology, scope, portability, ceremony, and placement against the
-then-current `CONTEXT.md`, Framework docs, existing templates, and Agent Ops
+then-current `CONTEXT.md`, Forge Canon, existing templates, and Agent Ops
 policy before drafting requirements.
 
 If the Post-Seed Skill Migration or Side-Thread Hand-Back Workflow tasks have
@@ -2956,7 +2956,7 @@ ordering, projection drafts versus external publication, security and
 documentation evidence freshness, review recursion, process-validation
 semantics, and plan-state hygiene.
 
-Keep the addendum current through full Framework Seed completion. For this
+Keep the addendum current through full Forge Seed completion. For this
 capture, full completion means the Seed branch has been pushed, the PR lifecycle
 has run, the Seed has been merged, external issue and PR surfaces have been
 reconciled with repo-file projections, merge cleanup has completed or been
@@ -2991,7 +2991,7 @@ skills installed.
 
 ### Ephemeral Workflow Opportunity Capture
 
-After the Framework Seed, process the side-thread opportunity-capture handoff at
+After the Forge Seed, process the side-thread opportunity-capture handoff at
 `docs/metasmith/handoff/2026-05-03-ephemeral-workflow-opportunity-capture.md`
 into rigorously engineered Agent Equipment.
 
@@ -3024,7 +3024,7 @@ session content.
 Spec coverage:
 
 - Source Handoff provenance: Task 2 validates the archived handoff manifest, files, and provenance boundary.
-- Preloaded Framework Path and Human Framework Entry: Task 3.
+- Forge Conveyor and Forge Tour: Task 3.
 - Canonical docs: Task 4.
 - Harness Capability Catalog refresh: Task 5.
 - Templates: Task 6.
@@ -3042,16 +3042,16 @@ Placeholder scan:
 
 Type and name consistency:
 
-- Use `Seed Validation Tool` for `tools/validate_framework_seed.py`.
+- Use `Seed Validation Tool` for `tools/validate_forge_seed.py`.
 - Use `Source Projection Register` for `docs/metasmith/source-projection.md`.
 - Use `Repository Threat Model` for `docs/security/threat-model.md`.
 - Use `Change Set Security Closeout` for the merge-readiness security gate.
 - Use `Change Set Documentation Closeout` for the affected-doc sweep and review gate.
 - Use `Published Agent Equipment` only for equipment that has completed promotion.
-- Use `Framework Example` for example surfaces.
+- Use `Forge Example` for example surfaces.
 
 ## Execution Handoff
 
-Plan complete and saved to `docs/plans/2026-05-03-framework-seed.md`.
+Plan complete and saved to `docs/plans/2026-05-03-forge-seed.md`.
 
 Execution mode for this repo is Subagent-Driven Development. Dispatch one implementer per task, then run spec-compliance review and code-quality/doc-quality review before moving to the next task.

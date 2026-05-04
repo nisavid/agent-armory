@@ -1,9 +1,9 @@
 # Capability Card: PR Review
 
-Status: Framework Example
+Status: Forge Example
 Promotion state: example
 
-This Framework Example is not Published Agent Equipment and is not installable.
+This Forge Example is not Published Agent Equipment and is not installable.
 Trace: capability card -> [interface decision record](interface-decision-record.md) -> projected components.
 
 ## Purpose

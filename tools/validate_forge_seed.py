@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import hashlib
 import json
 import re
 import sys
@@ -284,6 +285,43 @@ SOURCE_PROJECTION_FIELDS = [
 ]
 SOURCE_PROJECTION_VALIDATION_STATUSES = {"planned", "validated"}
 SOURCE_PROJECTION_PLANNED_REQUIREMENTS = {"H012", "H053"}
+SOURCE_DISPOSITION_PATH = "docs/closeout/forge-seed-source-disposition.md"
+SOURCE_DISPOSITION_MANIFEST_FIELDS = [
+    "source_id",
+    "source_kind",
+    "original_path",
+    "git_blob_id",
+    "sha256",
+    "normalized_payload_digest",
+    "durable_payload",
+]
+SOURCE_DISPOSITION_ITEM_FIELDS = [
+    "item_id",
+    "source_id",
+    "coverage_status",
+    "challenge_status",
+    "challenge_operator_confirmation_required",
+    "arbitration_required",
+    "disposition",
+    "operator_decision",
+    "evidence_target",
+]
+SOURCE_DISPOSITION_COVERAGE_STATUSES = {
+    "adequately_captured",
+    "partially_captured",
+    "missing",
+    "obsolete",
+    "intentionally_deferred",
+}
+SOURCE_DISPOSITION_CHALLENGE_STATUSES = {"unchallenged", "resolved"}
+SOURCE_DISPOSITION_MATRIX = {
+    "adequately_captured": {"kept_current", "integrated"},
+    "partially_captured": {"integrated", "deferred"},
+    "missing": {"integrated", "deferred", "rejected"},
+    "obsolete": {"obsolete"},
+    "intentionally_deferred": {"deferred"},
+}
+FINAL_STAMP_CANONICAL_TREE_DIGEST_PLACEHOLDER = "STAMP_CANONICAL_TREE_DIGEST"
 
 ACCEPTED_SOURCE_REQUIREMENTS = {
     "H001": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Your objective"},
@@ -346,7 +384,7 @@ SOURCE_HANDOFF_DIR = "docs/metasmith/handoff/2026-05-02"
 SOURCE_HANDOFF_MANIFEST = f"{SOURCE_HANDOFF_DIR}/manifest.json"
 SOURCE_HANDOFF_PROVENANCE_NOTICE = f"{SOURCE_HANDOFF_DIR}/AGENTS.md"
 REQUIRED_PRELOADED_ROUTES = [
-    "docs/equipment-framework.md",
+    "docs/agent-equipment-forge.md",
     "docs/smith-runbook.md",
     "docs/story-closeout.md",
     "docs/interface-decision-guide.md",
@@ -357,7 +395,7 @@ REQUIRED_PRELOADED_ROUTES = [
 ]
 CANONICAL_DOC_REQUIRED_SECTIONS = {
     "docs/ubiquitous-language.md": ["Language", "Relationships", "Precision rules"],
-    "docs/equipment-framework.md": [
+    "docs/agent-equipment-forge.md": [
         "Purpose",
         "Least cognitive privilege",
         "Component model",
@@ -371,10 +409,10 @@ CANONICAL_DOC_REQUIRED_SECTIONS = {
         "Docs/config/scripts/hooks/skills/agents/plugins",
         "Pressure Scenario Validation",
         "Equipment Promotion Path",
-        "Framework requirement escalation",
+        "Tooling Request",
         "Closeout",
     ],
-    "docs/metasmith-runbook.md": [
+    "docs/forgewright-runbook.md": [
         "Source handoff preservation",
         "decision projection",
         "Review Until Clean",
@@ -382,7 +420,7 @@ CANONICAL_DOC_REQUIRED_SECTIONS = {
         "Change set closeout",
         "Issue Projection",
         "downstream Smith specs",
-        "Framework requirement intake",
+        "Tooling Gap intake",
     ],
     "docs/interface-decision-guide.md": ["Decision tree", "placement guide"],
     "docs/harness-components.md": [
@@ -440,15 +478,15 @@ CANONICAL_DOC_REQUIRED_SECTIONS = {
 }
 CANONICAL_DOC_REQUIRED_TEXT = {
     "docs/smith-runbook.md": [
-        "When a Smith finds an unsatisfied Framework requirement that blocks or materially weakens the current equipment task, treat the Framework work as a dependency and escalate to a Metasmith before continuing.",
-        "Choose the least disruptive Metasmith path supported by the harness and operator policy: current session, subagent session, peer agent session, forked session, or new session.",
-        "The handoff must include the blocked task, unsatisfied Framework requirement, dependency impact, evidence checked, requested Metasmith deliverable, selected session path, and hand-back expectation.",
-        "docs, config, scripts, hooks, skills, Agent Profiles, plugins, and templates are discoverable from the Framework path",
+        "When a Smith finds an unsatisfied Tooling Gap that blocks or materially weakens the current equipment task, treat the Tooling Work as a dependency and escalate to a Forgewright before continuing.",
+        "Choose the least disruptive Forgewright path supported by the harness and operator policy: current session, subagent session, peer agent session, forked session, or new session.",
+        "The handoff must include the blocked task, unsatisfied Tooling Gap, dependency impact, evidence checked, requested Forgewright deliverable, selected session path, and hand-back expectation.",
+        "docs, config, scripts, hooks, skills, MCP/tools, Agent Profiles, plugins, and templates are discoverable from the Forge Conveyor",
         "Run a Cross-Boundary Coherence Ralph Review before story closeout.",
         "Run a Story Quality Ralph Review before story closeout.",
     ],
-    "docs/metasmith-runbook.md": [
-        "A Metasmith intake from a Smith starts by preserving the Smith handoff, refining the Framework requirement, updating canonical surfaces and validation, and returning a hand-back note.",
+    "docs/forgewright-runbook.md": [
+        "A Forgewright intake from a Smith starts by preserving the Smith handoff, refining the Tooling Gap, updating canonical surfaces and validation, and returning a hand-back note.",
         "The hand-back note names files changed, validation and review results, dependency updates, remaining risks, and the context the Smith needs to resume.",
     ],
     "docs/story-closeout.md": [
@@ -498,7 +536,7 @@ THREAT_MODEL_REQUIRED_SECTIONS = [
     "Assumptions",
     "High-impact failure modes",
 ]
-DOCUMENTATION_CLOSEOUT_PATH = "docs/closeout/framework-seed-documentation.md"
+DOCUMENTATION_CLOSEOUT_PATH = "docs/closeout/forge-seed-documentation.md"
 DOCUMENTATION_CLOSEOUT_REQUIRED_SECTIONS = [
     "Scope of inspected docs",
     "Docs changed",
@@ -513,10 +551,10 @@ DOCUMENTATION_CLOSEOUT_REQUIRED_EVIDENCE = [
     "AGENTS.md",
     "CONTEXT.md",
     "docs/agents/*.md",
-    "canonical Framework docs",
-    "docs/prd/framework-seed.md",
+    "Forge Canon",
+    "docs/prd/forge-seed.md",
     "docs/adr/*.md",
-    "docs/plans/2026-05-03-framework-seed.md",
+    "docs/plans/2026-05-03-forge-seed.md",
     "docs/security/*.md",
     "docs/closeout/*.md",
     "docs/metasmith/handoff/",
@@ -535,7 +573,7 @@ DOCUMENTATION_CLOSEOUT_FORBIDDEN_INCOMPLETE_TEXT = [
     "still requires",
     "record that review result here after it completes",
 ]
-SECURITY_CLOSEOUT_PATH = "docs/security/framework-seed-closeout.md"
+SECURITY_CLOSEOUT_PATH = "docs/security/forge-seed-closeout.md"
 SECURITY_CLOSEOUT_REQUIRED_SECTIONS = [
     "Scan scope",
     "Commands",
@@ -555,8 +593,8 @@ SECURITY_CLOSEOUT_REQUIRED_EVIDENCE = [
     "Durable security evidence is this closeout summary",
     "The raw report is not committed and should not be cited as reusable project doctrine.",
     "Codex Security phase sequence",
-    "python3.14 -m unittest tests/test_validate_framework_seed.py",
-    "python3.14 tools/validate_framework_seed.py",
+    "python3.14 -m unittest tests/test_validate_forge_seed.py",
+    "python3.14 tools/validate_forge_seed.py",
     "No reportable findings",
     "Suppressed findings",
     "Re-validation passed",
@@ -569,9 +607,9 @@ SECURITY_CLOSEOUT_COMPLETED_PHASE_EVIDENCE = [
     "Validation phase completed",
     "Attack-path analysis completed",
 ]
-PLAN_PATH = "docs/plans/2026-05-03-framework-seed.md"
+PLAN_PATH = "docs/plans/2026-05-03-forge-seed.md"
 STORY_REVIEW_STEP_LABEL = "Step 7: Ralph-review closeout coherence and quality"
-PROJECTION_DRAFTS_PATH = "docs/closeout/framework-seed-projection-drafts.md"
+PROJECTION_DRAFTS_PATH = "docs/closeout/forge-seed-projection-drafts.md"
 PROJECTION_DRAFTS_REQUIRED_SECTIONS = [
     "Published PRD Issue Draft",
     "Pull Request Draft",
@@ -581,7 +619,7 @@ PROJECTION_DRAFTS_REQUIRED_SECTIONS = [
 PROJECTION_DRAFTS_REQUIRED_EVIDENCE = [
     "Projected commit SHA",
     "TO_CAPTURE_IMMEDIATELY_BEFORE_ISSUE_PUBLICATION",
-    "Report disposition: recorded in `docs/security/framework-seed-closeout.md`",
+    "Report disposition: recorded in `docs/security/forge-seed-closeout.md`",
     "PR creation is intentionally paused after branch push",
     "Seed Closeout Addendum remains open through PR creation, PR review orchestration, merge, merge cleanup, external surface reconciliation, and final hand-back",
     "No release publication is planned",
@@ -951,6 +989,331 @@ def parse_markdown_table(markdown: str) -> list[dict[str, str]]:
     return parsed
 
 
+def parse_bool_cell(value: str) -> bool | None:
+    folded = value.strip().casefold()
+    if folded == "true":
+        return True
+    if folded == "false":
+        return False
+    return None
+
+
+def validate_source_disposition(root: Path) -> list[CheckResult]:
+    ok, detail, path = repo_relative_path_status(root, SOURCE_DISPOSITION_PATH, "file")
+    if not ok:
+        if detail == "path contains symlink":
+            detail = "source disposition path contains symlink"
+        return [CheckResult("source_disposition:path", False, detail, SOURCE_DISPOSITION_PATH)]
+    markdown = path.read_text(encoding="utf-8")
+    headings = markdown_heading_texts(markdown)
+    results: list[CheckResult] = []
+    for required_section in ("Source Manifest", "Disposition Items", "Source-Bearing Stamp", "Final Source-Retired Stamp"):
+        if normalize_reference_label(required_section) not in headings:
+            results.append(
+                CheckResult(
+                    f"source_disposition:section:{required_section}",
+                    False,
+                    f"missing section: {required_section}",
+                    SOURCE_DISPOSITION_PATH,
+                )
+            )
+
+    manifest_rows = parse_markdown_table(markdown_section(markdown, "## Source Manifest") or "")
+    item_rows = parse_markdown_table(markdown_section(markdown, "## Disposition Items") or "")
+    if not manifest_rows:
+        results.append(CheckResult("source_disposition:manifest", False, "no source rows", SOURCE_DISPOSITION_PATH))
+    if not item_rows:
+        results.append(CheckResult("source_disposition:items", False, "no item rows", SOURCE_DISPOSITION_PATH))
+
+    source_ids: set[str] = set()
+    for row in manifest_rows:
+        source_id = row.get("source_id", "")
+        source_ids.add(source_id)
+        missing = [field for field in SOURCE_DISPOSITION_MANIFEST_FIELDS if field not in row]
+        if missing:
+            results.append(
+                CheckResult(
+                    f"source_disposition:source:{source_id or 'unknown'}",
+                    False,
+                    f"missing fields: {', '.join(missing)}",
+                    SOURCE_DISPOSITION_PATH,
+                )
+            )
+            continue
+        if row["source_kind"] not in {"file", "synthetic"}:
+            results.append(
+                CheckResult(
+                    f"source_disposition:source:{source_id}",
+                    False,
+                    "source_kind must be file or synthetic",
+                    SOURCE_DISPOSITION_PATH,
+                )
+            )
+        if row["source_kind"] == "synthetic" and not row["durable_payload"].strip():
+            results.append(
+                CheckResult(
+                    f"source_disposition:source:{source_id}",
+                    False,
+                    "synthetic source missing durable payload",
+                    SOURCE_DISPOSITION_PATH,
+                )
+            )
+        if row["source_kind"] == "synthetic" and not row["normalized_payload_digest"].strip():
+            results.append(
+                CheckResult(
+                    f"source_disposition:source:{source_id}",
+                    False,
+                    "synthetic source missing normalized payload digest",
+                    SOURCE_DISPOSITION_PATH,
+                )
+            )
+
+    for row in item_rows:
+        item_id = row.get("item_id", "")
+        missing = [field for field in SOURCE_DISPOSITION_ITEM_FIELDS if field not in row]
+        if missing:
+            results.append(
+                CheckResult(
+                    f"source_disposition:item:{item_id or 'unknown'}",
+                    False,
+                    f"missing fields: {', '.join(missing)}",
+                    SOURCE_DISPOSITION_PATH,
+                )
+            )
+            continue
+        if row["source_id"] not in source_ids:
+            results.append(
+                CheckResult(
+                    f"source_disposition:item:{item_id}",
+                    False,
+                    f"unknown source_id: {row['source_id']}",
+                    SOURCE_DISPOSITION_PATH,
+                )
+            )
+        coverage_status = row["coverage_status"]
+        challenge_status = row["challenge_status"]
+        disposition = row["disposition"]
+        challenge_confirmation = parse_bool_cell(row["challenge_operator_confirmation_required"])
+        arbitration_required = parse_bool_cell(row["arbitration_required"])
+        operator_decision = row["operator_decision"].strip()
+        if coverage_status not in SOURCE_DISPOSITION_COVERAGE_STATUSES:
+            results.append(
+                CheckResult(
+                    f"source_disposition:item:{item_id}",
+                    False,
+                    "invalid coverage_status",
+                    SOURCE_DISPOSITION_PATH,
+                )
+            )
+        if challenge_status not in SOURCE_DISPOSITION_CHALLENGE_STATUSES:
+            results.append(
+                CheckResult(
+                    f"source_disposition:item:{item_id}",
+                    False,
+                    "challenge_status must be unchallenged or resolved",
+                    SOURCE_DISPOSITION_PATH,
+                )
+            )
+        if challenge_confirmation is None or arbitration_required is None:
+            results.append(
+                CheckResult(
+                    f"source_disposition:item:{item_id}",
+                    False,
+                    "confirmation and arbitration fields must be booleans",
+                    SOURCE_DISPOSITION_PATH,
+                )
+            )
+        expected_dispositions = SOURCE_DISPOSITION_MATRIX.get(coverage_status, set())
+        if disposition not in expected_dispositions:
+            results.append(
+                CheckResult(
+                    f"source_disposition:item:{item_id}",
+                    False,
+                    "disposition not allowed for coverage_status",
+                    SOURCE_DISPOSITION_PATH,
+                )
+            )
+        expected_arbitration = (
+            coverage_status != "adequately_captured"
+            or challenge_confirmation is True
+            or disposition == "integrated"
+        )
+        if arbitration_required is not None and arbitration_required != expected_arbitration:
+            results.append(
+                CheckResult(
+                    f"source_disposition:item:{item_id}",
+                    False,
+                    "arbitration_required does not match source disposition rule",
+                    SOURCE_DISPOSITION_PATH,
+                )
+            )
+        if disposition == "integrated" and (arbitration_required is not True or not operator_decision):
+            results.append(
+                CheckResult(
+                    f"source_disposition:item:{item_id}",
+                    False,
+                    "integrated disposition requires arbitration and operator_decision",
+                    SOURCE_DISPOSITION_PATH,
+                )
+            )
+        if arbitration_required is True and not operator_decision:
+            results.append(
+                CheckResult(
+                    f"source_disposition:item:{item_id}",
+                    False,
+                    "operator_decision required when arbitration_required is true",
+                    SOURCE_DISPOSITION_PATH,
+                )
+            )
+        evidence_target = row["evidence_target"].strip()
+        if evidence_target and not invalid_repo_relative_target(evidence_target):
+            target = root / evidence_target
+            if not target.exists():
+                results.append(
+                    CheckResult(
+                        f"source_disposition:item:{item_id}:target:{evidence_target}",
+                        False,
+                        "evidence target missing",
+                        SOURCE_DISPOSITION_PATH,
+                    )
+                )
+        elif evidence_target:
+            results.append(
+                CheckResult(
+                    f"source_disposition:item:{item_id}:target:{evidence_target}",
+                    False,
+                    "evidence target invalid",
+                    SOURCE_DISPOSITION_PATH,
+                )
+            )
+
+    if not any(result.name.startswith("source_disposition:") and not result.ok for result in results):
+        results.append(CheckResult("source_disposition:ledger", True, "present", SOURCE_DISPOSITION_PATH))
+    return results
+
+
+def validate_source_retired_tree(root: Path) -> list[CheckResult]:
+    results: list[CheckResult] = []
+    if (root / "docs/metasmith").exists():
+        results.append(
+            CheckResult(
+                "source_retired:raw_sources",
+                False,
+                "docs/metasmith must be removed after source disposition",
+                "docs/metasmith",
+            )
+        )
+    results.extend(validate_source_disposition(root))
+    if not any(result.name.startswith("source_retired:") and not result.ok for result in results):
+        results.append(CheckResult("source_retired:tree", True, "raw sources removed", "docs"))
+    return results
+
+
+def normalized_stamp_text(text: str) -> str:
+    text = re.sub(
+        r"(?m)^canonical_tree_digest:\s*\S+\s*$",
+        f"canonical_tree_digest: {FINAL_STAMP_CANONICAL_TREE_DIGEST_PLACEHOLDER}",
+        text,
+    )
+    text = re.sub(r"(?m)^timestamp:\s*\S+\s*$", "timestamp: STAMP_TIMESTAMP", text)
+    return text
+
+
+def placeholder_normalized_tree_digest(root: Path) -> str:
+    digest = hashlib.sha256()
+    for path in sorted(root.rglob("*")):
+        if not path.is_file():
+            continue
+        try:
+            relative = path.relative_to(root)
+        except ValueError:
+            continue
+        if ".git" in relative.parts or "__pycache__" in relative.parts:
+            continue
+        data = path.read_bytes()
+        try:
+            normalized = normalized_stamp_text(data.decode("utf-8")).encode("utf-8")
+        except UnicodeDecodeError:
+            normalized = data
+        digest.update(relative.as_posix().encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(normalized)
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
+def final_stamp_field(markdown: str, field: str) -> str | None:
+    match = re.search(rf"(?m)^{re.escape(field)}:\s*(\S+)\s*$", markdown)
+    return match.group(1) if match else None
+
+
+def validate_final_source_retired_stamp(root: Path, *, pre_stamp: bool = False) -> list[CheckResult]:
+    ok, detail, path = repo_relative_path_status(root, SOURCE_DISPOSITION_PATH, "file")
+    if not ok:
+        return [CheckResult("source_retired_stamp:path", False, detail, SOURCE_DISPOSITION_PATH)]
+    markdown = path.read_text(encoding="utf-8")
+    computed_digest = placeholder_normalized_tree_digest(root)
+    if pre_stamp:
+        return [
+            CheckResult(
+                "source_retired_stamp:canonical_tree_digest",
+                True,
+                computed_digest,
+                SOURCE_DISPOSITION_PATH,
+            )
+        ]
+    results: list[CheckResult] = []
+    if "stamp_target: placeholder-normalized canonical tree" not in markdown:
+        results.append(
+            CheckResult(
+                "source_retired_stamp:target",
+                False,
+                "missing placeholder-normalized stamp target",
+                SOURCE_DISPOSITION_PATH,
+            )
+        )
+    recorded_digest = final_stamp_field(markdown, "canonical_tree_digest")
+    if recorded_digest is None:
+        results.append(
+            CheckResult(
+                "source_retired_stamp:canonical_tree_digest",
+                False,
+                "missing canonical_tree_digest",
+                SOURCE_DISPOSITION_PATH,
+            )
+        )
+    elif recorded_digest == FINAL_STAMP_CANONICAL_TREE_DIGEST_PLACEHOLDER:
+        results.append(
+            CheckResult(
+                "source_retired_stamp:canonical_tree_digest",
+                False,
+                "canonical tree digest still placeholder",
+                SOURCE_DISPOSITION_PATH,
+            )
+        )
+    elif recorded_digest != computed_digest:
+        results.append(
+            CheckResult(
+                "source_retired_stamp:canonical_tree_digest",
+                False,
+                "canonical tree digest mismatch",
+                SOURCE_DISPOSITION_PATH,
+            )
+        )
+    if final_stamp_field(markdown, "source_retired") != "true":
+        results.append(
+            CheckResult("source_retired_stamp:source_retired", False, "source_retired must be true", SOURCE_DISPOSITION_PATH)
+        )
+    timestamp = final_stamp_field(markdown, "timestamp")
+    if timestamp is None or not re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$", timestamp):
+        results.append(
+            CheckResult("source_retired_stamp:timestamp", False, "timestamp must be UTC second precision", SOURCE_DISPOSITION_PATH)
+        )
+    if not any(result.name.startswith("source_retired_stamp:") and not result.ok for result in results):
+        results.append(CheckResult("source_retired_stamp:canonical_tree_digest", True, "matches", SOURCE_DISPOSITION_PATH))
+    return results
+
+
 def harness_matrix_rows(markdown: str) -> dict[str, dict[str, str]]:
     section = markdown_section(markdown, "## Harness matrix")
     if section is None:
@@ -1068,7 +1431,7 @@ def story_closeout_gate_order_valid(markdown: str) -> bool:
 def has_framework_seed_status(markdown: str) -> bool:
     visible_markdown = markdown_visible_text(markdown)
     nonblank_lines = [line.strip() for line in visible_markdown.splitlines() if line.strip()]
-    return "Status: Framework Seed" in nonblank_lines[:8]
+    return "Status: Forge Seed" in nonblank_lines[:8]
 
 
 def has_template_status(markdown: str) -> bool:
@@ -1500,20 +1863,20 @@ def validate_source_handoff_provenance(root: Path) -> list[CheckResult]:
     return results
 
 
-def validate_framework_routes(root: Path) -> list[CheckResult]:
+def validate_forge_routes(root: Path) -> list[CheckResult]:
     results: list[CheckResult] = []
     agents_path = root / "AGENTS.md"
     readme_path = root / "README.md"
     agents_markdown = agents_path.read_text(encoding="utf-8") if agents_path.exists() else ""
     readme_markdown = readme_path.read_text(encoding="utf-8") if readme_path.exists() else ""
 
-    agents_section = markdown_section(agents_markdown, "## Framework Path")
-    readme_section = markdown_section(readme_markdown, "## Framework")
+    agents_section = markdown_section(agents_markdown, "## Forge Conveyor")
+    readme_section = markdown_section(readme_markdown, "## Forge")
 
     if agents_section is None:
-        results.append(CheckResult("framework_route:agent", False, "missing Preloaded Framework Path", "AGENTS.md"))
+        results.append(CheckResult("forge_route:agent", False, "missing Forge Conveyor", "AGENTS.md"))
     if readme_section is None:
-        results.append(CheckResult("framework_route:human", False, "missing Human Framework Entry", "README.md"))
+        results.append(CheckResult("forge_route:human", False, "missing Forge Tour", "README.md"))
 
     agents_targets: list[str] = []
     if agents_section is not None:
@@ -1522,7 +1885,7 @@ def validate_framework_routes(root: Path) -> list[CheckResult]:
             if required_route not in agents_targets:
                 results.append(
                     CheckResult(
-                        f"framework_route:agent:{required_route}",
+                        f"forge_route:agent:{required_route}",
                         False,
                         "missing required preloaded route",
                         "AGENTS.md",
@@ -1532,12 +1895,12 @@ def validate_framework_routes(root: Path) -> list[CheckResult]:
     readme_targets: list[str] = []
     if readme_section is not None:
         readme_targets = find_markdown_links(readme_section)
-        if "docs/equipment-framework.md" not in readme_targets:
+        if "docs/forge-tour.md" not in readme_targets:
             results.append(
                 CheckResult(
-                    "framework_route:human:docs/equipment-framework.md",
+                    "forge_route:human:docs/forge-tour.md",
                     False,
-                    "missing Human Framework Entry link",
+                    "missing Forge Tour link",
                     "README.md",
                 )
             )
@@ -1548,7 +1911,7 @@ def validate_framework_routes(root: Path) -> list[CheckResult]:
             source = "AGENTS.md" if target in agents_targets else "README.md"
             results.append(
                 CheckResult(
-                    f"framework_route:target:{target}",
+                    f"forge_route:target:{target}",
                     False,
                     detail,
                     source,
@@ -1556,8 +1919,8 @@ def validate_framework_routes(root: Path) -> list[CheckResult]:
             )
 
     if not any(not result.ok for result in results):
-        results.append(CheckResult("framework_route:agent", True, "present", "AGENTS.md"))
-        results.append(CheckResult("framework_route:human", True, "present", "README.md"))
+        results.append(CheckResult("forge_route:agent", True, "present", "AGENTS.md"))
+        results.append(CheckResult("forge_route:human", True, "present", "README.md"))
     return results
 
 
@@ -1576,7 +1939,7 @@ def validate_canonical_docs(root: Path) -> list[CheckResult]:
                 CheckResult(
                     f"canonical_doc:status:{relative_path}",
                     False,
-                    "missing Status: Framework Seed",
+                    "missing Status: Forge Seed",
                     relative_path,
                 )
             )
@@ -1736,7 +2099,7 @@ def validate_documentation_closeout(root: Path) -> list[CheckResult]:
             )
         )
     if not any(result.name.startswith("documentation_closeout:") and not result.ok for result in results):
-        results.append(CheckResult("documentation_closeout:framework-seed", True, "present", DOCUMENTATION_CLOSEOUT_PATH))
+        results.append(CheckResult("documentation_closeout:forge-seed", True, "present", DOCUMENTATION_CLOSEOUT_PATH))
     return results
 
 
@@ -1806,7 +2169,7 @@ def validate_security_closeout(root: Path) -> list[CheckResult]:
             )
         )
     if not any(result.name.startswith("security_closeout:") and not result.ok for result in results):
-        results.append(CheckResult("security_closeout:framework-seed", True, "present", SECURITY_CLOSEOUT_PATH))
+        results.append(CheckResult("security_closeout:forge-seed", True, "present", SECURITY_CLOSEOUT_PATH))
     return results
 
 
@@ -1906,7 +2269,7 @@ def validate_projection_drafts(root: Path) -> list[CheckResult]:
             )
         )
     if not any(result.name.startswith("projection_drafts:") and not result.ok for result in results):
-        results.append(CheckResult("projection_drafts:framework-seed", True, "present", PROJECTION_DRAFTS_PATH))
+        results.append(CheckResult("projection_drafts:forge-seed", True, "present", PROJECTION_DRAFTS_PATH))
     return results
 
 
@@ -1948,7 +2311,7 @@ def validate_final_closeout(root: Path) -> list[CheckResult]:
             )
         )
     if not any(result.name.startswith("final_closeout:") and not result.ok for result in results):
-        results.append(CheckResult("final_closeout:framework-seed", True, "ready", PROJECTION_DRAFTS_PATH))
+        results.append(CheckResult("final_closeout:forge-seed", True, "ready", PROJECTION_DRAFTS_PATH))
     return results
 
 
@@ -3799,7 +4162,7 @@ def validate_templates(root: Path) -> list[CheckResult]:
 def has_framework_example_status(markdown: str) -> bool:
     visible_markdown = markdown_visible_text(markdown)
     nonblank_lines = [line.strip() for line in visible_markdown.splitlines() if line.strip()]
-    return "Status: Framework Example" in nonblank_lines[:8]
+    return "Status: Forge Example" in nonblank_lines[:8]
 
 
 def has_example_promotion_state(markdown: str) -> bool:
@@ -3827,7 +4190,7 @@ def validate_examples(root: Path) -> list[CheckResult]:
                     CheckResult(
                         f"example:status:{relative_path}",
                         False,
-                        "missing Status: Framework Example",
+                        "missing Status: Forge Example",
                         relative_path,
                     )
                 )
@@ -4012,28 +4375,40 @@ def render_json(results: list[CheckResult]) -> str:
     return json.dumps([asdict(result) for result in results], indent=2, sort_keys=True)
 
 
-def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
+def resolve_source_mode(root: Path, source_mode: str, final_closeout: bool) -> str:
+    if final_closeout:
+        return "source-retired-final"
+    if source_mode == "auto":
+        return "source-bearing" if (root / "docs/metasmith").exists() else "source-retired-final"
+    if source_mode in {"source-bearing", "source-retired-pre-stamp", "source-retired-final"}:
+        return source_mode
+    raise ValueError(f"unknown source mode: {source_mode}")
+
+
+def run(root: Path, *, final_closeout: bool = False, source_mode: str = "auto") -> list[CheckResult]:
+    resolved_source_mode = resolve_source_mode(root, source_mode, final_closeout)
     required_paths = [
         "README.md",
         "AGENTS.md",
         "CONTEXT.md",
-        "docs/prd/framework-seed.md",
-        "docs/metasmith/source-projection.md",
+        "docs/prd/forge-seed.md",
+        SOURCE_DISPOSITION_PATH,
         THREAT_MODEL_PATH,
         DOCUMENTATION_CLOSEOUT_PATH,
         SECURITY_CLOSEOUT_PATH,
         PROJECTION_DRAFTS_PATH,
+        "docs/forge-tour.md",
         "docs/harness-capabilities.toml",
         *CANONICAL_DOC_REQUIRED_SECTIONS,
         *TEMPLATE_REQUIRED_PATHS,
         *EXAMPLE_REQUIRED_PATHS,
         *SPEC_REQUIRED_PATHS,
     ]
+    if resolved_source_mode == "source-bearing":
+        required_paths.append("docs/metasmith/source-projection.md")
     results = [
         *validate_required_paths(root, required_paths),
-        *validate_source_handoff_provenance(root),
-        *validate_source_projection(root),
-        *validate_framework_routes(root),
+        *validate_forge_routes(root),
         *validate_canonical_docs(root),
         *validate_threat_model(root),
         *validate_documentation_closeout(root),
@@ -4045,15 +4420,35 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
         *validate_specs(root),
         *validate_markdown_links(root),
     ]
+    if resolved_source_mode == "source-bearing":
+        results.extend(validate_source_handoff_provenance(root))
+        results.extend(validate_source_projection(root))
+        results.extend(validate_source_disposition(root))
+    elif resolved_source_mode == "source-retired-pre-stamp":
+        results.extend(validate_source_retired_tree(root))
+        results.extend(validate_final_source_retired_stamp(root, pre_stamp=True))
+    else:
+        results.extend(validate_source_retired_tree(root))
+        results.extend(validate_final_source_retired_stamp(root))
     if final_closeout:
         results.extend(validate_final_closeout(root))
     return results
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Validate the Agent Armory Framework Seed.")
+    parser = argparse.ArgumentParser(description="Validate the Agent Armory Forge Seed.")
     parser.add_argument("--root", default=".", help="Repository root to validate.")
     parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON.")
+    parser.add_argument(
+        "--source-bearing",
+        action="store_true",
+        help="Require raw source handoff/projection inputs and the source disposition ledger.",
+    )
+    parser.add_argument(
+        "--source-retired-pre-stamp",
+        action="store_true",
+        help="Require raw sources to be retired and print the placeholder-normalized tree digest.",
+    )
     parser.add_argument(
         "--final-closeout",
         action="store_true",
@@ -4061,7 +4456,19 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    results = run(Path(args.root).resolve(), final_closeout=args.final_closeout)
+    selected_source_modes = [args.source_bearing, args.source_retired_pre_stamp]
+    if sum(1 for selected in selected_source_modes if selected) > 1:
+        parser.error("--source-bearing and --source-retired-pre-stamp are mutually exclusive")
+    if args.final_closeout and args.source_retired_pre_stamp:
+        parser.error("--final-closeout requires the final source-retired stamp, not pre-stamp mode")
+    if args.source_bearing:
+        source_mode = "source-bearing"
+    elif args.source_retired_pre_stamp:
+        source_mode = "source-retired-pre-stamp"
+    else:
+        source_mode = "auto"
+
+    results = run(Path(args.root).resolve(), final_closeout=args.final_closeout, source_mode=source_mode)
     output = render_json(results) if args.json else render_human(results)
     print(output)
     return 0 if all(result.ok for result in results) else 1
