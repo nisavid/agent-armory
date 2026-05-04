@@ -399,6 +399,39 @@ class IssueTrackerOpsTests(unittest.TestCase):
                 self.assertNotIn("Traceback", stderr)
                 self.assertEqual(gh.calls, [])
 
+    def test_parse_errors_use_injected_stderr_without_calling_gh(self):
+        gh = FakeGh()
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "comment",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "not-a-number",
+                "--body",
+                "Body",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 2)
+        self.assertEqual(stdout, "")
+        self.assertIn("argument --issue-number", stderr)
+        self.assertIn("is not a positive integer", stderr)
+        self.assertNotIn("Traceback", stderr)
+        self.assertEqual(gh.calls, [])
+
+    def test_help_uses_injected_stdout_and_returns_zero(self):
+        gh = FakeGh()
+
+        exit_code, stdout, stderr = self.run_cli(["--help"], gh=gh)
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn("GitHub Issues adapter MVP", stdout)
+        self.assertEqual(stderr, "")
+        self.assertEqual(gh.calls, [])
+
     def test_body_file_missing_exits_usage_error_without_calling_gh(self):
         gh = FakeGh()
         with tempfile.TemporaryDirectory() as tmp:
@@ -488,6 +521,14 @@ class IssueTrackerOpsTests(unittest.TestCase):
                 "jq": 0,
             },
         )
+
+    def test_gh_api_args_preserves_falsy_jq_values(self):
+        request = issue_tracker_ops.RequestSpec("GET", "repos/OWNER/REPO/issues/1", jq="")
+
+        args = issue_tracker_ops.gh_api_args(request, api_version="2026-03-10")
+
+        self.assertIn("--jq", args)
+        self.assertEqual(args[args.index("--jq") + 1], "")
 
     def test_execute_output_summarizes_issue_response(self):
         gh = FakeGh(

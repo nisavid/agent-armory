@@ -84,7 +84,7 @@ def gh_api_args(request: RequestSpec, *, api_version: str) -> list[str]:
     ]
     if request.body is not None:
         args.extend(["--input", "-"])
-    if request.jq:
+    if request.jq is not None:
         args.extend(["--jq", request.jq])
     if request.paginate:
         args.extend(["--paginate", "--slurp"])
