@@ -11,6 +11,8 @@ equipment kind.
 
 ## Captured Requirements
 
+- Ingest the [Engineering Workflow Generalization Addendum](../closeout/forge-seed-engineering-workflow-generalization.md)
+  alongside the original workflow lessons.
 - Start with a grill-with-docs session that resolves ingestion ambiguities and
   records ADRs before bulk import.
 - Treat source materials as directional evidence of intended capability, not as

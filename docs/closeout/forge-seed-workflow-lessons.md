@@ -21,3 +21,9 @@ validation before publication.
 - Persistent specs and tests should define current desired construction, not
   enumerate discarded names or non-goals unless contrast is itself intended
   behavior.
+
+## Linked Addenda
+
+- [Engineering workflow generalization](forge-seed-engineering-workflow-generalization.md):
+  generalizes the Forge Seed session workflow into portable equipment design
+  inputs for the post-Seed engineering workflow story.

@@ -2965,12 +2965,15 @@ skills, provenance notes, side-thread contracts, and progressive-disclosure
 routes as evidence to reconcile rather than decisions to bypass.
 
 Also ingest the linked
-[Seed Closeout Addendum](../closeout/forge-seed-workflow-lessons.md).
-It is the current capture for workflow lessons that emerged after the original
-handoff was written, including subagent review availability, closeout-gate
-ordering, projection drafts versus external publication, security and
-documentation evidence freshness, review recursion, process-validation
-semantics, and plan-state hygiene.
+[Seed Closeout Addendum](../closeout/forge-seed-workflow-lessons.md) and its
+linked
+[Engineering Workflow Generalization Addendum](../closeout/forge-seed-engineering-workflow-generalization.md).
+They are the current captures for workflow lessons that emerged after the
+original handoff was written, including subagent review availability,
+closeout-gate ordering, projection drafts versus external publication,
+security and documentation evidence freshness, review recursion,
+process-validation semantics, plan-state hygiene, reader-perspective cleanup,
+bookkeeping-noise removal, prompt reduction, and portable equipment design.
 
 Keep the addendum current through full Forge Seed completion. For this
 capture, full completion means the Seed branch has been pushed, the PR lifecycle

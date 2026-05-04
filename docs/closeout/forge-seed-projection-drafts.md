@@ -180,7 +180,8 @@ handoff surfaces are:
 - `docs/closeout/forge-seed-documentation.md`,
 - `docs/security/forge-seed-closeout.md`,
 - `docs/follow-ups/portable-agentic-engineering-workflow-equipment.md`,
-- `docs/closeout/forge-seed-workflow-lessons.md`.
+- `docs/closeout/forge-seed-workflow-lessons.md`,
+- `docs/closeout/forge-seed-engineering-workflow-generalization.md`.
 
 The in-chat pause after branch push should report the pushed branch, validation
 state, whether the Published PRD Issue has been created or remains a reviewed
