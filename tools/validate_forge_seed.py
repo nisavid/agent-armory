@@ -652,6 +652,9 @@ FINAL_CLOSEOUT_EXACT_VALIDATION_COUNT_RE = re.compile(
     r"\b\d+\s+(?:tests?\s+)?passed\b|\b\d+\s+passing result objects\b",
     re.IGNORECASE,
 )
+STORY_REVIEW_LINE_RE = re.compile(
+    r"(?im)^(?:-\s*)?(cross-boundary coherence|story quality)(?: review)?:\s*`?(Ralph Review Cycle \d+)`?\.?\s*$"
+)
 HARNESS_CATALOG_MARKDOWN_PATH = "docs/harness-capabilities.md"
 HARNESS_CATALOG_PATH = "docs/harness-capabilities.toml"
 REQUIRED_HARNESSES = [
@@ -1326,7 +1329,8 @@ def validate_source_disposition(root: Path, *, required_item_ids: set[str] | Non
 
 def validate_source_retired_tree(root: Path) -> list[CheckResult]:
     results: list[CheckResult] = []
-    if (root / "docs/metasmith").exists():
+    raw_source_path = root / "docs/metasmith"
+    if raw_source_path.exists() or raw_source_path.is_symlink():
         results.append(
             CheckResult(
                 "source_retired:raw_sources",
@@ -1336,7 +1340,7 @@ def validate_source_retired_tree(root: Path) -> list[CheckResult]:
             )
         )
     results.extend(validate_source_disposition(root, required_item_ids=SOURCE_DISPOSITION_FINAL_REQUIRED_ITEM_IDS))
-    if not any(result.name.startswith("source_retired:") and not result.ok for result in results):
+    if not any(not result.ok for result in results):
         results.append(CheckResult("source_retired:tree", True, "raw sources removed", "docs"))
     return results
 
@@ -1370,19 +1374,22 @@ def placeholder_normalized_tree_digest(root: Path) -> str:
     tracked_files = git_tracked_files(root)
     paths = tracked_files if tracked_files is not None else sorted(root.rglob("*"))
     for path in paths:
-        if not path.is_file():
-            continue
         try:
             relative = path.relative_to(root)
         except ValueError:
             continue
         if ".git" in relative.parts or "__pycache__" in relative.parts:
             continue
-        data = path.read_bytes()
-        try:
-            normalized = normalized_stamp_text(data.decode("utf-8")).encode("utf-8")
-        except UnicodeDecodeError:
-            normalized = data
+        if path.is_symlink():
+            normalized = f"symlink:{path.readlink().as_posix()}".encode("utf-8")
+        elif path.is_file():
+            data = path.read_bytes()
+            try:
+                normalized = normalized_stamp_text(data.decode("utf-8")).encode("utf-8")
+            except UnicodeDecodeError:
+                normalized = data
+        else:
+            continue
         digest.update(relative.as_posix().encode("utf-8"))
         digest.update(b"\0")
         digest.update(normalized)
@@ -2403,6 +2410,34 @@ def validate_projection_drafts(root: Path) -> list[CheckResult]:
         r"(?im)^(?:-\s*)?story quality(?: review)?:\s*(?:`?Ralph Review Cycle \d+`?|Ralph Review Cycle \d+\.?)\s*$",
         markdown,
     )
+    review_cycles_by_kind: dict[str, set[str]] = {
+        "cross-boundary coherence": set(),
+        "story quality": set(),
+    }
+    for match in STORY_REVIEW_LINE_RE.finditer(markdown):
+        review_cycles_by_kind[match.group(1).casefold()].add(match.group(2))
+    for kind, cycles in review_cycles_by_kind.items():
+        if len(cycles) > 1:
+            results.append(
+                CheckResult(
+                    f"projection_drafts:evidence:{PROJECTION_DRAFTS_PATH}:{kind} review consistency",
+                    False,
+                    f"projection drafts must not publish conflicting {kind} review cycles",
+                    PROJECTION_DRAFTS_PATH,
+                )
+            )
+    if (
+        PROJECTION_DRAFTS_PENDING_STORY_REVIEW_PLACEHOLDER.casefold() in raw_folded
+        and "tools/validate_forge_seed.py --final-closeout`: passed" in raw_folded
+    ):
+        results.append(
+            CheckResult(
+                f"projection_drafts:evidence:{PROJECTION_DRAFTS_PATH}:final closeout status",
+                False,
+                "projection drafts must not claim final-closeout passed while story-review placeholders remain",
+                PROJECTION_DRAFTS_PATH,
+            )
+        )
     if story_review_step_complete and (
         PROJECTION_DRAFTS_PENDING_STORY_REVIEW_PLACEHOLDER.casefold() in raw_folded
         or cross_boundary_review_ok is None
@@ -2458,6 +2493,22 @@ def validate_final_closeout(root: Path) -> list[CheckResult]:
                 PROJECTION_DRAFTS_PATH,
             )
         )
+    review_cycles_by_kind: dict[str, set[str]] = {
+        "cross-boundary coherence": set(),
+        "story quality": set(),
+    }
+    for match in STORY_REVIEW_LINE_RE.finditer(markdown):
+        review_cycles_by_kind[match.group(1).casefold()].add(match.group(2))
+    for kind, cycles in review_cycles_by_kind.items():
+        if len(cycles) > 1:
+            results.append(
+                CheckResult(
+                    f"final_closeout:evidence:{PROJECTION_DRAFTS_PATH}:{kind} review consistency",
+                    False,
+                    f"final closeout must not publish conflicting {kind} review cycles",
+                    PROJECTION_DRAFTS_PATH,
+                )
+            )
     if any(marker in raw_folded for marker in PROJECTION_DRAFTS_SCRATCH_ARTIFACT_MARKERS):
         results.append(
             CheckResult(

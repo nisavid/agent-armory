@@ -4,11 +4,11 @@ Status: Completed Security Closeout
 
 ## Scan scope
 
-Codex Security scanned the merge-base-to-working-tree Forge Seed diff from
-baseline `470f2b31a9c71d0676617fc11e6fd3810e7128f7` to the Seed publication
-worktree that will be published from branch `forge-seed`, including committed
-branch changes, staged diff, unstaged worktree edits, and untracked intended
-files present in the scan instance.
+Codex Security scanned the merge-base-to-working-tree Forge Seed diff from the
+`main` merge base `dbf41ace42ff4759a6d680ab963d7498996ddb6f` to the Seed
+publication worktree that will be published from branch `forge-seed`, including
+committed branch changes, staged diff, unstaged worktree edits, and untracked
+intended files present in the scan instance.
 
 The scan covered:
 

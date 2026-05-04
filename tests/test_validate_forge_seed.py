@@ -1479,6 +1479,25 @@ class SourceDispositionTests(unittest.TestCase):
             results,
         )
 
+    def test_validate_source_retired_tree_rejects_dangling_raw_source_symlink(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "docs").mkdir()
+            (root / "docs/metasmith").symlink_to(root / "missing")
+            self.write_source_disposition(root)
+
+            results = validate_source_retired_tree(root)
+
+        self.assertIn(
+            CheckResult(
+                "source_retired:raw_sources",
+                False,
+                "docs/metasmith must be removed after source disposition",
+                "docs/metasmith",
+            ),
+            results,
+        )
+
     def test_validate_final_source_retired_stamp_accepts_placeholder_normalized_digest(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -1503,6 +1522,20 @@ class SourceDispositionTests(unittest.TestCase):
             after = validate_final_source_retired_stamp(root, pre_stamp=True)[0].detail
 
         self.assertEqual(before, after)
+
+    def test_source_retired_stamp_digest_includes_tracked_symlinks(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_source_disposition(root)
+            subprocess.run(["git", "-C", str(root), "init"], check=True, stdout=subprocess.DEVNULL)
+            subprocess.run(["git", "-C", str(root), "add", "docs"], check=True, stdout=subprocess.DEVNULL)
+            before = validate_final_source_retired_stamp(root, pre_stamp=True)[0].detail
+
+            (root / "docs/link").symlink_to("missing")
+            subprocess.run(["git", "-C", str(root), "add", "docs/link"], check=True, stdout=subprocess.DEVNULL)
+            after = validate_final_source_retired_stamp(root, pre_stamp=True)[0].detail
+
+        self.assertNotEqual(before, after)
 
     def test_run_source_bearing_requires_raw_source_inputs(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -2867,6 +2900,59 @@ class ProjectionDraftValidationTests(unittest.TestCase):
             results,
         )
 
+    def test_validate_projection_drafts_rejects_final_closeout_passed_with_pending_story_reviews(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_projection_drafts(
+                root,
+                self.valid_projection_drafts()
+                + "\n\n- `python3.14 tools/validate_forge_seed.py --final-closeout`: passed.\n",
+            )
+
+            results = validate_projection_drafts(root)
+
+        self.assertIn(
+            CheckResult(
+                f"projection_drafts:evidence:{self.projection_path}:final closeout status",
+                False,
+                "projection drafts must not claim final-closeout passed while story-review placeholders remain",
+                self.projection_path,
+            ),
+            results,
+        )
+
+    def test_validate_projection_drafts_rejects_conflicting_story_review_cycles(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_projection_drafts(
+                root,
+                self.valid_projection_drafts()
+                .replace("Cross-Boundary Coherence review: `TO_FILL_AFTER_CLEAN_REVIEW`", "Cross-Boundary Coherence review: Ralph Review Cycle 101.")
+                .replace("Story Quality review: `TO_FILL_AFTER_CLEAN_REVIEW`", "Story Quality review: Ralph Review Cycle 102.")
+                + "\n\n## PR Reviews\n\n- Cross-Boundary Coherence: Ralph Review Cycle 71.\n- Story Quality: Ralph Review Cycle 72.\n",
+            )
+
+            results = validate_projection_drafts(root)
+
+        self.assertIn(
+            CheckResult(
+                f"projection_drafts:evidence:{self.projection_path}:cross-boundary coherence review consistency",
+                False,
+                "projection drafts must not publish conflicting cross-boundary coherence review cycles",
+                self.projection_path,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                f"projection_drafts:evidence:{self.projection_path}:story quality review consistency",
+                False,
+                "projection drafts must not publish conflicting story quality review cycles",
+                self.projection_path,
+            ),
+            results,
+        )
+
     def test_validate_final_closeout_rejects_pending_story_review_placeholders_without_step7_dependency(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -2972,6 +3058,39 @@ class ProjectionDraftValidationTests(unittest.TestCase):
                 f"final_closeout:evidence:{self.projection_path}:validation evidence",
                 False,
                 "final closeout evidence should cite validation commands without hard-coded pass counts",
+                self.projection_path,
+            ),
+            results,
+        )
+
+    def test_validate_final_closeout_rejects_conflicting_story_review_cycles(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_plan_with_step7(root, checked=True)
+            self.write_projection_drafts(
+                root,
+                self.valid_projection_drafts()
+                .replace("Cross-Boundary Coherence review: `TO_FILL_AFTER_CLEAN_REVIEW`", "Cross-Boundary Coherence review: Ralph Review Cycle 101.")
+                .replace("Story Quality review: `TO_FILL_AFTER_CLEAN_REVIEW`", "Story Quality review: Ralph Review Cycle 102.")
+                + "\n\n## PR Reviews\n\n- Cross-Boundary Coherence: Ralph Review Cycle 71.\n- Story Quality: Ralph Review Cycle 72.\n",
+            )
+
+            results = validate_final_closeout(root)
+
+        self.assertIn(
+            CheckResult(
+                f"final_closeout:evidence:{self.projection_path}:cross-boundary coherence review consistency",
+                False,
+                "final closeout must not publish conflicting cross-boundary coherence review cycles",
+                self.projection_path,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                f"final_closeout:evidence:{self.projection_path}:story quality review consistency",
+                False,
+                "final closeout must not publish conflicting story quality review cycles",
                 self.projection_path,
             ),
             results,

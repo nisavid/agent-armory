@@ -67,7 +67,7 @@ The Forge Seed adds:
 - `python3.14 -m unittest tests/test_validate_forge_seed.py`: passed.
 - `python3.14 tools/validate_forge_seed.py`: passed.
 - `python3.14 tools/validate_forge_seed.py --json`: passed.
-- `python3.14 tools/validate_forge_seed.py --final-closeout`: passed.
+- `python3.14 tools/validate_forge_seed.py --final-closeout`: pending clean story-review cycles.
 - `git diff --check`: passed.
 
 ## Security Closeout
@@ -170,8 +170,8 @@ Draft PR body:
 ## Reviews
 
 - Documentation closeout: Ralph Review Cycle 68.
-- Cross-Boundary Coherence: Ralph Review Cycle 71.
-- Story Quality: Ralph Review Cycle 72.
+- Cross-Boundary Coherence: `TO_FILL_AFTER_CLEAN_REVIEW`
+- Story Quality: `TO_FILL_AFTER_CLEAN_REVIEW`
 ```
 
 ## Release Draft
