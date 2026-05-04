@@ -1,3 +1,4 @@
+import argparse
 import io
 import json
 import subprocess
@@ -112,6 +113,26 @@ class IssueTrackerOpsTests(unittest.TestCase):
         self.assertEqual(payload["operation"], "comment")
         self.assertEqual(payload["error"], {"returncode": 1, "stderr": "boom"})
         self.assertNotIn("resolved", payload)
+
+    def test_execute_success_includes_empty_resolved_when_provided(self):
+        gh = FakeGh([subprocess.CompletedProcess(["gh"], 0, stdout="{}", stderr="")])
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+
+        exit_code = issue_tracker_ops.execute_request(
+            "dependency-op",
+            issue_tracker_ops.RequestSpec("GET", "repos/OWNER/REPO/issues/11"),
+            args=argparse.Namespace(api_version="2026-03-10"),
+            gh=gh,
+            stdout=stdout,
+            stderr=stderr,
+            resolved={},
+        )
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stderr.getvalue(), "")
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(payload["resolved"], {})
 
     def test_add_blocked_by_issue_number_resolves_issue_id_before_posting(self):
         gh = FakeGh(

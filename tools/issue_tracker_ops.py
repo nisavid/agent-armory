@@ -234,7 +234,7 @@ def dry_run_payload(operation: str, request: RequestSpec, *, resolved: dict | No
         },
         "request": compact_request(request),
     }
-    if resolved:
+    if resolved is not None:
         payload["resolved"] = resolved
     return payload
 
@@ -303,7 +303,7 @@ def execute_request(
         "request": compact_request(request),
         "result": summarize_result(result),
     }
-    if resolved:
+    if resolved is not None:
         payload["resolved"] = resolved
     write_json(stdout, payload)
     if completed.stderr:
