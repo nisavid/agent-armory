@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import subprocess
 import sys
@@ -49,6 +50,16 @@ def read_body(args: argparse.Namespace) -> str | None:
         except OSError as exc:
             raise UsageError(f"could not read --body-file {body_file!r}: {exc.strerror or exc}") from exc
     return body
+
+
+def positive_int(value: str) -> int:
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(f"{value!r} is not a positive integer") from exc
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError(f"{value!r} is not a positive integer")
+    return parsed
 
 
 def compact_request(request: RequestSpec) -> dict:
@@ -155,6 +166,8 @@ def create_issue_request(args: argparse.Namespace) -> RequestSpec:
 
 
 def update_issue_request(args: argparse.Namespace) -> RequestSpec:
+    if args.state_reason is not None and args.state is None:
+        raise UsageError("`--state-reason` requires `--state`")
     body: dict[str, object] = {}
     if args.title is not None:
         body["title"] = args.title
@@ -378,7 +391,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     update = subparsers.add_parser("update-issue", help="Update an issue.")
     add_common_flags(update)
-    update.add_argument("--issue-number", required=True, type=int)
+    update.add_argument("--issue-number", required=True, type=positive_int)
     update.add_argument("--title")
     add_body_flags(update)
     update.add_argument("--state", choices=["open", "closed"])
@@ -388,31 +401,31 @@ def build_parser() -> argparse.ArgumentParser:
 
     comment = subparsers.add_parser("comment", help="Add an issue comment.")
     add_common_flags(comment)
-    comment.add_argument("--issue-number", required=True, type=int)
+    comment.add_argument("--issue-number", required=True, type=positive_int)
     add_body_flags(comment, required=True)
 
     add_dep = subparsers.add_parser("add-blocked-by", help="Mark an issue as blocked by another issue.")
     add_common_flags(add_dep)
-    add_dep.add_argument("--issue-number", required=True, type=int)
+    add_dep.add_argument("--issue-number", required=True, type=positive_int)
     blocker = add_dep.add_mutually_exclusive_group(required=True)
-    blocker.add_argument("--blocking-issue-id", type=int)
-    blocker.add_argument("--blocking-issue-number", type=int)
+    blocker.add_argument("--blocking-issue-id", type=positive_int)
+    blocker.add_argument("--blocking-issue-number", type=positive_int)
 
     remove_dep = subparsers.add_parser("remove-blocked-by", help="Remove a blocked-by relationship.")
     add_common_flags(remove_dep)
-    remove_dep.add_argument("--issue-number", required=True, type=int)
+    remove_dep.add_argument("--issue-number", required=True, type=positive_int)
     remove_blocker = remove_dep.add_mutually_exclusive_group(required=True)
-    remove_blocker.add_argument("--blocking-issue-id", type=int)
-    remove_blocker.add_argument("--blocking-issue-number", type=int)
+    remove_blocker.add_argument("--blocking-issue-id", type=positive_int)
+    remove_blocker.add_argument("--blocking-issue-number", type=positive_int)
 
     list_blocked_by = subparsers.add_parser("list-blocked-by", help="List issues that block an issue.")
     add_common_flags(list_blocked_by, mutation=False)
-    list_blocked_by.add_argument("--issue-number", required=True, type=int)
+    list_blocked_by.add_argument("--issue-number", required=True, type=positive_int)
     list_blocked_by.add_argument("--paginate", action="store_true")
 
     list_blocking = subparsers.add_parser("list-blocking", help="List issues blocked by an issue.")
     add_common_flags(list_blocking, mutation=False)
-    list_blocking.add_argument("--issue-number", required=True, type=int)
+    list_blocking.add_argument("--issue-number", required=True, type=positive_int)
     list_blocking.add_argument("--paginate", action="store_true")
 
     return parser
@@ -441,7 +454,11 @@ def run(
 ) -> int:
     parser = build_parser()
     try:
-        args = parser.parse_args(argv)
+        try:
+            with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                args = parser.parse_args(argv)
+        except SystemExit as exc:
+            return exc.code if isinstance(exc.code, int) else 1
         if args.operation in {"add-blocked-by", "remove-blocked-by"}:
             if not args.execute:
                 write_json(stdout, dry_run_dependency_payload(args))
