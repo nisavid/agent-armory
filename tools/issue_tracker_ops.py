@@ -78,7 +78,7 @@ def gh_api_args(request: RequestSpec, *, api_version: str) -> list[str]:
     if request.jq:
         args.extend(["--jq", request.jq])
     if request.paginate:
-        args.append("--paginate")
+        args.extend(["--paginate", "--slurp"])
     return args
 
 
@@ -128,6 +128,15 @@ def summarize_result(result: dict | list | str | None) -> dict | list | str | No
     ]
     summary = {key: result[key] for key in keep_keys if key in result}
     return summary or result
+
+
+def combine_paginated_result(result: dict | list | str | None) -> dict | list | str | None:
+    if not isinstance(result, list) or not all(isinstance(page, list) for page in result):
+        return result
+    combined = []
+    for page in result:
+        combined.extend(page)
+    return combined
 
 
 def write_json(stdout: TextIO, payload: dict) -> None:
@@ -275,11 +284,14 @@ def execute_request(
             },
         )
         return completed.returncode
+    result = parse_json_output(completed)
+    if request.paginate:
+        result = combine_paginated_result(result)
     payload = {
         "mode": "execute",
         "operation": operation,
         "request": compact_request(request),
-        "result": summarize_result(parse_json_output(completed)),
+        "result": summarize_result(result),
     }
     if resolved:
         payload["resolved"] = resolved
