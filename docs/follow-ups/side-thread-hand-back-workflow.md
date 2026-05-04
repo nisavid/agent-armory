@@ -23,7 +23,12 @@ set.
 
 ## GitHub Issue Projection
 
-When issue creation is blocked by a story pause, keep the follow-up in this
-file, name the blocked projection surface in the handoff, and reconcile the
-file with the issue tracker when the session resumes and issue tooling is
-available.
+Projected follow-up issue:
+
+- [#7](https://github.com/nisavid/agent-armory/issues/7): Specify Side-Thread
+  Hand-Back workflow.
+
+This capture remains local source material until
+[#10](https://github.com/nisavid/agent-armory/issues/10) decides whether to
+retain, consolidate, or retire the Seed-era bookkeeping now that active
+tracking lives in GitHub Issues.
