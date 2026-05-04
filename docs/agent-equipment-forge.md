@@ -32,7 +32,7 @@ Use lower-overhead, more reliable surfaces for everything else:
 
 ## Component model
 
-A complete equipment design starts with a capability card, then projects requirements into one or more Harness Components and supporting artifacts. When a real Equipment Candidate needs committed entry artifacts before implementation, keep those records in one Forge Entry Bundle under a neutral project path.
+A complete equipment design starts with a capability card, then projects requirements into one or more Harness Components and supporting artifacts. When a real Equipment Candidate requires committed entry artifacts before implementation, keep those records in one Forge Entry Bundle under a neutral project path.
 
 Primary component types:
 

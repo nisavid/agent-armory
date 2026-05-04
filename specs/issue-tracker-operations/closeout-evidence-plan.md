@@ -49,7 +49,6 @@ conclusion.
 - MVP covers direct issue create, update, comment, and dependency operations
   under provisional policy.
 - Validation evidence is recorded.
-- If bootstrap is complete, remove the native dependency from #10.
 
 ## Full-delivery closeout
 

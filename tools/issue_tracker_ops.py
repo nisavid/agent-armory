@@ -46,7 +46,10 @@ def read_body(args: argparse.Namespace) -> str | None:
     body = getattr(args, "body", None)
     body_file = getattr(args, "body_file", None)
     if body_file:
-        return Path(body_file).read_text(encoding="utf-8")
+        try:
+            return Path(body_file).read_text(encoding="utf-8")
+        except OSError as exc:
+            raise UsageError(f"could not read --body-file {body_file!r}: {exc.strerror or exc}") from exc
     return body
 
 
@@ -198,7 +201,7 @@ def dry_run_payload(operation: str, request: RequestSpec, *, resolved: dict | No
         "mode": "dry-run",
         "operation": operation,
         "policy": {
-            "mutation_requires_execute": True,
+            "network_requires_execute": True,
             "auth_source": "gh CLI authenticated account",
             "transport": "gh api",
         },

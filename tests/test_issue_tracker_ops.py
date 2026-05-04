@@ -1,6 +1,7 @@
 import io
 import json
 import subprocess
+import tempfile
 import unittest
 
 from tools import issue_tracker_ops
@@ -143,6 +144,8 @@ class IssueTrackerOpsTests(unittest.TestCase):
         self.assertEqual(gh.calls, [])
         payload = json.loads(stdout)
         self.assertEqual(payload["mode"], "dry-run")
+        self.assertTrue(payload["policy"]["network_requires_execute"])
+        self.assertNotIn("mutation_requires_execute", payload["policy"])
         self.assertEqual(
             payload["steps"],
             [
@@ -158,6 +161,72 @@ class IssueTrackerOpsTests(unittest.TestCase):
                 },
             ],
         )
+
+    def test_update_issue_rejects_empty_patch_without_calling_gh(self):
+        gh = FakeGh()
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "update-issue",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "11",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 2)
+        self.assertEqual(stdout, "")
+        self.assertEqual(stderr, "update-issue requires at least one field to update\n")
+        self.assertNotIn("Traceback", stderr)
+        self.assertEqual(gh.calls, [])
+
+    def test_body_file_missing_exits_usage_error_without_calling_gh(self):
+        gh = FakeGh()
+        with tempfile.TemporaryDirectory() as tmp:
+            body_file = f"{tmp}/missing.md"
+
+            exit_code, stdout, stderr = self.run_cli(
+                [
+                    "comment",
+                    "--repo",
+                    "OWNER/REPO",
+                    "--issue-number",
+                    "11",
+                    "--body-file",
+                    body_file,
+                ],
+                gh=gh,
+            )
+
+        self.assertEqual(exit_code, 2)
+        self.assertEqual(stdout, "")
+        self.assertEqual(stderr, f"could not read --body-file {body_file!r}: No such file or directory\n")
+        self.assertNotIn("Traceback", stderr)
+        self.assertEqual(gh.calls, [])
+
+    def test_body_file_directory_exits_usage_error_without_calling_gh(self):
+        gh = FakeGh()
+        with tempfile.TemporaryDirectory() as body_file:
+            exit_code, stdout, stderr = self.run_cli(
+                [
+                    "comment",
+                    "--repo",
+                    "OWNER/REPO",
+                    "--issue-number",
+                    "11",
+                    "--body-file",
+                    body_file,
+                ],
+                gh=gh,
+            )
+
+        self.assertEqual(exit_code, 2)
+        self.assertEqual(stdout, "")
+        self.assertEqual(stderr, f"could not read --body-file {body_file!r}: Is a directory\n")
+        self.assertNotIn("Traceback", stderr)
+        self.assertEqual(gh.calls, [])
 
     def test_execute_output_summarizes_issue_response(self):
         gh = FakeGh(

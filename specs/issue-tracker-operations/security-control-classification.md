@@ -14,8 +14,8 @@ extension.
 
 | Operation | Class | Bootstrap control |
 | --- | --- | --- |
-| Dry-run create/update/comment/dependency | Advisory | No network call; JSON request preview. |
-| Issue read and dependency list | Read | Requires `--execute`; uses `gh api` with read permission. |
+| Dry-run create/update/comment/dependency operation | Advisory | No network call; JSON request preview. |
+| Dependency list | Read | Requires `--execute`; uses `gh api` with read permission. |
 | Issue create | Network write | Requires `--execute`; emits JSON audit output. |
 | Issue update | Network write | Requires `--execute`; emits JSON audit output. |
 | Issue comment | Network write and notification | Requires `--execute`; emits JSON audit output. |
@@ -39,7 +39,7 @@ extension.
 
 ## Controls
 
-- Writes default to dry-run.
+- Network operations default to dry-run.
 - `--execute` is required for every bootstrap network operation.
 - The script uses argument lists and JSON stdin for `gh api`; it does not invoke
   a shell.
