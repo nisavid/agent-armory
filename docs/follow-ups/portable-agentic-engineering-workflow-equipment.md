@@ -36,7 +36,14 @@ equipment kind.
 
 ## GitHub Issue Projection
 
-When issue creation is blocked by a story pause, keep the follow-up in this
-file, name the blocked projection surface in the handoff, and reconcile the
-file with the issue tracker when the session resumes and issue tooling is
-available.
+Projected follow-up issues:
+
+- [#5](https://github.com/nisavid/agent-armory/issues/5): Design equipment
+  ingestion and promotion pipeline.
+- [#8](https://github.com/nisavid/agent-armory/issues/8): Engineer portable
+  agentic workflow equipment.
+
+This capture remains local source material until
+[#10](https://github.com/nisavid/agent-armory/issues/10) decides whether to
+retain, consolidate, or retire the Seed-era bookkeeping now that active
+tracking lives in GitHub Issues.
