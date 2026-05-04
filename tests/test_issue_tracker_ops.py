@@ -294,6 +294,111 @@ class IssueTrackerOpsTests(unittest.TestCase):
         self.assertNotIn("Traceback", stderr)
         self.assertEqual(gh.calls, [])
 
+    def test_update_issue_rejects_state_reason_without_state(self):
+        gh = FakeGh()
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "update-issue",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "11",
+                "--state-reason",
+                "completed",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 2)
+        self.assertEqual(stdout, "")
+        self.assertEqual(stderr, "`--state-reason` requires `--state`\n")
+        self.assertNotIn("Traceback", stderr)
+        self.assertEqual(gh.calls, [])
+
+    def test_numeric_issue_flags_reject_non_positive_values_without_calling_gh(self):
+        cases = [
+            [
+                "update-issue",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "0",
+                "--title",
+                "Title",
+            ],
+            [
+                "comment",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "-1",
+                "--body",
+                "Body",
+            ],
+            [
+                "add-blocked-by",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "10",
+                "--blocking-issue-id",
+                "0",
+            ],
+            [
+                "add-blocked-by",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "10",
+                "--blocking-issue-number",
+                "-1",
+            ],
+            [
+                "remove-blocked-by",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "0",
+                "--blocking-issue-id",
+                "1",
+            ],
+            [
+                "remove-blocked-by",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "10",
+                "--blocking-issue-number",
+                "0",
+            ],
+            [
+                "list-blocked-by",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "0",
+            ],
+            [
+                "list-blocking",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "-1",
+            ],
+        ]
+        for argv in cases:
+            with self.subTest(argv=argv):
+                gh = FakeGh()
+
+                exit_code, stdout, stderr = self.run_cli(argv, gh=gh)
+
+                self.assertEqual(exit_code, 2)
+                self.assertEqual(stdout, "")
+                self.assertIn("is not a positive integer", stderr)
+                self.assertNotIn("Traceback", stderr)
+                self.assertEqual(gh.calls, [])
+
     def test_body_file_missing_exits_usage_error_without_calling_gh(self):
         gh = FakeGh()
         with tempfile.TemporaryDirectory() as tmp:
