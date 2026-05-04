@@ -21,6 +21,24 @@ Capture:
 
 The card keeps the capability independent from any first implementation shape.
 
+## Forge entry bundle
+
+When one real Equipment Candidate needs committed Forge entry artifacts, keep
+those records together in a Forge Entry Bundle under a neutral project path.
+Use `specs/<equipment-slug>/` for bundles that include the capability card,
+interface decision, security/control classification, pressure scenarios,
+validation plan, closeout evidence plan, and related design records.
+
+Use project-role paths for other surfaces: `docs/prd/` for PRDs,
+`docs/plans/` for implementation plans, `docs/adr/` for ADRs, `examples/`
+for Forge Examples, and `templates/` for reusable seed shapes. Put implemented
+skills, MCP/tool specs, hooks, Agent Profiles, plugins, scripts, config, or docs
+in their chosen component paths after the interface decision projects them
+there.
+
+Do not create a skill-, plugin-, tool-, or workflow-specific container path
+unless the Equipment Candidate is intrinsically about that surface.
+
 ## Interface decision record
 
 Create an interface decision record after the capability card. Start from
