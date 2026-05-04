@@ -9,6 +9,7 @@ components behind one installable or loadable boundary.
 
 - Plugin name.
 - Version.
+- Description.
 - Components.
 - Permissions.
 - Ownership and source notes.

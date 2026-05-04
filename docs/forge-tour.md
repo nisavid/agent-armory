@@ -1,10 +1,5 @@
 # Forge Tour
 
-Status: under construction
-
-The Agent Armory is under construction. The Forge has just come online, and the
-inventory is not stocked yet.
-
 The Forge Tour is the plain-language introduction to the Forge.
 It explains what the Forge is for, how its agent roles fit together, and where
 to go next before asking you to read deeper technical details.
@@ -56,8 +51,9 @@ equipment from being treated as the same thing.
 
 ## How harnesses get outfitted
 
-No published agent equipment is in the inventory yet. The current Forge is
-setting up the manufacturing process that will make that inventory possible.
+The Forge separates equipment manufacturing from future outfitting and use.
+Examples, blueprints, and candidates remain construction material until they
+reach the readiness state that makes them safe to select.
 
 When equipment reaches the right readiness state, an outfitter will be able to
 select equipment from the Armory and assemble a loadout for a role, task,

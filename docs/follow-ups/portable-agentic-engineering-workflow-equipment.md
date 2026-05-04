@@ -34,8 +34,9 @@ equipment kind.
   wrapper, extension, adaptation layer, local policy overlay, and upstream-update
   preservation strategies.
 
-## Pending Projection
+## GitHub Issue Projection
 
-GitHub Issue Projection is pending because the Forge Seed pauses after branch
-push and before PR creation. This file governs the follow-up until that issue is
-created or updated.
+When issue creation is blocked by a story pause, keep the follow-up in this
+file, name the blocked projection surface in the handoff, and reconcile the
+file with the issue tracker when the session resumes and issue tooling is
+available.

@@ -129,81 +129,11 @@ The seed separates durable surfaces by role:
 - `tools/validate_forge_seed.py`: Seed Validation Tool.
 - `tests/test_validate_forge_seed.py`: standard-library tests.
 
-The target seed structure is:
-
-```text
-README.md
-AGENTS.md
-CONTEXT.md
-docs/
-  adr/
-  closeout/
-    forge-seed-documentation.md
-    forge-seed-projection-drafts.md
-    forge-seed-source-disposition.md
-    forge-seed-workflow-lessons.md
-  follow-ups/
-    portable-agentic-engineering-workflow-equipment.md
-    side-thread-hand-back-workflow.md
-    ephemeral-workflow-opportunity-capture.md
-  plans/
-    2026-05-03-forge-seed.md
-  prd/
-    forge-seed.md
-  security/
-    threat-model.md
-    forge-seed-closeout.md
-  ubiquitous-language.md
-  agent-equipment-forge.md
-  smith-runbook.md
-  forgewright-runbook.md
-  interface-decision-guide.md
-  harness-components.md
-  harness-capabilities.md
-  harness-capabilities.toml
-  evidence-taxonomy.md
-  security-and-control.md
-  equipment-promotion.md
-  story-closeout.md
-templates/
-  capability-card.md
-  interface-decision-record.md
-  skill/
-    README.md
-    SKILL.md
-  hook/
-    README.md
-    hook.ts
-  agents/
-    README.md
-    profile.toml
-  plugin/
-    README.md
-    manifest.toml
-  script/
-    README.md
-    validate-example.py
-  mcp/
-    README.md
-    tool-spec.md
-  config/
-    README.md
-    example.toml
-  security-review.md
-  context-budget-review.md
-examples/
-  pr-review/
-  docs-research/
-  observability-investigation/
-specs/
-  agent-ops.md
-  periodic-actions.md
-  harness-capability-refresh.md
-tools/
-  validate_forge_seed.py
-tests/
-  test_validate_forge_seed.py
-```
+The Forge Seed must produce and maintain the role-based canonical surfaces
+listed above: human entry points, agent-facing law and policy, PRD/ADR/plan
+records, closeout and security evidence, Forge Canon, templates, examples,
+specs, validation tooling, and tests. Exact file inventory is discovered from
+the repository state rather than duplicated here.
 
 **Integration Points**:
 

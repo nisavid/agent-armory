@@ -26,8 +26,8 @@ export type HookEvent = {
 };
 
 export async function handle(event: HookEvent | null | undefined): Promise<HookDecision> {
-  if (!event || !event.kind) {
-    return { allow: false, reason: "missing event kind" };
+  if (!event || typeof event.kind !== "string" || event.kind.trim() === "") {
+    return { allow: false, reason: "missing or invalid event kind" };
   }
 
   return {

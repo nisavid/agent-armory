@@ -624,7 +624,7 @@ STORY_REVIEW_STEP_LABEL = "Step 7: Ralph-review closeout coherence and quality"
 PROJECTION_DRAFTS_PATH = "docs/closeout/forge-seed-projection-drafts.md"
 PROJECTION_DRAFTS_REQUIRED_SECTIONS = [
     "Published PRD Issue Draft",
-    "Pull Request Draft",
+    "Published Pull Request",
     "Release Draft",
     "Handoff Draft",
 ]
@@ -632,8 +632,8 @@ PROJECTION_DRAFTS_REQUIRED_EVIDENCE = [
     "Projected commit SHA",
     "TO_CAPTURE_IMMEDIATELY_BEFORE_ISSUE_PUBLICATION",
     "Report disposition: recorded in `docs/security/forge-seed-closeout.md`",
-    "PR creation is intentionally paused after branch push",
-    "Seed Closeout Addendum remains open through PR creation, PR review orchestration, merge, merge cleanup, external surface reconciliation, and final hand-back",
+    "Published PR: <https://github.com/nisavid/agent-armory/pull/1>",
+    "Seed Closeout Addendum remains open through PR review orchestration, merge, merge cleanup, external surface reconciliation, and final hand-back",
     "No release publication is planned",
     "No separate handoff publication is required",
 ]
@@ -3673,17 +3673,19 @@ def typescript_condition_is_read_only(condition: str) -> bool:
     stripped = condition.strip()
     if not stripped:
         return False
-    if any(character in stripped for character in "(){}[];,"):
+    normalized = re.sub(r"\.trim\(\)", ".trim", stripped)
+    normalized_structure = typescript_structure_source(normalized)
+    if any(character in normalized_structure for character in "(){}[];,"):
         return False
-    if re.search(r"\b(await|new|delete|yield|throw|import|function|class)\b", stripped):
+    if re.search(r"\b(await|new|delete|yield|throw|import|function|class)\b", normalized_structure):
         return False
-    if "=>" in stripped or "++" in stripped or "--" in stripped:
+    if "=>" in normalized_structure or "++" in normalized_structure or "--" in normalized_structure:
         return False
-    if re.search(r"(\+=|-=|\*=|/=|%=|&&=|\|\|=|\?\?=)", stripped):
+    if re.search(r"(\+=|-=|\*=|/=|%=|&&=|\|\|=|\?\?=)", normalized_structure):
         return False
-    if re.search(r"(?<![=!<>])=(?![=>])", stripped):
+    if re.search(r"(?<![=!<>])=(?![=>])", normalized_structure):
         return False
-    return re.fullmatch(r"[A-Za-z0-9_$.\s!&|=<>]*", stripped) is not None
+    return re.fullmatch(r"[A-Za-z0-9_$.\s!&|=<>]*", normalized_structure) is not None
 
 
 def hook_parameters_are_simple(parameters: str) -> bool:
@@ -3703,7 +3705,11 @@ def hook_body_has_malformed_event_guard(function_body: str) -> bool:
     if condition_end is None:
         return False
     condition = function_body[cursor + 1 : condition_end].strip()
-    if re.fullmatch(r"!event\s*\|\|\s*!event\.kind", condition) is None:
+    guard_patterns = [
+        r"!event\s*\|\|\s*!event\.kind",
+        r'!event\s*\|\|\s*typeof\s+event\.kind\s*!==\s*"string"\s*\|\|\s*event\.kind\.trim\(\)\s*===\s*""',
+    ]
+    if not any(re.fullmatch(pattern, condition) for pattern in guard_patterns):
         return False
     cursor = skip_typescript_whitespace(structure_body, condition_end + 1)
     if cursor >= len(structure_body) or structure_body[cursor] != "{":

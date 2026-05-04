@@ -18,8 +18,8 @@ sources = [
   { url = "https://developers.openai.com/codex/noninteractive", kind = "first_party", claim_scope = "noninteractive execution support" },
   { url = "https://developers.openai.com/codex/github-action", kind = "first_party", claim_scope = "GitHub Actions integration" },
   { url = "https://developers.openai.com/codex/config-reference", kind = "first_party", claim_scope = "configuration and permission surfaces" },
-  { url = "https://github.com/openai/codex/blob/main/codex-rs/app-server/README.md", kind = "first_party", claim_scope = "app-server API surface" },
-  { url = "https://github.com/openai/codex/blob/main/docs/config.md", kind = "first_party", claim_scope = "CLI configuration details" },
+  { url = "https://github.com/openai/codex/blob/5512b23c95084c39eb4c6bdbfe2e7e665eaf8231/codex-rs/app-server/README.md", kind = "first_party", claim_scope = "app-server API surface" },
+  { url = "https://github.com/openai/codex/blob/5512b23c95084c39eb4c6bdbfe2e7e665eaf8231/docs/config.md", kind = "first_party", claim_scope = "CLI configuration details" },
 ]
 uncertainty = "Stable version is anchored to GitHub releases. Prerelease features may be ahead of stable, and app-server and hook details can remain experimental or feature-gated."
 components = [

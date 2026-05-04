@@ -2729,6 +2729,8 @@ class ProjectionDraftValidationTests(unittest.TestCase):
 
             Status: Review Draft
 
+            Projection state: PR published; issue projection pending.
+
             ## Published PRD Issue Draft
 
             Projected commit SHA: `TO_CAPTURE_IMMEDIATELY_BEFORE_ISSUE_PUBLICATION`
@@ -2741,9 +2743,9 @@ class ProjectionDraftValidationTests(unittest.TestCase):
 
             Story Quality review: `TO_FILL_AFTER_CLEAN_REVIEW`
 
-            ## Pull Request Draft
+            ## Published Pull Request
 
-            PR creation is intentionally paused after branch push in this session.
+            Published PR: <https://github.com/nisavid/agent-armory/pull/1>
 
             Documentation closeout: Ralph Review Cycle 99.
 
@@ -2753,9 +2755,9 @@ class ProjectionDraftValidationTests(unittest.TestCase):
 
             ## Handoff Draft
 
-            No separate handoff publication is required before PR creation.
+            No separate handoff publication is required during PR review.
 
-            The Seed Closeout Addendum remains open through PR creation, PR review orchestration, merge, merge cleanup, external surface reconciliation, and final hand-back.
+            The Seed Closeout Addendum remains open through PR review orchestration, merge, merge cleanup, external surface reconciliation, and final hand-back.
             """
         ).strip()
 
@@ -2819,7 +2821,7 @@ class ProjectionDraftValidationTests(unittest.TestCase):
             self.write_projection_drafts(
                 root,
                 self.valid_projection_drafts().replace(
-                    "\n\n## Pull Request Draft\n\nPR creation is intentionally paused after branch push in this session.\n\nDocumentation closeout: Ralph Review Cycle 99.",
+                    "\n\n## Published Pull Request\n\nPublished PR: <https://github.com/nisavid/agent-armory/pull/1>\n\nDocumentation closeout: Ralph Review Cycle 99.",
                     "",
                 ),
             )
@@ -2828,9 +2830,9 @@ class ProjectionDraftValidationTests(unittest.TestCase):
 
         self.assertIn(
             CheckResult(
-                f"projection_drafts:section:{self.projection_path}:Pull Request Draft",
+                f"projection_drafts:section:{self.projection_path}:Published Pull Request",
                 False,
-                "missing section: Pull Request Draft",
+                "missing section: Published Pull Request",
                 self.projection_path,
             ),
             results,
@@ -3118,8 +3120,8 @@ class ProjectionDraftValidationTests(unittest.TestCase):
             self.write_projection_drafts(
                 root,
                 self.valid_projection_drafts().replace(
-                    "The Seed Closeout Addendum remains open through PR creation, PR review orchestration, merge, merge cleanup, external surface reconciliation, and final hand-back.",
-                    "The Seed Closeout Addendum remains open through PR creation, PR review orchestration, merge, and merge cleanup.",
+                    "The Seed Closeout Addendum remains open through PR review orchestration, merge, merge cleanup, external surface reconciliation, and final hand-back.",
+                    "The Seed Closeout Addendum remains open through PR review orchestration, merge, and merge cleanup.",
                 ),
             )
 
@@ -3127,9 +3129,9 @@ class ProjectionDraftValidationTests(unittest.TestCase):
 
         self.assertIn(
             CheckResult(
-                f"projection_drafts:evidence:{self.projection_path}:Seed Closeout Addendum remains open through PR creation, PR review orchestration, merge, merge cleanup, external surface reconciliation, and final hand-back",
+                f"projection_drafts:evidence:{self.projection_path}:Seed Closeout Addendum remains open through PR review orchestration, merge, merge cleanup, external surface reconciliation, and final hand-back",
                 False,
-                "missing evidence: Seed Closeout Addendum remains open through PR creation, PR review orchestration, merge, merge cleanup, external surface reconciliation, and final hand-back",
+                "missing evidence: Seed Closeout Addendum remains open through PR review orchestration, merge, merge cleanup, external surface reconciliation, and final hand-back",
                 self.projection_path,
             ),
             results,

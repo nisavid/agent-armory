@@ -197,8 +197,10 @@ A missing or inadequate Forge provision that blocks or materially weakens Smith 
 _Avoid_: ordinary task bug, ad hoc preference
 
 **Tooling Request**:
-The structured escalation of a Tooling Gap to a Forgewright.
-_Avoid_: vague handoff, unsupported workaround
+A Smith workflow for pausing an equipment task when an unsatisfied Tooling Gap
+blocks or materially weakens the task, recording that dependency, and handing
+the Tooling Work to a Forgewright before continuing.
+_Avoid_: vague handoff, unsupported workaround, continuing with an underspecified Forge
 
 **Tooling Work**:
 Forgewright work that adds or refines Forge Tooling.
@@ -251,10 +253,6 @@ _Avoid_: validating against stale assumptions
 **Intent Alignment Check**:
 A Story Quality check that compares Effective Intent with the refreshed model of Underlying Intent after Cross-Boundary Coherence has made Effective Intent legible. Refresh the model again if closeout evidence introduced new intent signals.
 _Avoid_: silent reinterpretation, mind-reading, unexamined literalism
-
-**Tooling Request**:
-A Smith workflow for pausing an equipment task when an unsatisfied Tooling Gap blocks or materially weakens the task, recording that dependency, and handing the Tooling Work to a Forgewright session before continuing.
-_Avoid_: ad hoc workaround, continuing with an underspecified Forge
 
 **Smith-to-Forgewright Handoff**:
 The context package a Smith gives to a Forgewright for Tooling Request.

@@ -2,14 +2,16 @@
 
 Status: Review Draft
 
-These drafts are review surfaces for Story Closeout. They are not published
-issue, PR, release, or handoff surfaces.
+Projection state: PR published; issue projection pending.
+
+These drafts are review surfaces for Story Closeout. The pull request surface
+has been published as <https://github.com/nisavid/agent-armory/pull/1>. The
+Published PRD Issue remains pending.
 
 External projection happens only after final validation, clean Cross-Boundary
-Coherence review, clean Story Quality review, final commit, and branch push.
-The operator-requested pause point happens after branch push and before PR
-creation. If the session pauses before Publishing the PRD Issue, this reviewed
-draft remains the source of truth until work resumes.
+Coherence review, clean Story Quality review, final commit, and branch push. If
+the session pauses before Publishing the PRD Issue, this reviewed draft remains
+the source of truth for that issue until work resumes.
 
 ## Published PRD Issue Draft
 
@@ -23,7 +25,7 @@ Draft body:
 ```markdown
 # Forge Seed PRD
 
-Status: Implemented on branch `forge-seed`; pending PR publication.
+Status: Implemented on branch `forge-seed`; PR published; pending issue publication.
 
 Repo draft: `docs/prd/forge-seed.md`
 
@@ -114,28 +116,28 @@ The repo draft remains the detailed review artifact. This issue is the tracking
 surface for the PRD.
 ```
 
-## Pull Request Draft
+## Published Pull Request
 
-PR creation is intentionally paused after branch push in this session. The
-operator has a side quest to perform at that point.
+Published PR: <https://github.com/nisavid/agent-armory/pull/1>
 
-Draft PR title:
+PR title:
 
 ```text
 feat(forge): implement forge seed
 ```
 
-Draft PR body:
+Published PR body:
 
 ```markdown
 ## Summary
 
 - Preserve and project the Source Handoff into Forge Canon,
   templates, examples, specs, validators, and closeout evidence.
-- Refresh the public docs spine with an under-construction README, expanded
-  Forge Tour, and human-facing docs map.
+- Refresh the public docs spine with an under-construction README, generated
+  README hero image, expanded Forge Tour, and human-facing docs map.
 - Add Tooling Request, Story Closeout, security closeout,
-  documentation closeout, and projection draft surfaces.
+  documentation closeout, workflow reflection capture, and projection draft
+  surfaces.
 - Add deterministic Seed Validation coverage and TDD tests for the seeded
   Forge shape.
 
@@ -143,7 +145,7 @@ Draft PR body:
 
 - `python3.14 -m unittest tests/test_validate_forge_seed.py`
 - `python3.14 tools/validate_forge_seed.py`
-- `python3.14 tools/validate_forge_seed.py --json`
+- `python3.14 tools/validate_forge_seed.py --source-retired-pre-stamp`
 - `python3.14 tools/validate_forge_seed.py --final-closeout`
 - `git diff --check`
 
@@ -172,7 +174,7 @@ and PR change set, not a versioned release.
 
 ## Handoff Draft
 
-No separate handoff publication is required before PR creation. The durable
+No separate handoff publication is required during PR review. The durable
 handoff surfaces are:
 
 - this projection draft,
@@ -183,12 +185,11 @@ handoff surfaces are:
 - `docs/closeout/forge-seed-workflow-lessons.md`,
 - `docs/closeout/forge-seed-engineering-workflow-generalization.md`.
 
-The in-chat pause after branch push should report the pushed branch, validation
-state, whether the Published PRD Issue has been created or remains a reviewed
-draft, and that PR creation is intentionally paused for the operator's side
-quest. It should also state that the Seed Closeout Addendum remains open through
-PR creation, PR review orchestration, merge, merge cleanup, external surface
-reconciliation, and final hand-back.
+Any in-chat pause during PR review should report the pushed branch, PR URL,
+validation state, whether the Published PRD Issue has been created or remains a
+reviewed draft, and that the Seed Closeout Addendum remains open through PR
+review orchestration, merge, merge cleanup, external surface reconciliation, and
+final hand-back.
 
 If issue projection, branch push, PR creation, PR review orchestration, merge,
 merge cleanup, external surface reconciliation, or final hand-back exposes

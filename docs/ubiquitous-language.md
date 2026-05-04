@@ -6,7 +6,7 @@ This document is the canonical vocabulary surface for Smiths and Forgewrights. U
 
 ## Language
 
-**Agent Armory** names the Agent Armory: the home for Agent Equipment and the Agent Equipment Forge.
+**Agent Armory** is the home for Agent Equipment and the Agent Equipment Forge.
 
 **Agent Equipment** is reusable tooling, behavior, workflow, knowledge, or configuration that equips an Agent or agentic system.
 

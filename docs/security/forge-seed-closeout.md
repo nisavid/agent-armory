@@ -28,9 +28,11 @@ The human-facing documentation spine refresh touched `README.md`,
 surface, `docs/closeout/forge-seed-documentation.md`, and projection evidence.
 The final public README presentation refresh also added
 `docs/assets/agent-armory-hero.png` and a README image reference.
-It did not add or materially change executable code, hooks, MCP/tool
-definitions, permissions, secrets handling, network/file/process side effects,
-package metadata, security policy, or Published Agent Equipment.
+It did not add or materially change runtime-integrated execution surfaces such
+as hooks, MCP/tool definitions, permissions, secrets handling,
+network/file/process side effects, package metadata, security policy, or
+Published Agent Equipment. This change set did include local validation tooling
+and tests, which were included in scan scope and re-validation.
 `docs/security-and-control.md` and `docs/security/threat-model.md` remain
 current for the refreshed public docs path.
 

@@ -158,4 +158,4 @@ live reader guidance.
 
 - Issue Projection is still pending; external issue state may lag this repo draft until the projection step lands.
 - Source-disposition and workflow-lesson records intentionally retain normalized references to source-era wording; future agents must continue treating those references as provenance, not live instruction.
-- Further security or documentation edits before PR creation may require a narrow refresh of this closeout summary and its review evidence.
+- Further security or documentation edits during PR review may require a narrow refresh of this closeout summary and its review evidence.
