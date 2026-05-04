@@ -23,9 +23,6 @@ class RequestSpec:
     paginate: bool = False
 
 
-GhRunner = Callable[[list[str]], subprocess.CompletedProcess[str]]
-
-
 class UsageError(Exception):
     pass
 
