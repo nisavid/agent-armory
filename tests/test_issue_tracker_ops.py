@@ -408,23 +408,28 @@ class IssueTrackerOpsTests(unittest.TestCase):
         )
 
     def test_execute_output_summarizes_issue_lists(self):
+        first_page = {
+            "id": 44,
+            "number": 11,
+            "html_url": "https://github.com/OWNER/REPO/issues/11",
+            "title": "Blocking issue",
+            "state": "open",
+            "repository": {"permissions": {"admin": True}},
+        }
+        second_page = {
+            "id": 45,
+            "number": 12,
+            "html_url": "https://github.com/OWNER/REPO/issues/12",
+            "title": "Another blocker",
+            "state": "closed",
+            "repository": {"permissions": {"admin": False}},
+        }
         gh = FakeGh(
             [
                 subprocess.CompletedProcess(
                     ["gh"],
                     0,
-                    stdout=json.dumps(
-                        [
-                            {
-                                "id": 44,
-                                "number": 11,
-                                "html_url": "https://github.com/OWNER/REPO/issues/11",
-                                "title": "Blocking issue",
-                                "state": "open",
-                                "repository": {"permissions": {"admin": True}},
-                            }
-                        ]
-                    ),
+                    stdout=json.dumps([[first_page], [second_page]]),
                     stderr="",
                 )
             ]
@@ -437,12 +442,17 @@ class IssueTrackerOpsTests(unittest.TestCase):
                 "OWNER/REPO",
                 "--issue-number",
                 "10",
+                "--paginate",
                 "--execute",
             ],
             gh=gh,
         )
 
         self.assertEqual(exit_code, 0, stderr)
+        args, input_text = gh.calls[0]
+        self.assertIn("--paginate", args)
+        self.assertIn("--slurp", args)
+        self.assertIsNone(input_text)
         payload = json.loads(stdout)
         self.assertEqual(
             payload["result"],
@@ -453,7 +463,14 @@ class IssueTrackerOpsTests(unittest.TestCase):
                     "html_url": "https://github.com/OWNER/REPO/issues/11",
                     "title": "Blocking issue",
                     "state": "open",
-                }
+                },
+                {
+                    "id": 45,
+                    "number": 12,
+                    "html_url": "https://github.com/OWNER/REPO/issues/12",
+                    "title": "Another blocker",
+                    "state": "closed",
+                },
             ],
         )
 
