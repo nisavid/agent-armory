@@ -3,9 +3,21 @@
 Issues and PRDs for this repo live in GitHub Issues for `nisavid/agent-armory`.
 
 Use `tools/issue_tracker_ops.py` for Issue Tracker Operations bootstrap modes
-that create, update, comment on, or add dependency relations for GitHub Issues.
-The adapter defaults write operations to dry-run output; pass `--execute` only
-when the active session allows tracker mutation.
+that create, update, comment on, add dependency relations, remove dependency
+relations, and list dependency relations for GitHub Issues.
+
+Bootstrap adapter subcommands:
+
+- `create-issue`
+- `update-issue`
+- `comment`
+- `add-blocked-by`
+- `remove-blocked-by`
+- `list-blocked-by`
+- `list-blocking`
+
+The adapter defaults network operations to dry-run output; pass `--execute`
+only when the active session allows the GitHub tracker operation.
 
 Use the `gh` CLI directly when a needed GitHub Issues operation is outside the
 bootstrap adapter's current modes, or when a skill needs a read-only query that

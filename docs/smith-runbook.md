@@ -23,7 +23,7 @@ The card keeps the capability independent from any first implementation shape.
 
 ## Forge entry bundle
 
-When one real Equipment Candidate needs committed Forge entry artifacts, keep
+When one real Equipment Candidate requires committed Forge entry artifacts, keep
 those records together in a Forge Entry Bundle under a neutral project path.
 Use `specs/<equipment-slug>/` for bundles that include the capability card,
 interface decision, security/control classification, pressure scenarios,
