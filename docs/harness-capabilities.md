@@ -8,7 +8,7 @@ The structured source of truth is [docs/harness-capabilities.toml](harness-capab
 
 ## Catalog policy
 
-Use this catalog before making harness-specific claims in Framework docs, Smith specs, templates, examples, or equipment implementation plans.
+Use this catalog before making harness-specific claims in Forge Canon, Equipment Blueprints, templates, examples, or equipment implementation plans.
 
 Treat every entry as versioned state. A Smith must refresh the relevant harness entry before relying on recently changed scheduling, hook, plugin, MCP, permission, or Agent Profile behavior. Record local CLI observations separately from public source facts.
 

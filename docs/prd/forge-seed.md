@@ -6,15 +6,15 @@ Status: Repo Draft PRD
 
 **Problem Statement**: Agent Armory accepted a substantial Source Handoff for an Agent Equipment Forge. The Forge Seed must turn that source material into canonical, validated Forge surfaces that future Smiths can use without replaying the handoff. Without those surfaces and closeout gates, future equipment work can drift into unreviewed examples, stale harness claims, oversized skills, or unclear source-of-truth boundaries.
 
-**Proposed Solution**: Create the Forge Seed: canonical docs, evidence discipline, harness capability catalog, decision method, templates, demonstrative examples, downstream Smith specs, and Seed Validation. Preserve the Source Handoff as provenance, refresh canonical harness facts, and publish a reviewed PRD summary into GitHub Issues after the repo draft stabilizes.
+**Proposed Solution**: Create the Forge Seed: canonical docs, evidence discipline, harness capability catalog, decision method, templates, demonstrative examples, Equipment Blueprints, and Seed Validation. Preserve the Source Handoff as provenance, refresh canonical harness facts, and publish a reviewed PRD summary into GitHub Issues after the repo draft stabilizes.
 
 **Success Criteria**:
 
-- **Forge routing coverage**: Root `AGENTS.md` exposes the Forge Conveyor for Smiths, and `README.md` exposes the Forge Tour; Seed Validation confirms all linked target paths exist.
+- **Forge routing coverage**: Root `AGENTS.md` exposes the Forge Conveyor for Smiths, and `README.md` links readers to the Forge Tour; Seed Validation confirms all linked target paths exist.
 - **Source disposition coverage**: 100% of accepted Source Handoff requirements are recorded in `docs/closeout/forge-seed-source-disposition.md`; the ledger records the source manifest, item-level coverage, challenge status, arbitration requirements, operator decisions, evidence targets, source-bearing checkpoint, and final source-retired stamp.
 - **Validation pass rate**: `python3.14 -m unittest` and `python3.14 tools/validate_forge_seed.py` both exit 0 from the repository root.
 - **Harness evidence completeness**: 100% of canonical Harness Capability Catalog claims include evidence category, source URL, checked-at date, checked version or version basis, and uncertainty note when evidence is incomplete or inconsistent.
-- **Promotion-state coverage**: 100% of Forge Examples and downstream Smith specs declare an Equipment Promotion Path state; every Forge Example traces from capability card to interface decision record to projected components.
+- **Promotion-state coverage**: 100% of Forge Examples and Equipment Blueprints declare an Equipment Promotion Path state; every Forge Example traces from capability card to interface decision record to projected components.
 - **Security closeout coverage**: The Forge Seed has a repository threat model, a Codex Security scan of the Seed change set, a durable security closeout summary, and recorded disposition for every reportable finding before the change set is treated as merge-ready.
 - **Documentation closeout coverage**: Every agent-facing and human-facing doc plausibly affected by the Forge Seed is inspected and either updated or explicitly left unchanged with rationale; doc changes complete review-until-clean with audience-appropriate doc-writing guidance.
 - **Story closeout review coverage**: Before closeout, the Forge Seed completes separate Cross-Boundary Coherence and Story Quality Ralph Reviews so scoped process outputs agree at system level and the story satisfies holistic quality criteria.
@@ -37,14 +37,14 @@ Status: Repo Draft PRD
 - As a Smith, I want templates and demonstrative examples so that I can create Equipment Candidates without confusing examples for Published Agent Equipment.
 - As a Forgewright, I want preserved Source Handoff provenance and canonical projections so that I can audit origin decisions without treating old handoff prompts as current instructions.
 - As a Forgewright, I want a refreshed Harness Capability Catalog so that Forge guidance does not start from stale harness facts.
-- As a maintainer, I want Seed Validation so that required docs, links, provenance, projection decisions, promotion states, and catalog fields are checked by a repeatable tool.
+- As a maintainer, I want Seed Validation so that required docs, links, provenance/disposition decisions, promotion states, and catalog fields are checked by a repeatable tool.
 - As a human operator, I want GitHub Issues to remain the tracking surface after PRD review so that durable project work is visible in the issue tracker without creating draft churn.
 - As a Smith, I want a built-in path for unsatisfied Tooling Gaps so that I can stop unsafe equipment work, hand the Tooling Gap to a Forgewright, and resume with a clear hand-back.
 
 **Acceptance Criteria**:
 
-- Root `AGENTS.md` gives Smiths the Forge Conveyor for understanding the Forge, creating equipment, checking harness facts, using templates, and finding downstream Smith specs.
-- `README.md` gives humans a concise Forge Tour and links to the canonical starting path without exposing agent-only machinery.
+- Root `AGENTS.md` gives Smiths the Forge Conveyor for understanding the Forge, creating equipment, checking harness facts, using templates, and finding Equipment Blueprints.
+- `README.md` links human readers to the Forge Tour and canonical starting path without exposing agent-only machinery.
 - `CONTEXT.md` defines the Forge Seed language used by canonical docs and specs.
 - `docs/closeout/forge-seed-source-disposition.md` preserves the Source Handoff inventory and the disposition of accepted source requirements without keeping raw source prompts in the final tree.
 - Seed Validation supports a source-bearing checkpoint mode before raw source retirement and a source-retired final mode after the disposition ledger is stamped.
@@ -54,7 +54,7 @@ Status: Repo Draft PRD
 - `docs/story-closeout.md` defines Story Closeout gate order, subordinate change-set closeout gates, review sequencing, interdependency rerun rules, recursion boundaries, and completion criteria.
 - Seed templates cover capability cards, interface decision records, skill templates, hooks, Agent Profiles, plugins, scripts, MCP/tool definitions, config, security reviews, and context-budget reviews.
 - Forge Examples demonstrate PR review, documentation research, and observability investigation as annotated examples with promotion state `example`; each example traces from capability card to interface decision record to projected components.
-- Downstream specs exist for Agent Ops, Periodic Actions, and Harness Capability Refresh with promotion state `specified`; each spec projects the substantive requirements captured in the Source Disposition Ledger, including required harness projections, management behavior, storage expectations, tracked fields, and change-response rules where applicable.
+- Equipment Blueprints exist for Agent Ops, Periodic Actions, and Harness Capability Refresh with promotion state `specified`; each Blueprint projects the substantive requirements captured in the Source Disposition Ledger, including required harness projections, management behavior, storage expectations, tracked fields, and change-response rules where applicable.
 - Seed Validation provides human-readable output by default and machine-readable output with `--json`.
 - `docs/security/threat-model.md` records an initial Repository Threat Model for Agent Armory before the Forge Seed is considered merge-ready.
 - `docs/security/forge-seed-closeout.md` records the Seed security closeout scope, commands, scan artifact disposition, report disposition, findings, fixes, suppressions, deferments, and re-validation status.
@@ -109,7 +109,7 @@ The Forge Seed is a documentation- and validation-first system. It preserves the
 
 The seed separates durable surfaces by role:
 
-- `README.md`: human-facing orientation with a Forge Tour.
+- `README.md`: human-facing orientation that links to the Forge Tour.
 - `AGENTS.md`: always-loaded agent law and concise repo operating policy.
 - `CONTEXT.md`: project vocabulary and resolved ambiguities.
 - `docs/adr/`: short decision records for architecture and policy choices.
@@ -125,7 +125,7 @@ The seed separates durable surfaces by role:
 - `docs/harness-capabilities.md` and `docs/harness-capabilities.toml`: refreshed Harness Capability Catalog.
 - `templates/`: copyable templates for Smith-created Equipment Candidates.
 - `examples/`: annotated Forge Examples.
-- `specs/`: downstream Smith specs.
+- `specs/`: Equipment Blueprints.
 - `tools/validate_forge_seed.py`: Seed Validation Tool.
 - `tests/test_validate_forge_seed.py`: standard-library tests.
 

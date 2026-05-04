@@ -32,7 +32,7 @@ Smiths creating or modifying Agent Equipment should start with:
 - `docs/harness-capabilities.md` before making harness-specific claims.
 - `templates/` for seed templates.
 - `examples/` for annotated Forge Examples.
-- `specs/` for downstream Smith specs.
+- `specs/` for Equipment Blueprints.
 
 ## Agent skills
 

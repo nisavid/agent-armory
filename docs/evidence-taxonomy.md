@@ -58,7 +58,7 @@ staleness boundaries.
 
 ## source hygiene
 
-Follow these hygiene rules for Framework claims:
+Follow these hygiene rules for Forge claims:
 
 - prefer first-party docs, releases, source, schemas, and tests;
 - label third-party metadata as fallback;

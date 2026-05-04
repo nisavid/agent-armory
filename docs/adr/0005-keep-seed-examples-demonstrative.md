@@ -4,7 +4,7 @@ Forge Seed examples will be annotated demonstrations of the decision method, wit
 
 ## Considered Options
 
-- Make examples annotated demonstrations of the Framework method.
+- Make examples annotated demonstrations of the Forge method.
 - Make examples complete copyable equipment packages.
 - Omit examples from the Forge Seed.
 

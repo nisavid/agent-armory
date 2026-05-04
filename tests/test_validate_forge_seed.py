@@ -1,4 +1,5 @@
 import json
+import subprocess
 import tempfile
 import textwrap
 import unittest
@@ -9,12 +10,15 @@ from tools.validate_forge_seed import (
     CheckResult,
     FINAL_STAMP_CANONICAL_TREE_DIGEST_PLACEHOLDER,
     REQUIRED_HARNESSES,
+    SOURCE_DISPOSITION_ITEM_FIELDS,
+    SOURCE_DISPOSITION_MANIFEST_FIELDS,
     SOURCE_DISPOSITION_PATH,
     find_markdown_links,
     harness_matrix_rows,
     load_toml,
     render_human,
     run,
+    source_disposition_table_digest,
     validate_final_source_retired_stamp,
     validate_final_closeout,
     validate_canonical_docs,
@@ -1136,6 +1140,51 @@ class SourceDispositionTests(unittest.TestCase):
         path = root / SOURCE_DISPOSITION_PATH
         path.parent.mkdir(parents=True, exist_ok=True)
         digest_value = digest or FINAL_STAMP_CANONICAL_TREE_DIGEST_PLACEHOLDER
+        manifest_rows = [
+            {
+                "source_id": "SYN001",
+                "source_kind": "synthetic",
+                "original_path": "tools/validate_forge_seed.py",
+                "git_blob_id": "abc123",
+                "sha256": "def456",
+                "normalized_payload_digest": "789abc",
+                "durable_payload": synthetic_payload,
+            }
+        ]
+        item_rows = [
+            {
+                "item_id": "I001",
+                "source_id": "SYN001",
+                "coverage_status": "adequately_captured",
+                "challenge_status": "unchallenged",
+                "challenge_operator_confirmation_required": "false",
+                "arbitration_required": "false",
+                "disposition": "kept_current",
+                "operator_decision": "",
+                "evidence_target": "docs/agent-equipment-forge.md",
+                "normalized_claim_summary": "Keep the synthetic accepted requirement in the Forge docs.",
+            },
+            {
+                "item_id": "I002",
+                "source_id": "SYN001",
+                "coverage_status": "partially_captured",
+                "challenge_status": "resolved",
+                "challenge_operator_confirmation_required": "true",
+                "arbitration_required": "true",
+                "disposition": "integrated",
+                "operator_decision": "Operator accepted integration.",
+                "evidence_target": "docs/follow-ups/portable-agentic-engineering-workflow-equipment.md",
+                "normalized_claim_summary": "Capture the portable workflow equipment follow-up.",
+            },
+        ]
+        source_manifest_digest = source_disposition_table_digest(
+            manifest_rows,
+            SOURCE_DISPOSITION_MANIFEST_FIELDS,
+        )
+        source_disposition_digest = source_disposition_table_digest(
+            item_rows,
+            SOURCE_DISPOSITION_ITEM_FIELDS,
+        )
         path.write_text(
             textwrap.dedent(
                 f"""
@@ -1151,15 +1200,18 @@ class SourceDispositionTests(unittest.TestCase):
 
                 ## Disposition Items
 
-                | item_id | source_id | coverage_status | challenge_status | challenge_operator_confirmation_required | arbitration_required | disposition | operator_decision | evidence_target |
-                | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-                | I001 | SYN001 | adequately_captured | unchallenged | false | false | kept_current |  | docs/agent-equipment-forge.md |
-                | I002 | SYN001 | partially_captured | resolved | true | true | integrated | Operator accepted integration. | docs/follow-ups/portable-agentic-engineering-workflow-equipment.md |
+                | item_id | source_id | coverage_status | challenge_status | challenge_operator_confirmation_required | arbitration_required | disposition | operator_decision | evidence_target | normalized_claim_summary |
+                | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+                | I001 | SYN001 | adequately_captured | unchallenged | false | false | kept_current |  | docs/agent-equipment-forge.md | Keep the synthetic accepted requirement in the Forge docs. |
+                | I002 | SYN001 | partially_captured | resolved | true | true | integrated | Operator accepted integration. | docs/follow-ups/portable-agentic-engineering-workflow-equipment.md | Capture the portable workflow equipment follow-up. |
 
                 ## Source-Bearing Stamp
 
                 source_bearing_snapshot_tree_id: source-tree
                 source_bearing_stamp_id: source-bearing-1
+                source_manifest_digest: {source_manifest_digest}
+                source_disposition_digest: {source_disposition_digest}
+                source_bearing_result: passed
 
                 ## Final Source-Retired Stamp
 
@@ -1213,8 +1265,8 @@ class SourceDispositionTests(unittest.TestCase):
             path = root / SOURCE_DISPOSITION_PATH
             path.write_text(
                 path.read_text(encoding="utf-8").replace(
-                    "| I002 | SYN001 | partially_captured | resolved | true | true | integrated | Operator accepted integration. | docs/follow-ups/portable-agentic-engineering-workflow-equipment.md |",
-                    "| I002 | SYN001 | partially_captured | resolved | false | false | integrated |  | docs/follow-ups/portable-agentic-engineering-workflow-equipment.md |",
+                    "| I002 | SYN001 | partially_captured | resolved | true | true | integrated | Operator accepted integration. | docs/follow-ups/portable-agentic-engineering-workflow-equipment.md | Capture the portable workflow equipment follow-up. |",
+                    "| I002 | SYN001 | partially_captured | resolved | false | false | integrated |  | docs/follow-ups/portable-agentic-engineering-workflow-equipment.md | Capture the portable workflow equipment follow-up. |",
                 ),
                 encoding="utf-8",
             )
@@ -1226,6 +1278,104 @@ class SourceDispositionTests(unittest.TestCase):
                 "source_disposition:item:I002",
                 False,
                 "integrated disposition requires arbitration and operator_decision",
+                SOURCE_DISPOSITION_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_source_disposition_rejects_missing_normalized_claim_summary(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_source_disposition(root)
+            path = root / SOURCE_DISPOSITION_PATH
+            path.write_text(
+                path.read_text(encoding="utf-8").replace(" | normalized_claim_summary", ""),
+                encoding="utf-8",
+            )
+
+            results = validate_source_disposition(root)
+
+        self.assertIn(
+            CheckResult(
+                "source_disposition:item:I001",
+                False,
+                "missing fields: normalized_claim_summary",
+                SOURCE_DISPOSITION_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_source_disposition_rejects_empty_normalized_claim_summary(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_source_disposition(root)
+            path = root / SOURCE_DISPOSITION_PATH
+            path.write_text(
+                path.read_text(encoding="utf-8").replace(
+                    "| I001 | SYN001 | adequately_captured | unchallenged | false | false | kept_current |  | docs/agent-equipment-forge.md | Keep the synthetic accepted requirement in the Forge docs. |",
+                    "| I001 | SYN001 | adequately_captured | unchallenged | false | false | kept_current |  | docs/agent-equipment-forge.md |  |",
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_source_disposition(root)
+
+        self.assertIn(
+            CheckResult(
+                "source_disposition:item:I001",
+                False,
+                "normalized_claim_summary required",
+                SOURCE_DISPOSITION_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_source_disposition_rejects_source_manifest_digest_mismatch(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_source_disposition(root)
+            path = root / SOURCE_DISPOSITION_PATH
+            path.write_text(
+                path.read_text(encoding="utf-8").replace(
+                    "source_manifest_digest: ",
+                    "source_manifest_digest: bad",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_source_disposition(root)
+
+        self.assertIn(
+            CheckResult(
+                "source_disposition:source_manifest_digest",
+                False,
+                "source_manifest_digest mismatch",
+                SOURCE_DISPOSITION_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_source_disposition_rejects_missing_source_bearing_stamp_field(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_source_disposition(root)
+            path = root / SOURCE_DISPOSITION_PATH
+            path.write_text(
+                path.read_text(encoding="utf-8").replace(
+                    "\nsource_bearing_result: passed",
+                    "",
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_source_disposition(root)
+
+        self.assertIn(
+            CheckResult(
+                "source_disposition:stamp:source_bearing_result",
+                False,
+                "missing source_bearing_result",
                 SOURCE_DISPOSITION_PATH,
             ),
             results,
@@ -1259,6 +1409,20 @@ class SourceDispositionTests(unittest.TestCase):
             results = validate_final_source_retired_stamp(root)
 
         self.assertTrue(all(result.ok for result in results), results)
+
+    def test_source_retired_stamp_digest_ignores_untracked_scratch_files(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_source_disposition(root)
+            subprocess.run(["git", "-C", str(root), "init"], check=True, stdout=subprocess.DEVNULL)
+            subprocess.run(["git", "-C", str(root), "add", "docs"], check=True, stdout=subprocess.DEVNULL)
+            before = validate_final_source_retired_stamp(root, pre_stamp=True)[0].detail
+
+            (root / "codex-security-scans").mkdir()
+            (root / "codex-security-scans/report.md").write_text("# Scratch\n", encoding="utf-8")
+            after = validate_final_source_retired_stamp(root, pre_stamp=True)[0].detail
+
+        self.assertEqual(before, after)
 
     def test_run_source_bearing_requires_raw_source_inputs(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -1492,7 +1656,7 @@ class CanonicalDocTests(unittest.TestCase):
             "Harness Fact Refresh",
             "Change set closeout",
             "Issue Projection",
-            "downstream Smith specs",
+            "Equipment Blueprints",
             "Tooling Gap intake",
         ],
         "docs/interface-decision-guide.md": ["Decision tree", "placement guide"],
@@ -2682,6 +2846,29 @@ class ProjectionDraftValidationTests(unittest.TestCase):
                 f"final_closeout:evidence:{self.projection_path}:portable evidence",
                 False,
                 "external projection drafts must not publish host-local or scratch artifact paths",
+                self.projection_path,
+            ),
+            results,
+        )
+
+    def test_validate_final_closeout_rejects_hard_coded_validation_counts(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_projection_drafts(
+                root,
+                self.valid_projection_drafts()
+                .replace("Cross-Boundary Coherence review: `TO_FILL_AFTER_CLEAN_REVIEW`", "Cross-Boundary Coherence review: Ralph Review Cycle 53.")
+                .replace("Story Quality review: `TO_FILL_AFTER_CLEAN_REVIEW`", "Story Quality review: Ralph Review Cycle 54.")
+                + "\n\n- `python3.14 -m unittest tests/test_validate_forge_seed.py`: 264 tests passed.\n",
+            )
+
+            results = validate_final_closeout(root)
+
+        self.assertIn(
+            CheckResult(
+                f"final_closeout:evidence:{self.projection_path}:validation evidence",
+                False,
+                "final closeout evidence should cite validation commands without hard-coded pass counts",
                 self.projection_path,
             ),
             results,
@@ -7936,7 +8123,7 @@ class SpecValidationTests(unittest.TestCase):
             [
                 f"# {title}",
                 "",
-                "Status: Downstream Smith Spec",
+                "Status: Equipment Blueprint",
                 "Promotion state: specified",
                 "",
                 "This spec describes desired behavior only. It does not implement Agent Equipment.",
@@ -7998,7 +8185,7 @@ class SpecValidationTests(unittest.TestCase):
                 """\
                 Required harnesses: Codex, OpenClaw, Hermes Agent, Claude Code, Cursor, OpenCode.
                 Required tracked fields: current version, checked-at timestamp, source URLs, supported Harness Component types, key affordances, known limitations, scheduling mechanisms, hook/event names, skill discovery paths, plugin interfaces, MCP behavior.
-                Change-response issue behavior creates a high-priority issue with current version, previous version, capability affected, source evidence, expected Framework impact, and suggested Smith task.
+                Change-response issue behavior creates a high-priority issue with current version, previous version, capability affected, source evidence, expected Forge impact, and suggested Smith task.
                 Fallback issue candidate path: issues/pending/high/.
                 Weekly starting cadence.
                 Prioritization order: security-relevant behavior, hook blocking semantics, permissions and sandboxing, scheduling, skill discovery/context behavior, plugin packaging, MCP tool exposure and context bloat.
@@ -8064,7 +8251,7 @@ class SpecValidationTests(unittest.TestCase):
                     "specs/periodic-actions.md": """\
                         # Periodic Actions Spec
 
-                        Status: Downstream Smith Spec
+                        Status: Equipment Blueprint
                         Promotion state: specified
 
                         ## Purpose
@@ -8231,7 +8418,7 @@ class SpecValidationTests(unittest.TestCase):
             "previous version",
             "capability affected",
             "source evidence",
-            "expected Framework impact",
+            "expected Forge impact",
             "suggested Smith task",
         ]
         with tempfile.TemporaryDirectory() as tmpdir:

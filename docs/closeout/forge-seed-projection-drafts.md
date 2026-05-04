@@ -23,7 +23,7 @@ Draft body:
 ```markdown
 # Forge Seed PRD
 
-Status: Implemented in branch `forge-seed`; pending PR publication.
+Status: Implemented on the branch intended to be pushed as `forge-seed`; pending PR publication.
 
 Repo draft: `docs/prd/forge-seed.md`
 
@@ -34,12 +34,12 @@ Repo draft: `docs/prd/forge-seed.md`
   validators, and closeout evidence.
 - Root `AGENTS.md` gives Smiths the zero-scout Forge Conveyor, including
   Tooling Request and Story Closeout routing.
-- Root `README.md` remains the Forge Tour and avoids agent-only
+- Root `README.md` links readers to the Forge Tour and avoids agent-only
   policy detail.
 - Forge Canon describe equipment vocabulary, runbooks, harness
   capabilities, evidence, security/control boundaries, promotion policy, and
   Story Closeout.
-- Templates, examples, and downstream Smith specs exist without implying
+- Templates, examples, and Equipment Blueprints exist without implying
   installability, publication, or production readiness.
 - Seed Validation and tests check required files, source disposition and
   retirement status, markdown links, templates, examples, specs, Story
@@ -56,7 +56,7 @@ The Forge Seed adds:
 - templates for skills, hooks, MCP tools, plugins, scripts, configs, security
   review, Agent Profiles, and interface decisions;
 - Forge Examples under `examples/`;
-- downstream Smith specs under `specs/`;
+- Equipment Blueprints under `specs/`;
 - Tooling Request from Smith to Forgewright;
 - Story Closeout, security closeout, documentation closeout, and projection
   draft surfaces;
@@ -64,13 +64,10 @@ The Forge Seed adds:
 
 ## Validation
 
-- `python3.14 -m unittest tests/test_validate_forge_seed.py`: 264 tests
-  passed.
-- `python3.14 tools/validate_forge_seed.py`: 0 failed, 174 passed.
-- `python3.14 tools/validate_forge_seed.py --json`: 174 passing result
-  objects.
-- `python3.14 tools/validate_forge_seed.py --final-closeout`: 0 failed,
-  175 passed.
+- `python3.14 -m unittest tests/test_validate_forge_seed.py`: passed.
+- `python3.14 tools/validate_forge_seed.py`: passed.
+- `python3.14 tools/validate_forge_seed.py --json`: passed.
+- `python3.14 tools/validate_forge_seed.py --final-closeout`: passed.
 - `git diff --check`: passed.
 
 ## Security Closeout
@@ -86,7 +83,7 @@ The Forge Seed adds:
 ## Documentation Closeout
 
 Documentation closeout inspected live agent-facing and human-facing surfaces,
-Forge Canon, PRD, ADRs, plan, source projection, security docs,
+Forge Canon, PRD, ADRs, plan, source-disposition evidence, security docs,
 closeout docs, specs, templates, examples, and archived handoff material reached
 by stale-language searches.
 

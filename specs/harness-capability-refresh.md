@@ -1,23 +1,23 @@
 # Harness Capability Refresh Spec
 
-Status: Downstream Smith Spec
+Status: Equipment Blueprint
 Promotion state: specified
 
 This spec describes desired behavior for future Agent Equipment. It does not implement Agent Equipment, create a live scheduler, or assert that current harness facts are already refreshed.
 
 ## Purpose
 
-Harness Capability Refresh keeps the Armory's harness knowledge current enough for Framework decisions. It periodically checks supported harnesses, records source-backed capability facts, and opens a high-priority issue or issue candidate when depended-on behavior changes.
+Harness Capability Refresh keeps the Armory's harness knowledge current enough for Forge decisions. It periodically checks supported harnesses, records source-backed capability facts, and opens a high-priority issue or issue candidate when depended-on behavior changes.
 
 ## User stories
 
 ### Maintainer receives drift signal
 
-As a maintainer, I receive a clear signal when a harness changes a capability that the Framework depends on.
+As a maintainer, I receive a clear signal when a harness changes a capability that the Forge depends on.
 
 ### Smith receives source-backed facts
 
-As a Smith, I can inspect the latest refresh record for a supported harness and see the source URLs, checked-at timestamp, version evidence, affordances, limitations, and Framework impact.
+As a Smith, I can inspect the latest refresh record for a supported harness and see the source URLs, checked-at timestamp, version evidence, affordances, limitations, and Forge impact.
 
 ### Agent falls back without issue access
 
@@ -51,7 +51,7 @@ For each harness, the refresh records these tracked fields:
 When depended-on capabilities change, the refresh creates a high-priority issue with this title shape:
 
 ```text
-[high] Refresh Framework for <harness> <capability> change
+[high] Refresh Forge for <harness> <capability> change
 ```
 
 The issue body includes:
@@ -60,7 +60,7 @@ The issue body includes:
 - previous version,
 - capability affected,
 - source evidence,
-- expected Framework impact,
+- expected Forge impact,
 - suggested Smith task.
 
 If GitHub issue creation is unavailable, the refresh writes a markdown issue candidate under `issues/pending/high/`:

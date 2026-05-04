@@ -1,6 +1,6 @@
 # Periodic Actions Spec
 
-Status: Downstream Smith Spec
+Status: Equipment Blueprint
 Promotion state: specified
 
 This spec describes desired behavior for future Agent Equipment. It does not implement Agent Equipment, install scheduled work, or select a final harness mechanism.

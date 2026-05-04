@@ -10,6 +10,6 @@ The Forge Seed will include `docs/forgewright-runbook.md` as a concise canonical
 
 ## Consequences
 
-- Framework maintenance duties become discoverable without bloating always-loaded agent instructions.
-- The runbook should point to source handoff preservation, decision projection, review-until-clean quality gates, harness fact refresh, and downstream Smith spec creation.
-- Specific project execution details still belong in PRDs, plans, specs, and ADRs.
+- Forge maintenance duties become discoverable without bloating always-loaded agent instructions.
+- The runbook should point to source handoff preservation, decision projection, review-until-clean quality gates, harness fact refresh, and Equipment Blueprint creation.
+- Specific project execution details still belong in PRDs, plans, Blueprints, and ADRs.

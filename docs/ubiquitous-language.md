@@ -42,7 +42,7 @@ use `agents/` for source paths that follow harness/plugin convention.
 
 **Forge Seed** is the first coherent version of the Agent Equipment Forge.
 
-**Seed Validation** checks the Forge Seed's repository shape, links, source projection, promotion-state labels, and catalog metadata.
+**Seed Validation** checks the Forge Seed's repository shape, links, source disposition, promotion-state labels, and catalog metadata.
 
 **Harness Capability Catalog** is the canonical versioned record of Agent Harness affordances, limitations, sources, and refresh requirements.
 

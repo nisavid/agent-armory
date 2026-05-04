@@ -20,8 +20,9 @@ Run closeout gates in this order:
 6. Run Cross-Boundary Coherence before Story Quality because quality review depends on coherent process evidence.
 7. Run Story Quality Ralph Review after coherence findings are fixed or soundly rejected.
 8. Run final validation and publication-readiness checks required by the active plan or repository policy. For the Forge Seed, `python3.14 tools/validate_forge_seed.py --final-closeout` is the branch-push and external-projection readiness check.
-9. Publish or update issue, PR, release, and handoff surfaces from the clean final story evidence.
-10. Perform publication actions that remain in scope, respecting repository policy and stated human pause points.
+9. Push or otherwise publish the branch only when the active plan, operator direction, or issue-projection surface needs a pushed commit before PR creation. A stated human pause point may occur here.
+10. Publish or update issue, PR, release, and handoff surfaces from the clean final story evidence.
+11. Perform publication actions that remain in scope, respecting repository policy and stated human pause points.
 
 Do not use issue projection, a PR body, or a final chat summary to make stale committed docs look current. Update the repo surface first when the evidence belongs in the repo.
 
@@ -34,7 +35,7 @@ Rerun the gate that owns any surface changed by a review fix.
 - Security changes rerun or update Change Set Security Closeout when the change touches trust boundaries, executable code, hooks, MCP/tool definitions, permissions, secrets handling, network/file/process side effects, package metadata, or security policy.
 - Documentation changes rerun or update Change Set Documentation Closeout when they change agent-facing policy, human-facing orientation, Forge Canon, examples, templates, specs, closeout claims, or issue/PR projection text that is derived from repo docs.
 - Validation changes rerun deterministic tests and Seed Validation. Treat validator logic as security-relevant when it gates merge-readiness evidence or suppresses risks.
-- PRD, spec, or plan changes rerun source projection, acceptance-criteria checks, and Cross-Boundary Coherence review for the affected scope.
+- PRD, Blueprint, or plan changes rerun source-disposition/provenance checks, acceptance-criteria checks, and Cross-Boundary Coherence review for the affected scope.
 - Issue or PR projection draft changes rerun the checks that prove the draft matches the current repo source of truth before external publication.
 - Final validation or publication-readiness changes rerun projection for any issue, PR, release, or handoff surface that carries the changed evidence.
 - Published issue, PR, release, or handoff corrections rerun a projection consistency check and a narrow Cross-Boundary Coherence review for the corrected surface.
@@ -45,7 +46,7 @@ If a revision changes security, documentation, validation, PRD/spec/plan scope, 
 
 ## Review gates
 
-Cross-Boundary Coherence Ralph Review checks whether the story's process outputs agree across PRD, specs, plans, implementation, deterministic validation, security closeout, documentation closeout, source projection, existing or draft issue/PR projection, and release or handoff surfaces.
+Cross-Boundary Coherence Ralph Review checks whether the story's process outputs agree across PRD, Blueprints, plans, implementation, deterministic validation, security closeout, documentation closeout, source-disposition/provenance evidence, existing or draft issue/PR projection, and release or handoff surfaces.
 
 Story Quality Ralph Review checks whether the story meets broader quality expectations after coherence is established: DX, UX, code quality, clean architecture, cohesive module boundaries, robustness against unspecified situations, interactions, user personas and attack paths, lessons from pathological dev/ops cycles, and alignment with a coherent strategic vision.
 

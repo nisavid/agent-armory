@@ -31,7 +31,7 @@ Observability data is live external state, so retrieval belongs in tools with ty
 
 ## Evidence category
 
-Implementation inference. The example demonstrates the Framework placement method without validating any observability integration.
+Implementation inference. The example demonstrates the Forge placement method without validating any observability integration.
 
 ## Harness-specific projection
 

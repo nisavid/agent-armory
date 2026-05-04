@@ -36,7 +36,7 @@ and the exported hook contract visible before implementation.
 Agent Profiles define reusable specialized Agent configurations.
 
 Many harness and plugin file layouts call these configurations `agents`; the
-Framework prose term remains Agent Profile.
+Forge prose term remains Agent Profile.
 
 Use an Agent Profile when the task needs distinct identity, authority, model/runtime preference, tool access, permissions, autonomy, context, skills, or output contract. Avoid profile proliferation for small prompt variations.
 
@@ -63,7 +63,7 @@ validator example.
 
 ## local docs
 
-Local docs store canonical project truth: policy, architecture, runbooks, evidence, maintenance rules, source projections, and troubleshooting guidance.
+Local docs store canonical project truth: policy, architecture, runbooks, evidence, maintenance rules, source-disposition/provenance records, and troubleshooting guidance.
 
 Use docs when humans and Agents need the same current rule. Link or route to docs from skills rather than duplicating the full guidance.
 

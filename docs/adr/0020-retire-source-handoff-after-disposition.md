@@ -16,9 +16,10 @@ source-only prompts, and pre-Seed uncertainty.
 
 Retire raw source handoff files after a source-bearing checkpoint records a
 self-contained Source Disposition Ledger. The ledger must preserve enough
-bounded excerpts, normalized summaries, synthetic source payloads, manifest
-digests, operator decisions, and source-retirement stamp evidence for future
-Forgewrights to audit the Seed without relying on raw source files or Git object
+source identity evidence, normalized summaries, synthetic source payloads,
+manifest and disposition digests, operator decisions, and source-retirement
+stamp evidence for future Forgewrights to audit the Seed without relying on raw
+source files, chat history, host-local scratch artifacts, or Git object
 reachability.
 
 ## Consequences

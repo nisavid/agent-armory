@@ -20,7 +20,7 @@ Use hooks, permissions, sandboxes, approvals, dry runs, explicit destructive fla
 
 ## secrets
 
-Never put secrets, personal credentials, private tokens, or host-specific credential paths in Framework docs, examples, templates, specs, skills, hooks, scripts, or config.
+Never put secrets, personal credentials, private tokens, or host-specific credential paths in Forge Canon, examples, templates, specs, skills, hooks, scripts, or config.
 
 Use secret references or documented environment contracts. Redact secret-like values in logs, hook output, tool results, and examples.
 

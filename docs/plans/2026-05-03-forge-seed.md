@@ -4,7 +4,9 @@
 
 **Goal:** Build the Forge Seed defined in `docs/prd/forge-seed.md`.
 
-**Architecture:** The seed is documentation- and validation-first. Canonical docs, templates, examples, specs, and refreshed harness facts are created as Seed Surfaces, while `tools/validate_forge_seed.py` and `tests/test_validate_forge_seed.py` enforce the repository shape, link paths, source projection register, promotion-state labels, and catalog metadata.
+**Architecture:** The seed is documentation- and validation-first. Canonical docs, templates, examples, Equipment Blueprints, and refreshed harness facts are created as Seed Surfaces, while `tools/validate_forge_seed.py` and `tests/test_validate_forge_seed.py` enforce the repository shape, link paths, source disposition, promotion-state labels, and catalog metadata.
+
+**Source-retirement note:** Task 2 records the original source-bearing implementation path. ADR 0020 superseded that path for the final tree: `docs/metasmith/**` and the Source Projection Register were retired after the source-bearing checkpoint, and `docs/closeout/forge-seed-source-disposition.md` is now the durable source-disposition surface. Do not recreate `docs/metasmith/**` during closeout unless a later accepted decision explicitly reopens source-bearing work.
 
 **Tech Stack:** Markdown, TOML, Python 3.14 standard library, `unittest`, Git, Firecrawl or equivalent first-party web source retrieval, GitHub issue tooling for post-review Issue Projection.
 
@@ -19,7 +21,7 @@ Create or modify these files:
 - Modify: `CONTEXT.md` for any new durable term exposed by implementation or closeout policy.
 - Modify: `docs/prd/forge-seed.md` if security closeout or seed-surface requirements are refined during implementation.
 - Create: ADRs for new durable policy decisions.
-- Create: `docs/metasmith/source-projection.md` for the Source Projection Register.
+- Create: `docs/closeout/forge-seed-source-disposition.md` for source-handoff disposition and final source-retirement evidence.
 - Create: `docs/security/threat-model.md` for the persistent Repository Threat Model.
 - Create: `docs/security/forge-seed-closeout.md` for Forge Seed security closeout evidence.
 - Create: `docs/closeout/forge-seed-documentation.md` for Forge Seed documentation closeout evidence.
@@ -341,6 +343,8 @@ git commit -m "test(forge): add seed validator primitives" -m "Co-authored-by: C
 ```
 
 ## Task 2: Source Projection Register and Handoff Provenance
+
+This task is superseded as final-tree guidance by the Source Disposition Ledger. The historical steps remain here to preserve the reviewed TDD path through the source-bearing checkpoint.
 
 **Files:**
 - Modify: `tools/validate_forge_seed.py`
@@ -2341,7 +2345,7 @@ git commit -m "docs(templates): add Forge Seed templates" -m "Co-authored-by: Co
 **Files:**
 - Create every `examples/` path listed in the File Structure section.
 - Modify: `AGENTS.md`
-- Modify: `docs/metasmith/source-projection.md`
+- Modify: `docs/closeout/forge-seed-source-disposition.md`
 - Modify: `docs/plans/2026-05-03-forge-seed.md`
 - Modify: `tools/validate_forge_seed.py`
 - Modify: `tests/test_validate_forge_seed.py`
@@ -2391,17 +2395,17 @@ Expected: example checks PASS; specs may still FAIL.
 Run:
 
 ```bash
-git add AGENTS.md docs/metasmith/source-projection.md docs/plans/2026-05-03-forge-seed.md examples tools/validate_forge_seed.py tests/test_validate_forge_seed.py
+git add AGENTS.md docs/closeout/forge-seed-source-disposition.md docs/plans/2026-05-03-forge-seed.md examples tools/validate_forge_seed.py tests/test_validate_forge_seed.py
 git commit -m "docs(examples): add Forge method examples" -m "Co-authored-by: Codex <noreply@openai.com>"
 ```
 
-## Task 8: Downstream Smith Specs
+## Task 8: Equipment Blueprints
 
 **Files:**
 - Create: `specs/agent-ops.md`
 - Create: `specs/periodic-actions.md`
 - Create: `specs/harness-capability-refresh.md`
-- Modify: `docs/metasmith/source-projection.md`
+- Modify: `docs/closeout/forge-seed-source-disposition.md`
 - Modify: `docs/plans/2026-05-03-forge-seed.md`
 - Modify: `tools/validate_forge_seed.py`
 - Modify: `tests/test_validate_forge_seed.py`
@@ -2476,14 +2480,14 @@ Expected: spec checks PASS. The full repository validator may still report the f
 Run:
 
 ```bash
-git add docs/metasmith/source-projection.md docs/plans/2026-05-03-forge-seed.md specs tools/validate_forge_seed.py tests/test_validate_forge_seed.py
+git add docs/closeout/forge-seed-source-disposition.md docs/plans/2026-05-03-forge-seed.md specs tools/validate_forge_seed.py tests/test_validate_forge_seed.py
 git commit -m "docs(specs): add initial smith task specs" -m "Co-authored-by: Codex <noreply@openai.com>"
 ```
 
 ## Task 9: Final Validation, Security Closeout, Documentation Closeout, Review, and Issue Projection
 
 **Files:**
-- Modify: `docs/metasmith/source-projection.md`
+- Modify: `docs/closeout/forge-seed-source-disposition.md`
 - Modify: `AGENTS.md`
 - Modify: `CONTEXT.md`
 - Modify: `docs/prd/forge-seed.md`
@@ -2711,7 +2715,7 @@ Dispatch an xhigh reviewer with the full merge-base-to-working-tree diff, includ
 
 1. Cross-Boundary Coherence Ralph Review:
    - PRD/spec/plan/implementation agreement,
-   - source projection completeness,
+   - source-disposition completeness,
    - AGENTS/README boundary,
    - harness evidence quality,
    - validation coverage,
@@ -2829,7 +2833,7 @@ Immediately before writing to the issue tracker, capture the projected SHA:
 git rev-parse HEAD
 ```
 
-Use that SHA in the issue body. If GitHub issue creation is unavailable, update `docs/metasmith/source-projection.md` or a closeout note with `Issue Projection pending`, the reason, and the attempted projection SHA captured immediately before the fallback note. Then rerun validation, Ralph-review that repo-file adjustment, and commit it before closeout.
+Use that SHA in the issue body. If GitHub issue creation is unavailable, update `docs/closeout/forge-seed-projection-drafts.md` or a neutral closeout note with `Issue Projection pending`, the reason, and the attempted projection SHA captured immediately before the fallback note. Then rerun validation, Ralph-review that repo-file adjustment, and commit it before closeout.
 
 After creating or updating the Published PRD Issue, verify the published issue body matches the reviewed projection draft and the projected SHA. If the published issue differs materially from the reviewed draft, correct the issue and run a narrow Cross-Boundary Coherence review for the corrected projection surface.
 
@@ -3029,7 +3033,7 @@ Spec coverage:
 - Harness Capability Catalog refresh: Task 5.
 - Templates: Task 6.
 - Examples: Task 7.
-- Downstream Smith specs: Task 8.
+- Equipment Blueprints: Task 8.
 - Seed Validation: Tasks 1 through 8.
 - Change Set Security Closeout and Repository Threat Model: Task 9.
 - Change Set Documentation Closeout: Task 9.
@@ -3038,12 +3042,12 @@ Spec coverage:
 Placeholder scan:
 
 - No `TBD`, `TODO`, `fill in`, or `implement later` placeholders are intended in this plan.
-- Each deferred scope is named as a non-goal or downstream Smith spec, not a placeholder.
+- Each deferred scope is named as a non-goal or Equipment Blueprint, not a placeholder.
 
 Type and name consistency:
 
 - Use `Seed Validation Tool` for `tools/validate_forge_seed.py`.
-- Use `Source Projection Register` for `docs/metasmith/source-projection.md`.
+- Use `Source Disposition Ledger` for `docs/closeout/forge-seed-source-disposition.md`.
 - Use `Repository Threat Model` for `docs/security/threat-model.md`.
 - Use `Change Set Security Closeout` for the merge-readiness security gate.
 - Use `Change Set Documentation Closeout` for the affected-doc sweep and review gate.

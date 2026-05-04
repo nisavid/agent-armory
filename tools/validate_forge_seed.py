@@ -6,6 +6,7 @@ import ast
 import hashlib
 import json
 import re
+import subprocess
 import sys
 import tomllib
 from dataclasses import asdict, dataclass
@@ -305,6 +306,7 @@ SOURCE_DISPOSITION_ITEM_FIELDS = [
     "disposition",
     "operator_decision",
     "evidence_target",
+    "normalized_claim_summary",
 ]
 SOURCE_DISPOSITION_COVERAGE_STATUSES = {
     "adequately_captured",
@@ -322,6 +324,13 @@ SOURCE_DISPOSITION_MATRIX = {
     "intentionally_deferred": {"deferred"},
 }
 FINAL_STAMP_CANONICAL_TREE_DIGEST_PLACEHOLDER = "STAMP_CANONICAL_TREE_DIGEST"
+SOURCE_BEARING_STAMP_FIELDS = [
+    "source_bearing_snapshot_tree_id",
+    "source_bearing_stamp_id",
+    "source_manifest_digest",
+    "source_disposition_digest",
+    "source_bearing_result",
+]
 
 ACCEPTED_SOURCE_REQUIREMENTS = {
     "H001": {"source_file": "00-metasmith-handoff-prompt.md", "source_anchor": "Your objective"},
@@ -419,7 +428,7 @@ CANONICAL_DOC_REQUIRED_SECTIONS = {
         "Harness Fact Refresh",
         "Change set closeout",
         "Issue Projection",
-        "downstream Smith specs",
+        "Equipment Blueprints",
         "Tooling Gap intake",
     ],
     "docs/interface-decision-guide.md": ["Decision tree", "placement guide"],
@@ -637,6 +646,10 @@ PROJECTION_DRAFTS_SCRATCH_ARTIFACT_MARKERS = [
     "file:///var/tmp/",
     "codex-security-scans/",
 ]
+FINAL_CLOSEOUT_EXACT_VALIDATION_COUNT_RE = re.compile(
+    r"\b\d+\s+(?:tests?\s+)?passed\b|\b\d+\s+passing result objects\b",
+    re.IGNORECASE,
+)
 HARNESS_CATALOG_MARKDOWN_PATH = "docs/harness-capabilities.md"
 HARNESS_CATALOG_PATH = "docs/harness-capabilities.toml"
 REQUIRED_HARNESSES = [
@@ -771,7 +784,7 @@ SPEC_REQUIRED_TEXT = {
         "previous version",
         "capability affected",
         "source evidence",
-        "expected Framework impact",
+        "expected Forge impact",
         "suggested Smith task",
         "issues/pending/high/",
         "weekly starting cadence",
@@ -989,6 +1002,15 @@ def parse_markdown_table(markdown: str) -> list[dict[str, str]]:
     return parsed
 
 
+def source_disposition_table_digest(rows: list[dict[str, str]], fields: list[str]) -> str:
+    normalized_rows = [
+        {field: row.get(field, "").strip() for field in fields}
+        for row in rows
+    ]
+    data = json.dumps(normalized_rows, ensure_ascii=True, separators=(",", ":"), sort_keys=True)
+    return hashlib.sha256(data.encode("utf-8")).hexdigest()
+
+
 def parse_bool_cell(value: str) -> bool | None:
     folded = value.strip().casefold()
     if folded == "true":
@@ -1068,6 +1090,72 @@ def validate_source_disposition(root: Path) -> list[CheckResult]:
                 )
             )
 
+    source_manifest_digest = final_stamp_field(markdown, "source_manifest_digest")
+    if source_manifest_digest is None:
+        results.append(
+            CheckResult(
+                "source_disposition:source_manifest_digest",
+                False,
+                "missing source_manifest_digest",
+                SOURCE_DISPOSITION_PATH,
+            )
+        )
+    elif manifest_rows and source_manifest_digest != source_disposition_table_digest(
+        manifest_rows,
+        SOURCE_DISPOSITION_MANIFEST_FIELDS,
+    ):
+        results.append(
+            CheckResult(
+                "source_disposition:source_manifest_digest",
+                False,
+                "source_manifest_digest mismatch",
+                SOURCE_DISPOSITION_PATH,
+            )
+        )
+
+    source_disposition_digest = final_stamp_field(markdown, "source_disposition_digest")
+    if source_disposition_digest is None:
+        results.append(
+            CheckResult(
+                "source_disposition:source_disposition_digest",
+                False,
+                "missing source_disposition_digest",
+                SOURCE_DISPOSITION_PATH,
+            )
+        )
+    elif item_rows and source_disposition_digest != source_disposition_table_digest(
+        item_rows,
+        SOURCE_DISPOSITION_ITEM_FIELDS,
+    ):
+        results.append(
+            CheckResult(
+                "source_disposition:source_disposition_digest",
+                False,
+                "source_disposition_digest mismatch",
+                SOURCE_DISPOSITION_PATH,
+            )
+        )
+
+    for field in SOURCE_BEARING_STAMP_FIELDS:
+        if final_stamp_field(markdown, field) is None:
+            results.append(
+                CheckResult(
+                    f"source_disposition:stamp:{field}",
+                    False,
+                    f"missing {field}",
+                    SOURCE_DISPOSITION_PATH,
+                )
+            )
+    if final_stamp_field(markdown, "source_bearing_result") != "passed":
+        results.append(
+            CheckResult(
+                "source_disposition:stamp:source_bearing_result",
+                False,
+                "source_bearing_result must be passed",
+                SOURCE_DISPOSITION_PATH,
+            )
+        )
+
     for row in item_rows:
         item_id = row.get("item_id", "")
         missing = [field for field in SOURCE_DISPOSITION_ITEM_FIELDS if field not in row]
@@ -1081,6 +1169,15 @@ def validate_source_disposition(root: Path) -> list[CheckResult]:
                 )
             )
             continue
+        if not row["normalized_claim_summary"].strip():
+            results.append(
+                CheckResult(
+                    f"source_disposition:item:{item_id}",
+                    False,
+                    "normalized_claim_summary required",
+                    SOURCE_DISPOSITION_PATH,
+                )
+            )
         if row["source_id"] not in source_ids:
             results.append(
                 CheckResult(
@@ -1219,9 +1316,25 @@ def normalized_stamp_text(text: str) -> str:
     return text
 
 
+def git_tracked_files(root: Path) -> list[Path] | None:
+    try:
+        completed = subprocess.run(
+            ["git", "-C", str(root), "ls-files", "-z"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    entries = [entry for entry in completed.stdout.decode("utf-8").split("\0") if entry]
+    return [root / entry for entry in entries]
+
+
 def placeholder_normalized_tree_digest(root: Path) -> str:
     digest = hashlib.sha256()
-    for path in sorted(root.rglob("*")):
+    tracked_files = git_tracked_files(root)
+    paths = tracked_files if tracked_files is not None else sorted(root.rglob("*"))
+    for path in paths:
         if not path.is_file():
             continue
         try:
@@ -2310,6 +2423,17 @@ def validate_final_closeout(root: Path) -> list[CheckResult]:
                 PROJECTION_DRAFTS_PATH,
             )
         )
+    for evidence_path in (PROJECTION_DRAFTS_PATH, SECURITY_CLOSEOUT_PATH):
+        ok, _detail, current_path = repo_relative_path_status(root, evidence_path, "file")
+        if ok and FINAL_CLOSEOUT_EXACT_VALIDATION_COUNT_RE.search(current_path.read_text(encoding="utf-8")):
+            results.append(
+                CheckResult(
+                    f"final_closeout:evidence:{evidence_path}:validation evidence",
+                    False,
+                    "final closeout evidence should cite validation commands without hard-coded pass counts",
+                    evidence_path,
+                )
+            )
     if not any(result.name.startswith("final_closeout:") and not result.ok for result in results):
         results.append(CheckResult("final_closeout:forge-seed", True, "ready", PROJECTION_DRAFTS_PATH))
     return results

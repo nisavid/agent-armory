@@ -31,7 +31,7 @@ The need for current documentation is situational, so a skill is appropriate for
 
 ## Evidence category
 
-Implementation inference. The example reflects the Framework method and current project policy but does not validate any provider integration.
+Implementation inference. The example reflects the Forge method and current project policy but does not validate any provider integration.
 
 ## Harness-specific projection
 

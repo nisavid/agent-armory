@@ -1,6 +1,6 @@
 # Agent Ops Spec
 
-Status: Downstream Smith Spec
+Status: Equipment Blueprint
 Promotion state: specified
 
 This spec describes desired behavior for future Agent Equipment. It does not implement Agent Equipment, publish installable assets, or establish a final config schema.

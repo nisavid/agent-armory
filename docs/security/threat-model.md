@@ -29,8 +29,8 @@ equipment is promoted.
 - Active repository policy in `AGENTS.md` and project vocabulary in
   `CONTEXT.md`.
 - Forge design, validation, and teaching surfaces in ADRs, canonical
-  Forge Canon, specs, templates, examples, and validators.
-- Forge Seed requirements, source projection records, PRD content, plan
+  Forge Canon, Blueprints, templates, examples, and validators.
+- Forge Seed requirements, source-disposition records, PRD content, plan
   content, and closeout evidence.
 - Preserved Source Handoff files, which are provenance rather than active
   instructions.
@@ -137,7 +137,7 @@ actions.
 
 - A contributor edits an archived handoff file or example so a future agent
   treats stale or adversarial guidance as active policy.
-- A branch changes validation logic so incomplete source projection or missing
+- A branch changes validation logic so incomplete source disposition or missing
   closeout evidence appears complete.
 - A template normalizes broad permissions or missing rollback guidance, making a
   future Smith more likely to create overpowered equipment.

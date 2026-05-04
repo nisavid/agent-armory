@@ -31,7 +31,7 @@ The review itself requires model judgment, so the procedure belongs in a skill. 
 
 ## Evidence category
 
-Implementation inference. The example applies the Framework decision tree to a common workflow without asserting that these exact components work in any harness.
+Implementation inference. The example applies the Forge decision tree to a common workflow without asserting that these exact components work in any harness.
 
 ## Harness-specific projection
 

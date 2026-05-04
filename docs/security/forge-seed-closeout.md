@@ -5,14 +5,15 @@ Status: Completed Security Closeout
 ## Scan scope
 
 Codex Security scanned the merge-base-to-working-tree Forge Seed diff from
-baseline `470f2b31a9c71d0676617fc11e6fd3810e7128f7` to the working tree on
-branch `forge-seed`, including committed branch changes, staged diff,
-unstaged worktree edits, and untracked intended files.
+baseline `470f2b31a9c71d0676617fc11e6fd3810e7128f7` to the worktree state
+intended for `forge-seed` publication, including committed branch changes,
+staged diff, unstaged worktree edits, and untracked intended files present in
+the scan instance.
 
 The scan covered:
 
 - active agent instructions and vocabulary,
-- Forge Canon, specs, templates, examples, and source projection,
+- Forge Canon, Blueprints, templates, examples, and source-disposition evidence,
 - the repository threat model,
 - security and documentation closeout surfaces,
 - Story Closeout, projection draft, and workflow closeout addendum surfaces,
@@ -94,11 +95,9 @@ Preventive hardening added during the Forge Seed closeout includes:
 
 Re-validation passed after this closeout file was populated.
 
-- `python3.14 -m unittest tests/test_validate_forge_seed.py`: 264 tests
-  passed.
-- `python3.14 tools/validate_forge_seed.py`: 0 failed, 174 passed.
-- `python3.14 tools/validate_forge_seed.py --json`: 174 passing result
-  objects.
+- `python3.14 -m unittest tests/test_validate_forge_seed.py`: passed.
+- `python3.14 tools/validate_forge_seed.py`: passed.
+- `python3.14 tools/validate_forge_seed.py --json`: passed.
 - `git diff --check`: passed.
 
 ## Deferred-risk tracking

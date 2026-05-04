@@ -49,7 +49,7 @@ Also inspected the raw Source Handoff before source retirement. The final tree p
 
 ## Docs unchanged with rationale
 
-- `README.md`: already provides a concise Forge Tour and does not expose maintainer-only machinery.
+- `README.md`: already links human readers to the Forge Tour and does not expose maintainer-only machinery.
 - `docs/agents/*.md`: issue tracker, triage labels, and domain-doc guidance were not changed by the Forge Seed deliverables.
 - Forge Canon not listed under "Docs changed" already describe the current seed surfaces, promotion boundaries, Forge Examples, downstream specs, and remaining uncertainties without saying that no Forge exists.
 - `docs/adr/*.md`: ADRs are historical decision records; their future-tense decision language is appropriate to their decision context.
@@ -75,9 +75,9 @@ The Source Disposition Ledger reflects established Forge Seed precedents, source
 ## Established precedents added or updated
 
 - The Forge Seed now has a persistent Repository Threat Model in `docs/security/threat-model.md`.
-- The Forge Seed has canonical docs, refreshed harness catalog, templates, Forge Examples, downstream Smith specs, and Seed Validation.
+- The Forge Seed has canonical docs, refreshed harness catalog, templates, Forge Examples, Equipment Blueprints, and Seed Validation.
 - Root `AGENTS.md` is the zero-scout Forge Conveyor for Smiths.
-- `README.md` is the Forge Tour, not an agent policy surface.
+- `README.md` links to the Forge Tour; it is not itself the Forge Tour and is not an agent policy surface.
 - Durable committed docs use neutral project paths unless intrinsically tied to a specific skill, plugin, tool, or workflow.
 - Agent Profiles are described in prose while source paths use the harness/plugin term `agents`.
 - Smiths have a zero-inquiry Tooling Request path for recording a discovered Tooling Gap, preempting unsafe equipment work, selecting a harness-appropriate Forgewright session path, and resuming from a Forgewright hand-back.
@@ -127,5 +127,5 @@ Latest clean documentation closeout review: Ralph Review Cycle 68.
 ## Residual documentation risk
 
 - Issue Projection is still pending; external issue state may lag this repo draft until the projection step lands.
-- The Source Handoff and side-thread handoff files intentionally retain source-era wording; future agents must continue treating those files as provenance, not live instruction.
+- Source-disposition and workflow-lesson records intentionally retain normalized references to source-era wording; future agents must continue treating those references as provenance, not live instruction.
 - Further security or documentation edits before PR creation may require a narrow refresh of this closeout summary and its review evidence.

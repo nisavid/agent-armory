@@ -6,7 +6,7 @@ The Equipment Promotion Path prevents examples, specs, plans, implementations, v
 
 ## example
 
-An `example` is an annotated teaching artifact that demonstrates Framework decisions.
+An `example` is an annotated teaching artifact that demonstrates Forge decisions.
 
 Entry criteria:
 
@@ -98,4 +98,4 @@ Exit criteria:
 
 Every state change records the evidence that justifies entry into the new state and the criteria required to leave it.
 
-Smiths keep state labels current in examples, specs, plans, implementation docs, and publication surfaces. Forgewrights inspect promotion-state language when Framework decisions change, validation rules change, or harness capability claims are refreshed.
+Smiths keep state labels current in examples, specs, plans, implementation docs, and publication surfaces. Forgewrights inspect promotion-state language when Forge decisions change, validation rules change, or harness capability claims are refreshed.

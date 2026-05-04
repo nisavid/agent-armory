@@ -57,11 +57,11 @@ Repo Draft PRDs are review surfaces. Published PRD Issues are tracking surfaces.
 
 After a Repo Draft PRD stabilizes and review is clean, create or update the corresponding Published PRD Issue. If projection remains pending, record why, what issue action is needed, and what repo artifact is the current source of truth.
 
-## downstream Smith specs
+## Equipment Blueprints
 
-Downstream Smith specs describe future Agent Equipment without implementing it in the Forge Seed.
+Equipment Blueprints describe future Agent Equipment without implementing it in the Forge Seed.
 
-Each spec names its promotion state, target harness assumptions, required Forge inputs, expected surfaces, validation needs, security boundaries, and open questions. When Forgewright decisions change the Forge, inspect downstream specs for drift and update or explicitly leave them unchanged with rationale.
+Each Blueprint names its promotion state, target harness assumptions, required Forge inputs, expected surfaces, validation needs, security boundaries, and open questions. When Forgewright decisions change the Forge, inspect Equipment Blueprints for drift and update or explicitly leave them unchanged with rationale.
 
 ## Tooling Gap intake
 
@@ -78,4 +78,4 @@ Before editing, identify:
 - harness and operator constraints that affect the Forgewright path;
 - the expected hand-back format.
 
-After resolving or deferring the requirement, update affected Forge Canon, validation, source projection, PRD/specs/issues, and closeout evidence as applicable. The hand-back note names files changed, validation and review results, dependency updates, remaining risks, and the context the Smith needs to resume.
+After resolving or deferring the requirement, update affected Forge Canon, validation, source-disposition or provenance evidence, PRD/Blueprint/issue surfaces, and closeout evidence as applicable. The hand-back note names files changed, validation and review results, dependency updates, remaining risks, and the context the Smith needs to resume.

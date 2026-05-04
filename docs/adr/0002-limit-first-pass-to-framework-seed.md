@@ -1,6 +1,6 @@
 # Limit First Pass to the Forge Seed
 
-The first PRD and implementation plan will cover the Forge Seed: canonical docs, decision method, evidence discipline, harness catalog, templates, examples, initial Smith task specs, and Seed Validation. Agent Ops, Periodic Actions, and Harness Capability Refresh remain downstream Smith specs until the Framework can guide their design and validation.
+The first PRD and implementation plan will cover the Forge Seed: canonical docs, decision method, evidence discipline, harness catalog, templates, examples, initial Smith task specs, and Seed Validation. Agent Ops, Periodic Actions, and Harness Capability Refresh remain Equipment Blueprints until the Forge can guide their design and validation.
 
 ## Considered Options
 
@@ -11,5 +11,5 @@ The first PRD and implementation plan will cover the Forge Seed: canonical docs,
 ## Consequences
 
 - The first pass stays reviewable and can establish quality gates before equipment work starts.
-- Downstream Smith specs can inherit the Framework's decision method instead of being designed ad hoc.
+- Equipment Blueprints can inherit the Forge's decision method instead of being designed ad hoc.
 - Acceptance criteria must distinguish specified future work from implemented equipment.
