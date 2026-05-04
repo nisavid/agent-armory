@@ -12,6 +12,7 @@ from typing import Callable, TextIO
 
 DEFAULT_API_VERSION = "2026-03-10"
 DEFAULT_ACCEPT = "application/vnd.github+json"
+JSONValue = dict | list | str | int | float | bool | None
 
 
 @dataclass(frozen=True)
@@ -96,7 +97,7 @@ def call_gh(
     return gh(gh_api_args(request, api_version=api_version), input_text=input_text)
 
 
-def parse_json_output(completed: subprocess.CompletedProcess[str]) -> dict | list | str | None:
+def parse_json_output(completed: subprocess.CompletedProcess[str]) -> JSONValue:
     output = completed.stdout.strip()
     if not output:
         return None
@@ -106,7 +107,7 @@ def parse_json_output(completed: subprocess.CompletedProcess[str]) -> dict | lis
         return output
 
 
-def summarize_result(result: dict | list | str | None) -> dict | list | str | None:
+def summarize_result(result: JSONValue) -> JSONValue:
     if isinstance(result, list):
         return [summarize_result(item) for item in result]
     if not isinstance(result, dict):
@@ -127,7 +128,7 @@ def summarize_result(result: dict | list | str | None) -> dict | list | str | No
     return summary or result
 
 
-def combine_paginated_result(result: dict | list | str | None) -> dict | list | str | None:
+def combine_paginated_result(result: JSONValue) -> JSONValue:
     if not isinstance(result, list) or not all(isinstance(page, list) for page in result):
         return result
     combined = []
@@ -267,19 +268,18 @@ def execute_request(
 ) -> int:
     completed = call_gh(gh, request, api_version=args.api_version)
     if completed.returncode != 0:
-        write_json(
-            stdout,
-            {
-                "mode": "execute",
-                "operation": operation,
-                "request": compact_request(request),
-                "resolved": resolved or {},
-                "error": {
-                    "returncode": completed.returncode,
-                    "stderr": completed.stderr.strip(),
-                },
+        payload = {
+            "mode": "execute",
+            "operation": operation,
+            "request": compact_request(request),
+            "error": {
+                "returncode": completed.returncode,
+                "stderr": completed.stderr.strip(),
             },
-        )
+        }
+        if resolved is not None:
+            payload["resolved"] = resolved
+        write_json(stdout, payload)
         return completed.returncode
     result = parse_json_output(completed)
     if request.paginate:
