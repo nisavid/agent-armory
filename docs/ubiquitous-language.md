@@ -6,7 +6,7 @@ This document is the canonical vocabulary surface for Smiths and Forgewrights. U
 
 ## Language
 
-**Agent Armory** is the home for Agent Equipment and the Agent Equipment Forge.
+**Agent Armory** names the Agent Armory: the home for Agent Equipment and the Agent Equipment Forge.
 
 **Agent Equipment** is reusable tooling, behavior, workflow, knowledge, or configuration that equips an Agent or agentic system.
 
@@ -85,7 +85,7 @@ use `agents/` for source paths that follow harness/plugin convention.
 - The Agent Armory contains Agent Equipment and the Agent Equipment Forge.
 - The Agent Equipment Forge is created by Forgewrights and used by Smiths.
 - Smiths create Agent Equipment for one or more Agent Harnesses.
-- Outfitters select Agent Equipment from the Agent Armory and assemble Loadouts.
+- Outfitters select Agent Equipment from the Armory and assemble Loadouts.
 - Wielders use Loadouts to perform work.
 - Equipment Candidates may become Published Agent Equipment after validation and publication.
 - An Agent is strapped when its reasoning and actions are mediated by an Agent Harness.

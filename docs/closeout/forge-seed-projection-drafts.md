@@ -34,8 +34,10 @@ Repo draft: `docs/prd/forge-seed.md`
   validators, and closeout evidence.
 - Root `AGENTS.md` gives Smiths the zero-scout Forge Conveyor, including
   Tooling Request and Story Closeout routing.
-- Root `README.md` links readers to the Forge Tour and avoids agent-only
-  policy detail.
+- Root `README.md` presents the under-construction state of the Armory, links
+  readers to the Forge Tour and docs map, keeps Wielders, Outfitters, Smiths,
+  and Forgewrights as agent roles, and avoids agent-only policy detail.
+- `docs/README.md` routes human readers by goal and Diataxis type.
 - Forge Canon describe equipment vocabulary, runbooks, harness
   capabilities, evidence, security/control boundaries, promotion policy, and
   Story Closeout.
@@ -52,6 +54,8 @@ The Forge Seed adds:
 - `docs/closeout/forge-seed-source-disposition.md` for source manifest,
   requirement disposition, checkpoint evidence, and source-retirement stamp;
 - Forge Canon under `docs/`;
+- a refreshed human-facing docs spine with `README.md`, `docs/forge-tour.md`,
+  and `docs/README.md`;
 - ADRs for Seed architectural decisions;
 - templates for skills, hooks, MCP tools, plugins, scripts, configs, security
   review, Agent Profiles, and interface decisions;
@@ -87,42 +91,20 @@ Forge Canon, PRD, ADRs, plan, source-disposition evidence, security docs,
 closeout docs, specs, templates, examples, and archived handoff material reached
 by stale-language searches.
 
-Material updates include the Repository Threat Model, security closeout, Story
-Closeout, Tooling Request, Source Disposition Ledger status
-semantics, Agent Profile terminology alignment, and captured post-Seed Portable
-Workflow reflections.
+Material updates include the refreshed public docs spine, Repository Threat
+Model, security closeout, Story Closeout, Tooling Request, Source Disposition
+Ledger status semantics, Agent Profile terminology alignment, and captured
+post-Seed Portable Workflow reflections.
 
-Documentation closeout review: Ralph Review Cycle 68.
-
-Ralph Review Cycle 58 found that the projection draft omitted the portable
-report-disposition evidence required by the plan. Ralph Review Cycle 59
-verified that fix. Ralph Review Cycle 60 verified the Intent Alignment Check wording,
-projection-draft target coverage, plan cross-references, and story-review
-evidence placeholders, and found no remaining documentation closeout issues.
-Ralph Review Cycle 66 found a stale security validation count, and Ralph Review
-Cycle 67 found stale path-shaped scan artifact contract wording in review
-history. Those findings were fixed. Ralph Review Cycle 68 verified the current
-report-disposition language, artifact-durability guardrail, intent terminology,
-gate ordering, security closeout evidence, validation evidence, and intentionally
-pending story-review placeholders, and found no remaining documentation
-closeout issues.
+Documentation closeout review: Ralph Review Cycle 87.
 
 ## Story Closeout Reviews
 
 Source-retirement and projection consistency review: Ralph Review Cycle 74.
 
-Cross-Boundary Coherence review: Ralph Review Cycle 75.
+Cross-Boundary Coherence review: Ralph Review Cycle 80.
 
-Story Quality review: Ralph Review Cycle 76.
-
-Ralph Review Cycle 74 verified source-retirement evidence, source-disposition
-durability, symlink/path hardening, projection evidence, final-closeout checks,
-security closeout, and Forge nomenclature, and found no remaining issues.
-Ralph Review Cycle 75 verified cross-boundary coherence across PRD, ADRs, plan,
-Forge Canon, runbooks, specs, templates, examples, validator/tests, closeout
-evidence, and projection surfaces, and found no remaining issues. Ralph Review
-Cycle 76 verified story quality, DX/UX, architecture, robustness, strategic
-alignment, and intent-alignment posture, and found no remaining issues.
+Story Quality review: Ralph Review Cycle 87.
 
 ## Commit
 
@@ -150,6 +132,8 @@ Draft PR body:
 
 - Preserve and project the Source Handoff into Forge Canon,
   templates, examples, specs, validators, and closeout evidence.
+- Refresh the public docs spine with an under-construction README, expanded
+  Forge Tour, and human-facing docs map.
 - Add Tooling Request, Story Closeout, security closeout,
   documentation closeout, and projection draft surfaces.
 - Add deterministic Seed Validation coverage and TDD tests for the seeded
@@ -175,10 +159,10 @@ Draft PR body:
 
 ## Reviews
 
-- Documentation closeout: Ralph Review Cycle 68.
+- Documentation closeout: Ralph Review Cycle 87.
 - Source-retirement and projection consistency: Ralph Review Cycle 74.
-- Cross-Boundary Coherence: Ralph Review Cycle 75.
-- Story Quality: Ralph Review Cycle 76.
+- Cross-Boundary Coherence: Ralph Review Cycle 80.
+- Story Quality: Ralph Review Cycle 87.
 ```
 
 ## Release Draft

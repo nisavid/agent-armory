@@ -21,6 +21,17 @@ The scan covered:
 - non-runtime hook, MCP/tool, plugin, script, config, and Agent Profile
   templates.
 
+The human-facing documentation spine refresh touched `README.md`,
+`docs/forge-tour.md`, `docs/README.md`, `CONTEXT.md`,
+`docs/ubiquitous-language.md`, `docs/prd/forge-seed.md`,
+`docs/security/threat-model.md`, `templates/skill/SKILL.md`, this closeout
+surface, `docs/closeout/forge-seed-documentation.md`, and projection evidence.
+It did not add or materially change executable code, hooks, MCP/tool
+definitions, permissions, secrets handling, network/file/process side effects,
+package metadata, security policy, or Published Agent Equipment.
+`docs/security-and-control.md` and `docs/security/threat-model.md` remain
+current for the refreshed public docs path.
+
 ## Commands
 
 - `python3.14 -m unittest tests.test_validate_forge_seed.SecurityCloseoutValidationTests`
@@ -68,6 +79,9 @@ report is not committed and should not be cited as reusable project doctrine.
 
 No reportable findings.
 
+The human-facing documentation spine refresh produced no reportable security
+finding and no deferred security risk.
+
 Suppressed findings: none.
 
 Finding discovery promoted no technically plausible candidate to validation.
@@ -107,5 +121,5 @@ Deferred risks: none.
 No reportable security finding was deferred. Future change sets that introduce
 or materially change executable code, hooks, MCP/tool definitions, permissions,
 secrets handling, network/file/process side effects, package metadata, security
-policy, or published Agent Equipment require their own applicable security
+policy, or Published Agent Equipment require their own applicable security
 analysis and closeout.

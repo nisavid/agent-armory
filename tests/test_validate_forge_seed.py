@@ -1627,7 +1627,7 @@ class ForgeRouteTests(unittest.TestCase):
                 encoding="utf-8",
             )
             (root / "README.md").write_text(
-                "## Forge\n\nStart with [Forge Tour](docs/forge-tour.md).\n",
+                "## Agent Equipment Forge\n\nStart with [Forge Tour](docs/forge-tour.md).\n",
                 encoding="utf-8",
             )
 
@@ -1673,7 +1673,7 @@ class ForgeRouteTests(unittest.TestCase):
                 encoding="utf-8",
             )
             (root / "README.md").write_text(
-                "## Forge\n\nStart with [Forge Tour](docs/forge-tour.md).\n",
+                "## Agent Equipment Forge\n\nStart with [Forge Tour](docs/forge-tour.md).\n",
                 encoding="utf-8",
             )
 
@@ -1716,7 +1716,7 @@ class ForgeRouteTests(unittest.TestCase):
                 encoding="utf-8",
             )
             (root / "README.md").write_text(
-                "## Forge\n\nStart with [Forge Tour](docs/forge-tour.md).\n",
+                "## Agent Equipment Forge\n\nStart with [Forge Tour](docs/forge-tour.md).\n",
                 encoding="utf-8",
             )
 
@@ -2307,7 +2307,7 @@ class DocumentationCloseoutValidationTests(unittest.TestCase):
         "Docs unchanged with rationale",
         "Stale-language cleanup result",
         "Established precedents added or updated",
-        "Review cycles and latest clean review",
+        "Review status",
         "Residual documentation risk",
     ]
 
@@ -2319,7 +2319,7 @@ class DocumentationCloseoutValidationTests(unittest.TestCase):
                 "## Docs unchanged with rationale\n\nRecorded why `README.md` and `AGENTS.md` needed no change.",
                 "## Stale-language cleanup result\n\nStale initial-state language was searched and resolved.",
                 "## Established precedents added or updated\n\nRecorded Forge Seed precedents. Portable workflow capture says a branch-push pause does not close the capture. Full Seed completion requires a merged Seed. An explicit hold or cancellation continues capture through an unmerged-state hand-back and should record the unmerged state directly.",
-                "## Review cycles and latest clean review\n\nLatest clean documentation closeout review: Ralph Review Cycle 99.",
+                "## Review status\n\n- Documentation closeout: Ralph Review Cycle 99.\n- Cross-Boundary Coherence: Ralph Review Cycle 100.\n- Story Quality: Ralph Review Cycle 101.",
                 "## Residual documentation risk\n\nResidual documentation risk is tracked for pending security closeout.",
             ]
         )
@@ -2416,14 +2416,14 @@ class DocumentationCloseoutValidationTests(unittest.TestCase):
             results,
         )
 
-    def test_validate_documentation_closeout_rejects_pending_latest_clean_review(self):
+    def test_validate_documentation_closeout_rejects_pending_review_status(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             self.write_closeout(
                 root,
                 self.valid_closeout().replace(
-                    "Latest clean documentation closeout review: Ralph Review Cycle 99.",
-                    "Prior review: Ralph Review Cycle 42.\n\nLatest clean documentation closeout review: pending.",
+                    "- Documentation closeout: Ralph Review Cycle 99.",
+                    "- Documentation closeout: pending.",
                 ),
             )
 
@@ -2431,9 +2431,9 @@ class DocumentationCloseoutValidationTests(unittest.TestCase):
 
         self.assertIn(
             CheckResult(
-                f"documentation_closeout:review:{self.closeout_path}",
+                f"documentation_closeout:review:{self.closeout_path}:Documentation closeout",
                 False,
-                "latest clean review must name a Ralph Review Cycle",
+                "review status must name a Ralph Review Cycle: Documentation closeout",
                 self.closeout_path,
             ),
             results,
@@ -2449,9 +2449,9 @@ class DocumentationCloseoutValidationTests(unittest.TestCase):
 
         self.assertIn(
             CheckResult(
-                f"documentation_closeout:evidence:{self.closeout_path}:Latest clean documentation closeout review",
+                f"documentation_closeout:evidence:{self.closeout_path}:Cross-Boundary Coherence",
                 False,
-                "missing evidence: Latest clean documentation closeout review",
+                "missing evidence: Cross-Boundary Coherence",
                 self.closeout_path,
             ),
             results,

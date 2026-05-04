@@ -1,6 +1,6 @@
 # Agent Armory
 
-Agent Armory defines a shared language for creating, cataloging, and maintaining reusable equipment for agents. This context keeps domain terms stable while the Forge is designed and refined.
+The Agent Armory defines a shared language for creating, cataloging, and maintaining reusable equipment for agents. This context keeps domain terms stable while the Forge is designed and refined.
 
 ## Language
 
@@ -141,7 +141,7 @@ The rule that Harness Capability Catalog claims prefer first-party sources, use 
 _Avoid_: unlabeled source mixing, stale memory-backed harness claims
 
 **Equipment Promotion Path**:
-The lifecycle that moves an equipment idea from example or spec toward published Agent Equipment.
+The lifecycle that moves an equipment idea from example or spec toward Published Agent Equipment.
 _Avoid_: treating example, specified, planned, implemented, validated, and published as interchangeable states
 
 **Pressure Scenario Validation**:
@@ -298,7 +298,7 @@ _Avoid_: chat-only conclusion, undocumented resume instruction
 - **Story Closeout** depends on current change-set validation, **Change Set Security Closeout**, **Change Set Documentation Closeout**, **Cross-Boundary Coherence Ralph Review**, and **Story Quality Ralph Review**.
 - **Intent Model Refresh** is the first **Story Closeout** gate so every downstream closeout check uses the current model of **Underlying Intent**.
 - **Cross-Boundary Coherence Ralph Review** precedes **Story Quality Ralph Review** because quality review depends on coherent process evidence.
-- A **Story Quality Ralph Review** includes an **Intent Alignment Check** that compares **Effective Intent** with the refreshed model of **Underlying Intent** before final story closeout.
+- A **Story Quality Ralph Review** includes an **Intent Alignment Check** that compares **Effective Intent** with the refreshed model of **Underlying Intent** before final Story Closeout.
 - A **Tooling Request** turns an unsatisfied Forge Tooling need into a task dependency, moves Tooling Work to a **Forgewright**, and returns a **Forgewright Hand-Back** that lets the **Smith** resume safely.
 
 ## Example dialogue

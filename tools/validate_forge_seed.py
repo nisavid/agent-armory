@@ -554,7 +554,7 @@ DOCUMENTATION_CLOSEOUT_REQUIRED_SECTIONS = [
     "Docs unchanged with rationale",
     "Stale-language cleanup result",
     "Established precedents added or updated",
-    "Review cycles and latest clean review",
+    "Review status",
     "Residual documentation risk",
 ]
 DOCUMENTATION_CLOSEOUT_REQUIRED_EVIDENCE = [
@@ -577,7 +577,8 @@ DOCUMENTATION_CLOSEOUT_REQUIRED_EVIDENCE = [
     "An explicit hold or cancellation continues",
     "unmerged-state hand-back",
     "record the unmerged state directly",
-    "Latest clean documentation closeout review",
+    "Cross-Boundary Coherence",
+    "Story Quality",
     "Ralph Review Cycle",
 ]
 DOCUMENTATION_CLOSEOUT_FORBIDDEN_INCOMPLETE_TEXT = [
@@ -2026,7 +2027,7 @@ def validate_forge_routes(root: Path) -> list[CheckResult]:
     readme_markdown = readme_path.read_text(encoding="utf-8") if readme_path.exists() else ""
 
     agents_section = markdown_section(agents_markdown, "## Forge Conveyor")
-    readme_section = markdown_section(readme_markdown, "## Forge")
+    readme_section = markdown_section(readme_markdown, "## Agent Equipment Forge")
 
     if agents_section is None:
         results.append(CheckResult("forge_route:agent", False, "missing Forge Conveyor", "AGENTS.md"))
@@ -2243,16 +2244,22 @@ def validate_documentation_closeout(root: Path) -> list[CheckResult]:
                     DOCUMENTATION_CLOSEOUT_PATH,
                 )
             )
-    latest_clean_match = re.search(r"(?im)^Latest clean documentation closeout review:\s*(.+)$", visible)
-    if latest_clean_match is None or not re.search(r"\bRalph Review Cycle \d+\b", latest_clean_match.group(1)):
-        results.append(
-            CheckResult(
-                f"documentation_closeout:review:{DOCUMENTATION_CLOSEOUT_PATH}",
-                False,
-                "latest clean review must name a Ralph Review Cycle",
-                DOCUMENTATION_CLOSEOUT_PATH,
+    required_review_statuses = [
+        "Documentation closeout",
+        "Cross-Boundary Coherence",
+        "Story Quality",
+    ]
+    for review_status in required_review_statuses:
+        pattern = rf"(?im)^(?:-\s*)?{re.escape(review_status)}(?: review)?:\s*`?Ralph Review Cycle \d+`?\.?\s*$"
+        if re.search(pattern, visible) is None:
+            results.append(
+                CheckResult(
+                    f"documentation_closeout:review:{DOCUMENTATION_CLOSEOUT_PATH}:{review_status}",
+                    False,
+                    f"review status must name a Ralph Review Cycle: {review_status}",
+                    DOCUMENTATION_CLOSEOUT_PATH,
+                )
             )
-        )
     if not any(result.name.startswith("documentation_closeout:") and not result.ok for result in results):
         results.append(CheckResult("documentation_closeout:forge-seed", True, "present", DOCUMENTATION_CLOSEOUT_PATH))
     return results

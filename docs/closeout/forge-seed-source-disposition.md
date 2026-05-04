@@ -50,10 +50,10 @@ Allowed source list digest: `2e1198863b18b42b46b0d4661c23737ef12488f26a24d151bcd
 | H012 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | tools/validate_forge_seed.py | Validate source disposition, seed surfaces, examples, Blueprints, and issue projection. |
 | H052 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | docs/prd/forge-seed.md | Preserve standard-library validation and non-production seed boundaries. |
 | H053 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | docs/closeout/forge-seed-documentation.md | Record final implementation, validation, issue projection, and closeout summaries. |
-| H013 | SRC003 | adequately_captured | unchallenged | false | false | kept_current |  | docs/agent-equipment-forge.md | Explain why Agent Armory needs a Forge instead of ad hoc equipment. |
+| H013 | SRC003 | adequately_captured | unchallenged | false | false | kept_current |  | docs/agent-equipment-forge.md | Explain why the Agent Armory needs a Forge instead of ad hoc equipment. |
 | H014 | SRC003 | adequately_captured | unchallenged | false | false | kept_current |  | docs/agent-equipment-forge.md | Preserve the capability, interface, harness, and context decomposition. |
 | H015 | SRC003 | adequately_captured | unchallenged | false | false | kept_current |  | docs/forgewright-runbook.md | Define Forgewright outputs and seed production responsibilities. |
-| H016 | SRC004 | adequately_captured | unchallenged | false | false | kept_current |  | CONTEXT.md | Define Agent Armory and Agent Equipment vocabulary. |
+| H016 | SRC004 | adequately_captured | unchallenged | false | false | kept_current |  | CONTEXT.md | Define the Agent Armory and Agent Equipment vocabulary. |
 | H017 | SRC004 | adequately_captured | unchallenged | false | false | kept_current |  | CONTEXT.md | Preserve relationships between capabilities, equipment, harnesses, and Agent Profiles. |
 | H018 | SRC005 | adequately_captured | unchallenged | false | false | kept_current |  | docs/evidence-taxonomy.md | Define evidence categories for project and harness claims. |
 | H019 | SRC005 | adequately_captured | unchallenged | false | false | kept_current |  | docs/evidence-taxonomy.md | Define source hygiene and provenance rules. |
@@ -104,12 +104,12 @@ No unresolved challenge enters source retirement. Rows marked `resolved` carry o
 source_bearing_snapshot_tree_id: 589bf626ffc5e9cdfffc7ee5983022adc1f7a1e2
 source_bearing_stamp_id: source-bearing-2026-05-04
 source_manifest_digest: 7ebb526ad69baa2254052deccf3ad9f236b3c785124842329d6d4e2a000cfbb5
-source_disposition_digest: c6faa42a86d6e64139b40e554e1d9aca14d8dfed3d224bfc6b08f1d5d46d8ffa
+source_disposition_digest: 5ac8403d95d2bc971bbbd899a94296cd6286e427e728b09e34cd765df5e2e200
 source_bearing_result: passed
 
 ## Final Source-Retired Stamp
 
 stamp_target: placeholder-normalized canonical tree
-canonical_tree_digest: 7b69f340b1c87f864fb512e6737f73bf05221fddbf695f8129b439e598166d8a
+canonical_tree_digest: 05cb48a456e83e31aa0d7249c9974876703bf82068f180c6eff138d679fc1c1d
 source_retired: true
-timestamp: 2026-05-04T00:00:00Z
+timestamp: 2026-05-04T11:33:03Z

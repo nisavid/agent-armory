@@ -4,7 +4,7 @@ Status: Repo Draft PRD
 
 ## 1. Executive Summary
 
-**Problem Statement**: Agent Armory accepted a substantial Source Handoff for an Agent Equipment Forge. The Forge Seed must turn that source material into canonical, validated Forge surfaces that future Smiths can use without replaying the handoff. Without those surfaces and closeout gates, future equipment work can drift into unreviewed examples, stale harness claims, oversized skills, or unclear source-of-truth boundaries.
+**Problem Statement**: The Agent Armory accepted a substantial Source Handoff for an Agent Equipment Forge. The Forge Seed must turn that source material into canonical, validated Forge surfaces that future Smiths can use without replaying the handoff. Without those surfaces and closeout gates, future equipment work can drift into unreviewed examples, stale harness claims, oversized skills, or unclear source-of-truth boundaries.
 
 **Proposed Solution**: Create the Forge Seed: canonical docs, evidence discipline, harness capability catalog, decision method, templates, demonstrative examples, Equipment Blueprints, and Seed Validation. Preserve the Source Handoff as provenance, refresh canonical harness facts, and publish a reviewed PRD summary into GitHub Issues after the repo draft stabilizes.
 
@@ -56,7 +56,7 @@ Status: Repo Draft PRD
 - Forge Examples demonstrate PR review, documentation research, and observability investigation as annotated examples with promotion state `example`; each example traces from capability card to interface decision record to projected components.
 - Equipment Blueprints exist for Agent Ops, Periodic Actions, and Harness Capability Refresh with promotion state `specified`; each Blueprint projects the substantive requirements captured in the Source Disposition Ledger, including required harness projections, management behavior, storage expectations, tracked fields, and change-response rules where applicable.
 - Seed Validation provides human-readable output by default and machine-readable output with `--json`.
-- `docs/security/threat-model.md` records an initial Repository Threat Model for Agent Armory before the Forge Seed is considered merge-ready.
+- `docs/security/threat-model.md` records an initial Repository Threat Model for the Agent Armory before the Forge Seed is considered merge-ready.
 - `docs/security/forge-seed-closeout.md` records the Seed security closeout scope, commands, scan artifact disposition, report disposition, findings, fixes, suppressions, deferments, and re-validation status.
 - `docs/closeout/forge-seed-documentation.md` records affected docs inspected, docs changed, docs left unchanged with rationale, stale-language cleanup results, doc review cycles, and residual documentation risk.
 - The Forge Seed closeout follows the Codex Security phase sequence against the Seed change set. Threat modeling and finding discovery always run; validation and attack-path analysis run when discovery promotes technically plausible candidates or another security workflow rule requires them. When validation or attack-path analysis is not applicable, the security closeout records the reason. Reportable findings are fixed, suppressed with evidence, or explicitly deferred with stakeholder approval and a tracking issue.

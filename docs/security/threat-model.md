@@ -1,4 +1,4 @@
-# Agent Armory Repository Threat Model
+# The Agent Armory Repository Threat Model
 
 Status: Repository Threat Model
 
@@ -8,7 +8,7 @@ change-set scans.
 
 ## Overview
 
-Agent Armory is a repository for Agent Equipment and the Agent Equipment
+The Agent Armory is a repository for Agent Equipment and the Agent Equipment
 Forge. The Forge Seed currently contains documentation, source
 projection records, templates, examples, specs, a harness capability catalog,
 and standard-library validation tooling. It does not expose a network service,

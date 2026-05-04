@@ -1,7 +1,7 @@
 <!-- Replace this commented frontmatter before publishing:
 ---
 name: example-skill
-description: Use when a Smith is drafting a reusable agent skill from an Agent Armory template
+description: Use when a Smith is drafting a reusable agent skill from a template in the Agent Armory
 ---
 -->
 
