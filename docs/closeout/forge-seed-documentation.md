@@ -37,7 +37,7 @@ Also inspected the raw Source Handoff before source retirement. The final tree p
   image while preserving the under-construction notice as the first substantive
   README content.
 - `docs/forge-tour.md`: expanded the human-facing Forge introduction with the
-  the Armory/the Forge distinction, Wielder/Outfitter/Smith/Forgewright role
+  Armory/the Forge distinction, Wielder/Outfitter/Smith/Forgewright role
   model, agent-operated repo model, equipment lifecycle, future outfitting
   path, and reflection-driven Forge improvement loop.
 - `docs/README.md`: added the human-facing documentation map organized by

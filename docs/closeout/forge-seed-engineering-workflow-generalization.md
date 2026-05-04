@@ -61,7 +61,7 @@ initiative authority.
   review results, source digests, and publication state can be durable; raw scan
   bundles, chat-only reasoning, and review-cycle narration usually are not.
 - When evidence depends on the exact tree, treat every tracked edit as capable
-  of staleing that evidence.
+  of making that evidence stale.
 - Preserve enough status for a future agent to continue safely: what passed,
   what remains pending, which branch or issue is involved, and which surface is
   source of truth until publication catches up.

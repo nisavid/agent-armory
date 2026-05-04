@@ -120,6 +120,6 @@ source_bearing_result: passed
 ## Final Source-Retired Stamp
 
 stamp_target: placeholder-normalized canonical tree
-canonical_tree_digest: a59b7ee6ce2f1c11d64b2bf83d63d263e6bb0e629e8d549dad6367a1030f9c52
+canonical_tree_digest: 79d75861aaa2d7d825b7fd27c238f1833012d03167661cd2d1b56013969b743f
 source_retired: true
-timestamp: 2026-05-04T15:42:25Z
+timestamp: 2026-05-04T16:01:45Z
