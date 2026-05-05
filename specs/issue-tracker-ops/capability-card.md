@@ -137,7 +137,7 @@ publication guidance.
 
 ## Open questions
 
-- Which Issue Ops policy settings must exist in the first plain config shape
-  before Agent Equipment Config integration lands?
+- Which Issue Ops policy settings must exist in the first Issue Ops-specific
+  plain config shape before Agent Equipment Config integration lands?
 - Which child issues own GitHub Projects, duplicate detection, fallback
   reconciliation, and tracker-neutral adapters after the bootstrap MVP?
