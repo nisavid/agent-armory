@@ -6,9 +6,8 @@ Promotion state: planned
 This Forge Entry Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for effective-config, config-diff,
 diagnostics, plain handoff promotion, authority checks, and projection
-classification. It does not implement Agent Equipment beyond this runtime
-slice, publish assets, resolve secrets, mutate source config, mutate external
-systems, or implement harness controls.
+classification, plus onboarding-plan and migration-apply output. It does not implement Agent Equipment beyond this runtime slice, publish assets, resolve
+secrets, mutate external systems, or implement harness controls.
 
 ## Closeout scope
 

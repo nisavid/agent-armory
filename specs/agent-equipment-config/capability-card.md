@@ -7,9 +7,8 @@ This Forge Entry Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for effective-config, config-diff,
 diagnostics, plain handoff promotion, authority checks, and projection
 classification, plus onboarding-plan output for first-run and re-onboarding
-flows. It does not implement Agent Equipment beyond this runtime slice, publish
-assets, resolve secrets, mutate source config, mutate external systems, or
-implement harness controls.
+flows and explicit migration apply for eligible local TOML sources. It does not implement Agent Equipment beyond this runtime slice, publish assets, resolve
+secrets, mutate external systems, or implement harness controls.
 
 ## Purpose
 
@@ -58,8 +57,9 @@ policy model without making Config depend on Issue Tracker Ops.
 - Docs: this Forge Entry Bundle and future usage docs.
 - Config: TOML authored layers and plain equipment-specific config handoff
   records.
-- Scripts/tools: the first portable effective-config and config-diff CLI slice,
-  plus future validation and migration commands.
+- Scripts/tools: the first portable effective-config, config-diff,
+  onboarding-plan, and migration-apply CLI slice, plus future validation
+  commands.
 - Hooks, permissions, approvals, sandboxes, or tool gates: future enforcement
   projections for mutation-capable behavior.
 - Skills: future Smith and Wielder judgment around design, onboarding, and
@@ -85,7 +85,7 @@ policy model without making Config depend on Issue Tracker Ops.
 
 ## Output contract
 
-Future deterministic surfaces should emit JSON-compatible objects for:
+Deterministic surfaces emit JSON-compatible objects for:
 
 - schema registration results,
 - effective-config output with value provenance,
@@ -93,6 +93,7 @@ Future deterministic surfaces should emit JSON-compatible objects for:
 - conflict diagnostics,
 - semantic validator diagnostics,
 - migration previews,
+- migration-apply decisions, refusals, mutations, and audit records,
 - secret reference resolution status,
 - onboarding status and partial config handoff plans,
 - policy decision audit records.

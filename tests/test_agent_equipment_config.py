@@ -585,6 +585,20 @@ class AgentEquipmentConfigTests(unittest.TestCase):
             },
         )
 
+    def renamed_mode_fragment(self, *, required: bool = False):
+        return agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=2,
+            fields={"mode": agent_equipment_config.FieldSpec(type="string", required=required, enum=["dry-run", "execute"])},
+            migrations=(
+                agent_equipment_config.MigrationPreview(
+                    from_version=1,
+                    field_renames={"operation_mode": "mode"},
+                    note="rename operation_mode to mode",
+                ),
+            ),
+        )
+
     def test_later_layer_wins_when_not_locked(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -1101,6 +1115,328 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(result["migration_previews"][0]["audit_preview"]["action"], "migration apply preview")
         self.assertFalse(result["migration_previews"][0]["audit_preview"]["would_rewrite_source"])
 
+    def test_migration_apply_dry_run_reports_exact_changes_and_audit_records(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.fragment_versions]
+                issue_tracker_ops = 1
+
+                [issue_tracker_ops]
+                operation_mode = "dry-run"
+            """)
+            original_text = layer.read_text(encoding="utf-8")
+
+            result = agent_equipment_config.migration_apply(
+                [layer],
+                [self.renamed_mode_fragment()],
+                apply=False,
+            )
+            rewritten_text = layer.read_text(encoding="utf-8")
+
+        self.assertEqual(rewritten_text, original_text)
+        self.assertFalse(result["applied"])
+        self.assertEqual(result["applications"][0]["decision"], "dry_run")
+        self.assertEqual(
+            result["applications"][0]["changes"],
+            [
+                {
+                    "operation": "rename field",
+                    "from": "issue_tracker_ops.operation_mode",
+                    "to": "issue_tracker_ops.mode",
+                    "value": "dry-run",
+                },
+                {
+                    "operation": "update fragment version",
+                    "path": "agent_equipment_config.fragment_versions.issue_tracker_ops",
+                    "from": 1,
+                    "to": 2,
+                },
+            ],
+        )
+        self.assertEqual(result["audit_records"][0]["action"], "migration apply decision")
+        self.assertEqual(result["audit_records"][0]["decision"], "dry_run")
+        self.assertEqual(result["audit_records"][0]["artifact_durability"], "durable project evidence")
+        self.assertEqual(result["audit_records"][0]["rollback"], "restore the source file from version control or the recorded diff")
+
+    def test_migration_apply_writes_eligible_source_with_operator_authority(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.fragment_versions]
+                issue_tracker_ops = 1
+
+                [issue_tracker_ops]
+                operation_mode = "dry-run"
+            """)
+
+            result = agent_equipment_config.migration_apply(
+                [layer],
+                [self.renamed_mode_fragment()],
+                apply=True,
+                apply_authority="operator",
+            )
+            rewritten_text = layer.read_text(encoding="utf-8")
+
+        self.assertTrue(result["applied"])
+        self.assertEqual(result["applications"][0]["decision"], "applied")
+        self.assertIn("issue_tracker_ops = 2", rewritten_text)
+        self.assertIn('mode = "dry-run"', rewritten_text)
+        self.assertNotIn("operation_mode", rewritten_text)
+        self.assertEqual(result["audit_records"][-1]["action"], "migration apply mutation")
+        self.assertEqual(result["audit_records"][-1]["result"], "applied")
+
+    def test_migration_apply_accepts_trusted_configured_authority(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.authority]
+                config_migration_apply = "usable"
+
+                [agent_equipment_config.fragment_versions]
+                issue_tracker_ops = 1
+
+                [issue_tracker_ops]
+                operation_mode = "dry-run"
+            """)
+
+            result = agent_equipment_config.migration_apply(
+                [layer],
+                [self.renamed_mode_fragment()],
+                apply=True,
+            )
+
+        self.assertTrue(result["applied"])
+        self.assertEqual(result["applications"][0]["decision"], "applied")
+
+    def test_migration_apply_rejects_authority_from_later_layer(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            repo = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.fragment_versions]
+                issue_tracker_ops = 1
+
+                [issue_tracker_ops]
+                operation_mode = "dry-run"
+            """)
+            local = self.write_layer(root, "local.toml", """
+                [agent_equipment_config.layer]
+                name = "user/operator local overrides"
+                category = "local-only operator config"
+
+                [agent_equipment_config.authority]
+                config_migration_apply = "usable"
+            """)
+
+            result = agent_equipment_config.migration_apply(
+                [repo, local],
+                [self.renamed_mode_fragment()],
+                apply=True,
+            )
+
+        self.assertFalse(result["applied"])
+        self.assertEqual(result["refusals"][0]["reason"], "missing migration apply authority")
+
+    def test_migration_apply_requires_authority_before_writing(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.fragment_versions]
+                issue_tracker_ops = 1
+
+                [issue_tracker_ops]
+                operation_mode = "dry-run"
+            """)
+            original_text = layer.read_text(encoding="utf-8")
+
+            result = agent_equipment_config.migration_apply(
+                [layer],
+                [self.renamed_mode_fragment()],
+                apply=True,
+            )
+            rewritten_text = layer.read_text(encoding="utf-8")
+
+        self.assertFalse(result["applied"])
+        self.assertEqual(rewritten_text, original_text)
+        self.assertEqual(result["refusals"][0]["reason"], "missing migration apply authority")
+        self.assertEqual(result["audit_records"][0]["decision"], "refused")
+
+    def test_migration_apply_records_local_only_source_as_instance_scoped(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "local.toml", """
+                [agent_equipment_config.layer]
+                name = "user/operator local overrides"
+                category = "local-only operator config"
+
+                [agent_equipment_config.fragment_versions]
+                issue_tracker_ops = 1
+
+                [issue_tracker_ops]
+                operation_mode = "dry-run"
+            """)
+
+            result = agent_equipment_config.migration_apply(
+                [layer],
+                [self.renamed_mode_fragment()],
+                apply=False,
+            )
+
+        self.assertEqual(result["applications"][0]["source_category"], "local-only operator config")
+        self.assertEqual(result["audit_records"][0]["artifact_durability"], "instance-scoped local evidence")
+        self.assertFalse(result["audit_records"][0]["project_truth"])
+
+    def test_migration_apply_refuses_generated_or_untrusted_sources(self):
+        cases = (
+            ("repository policy", "generated cache or state", True, "source category is not eligible for migration apply"),
+            ("checkout-local state", "checkout-local state", True, "source category is not eligible for migration apply"),
+            ("session overrides", "session override", True, "source category is not eligible for migration apply"),
+            ("user/operator local overrides", "secret reference source", True, "source category is not eligible for migration apply"),
+            ("repository policy", "committed durable config", False, "source is not trusted for migration apply"),
+        )
+        for layer_name, category, trusted, reason in cases:
+            with self.subTest(category=category, trusted=trusted):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    root = Path(tmpdir)
+                    trust_line = f"trusted = {str(trusted).lower()}"
+                    layer = self.write_layer(root, "repo.toml", f"""
+                        [agent_equipment_config.layer]
+                        name = "{layer_name}"
+                        category = "{category}"
+                        {trust_line}
+
+                        [agent_equipment_config.fragment_versions]
+                        issue_tracker_ops = 1
+
+                        [issue_tracker_ops]
+                        operation_mode = "dry-run"
+                    """)
+
+                    result = agent_equipment_config.migration_apply(
+                        [layer],
+                        [self.renamed_mode_fragment()],
+                        apply=True,
+                        apply_authority="operator",
+                    )
+
+                self.assertFalse(result["applied"])
+                self.assertEqual(result["refusals"][0]["reason"], reason)
+
+    def test_migration_apply_refuses_stale_schema_without_registered_migration(self):
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=2,
+            fields={"mode": agent_equipment_config.FieldSpec(type="string", enum=["dry-run", "execute"])},
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.fragment_versions]
+                issue_tracker_ops = 1
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+            """)
+
+            result = agent_equipment_config.migration_apply(
+                [layer],
+                [fragment],
+                apply=False,
+            )
+
+        self.assertFalse(result["applied"])
+        self.assertEqual(result["refusals"][0]["reason"], "no registered migration for stale schema")
+
+    def test_migration_apply_refuses_unsafe_inputs(self):
+        def always_unsafe(values, requested_behavior):
+            if requested_behavior == "mutation":
+                return [agent_equipment_config.Diagnostic("semantic conflict", "issue_tracker_ops.mode", "unsafe")]
+            return []
+
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=2,
+            fields={"mode": agent_equipment_config.FieldSpec(type="string", enum=["dry-run", "execute"])},
+            semantic_validators=(always_unsafe,),
+            migrations=(
+                agent_equipment_config.MigrationPreview(
+                    from_version=1,
+                    field_renames={"operation_mode": "mode"},
+                    note="rename operation_mode to mode",
+                ),
+            ),
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.fragment_versions]
+                issue_tracker_ops = 1
+
+                [issue_tracker_ops]
+                operation_mode = "dry-run"
+            """)
+
+            result = agent_equipment_config.migration_apply(
+                [layer],
+                [fragment],
+                apply=False,
+            )
+
+        self.assertFalse(result["applied"])
+        self.assertEqual(result["refusals"][0]["reason"], "effective Config Safety Status is unsafe")
+
+    def test_migration_apply_refuses_incomplete_inputs(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.fragment_versions]
+                issue_tracker_ops = 1
+
+                [issue_tracker_ops]
+                unrelated = "dry-run"
+            """)
+
+            result = agent_equipment_config.migration_apply(
+                [layer],
+                [self.renamed_mode_fragment(required=True)],
+                apply=False,
+            )
+
+        self.assertFalse(result["applied"])
+        self.assertEqual(result["refusals"][0]["reason"], "effective Config Safety Status is incomplete")
+
     def test_semantic_validator_can_mark_config_unsafe(self):
         def execute_requires_disclosure(values, requested_behavior):
             if requested_behavior == "mutation" and values.get("mode") == "execute" and values.get("external_disclosure") != "allowed":
@@ -1356,6 +1692,29 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(exit_code, 2)
         self.assertEqual(stdout.getvalue(), "")
         self.assertIn("error: effective-config requires at least one schema fragment flag", stderr.getvalue())
+
+    def test_cli_migration_apply_outputs_dry_run_json(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            stdout = agent_equipment_config.run(
+                ["migration-apply", "--layer", str(layer), "--issue-tracker-ops"],
+                stdout_text=True,
+            )
+
+        payload = json.loads(stdout)
+        self.assertEqual(payload["mode"], "dry-run")
+        self.assertFalse(payload["applied"])
+        self.assertEqual(payload["applications"], [])
+        self.assertEqual(payload["refusals"], [])
 
     def test_cli_effective_config_redacts_secret_reference_names(self):
         with tempfile.TemporaryDirectory() as tmpdir:
