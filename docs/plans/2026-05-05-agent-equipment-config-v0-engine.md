@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the first deterministic Agent Equipment Config v0 engine for schema-fragment validation, layered effective-config output, config-diff output, diagnostics, and Issue Tracker Ops pressure coverage.
+**Goal:** Build the first deterministic Agent Equipment Config v0 engine for schema-fragment validation, layered effective-config output, config-diff output, diagnostics, plain handoff fallback, projection classification, and Issue Tracker Ops pressure coverage.
 
-**Architecture:** Add one standard-library Python CLI and module at `tools/agent_equipment_config.py`, with tests in `tests/test_agent_equipment_config.py`. The engine reads TOML layer files, registers JSON-compatible schema fragments, computes effective-config and config-diff JSON, and emits diagnostics without mutating source config or resolving secret values.
+**Architecture:** Add one standard-library Python CLI and module at `tools/agent_equipment_config.py`, with tests in `tests/test_agent_equipment_config.py`. The engine reads TOML layer files and plain handoff TOML, registers JSON-compatible schema fragments, computes effective-config and config-diff JSON, classifies enforcement projections, and emits diagnostics without mutating source config or resolving secret values.
 
 **Tech Stack:** Python 3.14 standard library, `tomllib`, `argparse`, `json`, `dataclasses`, `unittest`.
 
@@ -25,6 +25,9 @@ In scope:
 - Config-diff JSON output.
 - Config Safety Status for `usable`, `incomplete`, `unsafe`, `stale`, `untrusted`, and `conflicted`.
 - Secret reference recognition and status reporting without fetching values.
+- Absent shared Config fallback through plain equipment-specific Issue Tracker Ops handoff ingestion and promotion.
+- Missing-authority diagnostics for mutation-gated settings without usable approval authority.
+- Deterministic enforcement projection classification as `blocking` or `advisory`, without harness enforcement.
 - Issue Tracker Ops pressure fixture.
 
 Out of scope:
@@ -33,6 +36,7 @@ Out of scope:
 - Migration apply execution.
 - Provider-specific secret fetching.
 - Hook, permission, approval, sandbox, or tool enforcement.
+- Harness-specific blocking-control implementation.
 - Harness-specific installation.
 - Network access.
 - GitHub issue mutation.
@@ -43,7 +47,6 @@ Out of scope:
 - Create `tests/test_agent_equipment_config.py`: behavior tests for each v0 contract case.
 - Modify `specs/agent-equipment-config/validation-plan.md`: add the new test command and note the implemented runtime subset.
 - Modify `specs/agent-equipment-config/README.md`: update promotion language only if the engine slice completes and remains consistent with the promotion path.
-- Modify `docs/README.md` or `README.md` only if the public roadmap needs a new status phrase after implementation.
 
 ---
 
@@ -401,7 +404,7 @@ class SchemaFragment:
     namespace: str
     version: int
     fields: dict[str, FieldSpec]
-    semantic_validators: tuple[Callable[[dict[str, Any]], list["Diagnostic"]], ...] = ()
+    semantic_validators: tuple[Callable[[dict[str, Any], str], list["Diagnostic"]], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -579,6 +582,7 @@ Append:
                 [agent_equipment_config.policy.issue_tracker_ops.mode]
                 non_overridable = true
                 required_for = "mutation"
+                authority = "live_tracker_write"
 
                 [issue_tracker_ops]
                 mode = "dry-run"
@@ -867,8 +871,8 @@ Append:
         self.assertFalse(result["migration_previews"][0]["audit_preview"]["would_rewrite_source"])
 
     def test_semantic_validator_can_mark_config_unsafe(self):
-        def execute_requires_disclosure(values):
-            if values.get("mode") == "execute" and values.get("external_disclosure") != "allowed":
+        def execute_requires_disclosure(values, requested_behavior):
+            if requested_behavior == "mutation" and values.get("mode") == "execute" and values.get("external_disclosure") != "allowed":
                 return [agent_equipment_config.Diagnostic("semantic conflict", "issue_tracker_ops.external_disclosure", "execute requires external disclosure policy")]
             return []
 
@@ -897,6 +901,38 @@ Append:
 
         self.assertEqual(result["safety_status"], "unsafe")
         self.assertEqual(result["diagnostics"][0]["kind"], "semantic conflict")
+
+    def test_mutation_only_semantic_validator_does_not_block_advisory_behavior(self):
+        def execute_requires_disclosure(values, requested_behavior):
+            if requested_behavior == "mutation" and values.get("mode") == "execute" and values.get("external_disclosure") != "allowed":
+                return [agent_equipment_config.Diagnostic("semantic conflict", "issue_tracker_ops.external_disclosure", "execute requires external disclosure policy")]
+            return []
+
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=1,
+            fields={
+                "mode": agent_equipment_config.FieldSpec(type="string", required=True, enum=["dry-run", "execute"]),
+                "external_disclosure": agent_equipment_config.FieldSpec(type="string", required=True, enum=["blocked", "allowed"]),
+            },
+            semantic_validators=(execute_requires_disclosure,),
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "session.toml", """
+                [agent_equipment_config.layer]
+                name = "session overrides"
+                category = "session override"
+
+                [issue_tracker_ops]
+                mode = "execute"
+                external_disclosure = "blocked"
+            """)
+
+            result = agent_equipment_config.effective_config([layer], [fragment], requested_behavior="advisory")
+
+        self.assertEqual(result["safety_status"], "usable")
+        self.assertEqual(result["diagnostics"], [])
 
     def test_safety_status_precedence_is_explicit_for_mixed_diagnostics(self):
         self.assertEqual(
@@ -936,7 +972,7 @@ Append:
 Run:
 
 ```bash
-python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_untrusted_layer_sets_untrusted_for_mutation tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_stale_fragment_version_reports_stale_without_rewriting_source tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_migration_preview_reports_audit_shape_without_rewriting_source tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_semantic_validator_can_mark_config_unsafe tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_safety_status_precedence_is_explicit_for_mixed_diagnostics
+python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_untrusted_layer_sets_untrusted_for_mutation tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_stale_fragment_version_reports_stale_without_rewriting_source tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_migration_preview_reports_audit_shape_without_rewriting_source tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_semantic_validator_can_mark_config_unsafe tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_mutation_only_semantic_validator_does_not_block_advisory_behavior tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_safety_status_precedence_is_explicit_for_mixed_diagnostics
 ```
 
 Expected: failures because untrusted, stale, migration preview, and semantic validators are not complete.
@@ -958,7 +994,7 @@ class SchemaFragment:
     namespace: str
     version: int
     fields: dict[str, FieldSpec]
-    semantic_validators: tuple[Callable[[dict[str, Any]], list["Diagnostic"]], ...] = ()
+    semantic_validators: tuple[Callable[[dict[str, Any], str], list["Diagnostic"]], ...] = ()
     migrations: tuple[MigrationPreview, ...] = ()
 
 
@@ -1111,7 +1147,7 @@ def effective_config(layer_paths: list[Path], fragments: list[SchemaFragment], *
                 migration_previews.extend(migration_previews_for_layer(layer, fragment))
         plain_values = raw_values_for_namespace(namespace_values)
         for validator in fragment.semantic_validators:
-            diagnostics.extend(validator(plain_values))
+            diagnostics.extend(validator(plain_values, requested_behavior))
         effective[fragment.namespace] = namespace_values
     safety_status = safety_status_from_diagnostics(diagnostics, requested_behavior=requested_behavior)
     return {
@@ -1149,7 +1185,7 @@ def safety_status_from_diagnostics(diagnostics: list[Diagnostic], *, requested_b
 Run:
 
 ```bash
-python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_untrusted_layer_sets_untrusted_for_mutation tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_stale_fragment_version_reports_stale_without_rewriting_source tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_migration_preview_reports_audit_shape_without_rewriting_source tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_semantic_validator_can_mark_config_unsafe tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_safety_status_precedence_is_explicit_for_mixed_diagnostics
+python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_untrusted_layer_sets_untrusted_for_mutation tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_stale_fragment_version_reports_stale_without_rewriting_source tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_migration_preview_reports_audit_shape_without_rewriting_source tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_semantic_validator_can_mark_config_unsafe tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_mutation_only_semantic_validator_does_not_block_advisory_behavior tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_safety_status_precedence_is_explicit_for_mixed_diagnostics
 ```
 
 Expected: `OK`.
@@ -1389,8 +1425,8 @@ Add:
 
 ```python
 def issue_tracker_ops_fragment() -> SchemaFragment:
-    def execute_requires_disclosure(values: dict[str, Any]) -> list[Diagnostic]:
-        if values.get("mode") == "execute" and values.get("external_disclosure") != "allowed":
+    def execute_requires_disclosure(values: dict[str, Any], requested_behavior: str) -> list[Diagnostic]:
+        if requested_behavior == "mutation" and values.get("mode") == "execute" and values.get("external_disclosure") != "allowed":
             return [Diagnostic("semantic conflict", "issue_tracker_ops.external_disclosure", "execute requires external disclosure policy")]
         return []
 
@@ -1457,7 +1493,386 @@ git commit -m "feat(config): add effective config cli" -m "Co-authored-by: Codex
 
 ---
 
-### Task 6: Issue Tracker Ops Pressure Coverage And Documentation
+### Task 6: Plain Handoff, Missing Authority, And Projection Classification
+
+**Files:**
+- Modify: `tools/agent_equipment_config.py`
+- Modify: `tests/test_agent_equipment_config.py`
+
+- [ ] **Step 1: Write failing tests for plain handoff fallback, missing authority, and projection classification**
+
+Append:
+
+```python
+    def test_plain_issue_tracker_ops_handoff_promotes_without_shared_config_layer(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            handoff = self.write_layer(root, "issue-tracker-handoff.toml", """
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+
+            result = agent_equipment_config.effective_config(
+                [],
+                [agent_equipment_config.issue_tracker_ops_fragment()],
+                requested_behavior="advisory",
+                plain_handoff_paths=[handoff],
+            )
+
+        self.assertEqual(result["safety_status"], "usable")
+        self.assertEqual(result["effective"]["issue_tracker_ops"]["mode"]["value"], "dry-run")
+        self.assertEqual(result["plain_handoffs"][0]["source"], handoff.as_posix())
+        self.assertEqual(result["plain_handoffs"][0]["promoted_to"], "session overrides")
+        self.assertEqual(result["enforcement_projection"]["classification"], "advisory")
+
+    def test_cli_accepts_plain_handoff_without_layer(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            handoff = self.write_layer(root, "issue-tracker-handoff.toml", """
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+
+            stdout = agent_equipment_config.run(
+                ["effective-config", "--plain-handoff", str(handoff), "--issue-tracker-ops"],
+                stdout_text=True,
+            )
+
+        payload = json.loads(stdout)
+        self.assertEqual(payload["safety_status"], "usable")
+        self.assertEqual(payload["plain_handoffs"][0]["source"], handoff.as_posix())
+
+    def test_missing_authority_blocks_mutation_projection_without_harness_enforcement(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy = self.write_layer(root, "org.toml", """
+                [agent_equipment_config.layer]
+                name = "organization or tracker policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.policy.issue_tracker_ops.mode]
+                required_for = "mutation"
+                authority = "live_tracker_write"
+
+                [issue_tracker_ops]
+                mode = "execute"
+                external_disclosure = "allowed"
+            """)
+
+            result = agent_equipment_config.effective_config([policy], [self.issue_ops_fragment()], requested_behavior="mutation")
+
+        self.assertEqual(result["safety_status"], "unsafe")
+        self.assertEqual(result["diagnostics"][0]["kind"], "missing authority")
+        self.assertEqual(result["diagnostics"][0]["evidence"]["authority"], "live_tracker_write")
+        self.assertEqual(result["enforcement_projection"]["classification"], "blocking")
+        self.assertEqual(result["enforcement_projection"]["enforced_by_harness"], False)
+
+    def test_usable_authority_allows_mutation_projection_to_remain_advisory(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy = self.write_layer(root, "org.toml", """
+                [agent_equipment_config.layer]
+                name = "organization or tracker policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.policy.issue_tracker_ops.mode]
+                required_for = "mutation"
+                authority = "live_tracker_write"
+
+                [agent_equipment_config.authority]
+                live_tracker_write = "usable"
+
+                [issue_tracker_ops]
+                mode = "execute"
+                external_disclosure = "allowed"
+            """)
+
+            result = agent_equipment_config.effective_config([policy], [self.issue_ops_fragment()], requested_behavior="mutation")
+
+        self.assertEqual(result["safety_status"], "usable")
+        self.assertEqual(result["diagnostics"], [])
+        self.assertEqual(result["enforcement_projection"]["classification"], "advisory")
+```
+
+- [ ] **Step 2: Run tests to verify they fail**
+
+Run:
+
+```bash
+python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_plain_issue_tracker_ops_handoff_promotes_without_shared_config_layer tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_cli_accepts_plain_handoff_without_layer tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_missing_authority_blocks_mutation_projection_without_harness_enforcement tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_usable_authority_allows_mutation_projection_to_remain_advisory
+```
+
+Expected: failures because plain handoff loading, authority status, and enforcement projection classification are missing.
+
+- [ ] **Step 3: Implement plain handoff loading, authority checks, and projection classification**
+
+Replace `PolicyLock` and `policy_locks` with:
+
+```python
+@dataclass(frozen=True)
+class PolicyLock:
+    namespace: str
+    field: str
+    layer: Layer
+    required_for: str
+    non_overridable: bool = False
+    authority: str | None = None
+
+
+def policy_locks(layer: Layer) -> dict[tuple[str, str], PolicyLock]:
+    policy = layer.metadata.get("policy", {})
+    locks: dict[tuple[str, str], PolicyLock] = {}
+    for namespace, fields in policy.items():
+        if not isinstance(fields, dict):
+            continue
+        for field_name, rule in fields.items():
+            if not isinstance(rule, dict):
+                continue
+            non_overridable = bool(rule.get("non_overridable", False))
+            authority = rule.get("authority")
+            if non_overridable or isinstance(authority, str):
+                locks[(namespace, field_name)] = PolicyLock(
+                    namespace=namespace,
+                    field=field_name,
+                    layer=layer,
+                    required_for=str(rule.get("required_for", "mutation")),
+                    non_overridable=non_overridable,
+                    authority=authority if isinstance(authority, str) else None,
+                )
+    return locks
+```
+
+Add:
+
+```python
+def load_plain_handoff_layers(paths: Iterable[Path]) -> tuple[list[Layer], list[dict[str, Any]]]:
+    layers: list[Layer] = []
+    summaries: list[dict[str, Any]] = []
+    for index, path in enumerate(paths):
+        document = load_toml(path)
+        layer = Layer(
+            name="session overrides",
+            category="session override",
+            path=path.as_posix(),
+            precedence=LAYER_PRECEDENCE.index("session overrides"),
+            source_order=10_000 + index,
+            data=document,
+            metadata={"plain_handoff": True},
+            trusted=True,
+        )
+        layers.append(layer)
+        summaries.append({"source": path.as_posix(), "promoted_to": "session overrides", "category": "session override"})
+    return layers, summaries
+
+
+def authority_is_usable(layers: list[Layer], authority: str) -> bool:
+    for layer in layers:
+        authority_table = layer.metadata.get("authority", {})
+        if isinstance(authority_table, dict) and authority_table.get(authority) == "usable":
+            return True
+    return False
+
+
+def enforcement_projection(safety_status: str, requested_behavior: str) -> dict[str, Any]:
+    classification = "blocking" if requested_behavior == "mutation" and safety_status != "usable" else "advisory"
+    return {
+        "requested_behavior": requested_behavior,
+        "classification": classification,
+        "enforced_by_harness": False,
+    }
+```
+
+Replace the whole `effective_config` function with:
+
+```python
+def effective_config(
+    layer_paths: list[Path],
+    fragments: list[SchemaFragment],
+    *,
+    requested_behavior: str,
+    plain_handoff_paths: list[Path] | None = None,
+) -> dict[str, Any]:
+    handoff_layers, plain_handoffs = load_plain_handoff_layers(plain_handoff_paths or [])
+    layers = sorted([*load_layers(layer_paths), *handoff_layers], key=lambda layer: (layer.precedence, layer.source_order))
+    effective: dict[str, dict[str, Any]] = {}
+    diagnostics: list[Diagnostic] = []
+    migration_previews: list[dict[str, Any]] = []
+    for fragment in fragments:
+        namespace_values: dict[str, Any] = {}
+        for field_name, field in fragment.fields.items():
+            value = field.default
+            source_layer: Layer | None = None
+            active_lock: PolicyLock | None = None
+            values_by_precedence: dict[int, tuple[JSONValue, Layer]] = {}
+            field_conflicted = False
+            path = f"{fragment.namespace}.{field_name}"
+            for layer in layers:
+                locks = policy_locks(layer)
+                if (fragment.namespace, field_name) in locks:
+                    active_lock = locks[(fragment.namespace, field_name)]
+                section = layer.data.get(fragment.namespace, {})
+                if field_name not in section:
+                    continue
+                candidate = section[field_name]
+                prior_value = values_by_precedence.get(layer.precedence)
+                if prior_value is not None and prior_value[0] != candidate:
+                    diagnostics.append(
+                        diagnostic(
+                            "same-precedence collision",
+                            path,
+                            f"{layer.name} has multiple values at the same precedence",
+                            layer,
+                        )
+                    )
+                    value = None
+                    source_layer = None
+                    field_conflicted = True
+                    continue
+                values_by_precedence[layer.precedence] = (candidate, layer)
+                lock_applies = active_lock is not None and active_lock.required_for in {requested_behavior, "always"}
+                if lock_applies and active_lock.non_overridable and layer.precedence > active_lock.layer.precedence:
+                    diagnostics.append(
+                        diagnostic(
+                            "blocked override",
+                            path,
+                            f"{layer.name} cannot override non-overridable value from {active_lock.layer.name}",
+                            layer,
+                            evidence={
+                                "blocked_value": candidate,
+                                "blocked_by": {
+                                    "layer": active_lock.layer.name,
+                                    "source": active_lock.layer.path,
+                                },
+                            },
+                        )
+                    )
+                    continue
+                if not field_conflicted:
+                    value = candidate
+                    source_layer = layer
+            if active_lock is not None and active_lock.required_for in {requested_behavior, "always"} and active_lock.authority:
+                if not authority_is_usable(layers, active_lock.authority):
+                    diagnostics.append(
+                        diagnostic(
+                            "missing authority",
+                            path,
+                            f"missing usable authority {active_lock.authority!r} for {active_lock.required_for}",
+                            active_lock.layer,
+                            evidence={"authority": active_lock.authority, "required_for": active_lock.required_for},
+                        )
+                    )
+            if value is None and field.required and not field_conflicted:
+                diagnostics.append(diagnostic("schema conflict", path, "missing required value", source_layer))
+            if not field_conflicted:
+                diagnostics.extend(validate_field(value, field, path, source_layer))
+            wrapped_value = {
+                "value": value,
+                "source": source_layer.path if source_layer else "schema default",
+                "layer": source_layer.name if source_layer else "schema default",
+            }
+            reference = secret_reference(value)
+            if reference is not None:
+                wrapped_value.pop("value", None)
+                wrapped_value["secret_reference"] = reference
+            namespace_values[field_name] = wrapped_value
+        for layer in layers:
+            if not layer.trusted and fragment.namespace in layer.data and requested_behavior == "mutation":
+                diagnostics.append(diagnostic("untrusted source", fragment.namespace, f"{layer.name} is not trusted for mutation", layer))
+            versions = fragment_versions(layer)
+            if fragment.namespace in versions and versions[fragment.namespace] < fragment.version:
+                diagnostics.append(diagnostic("stale schema", fragment.namespace, f"source version {versions[fragment.namespace]} is older than schema version {fragment.version}", layer))
+                migration_previews.extend(migration_previews_for_layer(layer, fragment))
+        plain_values = raw_values_for_namespace(namespace_values)
+        for validator in fragment.semantic_validators:
+            diagnostics.extend(validator(plain_values, requested_behavior))
+        effective[fragment.namespace] = namespace_values
+    safety_status = safety_status_from_diagnostics(diagnostics, requested_behavior=requested_behavior)
+    return {
+        "safety_status": safety_status,
+        "effective": effective,
+        "diagnostics": [asdict(item) for item in diagnostics],
+        "migration_previews": migration_previews,
+        "plain_handoffs": plain_handoffs,
+        "enforcement_projection": enforcement_projection(safety_status, requested_behavior),
+    }
+```
+
+Update `safety_status_from_diagnostics` so `missing authority` is unsafe:
+
+```python
+def safety_status_from_diagnostics(diagnostics: list[Diagnostic], *, requested_behavior: str) -> str:
+    kinds = {item.kind for item in diagnostics}
+    # Precedence is intentional: structural conflicts first, then incomplete schema,
+    # then provenance/version hazards, then semantic or authority unsafety.
+    if "blocked override" in kinds or "same-precedence collision" in kinds:
+        return "conflicted"
+    if "schema conflict" in kinds and any("missing required" in item.detail for item in diagnostics):
+        return "incomplete"
+    if "schema conflict" in kinds:
+        return "conflicted"
+    if "untrusted source" in kinds:
+        return "untrusted"
+    if "stale schema" in kinds:
+        return "stale"
+    if "semantic conflict" in kinds or "missing authority" in kinds:
+        return "unsafe"
+    return "usable"
+```
+
+Update `build_parser` and `run`:
+
+```python
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Compute Agent Equipment Config v0 outputs.")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    effective = subparsers.add_parser("effective-config")
+    effective.add_argument("--layer", action="append", default=[])
+    effective.add_argument("--plain-handoff", action="append", default=[])
+    effective.add_argument("--requested-behavior", choices=["advisory", "mutation"], default="advisory")
+    effective.add_argument("--issue-tracker-ops", action="store_true")
+    return parser
+
+
+def run(argv: list[str] | None = None, *, stdout: TextIO | None = None, stdout_text: bool = False) -> int | str:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    output = stdout or sys.stdout
+    fragments = [issue_tracker_ops_fragment()] if args.issue_tracker_ops else []
+    payload = effective_config(
+        [Path(path) for path in args.layer],
+        fragments,
+        requested_behavior=args.requested_behavior,
+        plain_handoff_paths=[Path(path) for path in args.plain_handoff],
+    )
+    text = json.dumps(payload, indent=2, sort_keys=True) + "\n"
+    if stdout_text:
+        return text
+    output.write(text)
+    return 0
+```
+
+- [ ] **Step 4: Run handoff and projection tests**
+
+Run:
+
+```bash
+python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_plain_issue_tracker_ops_handoff_promotes_without_shared_config_layer tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_cli_accepts_plain_handoff_without_layer tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_missing_authority_blocks_mutation_projection_without_harness_enforcement tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_usable_authority_allows_mutation_projection_to_remain_advisory
+```
+
+Expected: `OK`.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add tools/agent_equipment_config.py tests/test_agent_equipment_config.py
+git commit -m "feat(config): support handoff and authority projection" -m "Co-authored-by: Codex <noreply@openai.com>"
+```
+
+---
+
+### Task 7: Issue Tracker Ops Pressure Regression And Documentation
 
 **Files:**
 - Modify: `tests/test_agent_equipment_config.py`
@@ -1466,6 +1881,11 @@ git commit -m "feat(config): add effective config cli" -m "Co-authored-by: Codex
 - Modify: `specs/agent-equipment-config/pressure-scenarios.md`
 
 - [ ] **Step 1: Write pressure scenario regression test**
+
+This is a post-implementation pressure regression: Task 6 provides the failing
+tests for the underlying handoff, missing-authority, and projection behavior.
+This test proves those pieces work together for the Issue Tracker Ops scenario
+before updating the spec evidence.
 
 Append:
 
@@ -1503,6 +1923,9 @@ Append:
         self.assertEqual(result["diagnostics"][0]["evidence"]["blocked_value"], "execute")
         self.assertEqual(result["diagnostics"][0]["evidence"]["blocked_by"]["layer"], "organization or tracker policy")
         self.assertEqual(result["diagnostics"][0]["evidence"]["blocked_by"]["source"], org.as_posix())
+        self.assertIn("missing authority", [item["kind"] for item in result["diagnostics"]])
+        self.assertEqual(result["enforcement_projection"]["classification"], "blocking")
+        self.assertFalse(result["enforcement_projection"]["enforced_by_harness"])
 ```
 
 - [ ] **Step 2: Run pressure scenario regression test**
@@ -1513,7 +1936,7 @@ Run:
 python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_issue_tracker_ops_pressure_scenario_blocks_execute_without_authority
 ```
 
-Expected: `OK` if Task 3 and Task 5 are correct. If it fails, fix the implementation rather than weakening the test.
+Expected: `OK` if Task 3, Task 5, and Task 6 are correct. If it fails, fix the implementation rather than weakening the test.
 
 - [ ] **Step 3: Update validation plan command list**
 
@@ -1534,6 +1957,9 @@ Implemented by the v0 engine slice:
 - config-diff output for values, secret-reference identity, status changes, and diagnostic changes;
 - Config Safety Status classification;
 - deprecation diagnostics and migration-preview output with audit-preview shape;
+- plain Issue Tracker Ops handoff fallback and promotion;
+- missing-authority diagnostics for mutation-gated settings;
+- enforcement projection classification as `blocking` or `advisory`;
 - Issue Tracker Ops pressure scenario for blocked live mutation.
 ```
 
@@ -1546,8 +1972,8 @@ In `specs/agent-equipment-config/README.md`, add this section after "V0 contract
 
 The first runtime slice provides a standard-library Python effective-config
 engine for deterministic validation and pressure coverage. It previews source
-migrations but does not rewrite source config, resolve secrets, or enforce
-harness controls.
+migrations and classifies enforcement projections, but does not rewrite source
+config, resolve secrets, or implement harness controls.
 ```
 
 - [ ] **Step 5: Update pressure scenario status**
@@ -1556,9 +1982,9 @@ In `specs/agent-equipment-config/pressure-scenarios.md`, add this paragraph afte
 
 ```markdown
 Runtime coverage: `tests.test_agent_equipment_config` covers the blocked
-session override path for Issue Tracker Ops mutation. The broader pressure
-scenario still needs harness-specific projection coverage before promotion
-beyond `planned`.
+session override path and missing-authority path for Issue Tracker Ops
+mutation. The broader pressure scenario still needs harness-specific
+enforcement implementation before promotion beyond `planned`.
 ```
 
 - [ ] **Step 6: Commit**
@@ -1570,7 +1996,7 @@ git commit -m "test(config): cover issue tracker pressure scenario" -m "Co-autho
 
 ---
 
-### Task 7: Validator, Security, And Closeout
+### Task 8: Validator, Security, And Closeout
 
 **Files:**
 - Modify: `tools/validate_forge_seed.py`
@@ -1609,7 +2035,8 @@ In `specs/agent-equipment-config/closeout-evidence-plan.md`, add this bullet to 
 - Agent Equipment Config runtime-slice command
   `python3.14 -m unittest tests.test_agent_equipment_config` and the focused
   security review conclusion for executable parsing, merge, diff, migration
-  preview, and secret-reference behavior.
+  preview, plain handoff, authority, projection-classification, and
+  secret-reference behavior.
 ```
 
 - [ ] **Step 4: Run focused validator tests**
@@ -1650,6 +2077,9 @@ Inspect this diff for:
 - no subprocess calls;
 - no source config rewrite;
 - migration preview and audit-preview output remaining diagnostic-only;
+- plain handoff promotion not writing source config;
+- missing-authority and enforcement projection classification remaining
+  diagnostic-only;
 - no secret value logging or resolution;
 - JSON and config-diff output not exposing secret values;
 - mutation behavior remaining diagnostic-only.
@@ -1667,9 +2097,9 @@ git commit -m "test(config): validate runtime slice coverage" -m "Co-authored-by
 
 ## Self-Review Checklist
 
-- Spec coverage: tasks cover schema fragments, layered config, Layer Precedence, Policy Authority, same-precedence collisions, effective-config, config-diff for values/status/diagnostics, semantic validators, Config Safety Status precedence, deprecation diagnostics, migration previews with audit-preview shape, secret references, session-scoped behavior, plain Issue Tracker Ops handoff pressure, and validation commands.
-- Deliberate deferrals: source rewrites, provider-specific secret fetching, and harness blocking enforcement remain out of scope and are named in the plan.
-- Type consistency: `Layer`, `FieldSpec`, `SchemaFragment`, `MigrationPreview`, `Diagnostic`, `effective_config`, `config_diff`, and `issue_tracker_ops_fragment` are introduced before use in later tasks.
+- Spec coverage: tasks cover schema fragments, layered config, Layer Precedence, Policy Authority, same-precedence collisions, effective-config, config-diff for values/status/diagnostics, behavior-aware semantic validators, Config Safety Status precedence, deprecation diagnostics, migration previews with audit-preview shape, secret references, session-scoped behavior, plain Issue Tracker Ops handoff fallback/promotion, missing authority, enforcement projection classification, Issue Tracker Ops pressure, and validation commands.
+- Deliberate deferrals: source rewrites, migration apply execution, provider-specific secret fetching, and harness blocking-control implementation remain out of scope and are named in the plan.
+- Type consistency: `Layer`, `FieldSpec`, `SchemaFragment`, `MigrationPreview`, `Diagnostic`, `PolicyLock`, `effective_config`, `config_diff`, `enforcement_projection`, and `issue_tracker_ops_fragment` are introduced before use in later tasks.
 - Security boundary: no network, subprocess, secret fetching, or source mutation is part of the runtime slice.
 
 ## Execution Handoff
