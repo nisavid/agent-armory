@@ -1623,24 +1623,33 @@ def markdown_files(root: Path) -> list[Path]:
     return sorted(files)
 
 
+def python_runtime_reference_path_excluded(relative_path: Path) -> bool:
+    return any(part in PYTHON_RUNTIME_REFERENCE_EXCLUDED_DIR_NAMES for part in relative_path.parts) or any(
+        relative_path == excluded or relative_path.is_relative_to(excluded)
+        for excluded in PYTHON_RUNTIME_REFERENCE_EXCLUDED_DIRS
+    )
+
+
 def python_runtime_text_files(root: Path) -> list[Path]:
     files: list[Path] = []
-    for path in root.rglob("*"):
-        relative = path.relative_to(root)
-        if any(part in PYTHON_RUNTIME_REFERENCE_EXCLUDED_DIR_NAMES for part in relative.parts):
-            continue
-        if any(
-            relative == excluded or relative.is_relative_to(excluded)
-            for excluded in PYTHON_RUNTIME_REFERENCE_EXCLUDED_DIRS
-        ):
-            continue
-        if not path.is_file():
-            continue
-        try:
-            path.read_text(encoding="utf-8")
-        except UnicodeDecodeError:
-            continue
-        files.append(path)
+    directories = [root]
+    while directories:
+        directory = directories.pop()
+        for path in sorted(directory.iterdir()):
+            relative = path.relative_to(root)
+            if python_runtime_reference_path_excluded(relative):
+                continue
+            if path.is_dir():
+                if not path.is_symlink():
+                    directories.append(path)
+                continue
+            if not path.is_file():
+                continue
+            try:
+                path.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                continue
+            files.append(path)
     return sorted(files)
 
 
