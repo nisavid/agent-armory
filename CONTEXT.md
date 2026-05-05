@@ -138,6 +138,24 @@ configuration across Agent Equipment.
 _Avoid_: treating it as a component of Agent Ops or any other higher-level
 equipment
 
+**Cognition Enhancement Equipment**:
+Agent Equipment that shapes how an Agent reasons, reflects, remembers, routes
+insight, right-sizes cognition, or improves its future harness behavior.
+_Avoid_: prompt style when deterministic support, durable capture, policy, or
+validation is the needed surface
+
+**Reflection**:
+An Agent activity that inspects recent experience, extracts reusable lessons,
+and routes durable follow-up into Agent Equipment, issue tracker records,
+config, docs, validators, workflows, policy, or Forge Tooling.
+_Avoid_: chat-only introspection when the finding should become durable
+
+**Reflection Finding**:
+An issue-tracked or otherwise durable output of Reflection that captures an
+observed friction, failure, pattern, or insight and the induced equipment,
+policy, validator, config, workflow, or documentation candidate.
+_Avoid_: final equipment design, untracked note
+
 **Review Until Clean**:
 A repeated review-and-revision loop that stops only when the latest review cycle has no findings.
 _Avoid_: assuming any named external review skill is repo policy unless the operator invokes it or repo policy names it
@@ -304,6 +322,7 @@ _Avoid_: chat-only conclusion, undocumented resume instruction
 - A **Repo Draft PRD** can become the source for a **Published PRD Issue** after review.
 - A **Published PRD Issue** is the tracking surface; material repo-draft changes need explicit issue re-projection.
 - **Issue Projection** happens after repo-draft review; closeout records either the issue update or the reason projection remains pending.
+- **Reflection Findings** are source material for future **Cognition Enhancement Equipment** and may also induce **Tooling Requests**, **Equipment Candidates**, or issue-tracked work in narrower equipment stories.
 - A **Forgewright Runbook** guides Forge maintenance without replacing ADRs, PRDs, implementation plans, or Smith runbooks.
 - A **Target Structure** can guide a PRD, but the **Forge Seed** creates only **Seed Surfaces**.
 - A **Seed Validation Tool** implements **Seed Validation** without adding runtime dependencies.
@@ -339,6 +358,7 @@ _Avoid_: chat-only conclusion, undocumented resume instruction
 - "Agent Equipment" can mean the broad category or a ready-to-equip surface. Resolution: use **Equipment Candidate** before validation/publication and **Published Agent Equipment** for ready-to-equip surfaces.
 - "PRD tracking" can mean worktree drafting or issue-tracker publication. Resolution: use **Repo Draft PRD** for reviewable drafts, **Published PRD Issue** for tracking, and re-project material draft changes into the issue.
 - "Issue projection" can mean publication timing or synchronization mechanics. Resolution: use **Issue Projection** for post-review publication and closeout synchronization.
+- "Reflection" can mean private thinking, a closeout habit, a durable finding, or future equipment. Resolution: use **Reflection Finding** when the output should be tracked, and **Cognition Enhancement Equipment** when the capability itself is being engineered.
 - "Forgewright guidance" can mean durable workflow or a specific plan. Resolution: use the **Forgewright Runbook** for repeatable maintenance duties and keep project-specific steps in PRDs, plans, and ADRs.
 - "Review until clean" can mean a general quality gate or a named imported skill. Resolution: use **Review Until Clean** for the repo concept and invoke named review skills only when requested or adopted by repo policy.
 - "Repository structure" can mean an intended architecture or files to create now. Resolution: use **Target Structure** for the PRD-level architecture and **Seed Surface** for files created in the Forge Seed.

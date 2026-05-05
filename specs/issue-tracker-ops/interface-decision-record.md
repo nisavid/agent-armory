@@ -10,6 +10,13 @@ external tracker operations, layered priority and selection policy, dry-run
 safety, audit output, and future portability across issue trackers and agent
 harnesses.
 
+## Vision alignment
+
+Issue Ops makes the Armory's reflection and self-onboarding loop durable. It
+keeps follow-up creation, dependency mapping, repair, enrichment, and equipment
+candidate routing issue-tracked while deterministic adapter behavior and future
+layered config keep tracker mutations out of vague model preference.
+
 ## Decision
 
 Use a thin bootstrap script for GitHub Issues operations, a Forge Entry Bundle

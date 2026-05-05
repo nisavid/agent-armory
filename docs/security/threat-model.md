@@ -40,6 +40,9 @@ equipment is promoted.
   hooks, scripts, config, Agent Profiles, and plugin manifests.
 - Security and documentation closeout records that carry merge-readiness claims
   into PRs, issues, and future work.
+- Reflection Findings and cognition-equipment source material that may carry
+  private session context, workflow failures, induced priorities, or proposed
+  harness behavior changes.
 
 ### Trust boundaries
 
@@ -170,6 +173,9 @@ actions.
   evidence and stakeholder-approved tracking.
 - Issue or PR projection publishes stale SHA, stale validation status, or
   incomplete security/documentation closeout claims.
+- Reflection or cognition equipment projects private session context,
+  speculative lessons, or unreviewed priority changes into durable issue,
+  policy, or config surfaces without classification and routing controls.
 
 ## Severity Calibration (Critical, High, Medium, Low)
 

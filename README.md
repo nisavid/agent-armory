@@ -87,7 +87,7 @@ capability belongs in a skill, script, tool, or config is written down.
 Equipment is not treated as ready just because it looks plausible. Safeguards,
 checks, and review are part of the build process.
 
-## Who it serves
+## The People It Serves
 
 The Agent Armory is meant for people who wield, outfit, evaluate, procure,
 commission, or keep agent equipment current through their agents. Humans choose
@@ -137,6 +137,12 @@ these equipment lines:
   local approval and auditable state.
 - [Harness Capability Refresh](specs/harness-capability-refresh.md), for keeping
   harness facts current.
+- [Reflection and cognition equipment](https://github.com/nisavid/agent-armory/issues/25),
+  for turning recent agent experience into durable insight, routed follow-up,
+  and harness improvements after enough rudimentary engineering, operations, and
+  tooling equipment exists.
 
-The notes under [docs/follow-ups/](docs/follow-ups/) collect additional future
-equipment ideas without presenting them as current inventory.
+The active story structure lives in the
+[issue tracker](https://github.com/nisavid/agent-armory/issues). The notes under
+[docs/follow-ups/](docs/follow-ups/) collect additional future equipment ideas
+without presenting them as current inventory.

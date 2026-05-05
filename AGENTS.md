@@ -41,6 +41,12 @@ Smiths creating or modifying Agent Equipment should start with:
 
 Issues and PRDs are tracked in GitHub Issues for `nisavid/agent-armory`. See `docs/agents/issue-tracker.md`.
 
+### Reflection findings
+
+Manual reflections that produce actionable equipment, policy, validator,
+config, workflow, or documentation candidates should become issue-tracked
+Reflection Findings. See `docs/agents/issue-tracker.md`.
+
 ### Triage labels
 
 Use the default five-label triage vocabulary. See `docs/agents/triage-labels.md`.

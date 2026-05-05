@@ -29,6 +29,8 @@ hooks, skills, Agent Profiles, plugins, or GitHub Projects extension.
 - Issue bodies, comments, file references, source links, and validation evidence.
 - Stakeholder priority, workflow status, board-column placement, assignment,
   readiness, selection, and delegation decisions.
+- Reflection Findings, including session context, observed failures, workflow
+  insights, and induced equipment candidates.
 
 ## Trust boundaries
 
@@ -65,6 +67,8 @@ hooks, skills, Agent Profiles, plugins, or GitHub Projects extension.
 - No rate-limit backoff beyond surfacing `gh api` failure.
 - No redaction layer for body text in dry-run output.
 - No hook-enforced approval gate beyond explicit `--execute`.
+- No Reflection Finding redaction or routing policy beyond current issue
+  projection discipline.
 
 ## Bootstrap security decision
 

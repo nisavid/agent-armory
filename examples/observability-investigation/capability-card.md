@@ -10,6 +10,13 @@ Trace: capability card -> [interface decision record](interface-decision-record.
 
 Investigate service latency, error, or regression signals by correlating bounded metrics, traces, logs, and deploy history.
 
+## Vision alignment
+
+This example shows how an investigation Assembly lets the Agent synthesize a
+timeline and confidence model while typed observability tools, query bounds,
+redaction gates, config, scripts, and local docs protect reliability and
+authority boundaries.
+
 ## Users
 
 - Human operator: wants a clear incident timeline and evidence-backed suspected cause.

@@ -26,6 +26,9 @@ Capture:
 - evidence category and open questions.
 
 The card keeps the capability independent from any first implementation shape.
+If the capability was induced by a Reflection Finding, cite the issue,
+comment, or capture that contains the finding and preserve the routing rationale
+as source material, not as unquestioned design.
 
 ## Forge entry bundle
 
@@ -145,6 +148,8 @@ Follow `docs/story-closeout.md` for closeout gate order, interdependencies, revi
 Before closeout, verify:
 
 - vision alignment is still accurate for the final scope;
+- actionable reflection findings from the work are issue-tracked, routed to the
+  relevant equipment story, or explicitly left as non-durable session insight;
 - the capability card and interface decision record agree;
 - deterministic checks run or have an explicit unavailable-control note;
 - security and control requirements are represented in the right surfaces;

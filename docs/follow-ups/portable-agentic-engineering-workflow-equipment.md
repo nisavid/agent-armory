@@ -26,6 +26,9 @@ equipment kind.
   publishable equipment, bundle member, wrapper/extension, rejected source, or
   deferred design input.
 - Preserve source, provenance, and licensing context.
+- Scout Reflection Findings and closeout reflection captures that describe
+  workflow friction, right-sizing failures, handoff failures, review loops,
+  publication pauses, or durable-equipment candidates.
 - Identify global-installation assumptions and remove accidental dependency on
   the operator's user-global state.
 - Provide an interactive or configurable UX so the operator can choose import
@@ -42,6 +45,9 @@ Projected follow-up issues:
   ingestion and promotion pipeline.
 - [#8](https://github.com/nisavid/agent-armory/issues/8): Engineer portable
   agentic workflow equipment.
+- [#25](https://github.com/nisavid/agent-armory/issues/25): Engineer
+  Reflection and cognition equipment, which should scout this capture for
+  manually produced reflection evidence.
 
 This capture remains local source material until
 [#10](https://github.com/nisavid/agent-armory/issues/10) decides whether to

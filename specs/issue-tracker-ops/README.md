@@ -30,3 +30,7 @@ Issue Ops configuration is a progressive enhancement. Durable layered
 configuration belongs to Agent Equipment Config; Issue Ops still needs a plain
 session-scoped config shape for operation, handoff, and later ingestion when the
 shared config equipment is unavailable.
+
+Issue Ops also provides the issue-tracked path for Reflection Findings until
+generic Reflection and cognition equipment can automate more of that capture,
+routing, and follow-up loop.

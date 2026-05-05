@@ -17,12 +17,15 @@ Run closeout gates in this order:
 3. Complete Change Set Security Closeout for the current change set.
 4. Complete Change Set Documentation Closeout for affected human-facing and agent-facing docs.
 5. Prepare projection drafts for issues, PR bodies, handoff notes, and release summaries from the current story evidence, or record the explicit pending-projection rationale.
-6. Run Cross-Boundary Coherence before Story Quality because quality review depends on coherent process evidence.
-7. Run Story Quality Ralph Review after coherence findings are fixed or soundly rejected.
-8. Run final validation and publication-readiness checks required by the active plan or repository policy. For the Forge Seed, `python3.14 tools/validate_forge_seed.py --final-closeout` is the branch-push and external-projection readiness check.
-9. Push or otherwise publish the branch only when the active plan, operator direction, or issue-projection surface needs a pushed commit before PR creation. A stated human pause point may occur here.
-10. Publish or update issue, PR, release, and handoff surfaces from the clean final story evidence.
-11. Perform publication actions that remain in scope, respecting repository policy and stated human pause points.
+6. Route actionable Reflection Findings discovered during the story into the
+   issue tracker, Tooling Request, or the relevant Equipment Candidate, or
+   record why the insight is not durable.
+7. Run Cross-Boundary Coherence before Story Quality because quality review depends on coherent process evidence.
+8. Run Story Quality Ralph Review after coherence findings are fixed or soundly rejected.
+9. Run final validation and publication-readiness checks required by the active plan or repository policy. For the Forge Seed, `python3.14 tools/validate_forge_seed.py --final-closeout` is the branch-push and external-projection readiness check.
+10. Push or otherwise publish the branch only when the active plan, operator direction, or issue-projection surface needs a pushed commit before PR creation. A stated human pause point may occur here.
+11. Publish or update issue, PR, release, and handoff surfaces from the clean final story evidence.
+12. Perform publication actions that remain in scope, respecting repository policy and stated human pause points.
 
 Do not use issue projection, a PR body, or a final chat summary to make stale committed docs look current. Update the repo surface first when the evidence belongs in the repo.
 
@@ -40,6 +43,9 @@ Rerun the gate that owns any surface changed by a review fix.
 - Final validation or publication-readiness changes rerun projection for any issue, PR, release, or handoff surface that carries the changed evidence.
 - Published issue, PR, release, or handoff corrections rerun a projection consistency check and a narrow Cross-Boundary Coherence review for the corrected surface.
 - New operator input, accepted decision changes, review dispositions, handoff updates, or observed corrections that may change Underlying Intent rerun Intent Model Refresh before the next closeout gate.
+- Reflection Findings that add equipment scope, policy, validation, security,
+  documentation, or issue-projection claims rerun the owning closeout gate before
+  projection.
 - Evidence-artifact durability changes rerun the closeout gate that owns the artifact and any projection surface that carries its claims.
 
 If a revision changes security, documentation, validation, PRD/spec/plan scope, or issue/PR projection, rerun the affected upstream gate before the next closeout review.
@@ -76,6 +82,9 @@ A story is ready to close when:
   the story affects ideation, architecture, design, strategy, validation,
   maintenance, or the intended agent and human experience;
 - issue, PR, release, and handoff drafts or published surfaces are projected from the same current repo facts;
+- actionable Reflection Findings are routed to the issue tracker, Tooling
+  Request, or the relevant Equipment Candidate, or are explicitly classified as
+  non-durable session insight;
 - closeout evidence artifacts are classified by durability, and instance-scoped scratch artifacts are summarized rather than committed or externally projected as project truth;
 - deferred risks, unavailable controls, or stakeholder decisions have tracking and owner-visible rationale;
 - final publication actions respect repository policy and the human operator's stated pause points.

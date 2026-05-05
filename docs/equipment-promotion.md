@@ -76,6 +76,8 @@ Entry criteria:
 - pressure scenarios or harness smoke tests cover the intended use;
 - validation evidence shows the Agent can discover, equip, use, or hand off the
   equipment under realistic task pressure;
+- cognition and Reflection equipment evidence shows changed agent behavior
+  under task pressure, not merely plausible introspective prose;
 - security and control checks have no unresolved reportable risk;
 - evidence category, source basis, and residual uncertainty are recorded.
 

@@ -10,6 +10,12 @@ Trace: [capability card](capability-card.md) -> interface decision record -> [pr
 
 The documentation research capability needs a trigger for version-sensitive questions, deterministic local version discovery, read-only external retrieval tools, evidence labeling, and disclosure gates for private context.
 
+## Vision alignment
+
+The decision gives the Agent judgment over when research is needed, but relies
+on tools, scripts, evidence labels, config, and hooks to keep current facts,
+version detection, and disclosure policy out of vague memory.
+
 ## Decision
 
 Use a skill for the trigger and research procedure, MCP/tools for live docs retrieval, scripts for local version inspection, local docs for source policy, config for provider and disclosure preferences, and hooks for citation or disclosure enforcement where the harness supports them.

@@ -108,9 +108,16 @@ inventory items yet:
   across harnesses.
 - [Harness Capability Refresh](../specs/harness-capability-refresh.md):
   recurring refresh of harness facts with evidence.
+- [Reflection and cognition equipment](https://github.com/nisavid/agent-armory/issues/25):
+  future cognition enhancement equipment that turns recent agent experience into
+  durable insight, routed follow-up, and harness improvements.
 - [Portable workflow equipment](follow-ups/portable-agentic-engineering-workflow-equipment.md):
   future support for portable agent equipment.
 - [Side-thread hand-back](follow-ups/side-thread-hand-back-workflow.md): future
   support for side conversations around active work.
 - [Ephemeral workflow opportunity capture](follow-ups/ephemeral-workflow-opportunity-capture.md):
   future support for capturing useful workflow ideas during active sessions.
+
+The GitHub issue tracker carries active story structure. Local follow-up
+captures remain seed-era source material until Issue Ops projections retain,
+consolidate, or retire them.
