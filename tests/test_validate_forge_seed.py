@@ -177,11 +177,6 @@ class ValidatorPrimitiveTests(unittest.TestCase):
                 f"This historical decision mentioned {drifted_reference}.\n",
                 encoding="utf-8",
             )
-            (root / "docs/closeout").mkdir()
-            (root / "docs/closeout/summary.md").write_text(
-                f"Closeout evidence mentioned {drifted_reference}.\n",
-                encoding="utf-8",
-            )
             (root / "docs/metasmith/handoff/2026-05-02").mkdir(parents=True)
             (root / "docs/metasmith/handoff/2026-05-02/provenance.md").write_text(
                 f"Source-bearing provenance mentioned {drifted_reference}.\n",
@@ -200,6 +195,30 @@ class ValidatorPrimitiveTests(unittest.TestCase):
                     path=".python-version",
                 )
             ],
+        )
+
+    def test_validate_python_runtime_declaration_rejects_closeout_reference_drift(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            drifted_version = "3.13"
+            drifted_reference = f"Python {drifted_version}"
+            (root / ".python-version").write_text("3.14\n", encoding="utf-8")
+            (root / "docs/closeout").mkdir(parents=True)
+            (root / "docs/closeout/summary.md").write_text(
+                f"Closeout evidence mentioned {drifted_reference}.\n",
+                encoding="utf-8",
+            )
+
+            results = validate_python_runtime_declaration(root)
+
+        self.assertIn(
+            CheckResult(
+                name="python_runtime:reference:docs/closeout/summary.md:3.13",
+                ok=False,
+                detail=f"Python runtime reference {drifted_version} does not match .python-version 3.14",
+                path="docs/closeout/summary.md",
+            ),
+            results,
         )
 
     def test_validate_python_runtime_declaration_ignores_local_work_directories(self):

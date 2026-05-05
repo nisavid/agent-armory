@@ -1046,7 +1046,6 @@ MARKDOWN_LINK_EXCLUDED_DIRS = [
 ]
 PYTHON_RUNTIME_REFERENCE_EXCLUDED_DIRS = [
     Path("docs/adr"),
-    Path("docs/closeout"),
     Path("docs/metasmith"),
 ]
 PYTHON_RUNTIME_REFERENCE_EXCLUDED_DIR_NAMES = {
