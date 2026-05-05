@@ -177,6 +177,11 @@ class ValidatorPrimitiveTests(unittest.TestCase):
                 f"This historical decision mentioned {drifted_reference}.\n",
                 encoding="utf-8",
             )
+            (root / "docs/closeout").mkdir()
+            (root / "docs/closeout/summary.md").write_text(
+                f"Closeout evidence mentioned {drifted_reference}.\n",
+                encoding="utf-8",
+            )
             (root / "docs/metasmith/handoff/2026-05-02").mkdir(parents=True)
             (root / "docs/metasmith/handoff/2026-05-02/provenance.md").write_text(
                 f"Source-bearing provenance mentioned {drifted_reference}.\n",
