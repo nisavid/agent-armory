@@ -5,10 +5,11 @@ Promotion state: planned
 
 This Forge Entry Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for effective-config, config-diff,
-diagnostics, plain handoff promotion, authority checks, and projection
-classification. It does not implement Agent Equipment beyond this runtime
-slice, publish assets, resolve secrets, mutate source config, mutate external
-systems, or implement harness controls.
+diagnostics, plain handoff promotion, authority checks, projection
+classification, and the published runtime guide. It does not resolve secrets,
+mutate source config, mutate external systems, or implement harness controls.
+The Blueprint itself does not implement Agent Equipment; the runtime guide
+names the currently published slice.
 
 Issue: [#23](https://github.com/nisavid/agent-armory/issues/23)
 
@@ -61,6 +62,9 @@ The first runtime slice provides a standard-library Python effective-config
 engine for deterministic validation and pressure coverage. It previews source
 migrations and classifies enforcement projections, but does not rewrite source
 config, resolve secrets, or implement harness controls.
+
+Published usage guidance lives in
+[docs/equipment/agent-equipment-config.md](../../docs/equipment/agent-equipment-config.md).
 
 ### Runtime-slice harness projections
 

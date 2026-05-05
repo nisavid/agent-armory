@@ -1,0 +1,23 @@
+[agent_equipment_config.layer]
+name = "repository policy"
+category = "committed durable config"
+
+[agent_equipment_config.authority]
+repo-maintainers = "usable"
+
+[agent_equipment_config.fragment_versions]
+issue_tracker_ops = 1
+
+[agent_equipment_config.policy.issue_tracker_ops.mode]
+required_for = "always"
+non_overridable = true
+authority = "repo-maintainers"
+
+[agent_equipment_config.policy.issue_tracker_ops.external_disclosure]
+required_for = "mutation"
+non_overridable = true
+authority = "repo-maintainers"
+
+[issue_tracker_ops]
+mode = "dry-run"
+external_disclosure = "blocked"

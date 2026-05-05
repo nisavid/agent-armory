@@ -2,12 +2,13 @@
 
 This map helps human readers choose what to read and what to give to their
 agents. The Agent Armory is under construction: the Forge has just come online,
-and the first equipment has not yet been published into the inventory.
+and Agent Equipment Config has its first published runtime slice.
 
 ## Choose a path
 
 - **Wielding a loadout**: start with the [Armory Vision](vision.md), then the
-  [Forge Tour](forge-tour.md). Published loadouts are not in the inventory yet.
+  [Forge Tour](forge-tour.md). For shared equipment configuration, use
+  [Agent Equipment Config](equipment/agent-equipment-config.md).
 - **Outfitting a harness**: ask an outfitter to compare
   [harness capabilities](harness-capabilities.md),
   [harness components](harness-components.md), and
@@ -78,6 +79,8 @@ agent equipment.
   needs approval, and where secrets and side effects are controlled.
 - [Templates](../templates/): starting points an agent can copy while making
   future equipment.
+- [Agent Equipment Config](equipment/agent-equipment-config.md): published
+  runtime slice for effective-config and config-diff behavior.
 
 ## Explanation
 
@@ -94,11 +97,11 @@ agent equipment.
 
 ## Roadmap
 
-The current roadmap points to written future-equipment ideas. These are not
-inventory items yet:
+The current roadmap points to equipment lines that still have future slices:
 
 - [Agent Equipment Config](../specs/agent-equipment-config/): shared,
-  layerable, enforceable configuration across equipment.
+  layerable, enforceable configuration across equipment; the
+  [runtime slice](equipment/agent-equipment-config.md) is published.
 - [Issue Tracker Ops](../specs/issue-tracker-ops/): direct GitHub
   Issues bootstrap operations and future issue lifecycle equipment. Issue Ops
   is the accepted shorthand.
