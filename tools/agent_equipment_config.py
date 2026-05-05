@@ -77,6 +77,14 @@ class Diagnostic:
     evidence: dict[str, Any] = field(default_factory=dict)
 
 
+@dataclass(frozen=True)
+class PolicyLock:
+    namespace: str
+    field: str
+    layer: Layer
+    required_for: str
+
+
 TYPE_CHECKS: dict[str, type | tuple[type, ...]] = {
     "string": str,
     "boolean": bool,
@@ -116,6 +124,23 @@ def validate_field(value: JSONValue, field: FieldSpec, path: str, layer: Layer |
         replacement = f"use {path.rsplit('.', 1)[0]}.{field.replacement} instead" if field.replacement else "field is deprecated"
         diagnostics.append(diagnostic("deprecated field", path, replacement, layer))
     return diagnostics
+
+
+def policy_locks(layer: Layer) -> dict[tuple[str, str], PolicyLock]:
+    policy = layer.metadata.get("policy", {})
+    locks: dict[tuple[str, str], PolicyLock] = {}
+    for namespace, fields in policy.items():
+        if not isinstance(fields, dict):
+            continue
+        for field_name, rule in fields.items():
+            if isinstance(rule, dict) and rule.get("non_overridable"):
+                locks[(namespace, field_name)] = PolicyLock(
+                    namespace=namespace,
+                    field=field_name,
+                    layer=layer,
+                    required_for=str(rule.get("required_for", "mutation")),
+                )
+    return locks
 
 
 def load_toml(path: Path) -> dict[str, Any]:
@@ -174,14 +199,63 @@ def effective_config(layer_paths: list[Path], fragments: list[SchemaFragment], *
         for field_name, field in fragment.fields.items():
             value = field.default
             source_layer: Layer | None = None
+            active_lock: PolicyLock | None = None
+            values_by_precedence: dict[int, tuple[JSONValue, Layer]] = {}
+            field_conflicted = False
+            path = f"{fragment.namespace}.{field_name}"
             for layer in layers:
+                locks = policy_locks(layer)
+                if (fragment.namespace, field_name) in locks:
+                    active_lock = locks[(fragment.namespace, field_name)]
                 section = layer.data.get(fragment.namespace, {})
-                if field_name in section:
-                    value = section[field_name]
+                if field_name not in section:
+                    continue
+                candidate = section[field_name]
+                prior_value = values_by_precedence.get(layer.precedence)
+                if prior_value is not None and prior_value[0] != candidate:
+                    diagnostics.append(
+                        diagnostic(
+                            "same-precedence collision",
+                            path,
+                            f"{layer.name} has multiple values at the same precedence",
+                            layer,
+                        )
+                    )
+                    if not (
+                        active_lock is not None
+                        and active_lock.required_for in {requested_behavior, "always"}
+                        and active_lock.layer.precedence < layer.precedence
+                    ):
+                        value = None
+                        source_layer = None
+                    field_conflicted = True
+                    continue
+                values_by_precedence[layer.precedence] = (candidate, layer)
+                lock_applies = active_lock is not None and active_lock.required_for in {requested_behavior, "always"}
+                if lock_applies and layer.precedence > active_lock.layer.precedence:
+                    diagnostics.append(
+                        diagnostic(
+                            "blocked override",
+                            path,
+                            f"{layer.name} cannot override non-overridable value from {active_lock.layer.name}",
+                            layer,
+                            evidence={
+                                "blocked_value": candidate,
+                                "blocked_by": {
+                                    "layer": active_lock.layer.name,
+                                    "source": active_lock.layer.path,
+                                },
+                            },
+                        )
+                    )
+                    continue
+                if not field_conflicted:
+                    value = candidate
                     source_layer = layer
-            if value is None and field.required:
-                diagnostics.append(diagnostic("schema conflict", f"{fragment.namespace}.{field_name}", "missing required value", source_layer))
-            diagnostics.extend(validate_field(value, field, f"{fragment.namespace}.{field_name}", source_layer))
+            if value is None and field.required and not field_conflicted:
+                diagnostics.append(diagnostic("schema conflict", path, "missing required value", source_layer))
+            if not field_conflicted:
+                diagnostics.extend(validate_field(value, field, path, source_layer))
             namespace_values[field_name] = {
                 "value": value,
                 "source": source_layer.path if source_layer else "schema default",
