@@ -73,7 +73,7 @@ repository-policy layer. It demonstrates:
 Run it through the current Issue Tracker Ops pressure fragment with:
 
 ```bash
-python3.14 tools/agent_equipment_config.py effective-config \
+python3 tools/agent_equipment_config.py effective-config \
   --layer templates/config/agent-equipment-config-example.toml \
   --issue-tracker-ops \
   --requested-behavior advisory
