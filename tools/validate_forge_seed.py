@@ -1623,7 +1623,7 @@ def markdown_files(root: Path) -> list[Path]:
     return sorted(files)
 
 
-def text_files(root: Path) -> list[Path]:
+def python_runtime_text_files(root: Path) -> list[Path]:
     files: list[Path] = []
     for path in root.rglob("*"):
         relative = path.relative_to(root)
@@ -1667,7 +1667,7 @@ def validate_python_runtime_declaration(root: Path) -> list[CheckResult]:
         ]
 
     results: list[CheckResult] = []
-    for text_path in text_files(root):
+    for text_path in python_runtime_text_files(root):
         relative_path = text_path.relative_to(root).as_posix()
         text = text_path.read_text(encoding="utf-8")
         observed_versions = {
