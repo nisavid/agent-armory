@@ -1354,7 +1354,7 @@ def validate_source_retired_tree(root: Path) -> list[CheckResult]:
 
 
 def final_stamp_field(markdown: str, field: str) -> str | None:
-    match = re.search(rf"(?m)^{re.escape(field)}:\s*(\S+)\s*$", markdown)
+    match = re.search(rf"(?m)^{re.escape(field)}:\s*(.*?)\s*$", markdown)
     return match.group(1) if match else None
 
 

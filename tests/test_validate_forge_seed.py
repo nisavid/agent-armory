@@ -1500,6 +1500,15 @@ class SourceDispositionTests(unittest.TestCase):
             results = validate_final_source_retired_stamp(root)
 
         self.assertTrue(all(result.ok for result in results), results)
+        self.assertIn(
+            CheckResult(
+                "source_retired_stamp:source_retired",
+                True,
+                "true",
+                SOURCE_DISPOSITION_PATH,
+            ),
+            results,
+        )
 
     def test_validate_final_source_retired_stamp_rejects_volatile_digest_fields(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -1529,6 +1538,15 @@ class SourceDispositionTests(unittest.TestCase):
                 "source_retired_stamp:canonical_tree_digest",
                 False,
                 "canonical_tree_digest is volatile and must be removed",
+                SOURCE_DISPOSITION_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                "source_retired_stamp:stamp_target",
+                False,
+                "stamp_target is volatile and must be removed",
                 SOURCE_DISPOSITION_PATH,
             ),
             results,
