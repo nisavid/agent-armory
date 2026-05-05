@@ -33,7 +33,7 @@ Also inspected the raw Source Handoff before source retirement. The final tree p
 - `README.md`: replaced the minimal landing page with an under-construction
   public orientation, current Forge Seed value, agent role model, reader paths,
   differentiators, and grounded roadmap links.
-- `README.md` and `docs/assets/agent-armory-hero.png`: added the public hero
+- `README.md` and `docs/assets/agent-armory-hero.webp`: added the public hero
   image while preserving the under-construction notice as the first substantive
   README content.
 - `docs/forge-tour.md`: expanded the human-facing Forge introduction with the
