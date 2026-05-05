@@ -23,6 +23,22 @@ gear: the workflow an agent follows, the facts it can trust about a harness,
 the checks that keep it honest, the tools it can call, and the points where a
 person stays in control. The Agent Armory is where that gear will live.
 
+## Vision
+
+The Armory's long-range vision is an agent experience where a person can state
+intent before every criterion is known, and an adequately equipped agent can
+first outfit the work: choose or assemble the right equipment, route companion
+agents when needed, and use the Forge to create missing equipment before
+solving the task.
+
+That experience depends on more than skills. Equipment gives agents durable
+knowledge, typed data, deterministic checks, enforceable policy boundaries,
+configurable behavior, reflection loops, and loadouts that fit the task instead
+of leaving every responsibility inside model context.
+
+Read the full [Armory Vision](docs/vision.md) for the user experience and
+engineering north star behind the Armory, the Forge, and Agent Equipment.
+
 ## Agent Equipment Forge
 
 The inventory is not stocked yet. What exists now is the **Agent Equipment

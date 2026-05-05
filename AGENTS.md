@@ -24,6 +24,7 @@ Do not narrow that purpose into a specific content model, methodology, directory
 
 Smiths creating or modifying Agent Equipment should start with:
 
+- `docs/vision.md` for the Armory, Forge, and Equipment experience goals that should guide ideation, architecture, design, strategy, validation, and maintenance.
 - `docs/agent-equipment-forge.md` for the Forge overview.
 - `docs/smith-runbook.md` for the equipment creation workflow.
 - `docs/story-closeout.md` for closeout gate order, review sequencing, and rerun rules.
@@ -66,7 +67,7 @@ Use single-context domain docs. See `docs/agents/domain.md`.
 - Ralph-review documentation closeout changes with reviewer guidance that includes the applicable doc-writing standards: `honing-agent-facing-docs` for agent-facing docs, `honing-human-facing-docs` for human-facing docs, `writing-skills` for skill docs or skill-like instructions, `documentation-writer` for Diataxis structure, and `writing-clearly-and-concisely` for clear prose.
 - Follow `docs/story-closeout.md` for closeout gate order, interdependency rules, review sequencing, and rerun rules.
 - Before story closeout, run a Cross-Boundary Coherence Ralph Review that checks behavior and evidence across PRD, specs, plan, implementation, validation, security, docs, issue/PR projection, and release or handoff surfaces.
-- Before story closeout, run a Story Quality Ralph Review that checks DX, UX, code quality, architecture, robustness against unspecified interactions and attack paths, lessons from prior pathological dev/ops cycles, and alignment with the strategic vision.
+- Before story closeout, run a Story Quality Ralph Review that checks DX, UX, code quality, architecture, robustness against unspecified interactions and attack paths, lessons from prior pathological dev/ops cycles, and alignment with `docs/vision.md`.
 - Once work is underway, agents may stage, commit, push, open PRs, update issues, and perform closeout steps when those actions advance the assigned work and respect the repository's current review, verification, and stakeholder boundaries.
 - Do not force-push or perform destructive history operations unless the user explicitly asks for that action.
 

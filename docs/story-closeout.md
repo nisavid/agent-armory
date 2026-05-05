@@ -48,7 +48,7 @@ If a revision changes security, documentation, validation, PRD/spec/plan scope, 
 
 Cross-Boundary Coherence Ralph Review checks whether the story's process outputs agree across PRD, Blueprints, plans, implementation, deterministic validation, security closeout, documentation closeout, source-disposition/provenance evidence, existing or draft issue/PR projection, and release or handoff surfaces.
 
-Story Quality Ralph Review checks whether the story meets broader quality expectations after coherence is established: DX, UX, code quality, clean architecture, cohesive module boundaries, robustness against unspecified situations, interactions, user personas and attack paths, lessons from pathological dev/ops cycles, and alignment with a coherent strategic vision.
+Story Quality Ralph Review checks whether the story meets broader quality expectations after coherence is established: DX, UX, code quality, clean architecture, cohesive module boundaries, robustness against unspecified situations, interactions, user personas and attack paths, lessons from pathological dev/ops cycles, and alignment with the [Armory Vision](vision.md).
 
 Intent Model Refresh is the first closeout gate. Update the agent's model of Underlying Intent by reviewing recent operator input, accepted ADR/PRD/spec/plan changes, review dispositions, handoff notes, and observed corrections relevant to the story before running downstream closeout gates.
 
@@ -72,6 +72,9 @@ A story is ready to close when:
 - Change Set Security Closeout is current for the final diff or records why narrower action is sufficient;
 - Change Set Documentation Closeout is current for affected docs and records unchanged rationale where no edits were needed;
 - Cross-Boundary Coherence Ralph Review and Story Quality Ralph Review both have latest clean cycles;
+- Story Quality has checked alignment with the [Armory Vision](vision.md) where
+  the story affects ideation, architecture, design, strategy, validation,
+  maintenance, or the intended agent and human experience;
 - issue, PR, release, and handoff drafts or published surfaces are projected from the same current repo facts;
 - closeout evidence artifacts are classified by durability, and instance-scoped scratch artifacts are summarized rather than committed or externally projected as project truth;
 - deferred risks, unavailable controls, or stakeholder decisions have tracking and owner-visible rationale;

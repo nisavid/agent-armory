@@ -4,6 +4,11 @@ Status: Forge Seed
 
 The Equipment Promotion Path prevents examples, specs, plans, implementations, validations, and published equipment from being treated as the same thing.
 
+Promotion state changes also preserve alignment with the
+[Armory Vision](vision.md). A candidate moves forward only when the evidence
+supports the intended agent and human experience, not merely the existence of
+files or instructions.
+
 ## example
 
 An `example` is an annotated teaching artifact that demonstrates Forge decisions.
@@ -69,6 +74,8 @@ Entry criteria:
 
 - deterministic checks pass where applicable;
 - pressure scenarios or harness smoke tests cover the intended use;
+- validation evidence shows the Agent can discover, equip, use, or hand off the
+  equipment under realistic task pressure;
 - security and control checks have no unresolved reportable risk;
 - evidence category, source basis, and residual uncertainty are recorded.
 
@@ -85,6 +92,8 @@ Entry criteria:
 
 - the equipment is validated;
 - installation or equipping instructions are clear;
+- usage guidance explains where the equipment fits in the intended Loadout,
+  Assembly, or Armory experience;
 - support, maintenance, refresh, rollback, and deprecation expectations are documented;
 - publication does not expose secrets, private host assumptions, or unapproved mutation authority.
 

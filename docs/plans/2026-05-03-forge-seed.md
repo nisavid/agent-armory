@@ -2735,7 +2735,7 @@ Dispatch an xhigh reviewer with the full merge-base-to-working-tree diff, includ
    - clean architecture and cohesive module boundaries,
    - robustness against unspecified situations, interactions, user personas, and attack vectors,
    - mitigations implemented or planned for pathological dev/ops cycles observed in prior sessions,
-   - coherent and plausibly realizable strategic vision,
+   - coherent and plausibly realizable strategic vision from `docs/vision.md`,
    - direct or indirect alignment of current and planned work toward that vision,
    - alignment between Effective Intent actually imposed by ADRs, PRDs, specs, plans, acceptance criteria, review dispositions, and other declarations, and the agent's refreshed evidence-backed model of Underlying Intent after Cross-Boundary Coherence has made Effective Intent legible,
    - escalation of any non-dismissible likelihood of Effective Intent and Underlying Intent misalignment unless observable evidence supports realigning and reprojecting the affected declarations beyond reasonable doubt,

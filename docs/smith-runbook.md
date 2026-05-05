@@ -4,6 +4,11 @@ Status: Forge Seed
 
 This runbook is the canonical workflow for Smiths creating Agent Equipment with the Forge Seed.
 
+Before shaping a capability, read `docs/vision.md`. Use it to frame the
+intended agent and human experience, the Loadout or Assembly the capability
+belongs to, the deterministic boundaries it needs, and the missing equipment it
+may reveal.
+
 ## Capability card
 
 Write the capability card before choosing an interface. Start from
@@ -12,6 +17,7 @@ Write the capability card before choosing an interface. Start from
 Capture:
 
 - name and purpose;
+- vision alignment and intended experience;
 - intended users and target harnesses;
 - risks, external systems, and side effects;
 - needed docs, config, scripts, hooks, skills, MCP/tools, Agent Profiles, and plugins;
@@ -138,6 +144,7 @@ Follow `docs/story-closeout.md` for closeout gate order, interdependencies, revi
 
 Before closeout, verify:
 
+- vision alignment is still accurate for the final scope;
 - the capability card and interface decision record agree;
 - deterministic checks run or have an explicit unavailable-control note;
 - security and control requirements are represented in the right surfaces;
@@ -156,6 +163,6 @@ Run a Story Quality Ralph Review before story closeout.
 This review checks general and specific DX, UX, code quality, clean
 architecture, robustness against unspecified interactions, user personas, and
 attack paths, mitigations for pathological dev/ops cycles, and alignment with a
-coherent strategic vision.
+coherent strategic vision from `docs/vision.md`.
 
 If a stakeholder decision or unavailable control surface blocks the work, escalate with the needed result or artifact stated clearly.

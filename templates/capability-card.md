@@ -8,6 +8,12 @@ Promotion state: <specified|planned|implemented|validated|example|published>
 State the capability in one sentence. Name the user-visible outcome, not the
 implementation surface.
 
+## Vision alignment
+
+State how the capability supports `docs/vision.md`: self-onboarding, Loadout or
+Assembly fit, deterministic support, enforceable policy, durable knowledge,
+typed data, reflection, or another part of the intended Armory experience.
+
 ## Users
 
 - Human operator:

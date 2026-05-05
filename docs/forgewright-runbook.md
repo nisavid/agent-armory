@@ -4,6 +4,11 @@ Status: Forge Seed
 
 This runbook is the canonical workflow for Agents that maintain the Agent Equipment Forge. Keep project-specific task checklists in PRDs, plans, ADRs, issues, and closeout records.
 
+Use `docs/vision.md` when a Forge change affects ideation, architecture,
+design, strategy, validation, maintenance, or the intended agent and human
+experience. Project accepted vision implications into the narrowest live
+surface future Smiths or Forgewrights will read at the right time.
+
 ## Source handoff preservation
 
 Preserve Source Handoffs as provenance. Do not turn archived prompts or handoff notes into current instructions.
@@ -22,6 +27,8 @@ For accepted source material:
 Project durable decisions into the narrowest live surface that future Smiths or Forgewrights will read at the right time.
 
 - Vocabulary belongs in `CONTEXT.md` and this Forge language surface.
+- Experience and lifecycle north-star guidance belongs in `docs/vision.md` or
+  in narrower docs that explicitly apply that vision.
 - Current Smith procedure belongs in Forge Canon and templates.
 - Architecture or policy choices that need rationale belong in ADRs.
 - Repeatable checks belong in validation tools or tests.

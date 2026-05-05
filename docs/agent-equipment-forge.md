@@ -17,6 +17,14 @@ The Forge Seed supplies the first canonical docs, templates, examples, specs,
 and validation checks. It does not implement downstream equipment such as Agent
 Equipment Config, Agent Ops, Periodic Actions, or Harness Capability Refresh.
 
+## Vision alignment
+
+Use the [Armory Vision](vision.md) as the experience north star for Forge work.
+Equipment should help Agents outfit work before execution, right-size model
+cognition, keep deterministic operations in deterministic surfaces, enforce
+policy through reliable boundaries, preserve durable knowledge, and improve the
+equipment ecosystem when repeated friction reveals a gap.
+
 ## Least cognitive privilege
 
 Put only reasoning the model must actively apply into model-facing context.

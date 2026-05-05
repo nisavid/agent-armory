@@ -393,6 +393,7 @@ SOURCE_HANDOFF_DIR = "docs/metasmith/handoff/2026-05-02"
 SOURCE_HANDOFF_MANIFEST = f"{SOURCE_HANDOFF_DIR}/manifest.json"
 SOURCE_HANDOFF_PROVENANCE_NOTICE = f"{SOURCE_HANDOFF_DIR}/AGENTS.md"
 REQUIRED_PRELOADED_ROUTES = [
+    "docs/vision.md",
     "docs/agent-equipment-forge.md",
     "docs/smith-runbook.md",
     "docs/story-closeout.md",
@@ -403,9 +404,19 @@ REQUIRED_PRELOADED_ROUTES = [
     "specs/",
 ]
 CANONICAL_DOC_REQUIRED_SECTIONS = {
+    "docs/vision.md": [
+        "Experience",
+        "Equipment",
+        "Deterministic boundaries",
+        "Harness lifecycle",
+        "Self-onboarding",
+        "Reflection",
+        "Lifecycle use",
+    ],
     "docs/ubiquitous-language.md": ["Language", "Relationships", "Precision rules"],
     "docs/agent-equipment-forge.md": [
         "Purpose",
+        "Vision alignment",
         "Least cognitive privilege",
         "Component model",
         "Context management",
@@ -486,6 +497,10 @@ CANONICAL_DOC_REQUIRED_SECTIONS = {
     ],
 }
 CANONICAL_DOC_REQUIRED_TEXT = {
+    "docs/vision.md": [
+        "autonomous self-onboarding to purpose-built assemblies of harness components",
+        "Use this vision as an input throughout the engineering lifecycle.",
+    ],
     "docs/smith-runbook.md": [
         "When a Smith finds an unsatisfied Tooling Gap that blocks or materially weakens the current equipment task, treat the Tooling Work as a dependency and escalate to a Forgewright before continuing.",
         "Choose the least disruptive Forgewright path supported by the harness and operator policy: current session, subagent session, peer agent session, forked session, or new session.",
@@ -843,6 +858,7 @@ ROOT_TEMPLATE_FILES = [
 ROOT_TEMPLATE_REQUIRED_SECTIONS = {
     "templates/capability-card.md": [
         "Purpose",
+        "Vision alignment",
         "Users",
         "Target harnesses",
         "Risks",
@@ -858,6 +874,7 @@ ROOT_TEMPLATE_REQUIRED_SECTIONS = {
     ],
     "templates/interface-decision-record.md": [
         "Requirement",
+        "Vision alignment",
         "Decision",
         "Chosen surface",
         "Rationale",
