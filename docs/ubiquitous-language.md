@@ -54,7 +54,7 @@ use `agents/` for source paths that follow harness/plugin convention.
 
 **Equipment Promotion Path** is the lifecycle that moves an equipment idea from example or spec toward Published Agent Equipment.
 
-**Issue Tracker Operations** is Agent Equipment for issue-tracked follow-ups
+**Issue Tracker Ops** is Agent Equipment for issue-tracked follow-ups
 that should be created, reviewed, repaired, enriched, organized, assigned,
 worked, and orchestrated directly in an issue tracker.
 
@@ -124,6 +124,6 @@ worked, and orchestrated directly in an issue tracker.
 - Use **Forge Canon** for current guidance.
 - Use **Forge Seed** for this first Forge pass; name downstream equipment separately.
 - Use **Harness Fact Refresh** for catalog updates and **Harness Capability Refresh** for the downstream equipment that maintains the catalog over time.
-- Use **Issue Tracker Operations** for broad issue lifecycle equipment; use
+- Use **Issue Tracker Ops** for broad issue lifecycle equipment; use
   **Issue Projection** only for post-review PRD publication into the issue
   tracker.

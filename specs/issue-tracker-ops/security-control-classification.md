@@ -1,4 +1,4 @@
-# Security and Control Classification: Issue Tracker Operations
+# Security and Control Classification: Issue Tracker Ops
 
 Status: Equipment Candidate
 Promotion state: implemented for bootstrap MVP; full delivery remains open
@@ -27,7 +27,8 @@ extension.
   sub-issue relationships.
 - Local `gh` authentication state and token.
 - Issue bodies, comments, file references, source links, and validation evidence.
-- Stakeholder priority, assignment, readiness, and delegation decisions.
+- Stakeholder priority, workflow status, board-column placement, assignment,
+  readiness, selection, and delegation decisions.
 
 ## Trust boundaries
 

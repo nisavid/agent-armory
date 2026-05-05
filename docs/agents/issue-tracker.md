@@ -2,7 +2,7 @@
 
 Issues and PRDs for this repo live in GitHub Issues for `nisavid/agent-armory`.
 
-Use `tools/issue_tracker_ops.py` for Issue Tracker Operations bootstrap modes
+Use `tools/issue_tracker_ops.py` for Issue Tracker Ops bootstrap modes
 that create, update, comment on, add dependency relations, remove dependency
 relations, and list dependency relations for GitHub Issues.
 
