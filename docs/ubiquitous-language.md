@@ -66,6 +66,17 @@ worked, and orchestrated directly in an issue tracker.
 **Agent Equipment Config** is Agent Equipment for shared, layerable,
 composable, adaptable, and enforceable configuration across Agent Equipment.
 
+**Layer Precedence** is the Agent Equipment Config merge order that decides
+which configuration value would win when no policy lock blocks it.
+
+**Policy Authority** is the right of a configuration layer to constrain
+later overrides or lower-authority layers by marking a setting
+non-overridable or requiring a mutation gate.
+
+**Config Safety Status** is the machine-visible Agent Equipment Config
+classification that states whether a configuration is usable, incomplete,
+unsafe, stale, untrusted, or conflicted for the requested behavior.
+
 **Cognition Enhancement Equipment** is Agent Equipment that shapes how an Agent
 reasons, reflects, remembers, routes insight, right-sizes cognition, or
 improves its future harness behavior.
@@ -166,5 +177,8 @@ induced candidate for future work.
 - Use **Agent Equipment Config** for the shared equipment config primitive; use
   equipment-specific config for one equipment line's schema fragment or plain
   handoff shape.
+- Use **Layer Precedence** for merge order, **Policy Authority** for who may
+  constrain later overrides, and **Config Safety Status** for machine-visible
+  safety classification.
 - Use **Reflection Finding** for durable reflection output, not for private
   reasoning or final equipment design.

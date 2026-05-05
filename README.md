@@ -119,7 +119,7 @@ If your agent is making equipment, start it with the
 The first inventory items are not published yet. The current roadmap includes
 these equipment lines:
 
-- [Agent Equipment Config](specs/agent-equipment-config.md), for shared,
+- [Agent Equipment Config](specs/agent-equipment-config/), for shared,
   layerable, enforceable configuration across equipment.
 - [Issue Tracker Ops](specs/issue-tracker-ops/), for direct
   GitHub Issues bootstrap operations and future issue lifecycle equipment.
