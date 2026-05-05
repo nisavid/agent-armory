@@ -477,11 +477,6 @@ def render_migration_source_from_text(text: str, layer: Layer, fragment: SchemaF
     return "".join(lines)
 
 
-def render_migration_source(layer: Layer, fragment: SchemaFragment, migration: MigrationPreview) -> str:
-    path = Path(layer.path)
-    return render_migration_source_from_text(path.read_text(encoding="utf-8"), layer, fragment, migration)
-
-
 def atomic_write_text(path: Path, text: str) -> None:
     original_mode = path.stat().st_mode
     temporary_path: str | None = None
