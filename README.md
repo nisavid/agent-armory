@@ -110,9 +110,11 @@ If your agent is making equipment, start it with the
 The first inventory items are not published yet. The current roadmap includes
 these equipment lines:
 
+- [Agent Equipment Config](specs/agent-equipment-config.md), for shared,
+  layerable, enforceable configuration across equipment.
 - [Issue Tracker Ops](specs/issue-tracker-ops/), for direct
   GitHub Issues bootstrap operations and future issue lifecycle equipment.
-
+  Issue Ops is the accepted shorthand.
 - [Agent Ops](specs/agent-ops.md), for repository operations performed by
   agents.
 - [Periodic Actions](specs/periodic-actions.md), for recurring agent work with

@@ -53,6 +53,7 @@ conclusion.
 ## Full-delivery closeout
 
 Issue #11 remains open until the tracker-neutral core, full GitHub adapter,
-Projects extension or child issue, configuration/onboarding model, issue repair
-and orchestration modes, security controls, fallback reconciliation, docs, and
-full validation matrix are complete.
+Projects extension or child issue, Issue Ops plain config profile, Agent
+Equipment Config integration, onboarding model, issue repair and orchestration
+modes, security controls, fallback reconciliation, docs, and full validation
+matrix are complete.

@@ -127,6 +127,17 @@ issue tracker.
 _Avoid_: Issue Projection when the work is broader than PRD publication;
 in-tree tracking state when the issue tracker is available
 
+**Issue Ops**:
+Accepted shorthand for Issue Tracker Ops after the full name is clear in the
+current context.
+_Avoid_: using it as a separate equipment name
+
+**Agent Equipment Config**:
+Agent Equipment for shared, layerable, composable, adaptable, and enforceable
+configuration across Agent Equipment.
+_Avoid_: treating it as a component of Agent Ops or any other higher-level
+equipment
+
 **Review Until Clean**:
 A repeated review-and-revision loop that stops only when the latest review cycle has no findings.
 _Avoid_: assuming any named external review skill is repo policy unless the operator invokes it or repo policy names it

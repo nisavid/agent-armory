@@ -7,7 +7,15 @@ This spec describes desired behavior for future Agent Equipment. It does not imp
 
 ## Purpose
 
-Agent Ops provides a repository framework for agentic operations. It lets a repo declare how agent operators should discover operations, read and write local settings, honor autonomy levels, and enforce policy through the harness mechanisms available in that environment.
+Agent Ops provides a repository framework for agentic operations. It lets a repo
+declare how agent operators should discover operations, read and write Agent
+Ops settings, honor autonomy levels, and enforce policy through the harness
+mechanisms available in that environment.
+
+Agent Ops consumes lower-level equipment rather than owning it. Issue Tracker
+Ops, or Issue Ops for short, owns issue-tracked operations. Agent Equipment
+Config owns the shared configuration primitive. Agent Ops may use both, but it
+must not make either depend on Agent Ops.
 
 Agent Ops should support extension systems that reuse core Agent Ops behavior for more specific operations. Extensions may define additional config keys, runbooks, hooks, periodic actions, or workflow equipment, but they must not override core ownership, approval, and safety rules.
 
@@ -22,18 +30,25 @@ As an agent strapped into a harness equipped with Agent Ops, I can readily find:
 - the durable settings that apply to the current checkout,
 - the local-only settings that should not be committed.
 
-### Durable version-controlled config
+### Durable Agent Ops config
 
-As a repo owner, I can store Agent Ops settings in TOML files that are durable across sessions and trackable in version control when appropriate.
+As a repo owner, I can store Agent Ops settings in TOML files that are durable
+across sessions and trackable in version control when appropriate.
 
-Agent Ops config supports keys from:
+Agent Ops defines its own config shape for:
 
 - Agent Ops core,
 - Agent Ops extensions,
 - the repo,
 - the local checkout.
 
-The config model prevents key conflicts between layers and between distinct members of the same layer. It supports multiple extensions and chains of repo forks without forcing unrelated projects to share a namespace.
+When Agent Equipment Config is equipped, Agent Ops contributes this shape as a
+namespaced schema fragment and relies on Agent Equipment Config for layering,
+conflict reporting, migration, governance, and effective-config output.
+
+When Agent Equipment Config is absent, Agent Ops still describes enough of its
+plain config shape to support session-scoped operation, handoff, and later
+ingestion.
 
 ### Policy enforcement
 
@@ -49,13 +64,20 @@ As a repo owner or operator, I can equip a harness with Agent Ops without enabli
 
 As a repo owner, I can declare that a repo uses Agent Ops, agentic operations, or an equivalent project term.
 
-The declaration may specify an autonomy level. If it does not, the harness should prompt for one, preferably through an interactive menu when available. The selected value is stored in Agent Ops config.
+The declaration may specify an autonomy level. If it does not, the harness
+should prompt for one, preferably through an interactive menu when available.
+The selected value is stored in Agent Ops config when durable config is
+available, or in session policy when it is not.
 
 ## Acceptance criteria
 
 - Agent Ops defines autonomy levels for `off`, `advisory`, `assisted`, `supervised`, `autonomous`, and `forbidden`, or records a reasoned refinement before implementation.
-- Agent Ops config uses TOML, human-readable filenames, human-readable keys, and sensibly typed values.
-- Agent Ops config can drive agent behavior, hook behavior, and other configurable Agent Ops behavior.
+- Agent Ops defines a plain config shape that uses TOML, human-readable
+  filenames, human-readable keys, and sensibly typed values.
+- Agent Ops publishes a schema fragment for Agent Equipment Config when the
+  shared config equipment is available.
+- Agent Ops config can drive agent behavior, hook behavior, and other
+  configurable Agent Ops behavior.
 - Committed config and local-only config are separated clearly.
 - Ownership config can name an owner through stable identifiers such as GitHub users.
 - Runbook config can list exact paths and controlled globs.
@@ -65,7 +87,7 @@ The declaration may specify an autonomy level. If it does not, the harness shoul
 - Policy enforcement behavior is explicit for every harness projection.
 - Advisory fallbacks are labeled as weaker than blocking controls.
 
-An initial config shape may look like:
+An initial plain config shape may look like:
 
 ```toml
 [agent_ops.core]
@@ -103,6 +125,9 @@ Each projection must describe:
 
 - where the harness discovers Agent Ops config,
 - how the harness loads committed and local-only settings,
+- how the projection uses Agent Equipment Config when it is available,
+- how the projection operates from explicit session policy when Agent Equipment
+  Config is absent,
 - which actions can be blocked,
 - which actions are advisory only,
 - how owner checks are performed,
@@ -112,12 +137,13 @@ Each projection must describe:
 ## Non-goals
 
 - Agent Ops does not make unowned repositories agent-operated by default.
+- Agent Ops does not own the generic Agent Equipment configuration system.
+- Agent Ops does not make Issue Ops depend on Agent Ops.
 - Agent Ops does not guarantee blocking policy enforcement in harnesses that expose only advisory controls.
 - Agent Ops does not require all harnesses to use the same storage internals when their native controls differ.
 - Agent Ops does not treat this Seed spec as a final schema contract.
 
 ## Open questions
 
-- What exact local file should store machine-specific Agent Ops choices?
-- Should extension namespaces include package identities, repository paths, or both?
-- Which config keys should be core keys, and which should belong to the first extension specs?
+- Which Agent Ops settings are core schema keys, and which belong to extension
+  schema fragments?

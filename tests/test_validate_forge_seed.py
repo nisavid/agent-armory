@@ -8448,6 +8448,7 @@ class ExampleValidationTests(unittest.TestCase):
 
 class SpecValidationTests(unittest.TestCase):
     required_spec_paths = [
+        "specs/agent-equipment-config.md",
         "specs/agent-ops.md",
         "specs/periodic-actions.md",
         "specs/harness-capability-refresh.md",
@@ -8501,6 +8502,16 @@ class SpecValidationTests(unittest.TestCase):
 
     def write_all_specs(self, root: Path, overrides: dict[str, str] | None = None) -> None:
         specs = {
+            "specs/agent-equipment-config.md": self.valid_spec(
+                "Agent Equipment Config Spec",
+                """\
+                Typed schemas compose schema fragments into layered config.
+                Effective-config output explains policy decisions.
+                Session-scoped behavior accepts a plain equipment-specific config handoff.
+                Secret references are stored instead of secrets.
+                Required harnesses: Codex, OpenClaw, Hermes Agent, Claude Code, Cursor, OpenCode.
+                """,
+            ),
             "specs/agent-ops.md": self.valid_spec(
                 "Agent Ops Spec",
                 """\
@@ -8656,6 +8667,47 @@ class SpecValidationTests(unittest.TestCase):
             ),
             results,
         )
+
+    def test_validate_specs_requires_each_agent_equipment_config_required_term(self):
+        required_terms = [
+            "typed schemas",
+            "schema fragments",
+            "layered config",
+            "effective-config",
+            "session-scoped",
+            "plain equipment-specific config handoff",
+            "secret",
+            "policy",
+            "Codex",
+            "OpenClaw",
+            "Hermes Agent",
+            "Claude Code",
+            "Cursor",
+            "OpenCode",
+        ]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_specs(root)
+            path = root / "specs/agent-equipment-config.md"
+            spec_text = path.read_text(encoding="utf-8")
+            for required_term in required_terms:
+                mutated_text = spec_text
+                for variant in {required_term, required_term[:1].upper() + required_term[1:]}:
+                    mutated_text = mutated_text.replace(variant, "")
+                if required_term == "secret":
+                    mutated_text = mutated_text.replace("secrets", "")
+                path.write_text(mutated_text, encoding="utf-8")
+                with self.subTest(required_term=required_term):
+                    results = validate_specs(root)
+                    self.assertIn(
+                        CheckResult(
+                            name=f"spec:text:specs/agent-equipment-config.md:{required_term}",
+                            ok=False,
+                            detail=f"missing {required_term}",
+                            path="specs/agent-equipment-config.md",
+                        ),
+                        results,
+                    )
 
     def test_validate_specs_requires_periodic_actions_content(self):
         with tempfile.TemporaryDirectory() as tmpdir:

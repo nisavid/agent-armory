@@ -51,7 +51,8 @@ paths.
 
 ## Full-delivery validation
 
-Full closure of issue #11 needs additional validation for onboarding,
-configuration layering, policy conflicts, issue selection, issue repair,
-fallback reconciliation, permission failure, rate limiting, duplicate detection,
-subtask handling, and cross-issue orchestration.
+Full closure of issue #11 needs additional validation for onboarding, Issue Ops
+plain config handoff, Agent Equipment Config integration, configuration
+layering, policy conflicts, issue selection, issue repair, fallback
+reconciliation, permission failure, rate limiting, duplicate detection, subtask
+handling, and cross-issue orchestration.

@@ -5,16 +5,18 @@ Promotion state: implemented for bootstrap MVP; full delivery remains open
 
 ## Requirement
 
-Issue Tracker Ops needs procedural judgment, typed external tracker
-operations, layered priority and selection policy, dry-run safety, audit output,
-and future portability across issue trackers and agent harnesses.
+Issue Tracker Ops, or Issue Ops for short, needs procedural judgment, typed
+external tracker operations, layered priority and selection policy, dry-run
+safety, audit output, and future portability across issue trackers and agent
+harnesses.
 
 ## Decision
 
 Use a thin bootstrap script for GitHub Issues operations, a Forge Entry Bundle
-for design and validation planning, future config for durable policy, future
-skills for review and orchestration judgment, and future MCP/tools for the
-tracker-neutral contract once the MVP proves the operation shape.
+for design and validation planning, Agent Equipment Config for durable layered
+policy, future skills for review and orchestration judgment, and future
+MCP/tools for the tracker-neutral contract once the MVP proves the operation
+shape.
 
 ## Chosen surface
 
@@ -26,9 +28,10 @@ tracker-neutral contract once the MVP proves the operation shape.
 - Agent Profile: deferred issue reviewer or orchestrator profile.
 - Plugin: deferred portable bundle.
 - Script: `tools/issue_tracker_ops.py` for the GitHub Issues-only bootstrap MVP.
-- Config: deferred layered policy for taxonomy, priority, workflow status,
-  board-column semantics, readiness, and authority; bootstrap uses provisional
-  CLI policy with dry-run default and `--execute` for mutation.
+- Config: progressive enhancement through Agent Equipment Config for durable
+  layered policy; Issue Ops owns a plain Issue Ops config shape for
+  session-scoped operation, handoff, and later ingestion; bootstrap uses
+  provisional CLI policy with dry-run default and `--execute` for mutation.
 - Local docs: this Forge Entry Bundle records current design, security,
   validation, and closeout expectations.
 
@@ -42,9 +45,11 @@ introducing a server or plugin before the tracker-neutral contract is stable.
 
 Issue review and orchestration require model judgment, so they belong in skills
 after the operation contract exists. Hard mutation policy belongs in hooks,
-permissions, approvals, and typed config rather than skill prose. A future
-MCP/tool surface is appropriate once the adapter contract can expose typed inputs
-and outputs without relying on CLI command composition.
+permissions, approvals, and typed config rather than skill prose. Generic
+layering, governance, migration, and effective-config output belong in Agent
+Equipment Config so Issue Ops does not depend on Agent Ops for its instantiated
+policy. A future MCP/tool surface is appropriate once the adapter contract can
+expose typed inputs and outputs without relying on CLI command composition.
 
 ## Evidence category
 
@@ -58,8 +63,9 @@ and outputs without relying on CLI command composition.
 - Codex: use the script through local shell tools and GitHub MCP for issue
   orientation; mutation remains dry-run by default unless the active session
   explicitly executes it.
-- Other harnesses: defer until the tracker-neutral core, config model, and
-  mutation gates have stable contracts.
+- Other harnesses: defer until the tracker-neutral core, Issue Ops plain config
+  shape, Agent Equipment Config integration, and mutation gates have stable
+  contracts.
 
 ## Alternatives rejected
 
@@ -83,10 +89,13 @@ and outputs without relying on CLI command composition.
   refreshed before promotion beyond the bootstrap MVP.
 - The MVP does not yet implement onboarding, layered policy, issue selection,
   duplicate detection, fallback reconciliation, or issue-set orchestration.
+- Durable layered policy depends on future Agent Equipment Config integration,
+  but Issue Ops must still support explicit session-scoped behavior without it.
 
 ## Maintenance notes
 
 Review this decision when GitHub changes issue dependency or sub-issue APIs,
 when the GitHub MCP connector exposes equivalent dependency operations, when
-Issue Tracker Ops gains a schema-backed config model, or when repeated
-use shows the CLI contract is too narrow for real tracker orchestration.
+Issue Ops gains its plain config shape or Agent Equipment Config integration, or
+when repeated use shows the CLI contract is too narrow for real tracker
+orchestration.

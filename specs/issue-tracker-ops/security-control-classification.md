@@ -7,8 +7,8 @@ Promotion state: implemented for bootstrap MVP; full delivery remains open
 
 This classification covers the bootstrap GitHub Issues adapter and the Forge
 Entry Bundle for issue #11. It does not certify the future tracker-neutral core,
-onboarding flow, hooks, skills, Agent Profiles, plugins, or GitHub Projects
-extension.
+onboarding flow, Issue Ops config profile, Agent Equipment Config integration,
+hooks, skills, Agent Profiles, plugins, or GitHub Projects extension.
 
 ## Operation classes
 
@@ -36,7 +36,10 @@ extension.
 - Local script to `gh` authenticated transport.
 - Local worktree or body files to external GitHub issue content.
 - Dry-run terminal output to logs, chat summaries, and review evidence.
-- Repository policy to future organization, project, user, and session overrides.
+- Repository policy to future organization, project, user, and session
+  overrides.
+- Issue Ops plain config to future Agent Equipment Config schema fragments and
+  layered effective config.
 
 ## Controls
 
@@ -53,6 +56,7 @@ extension.
 
 ## Known gaps
 
+- No Issue Ops plain config shape or Agent Equipment Config integration yet.
 - No schema-backed layered configuration yet.
 - No duplicate detection or idempotency key behavior yet.
 - No rollback or compensation beyond recording the failed or successful
