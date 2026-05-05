@@ -20,21 +20,29 @@ better equipment.
 
 Good agent work is not only about the model. It also depends on the surrounding
 gear: the workflow an agent follows, the facts it can trust about a harness,
-the checks that keep it honest, the tools it can call, and the points where a
-person stays in control. The Agent Armory is where that gear will live.
+the checks that keep it honest, the tools it can call, and the points where an
+operator stays in control. The Agent Armory is where that gear will live.
 
 ## Vision
 
-The Armory's long-range vision is an agent experience where a person can state
-intent before every criterion is known, and an adequately equipped agent can
-first outfit the work: choose or assemble the right equipment, route companion
-agents when needed, and use the Forge to create missing equipment before
-solving the task.
+The Armory's long-range vision is an agent experience where an operator can
+state intent before every criterion is known, and an adequately equipped agent
+can turn that underspecified intent into a high-quality outcome.
+
+The agent first makes the solution space legible. It asks enough questions to
+understand the shape, extent, and boundaries of the work, then outfits the work
+by choosing or assembling the right equipment, routing companion agents when
+needed, and using the Forge to create missing equipment before solving the task.
 
 That experience depends on more than skills. Equipment gives agents durable
 knowledge, typed data, deterministic checks, enforceable policy boundaries,
 configurable behavior, reflection loops, and loadouts that fit the task instead
 of leaving every responsibility inside model context.
+
+Between stages, the agent reflects on what just happened, imagines the next
+stage, asks new questions, predicts the capabilities it will need, and adjusts
+its loadout. The operator should not have to remind it to think critically,
+track context, prepare, or keep itself aligned.
 
 Read the full [Armory Vision](docs/vision.md) for the user experience and
 engineering north star behind the Armory, the Forge, and Agent Equipment.
@@ -72,7 +80,7 @@ enough discipline to trust.
 ## Why this matters
 
 A good piece of agent equipment should feel boring in the best way: the agent
-knows what to do, uses the right tool, stays within the person's choices and
+knows what to do, uses the right tool, stays within the operator's choices and
 limits, and leaves evidence behind when it makes a claim.
 
 That is the experience the Forge is designed to protect. It keeps repeatable

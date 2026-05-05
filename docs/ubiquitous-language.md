@@ -24,6 +24,9 @@ This document is the canonical vocabulary surface for Smiths and Forgewrights. U
 
 **Agent** is the causal stream of reasoning, actions, tool calls, messages, and content mediated by an Agent Harness.
 
+**Operator** is an intent-capable actor that initiates, routes, controls, or
+evaluates Agent work. An Operator may be a human or an orchestrator-agent.
+
 **Agent Harness** is the runtime or orchestration system in which an Agent is strapped.
 
 **Strapped** means mediated by an Agent Harness.
@@ -116,6 +119,8 @@ induced candidate for future work.
 - Wielders use Loadouts to perform work.
 - Equipment Candidates may become Published Agent Equipment after validation and publication.
 - An Agent is strapped when its reasoning and actions are mediated by an Agent Harness.
+- Operators initiate, route, control, or evaluate Agent work; human authority
+  should be named explicitly when the distinction matters.
 - A Harness Plugin packages one or more Harness Components.
 - An Agent Profile configures a reusable kind of Agent but is not the running Agent.
 - A Source Handoff can inform Forge Canon, but it is not itself the live Forge surface.

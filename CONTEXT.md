@@ -40,6 +40,12 @@ _Avoid_: implementer when the role includes equipment design
 The causal stream of reasoning, actions, tool calls, messages, and content mediated by an Agent Harness.
 _Avoid_: bot, model, profile when precision matters
 
+**Operator**:
+An intent-capable actor that initiates, routes, controls, or evaluates Agent
+work. An Operator may be a human or an orchestrator-agent.
+_Avoid_: assuming every Operator is human; use human operator or stakeholder
+when human authority specifically matters
+
 **Agent Harness**:
 The runtime or orchestration system in which an Agent is strapped.
 _Avoid_: client when the system provides agent orchestration

@@ -33,7 +33,7 @@ and the first equipment has not yet been published into the inventory.
 
 ## Start here
 
-- [Armory Vision](vision.md): the intended agent and human experience behind the
+- [Armory Vision](vision.md): the intended agent and operator experience behind the
   Armory, the Forge, and Agent Equipment.
 - [Forge Tour](forge-tour.md): human-facing orientation to the Armory, the Forge,
   agent roles, and current construction state.

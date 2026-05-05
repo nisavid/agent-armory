@@ -2,20 +2,28 @@
 
 Status: Forge Seed
 
-The Agent Armory is being built to make a more coherent agent and human
+The Agent Armory is being built to make a more coherent agent and operator
 experience possible.
 
-The intended experience starts with intent. A person can express what they want
-before every criterion, tool, risk, stakeholder constraint, or success measure
-is known. When an Agent is adequately equipped, that intent should be enough for
-the Agent to discover what the situation requires, assemble the right support,
-and produce the right solution under the right standards.
+The intended experience starts with intent. An operator can express what they
+want before every criterion, tool, risk, stakeholder constraint, or success
+measure is known. When an Agent is adequately equipped, that intent should be
+enough for the Agent to discover what the situation requires, resolve the
+ambiguities that matter, assemble the right support, and produce the right
+solution under the right standards.
 
 ## Experience
 
 An equipped Agent should not begin by merely generating a plausible answer. It
 also should not always begin by doing the apparent task. It should begin by
-outfitting the work.
+making the intent usable.
+
+Before selecting or inventing its initial equipment, the Agent asks the
+operator enough questions to understand the shape, extent, and boundaries of
+the solution space. The goal is not to exhaust every unknown before work starts.
+The goal is to resolve enough ambiguity for the Agent to define an approach,
+induce a plan, choose suitable standards, and know where the operator's
+authority or values still matter.
 
 Outfitting means selecting the right Agent Equipment, assembling it into a
 purpose-built Loadout, assigning any accompanying Agents that need different
@@ -23,11 +31,29 @@ roles or authority, and identifying gaps before those gaps become quality
 failures. If the needed equipment does not exist, the Agent starts the
 engineering process by making or commissioning that equipment through the Forge.
 
-The result should feel methodical without requiring the person to micromanage
-method. The Agent should make the task legible, choose suitable standards,
-respect the context's value system, use the tools and boundaries already
-available, and surface human decisions only where human authority is actually
-needed.
+The Agent then ingests the clarified intent, defines the approach, outfits the
+work, induces the plan, and executes the solution. The result should feel
+methodical without requiring the operator to micromanage method. The Agent
+should make the task legible, respect the context's value system, use the tools
+and boundaries already available, and surface operator decisions only where
+operator authority is actually needed.
+
+## Metacognitive loop
+
+The workflow may have predefined stages, but the Agent's metacognitive
+behavior should be self-initiated and self-directed.
+
+Between stages, the Agent reflects on the previous stage, imagines the next
+stage, asks the operator any new questions it has, predicts what capabilities
+the next stage will need, and adjusts its Loadout accordingly. The same loop
+also covers the underlying bookkeeping, durable knowledge retrieval, issue
+routing, source lookup, config inspection, and evidence preservation that let an
+Agent keep its own work coherent.
+
+Equipment induces these behaviors through the Agent Harness. The operator
+should not have to keep reminding the Agent to think critically, reflect,
+anticipate, track context, prepare for the next phase, or keep itself aligned
+with the active values and constraints.
 
 ## Equipment
 
@@ -85,12 +111,13 @@ explicit, inspectable, and enforceable.
 
 The Armory's central feature is autonomous self-onboarding to purpose-built assemblies of harness components.
 
-Given a task, an Agent should be able to discover what equipment exists, decide
-what equipment fits, equip itself and any companion Agents, adapt that Loadout
-to the harness and environment, and continue with clear evidence about what it
-is relying on. Given a missing capability, a Smith should be able to use the
-Forge to shape that capability into equipment. Given a Forge limitation, a
-Forgewright should be able to improve the Forge before equipment work continues.
+Given a task, an Agent should be able to clarify the operator's intent, discover
+what equipment exists, decide what equipment fits, equip itself and any
+companion Agents, adapt that Loadout to the harness and environment, and
+continue with clear evidence about what it is relying on. Given a missing
+capability, a Smith should be able to use the Forge to shape that capability
+into equipment. Given a Forge limitation, a Forgewright should be able to
+improve the Forge before equipment work continues.
 
 The same methodology applies across use, procurement, and manufacturing:
 
@@ -100,9 +127,9 @@ The same methodology applies across use, procurement, and manufacturing:
 - Forgewrights improve the Forge when the equipment-making process itself needs
   better tooling, policy, evidence, or structure.
 
-Humans retain initiative authority. Agents carry assigned work forward until a
-stakeholder decision, unavailable access, or unknown policy boundary requires
-human input.
+Operators retain initiative and routing authority. Agents carry assigned work
+forward until a stakeholder decision, unavailable access, or unknown policy
+boundary requires operator input.
 
 ## Reflection
 
@@ -129,25 +156,29 @@ policy, validator, config, workflow, or documentation candidate.
 
 Use this vision as an input throughout the engineering lifecycle.
 
-- Ideation asks whether an idea improves the Agent's ability to self-onboard,
-  right-size cognition, respect stakeholder intent, or turn repeated friction
-  into reusable equipment.
+- Ideation asks whether an idea improves the Agent's ability to clarify intent,
+  self-onboard, right-size cognition, respect stakeholder intent, or turn
+  repeated friction into reusable equipment.
 - Strategy asks which primitive equipment unlocks better future equipment, which
   assemblies belong together, and which work should be deferred until the right
   equipment exists.
 - Architecture asks which responsibilities belong in probabilistic inference,
   deterministic software, durable docs, config, typed schemas, tools, hooks,
   plugins, Agent Profiles, or approval boundaries.
-- Design asks how an Agent discovers, equips, uses, adapts, hands off, and
-  revises the equipment under realistic task pressure.
+- Design asks how an Agent questions, discovers, equips, uses, adapts, hands
+  off, and revises the equipment under realistic task pressure.
 - Implementation keeps deterministic operations deterministic, state typed,
   policy enforceable, and model-facing context focused on judgment.
-- Validation checks not only whether the component works, but whether the
-  resulting experience is reliable, explainable, policy-respecting, adaptable,
+- Validation checks not only whether the component works, but whether the Agent
+  asks useful questions, adjusts its Loadout, preserves evidence, and produces
+  an experience that is reliable, explainable, policy-respecting, adaptable,
   and suitable for the intended Wielder or Outfitter.
 - Maintenance asks what drift, repeated failures, stale assumptions, or awkward
   handoffs reveal about missing equipment or missing Forge support.
 
-The Armory succeeds when an Agent that is adequately equipped can move from
-intent to outcome by outfitting the work, using deterministic support where it
-belongs, and improving the equipment ecosystem when the work reveals a gap.
+The Armory's hypothesis is that this solves the slop problem: it makes the
+process productive, reliable, observable, controllable, accessible, and
+enjoyable. The Armory succeeds when an Agent that is adequately equipped can
+move from intent to outcome by clarifying the solution space, outfitting the
+work, using deterministic support where it belongs, and improving the equipment
+ecosystem when the work reveals a gap.

@@ -21,9 +21,10 @@ Equipment Config, Agent Ops, Periodic Actions, or Harness Capability Refresh.
 
 Use the [Armory Vision](vision.md) as the experience north star for Forge work.
 Equipment should help Agents outfit work before execution, right-size model
-cognition, keep deterministic operations in deterministic surfaces, enforce
-policy through reliable boundaries, preserve durable knowledge, and improve the
-equipment ecosystem when repeated friction reveals a gap.
+cognition, clarify underspecified intent, keep deterministic operations in
+deterministic surfaces, enforce policy through reliable boundaries, preserve
+durable knowledge, and improve the equipment ecosystem when repeated friction
+reveals a gap.
 
 ## Least cognitive privilege
 

@@ -23,9 +23,9 @@ Run closeout gates in this order:
 7. Run Cross-Boundary Coherence before Story Quality because quality review depends on coherent process evidence.
 8. Run Story Quality Ralph Review after coherence findings are fixed or soundly rejected.
 9. Run final validation and publication-readiness checks required by the active plan or repository policy. For the Forge Seed, `python3.14 tools/validate_forge_seed.py --final-closeout` is the branch-push and external-projection readiness check.
-10. Push or otherwise publish the branch only when the active plan, operator direction, or issue-projection surface needs a pushed commit before PR creation. A stated human pause point may occur here.
+10. Push or otherwise publish the branch only when the active plan, operator direction, or issue-projection surface needs a pushed commit before PR creation. A stated operator pause point may occur here.
 11. Publish or update issue, PR, release, and handoff surfaces from the clean final story evidence.
-12. Perform publication actions that remain in scope, respecting repository policy and stated human pause points.
+12. Perform publication actions that remain in scope, respecting repository policy and stated operator pause points.
 
 Do not use issue projection, a PR body, or a final chat summary to make stale committed docs look current. Update the repo surface first when the evidence belongs in the repo.
 
@@ -80,11 +80,11 @@ A story is ready to close when:
 - Cross-Boundary Coherence Ralph Review and Story Quality Ralph Review both have latest clean cycles;
 - Story Quality has checked alignment with the [Armory Vision](vision.md) where
   the story affects ideation, architecture, design, strategy, validation,
-  maintenance, or the intended agent and human experience;
+  maintenance, or the intended agent and operator experience;
 - issue, PR, release, and handoff drafts or published surfaces are projected from the same current repo facts;
 - actionable Reflection Findings are routed to the issue tracker, Tooling
   Request, or the relevant Equipment Candidate, or are explicitly classified as
   non-durable session insight;
 - closeout evidence artifacts are classified by durability, and instance-scoped scratch artifacts are summarized rather than committed or externally projected as project truth;
 - deferred risks, unavailable controls, or stakeholder decisions have tracking and owner-visible rationale;
-- final publication actions respect repository policy and the human operator's stated pause points.
+- final publication actions respect repository policy and the operator's stated pause points.
