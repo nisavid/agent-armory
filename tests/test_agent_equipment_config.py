@@ -1,3 +1,4 @@
+import io
 import json
 import tempfile
 import textwrap
@@ -501,6 +502,7 @@ class AgentEquipmentConfigTests(unittest.TestCase):
             ("non_overridable", '"yes"', "must be a boolean"),
             ("authority", "true", "must be a string"),
             ("required_for", "true", "must be a string"),
+            ("required_for", '"sometimes"', "must be one of"),
         )
         for key, value, message in cases:
             with self.subTest(key=key):
@@ -545,6 +547,32 @@ class AgentEquipmentConfigTests(unittest.TestCase):
 
         self.assertEqual(result["safety_status"], "stale")
         self.assertEqual(result["diagnostics"][0]["kind"], "stale schema")
+
+    def test_fragment_versions_must_be_integer_metadata(self):
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=2,
+            fields={"mode": agent_equipment_config.FieldSpec(type="string", required=True, enum=["dry-run", "execute"])},
+        )
+        cases = ('"v1"', "true")
+        for value in cases:
+            with self.subTest(value=value):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    root = Path(tmpdir)
+                    layer = self.write_layer(root, "repo.toml", f"""
+                        [agent_equipment_config.layer]
+                        name = "repository policy"
+                        category = "committed durable config"
+
+                        [agent_equipment_config.fragment_versions]
+                        issue_tracker_ops = {value}
+
+                        [issue_tracker_ops]
+                        mode = "dry-run"
+                    """)
+
+                    with self.assertRaisesRegex(agent_equipment_config.ConfigError, "fragment_versions.issue_tracker_ops must be an integer"):
+                        agent_equipment_config.effective_config([layer], [fragment], requested_behavior="mutation")
 
     def test_migration_preview_reports_audit_shape_without_rewriting_source(self):
         fragment = agent_equipment_config.SchemaFragment(
@@ -810,6 +838,16 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(payload["safety_status"], "usable")
         self.assertEqual(payload["effective"]["issue_tracker_ops"]["mode"]["value"], "dry-run")
 
+    def test_cli_effective_config_requires_schema_fragment_flag(self):
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+
+        exit_code = agent_equipment_config.run(["effective-config"], stdout=stdout, stderr=stderr)
+
+        self.assertEqual(exit_code, 2)
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertIn("error: effective-config requires at least one schema fragment flag", stderr.getvalue())
+
     def test_cli_effective_config_redacts_secret_reference_names(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -853,6 +891,27 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(payload["changes"][0]["path"], "issue_tracker_ops.mode")
         self.assertEqual(payload["changes"][0]["before"], "dry-run")
         self.assertEqual(payload["changes"][0]["after"], "execute")
+
+    def test_cli_config_diff_reports_input_errors_without_traceback(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            before = root / "before.json"
+            after = root / "after.json"
+            before.write_text("{", encoding="utf-8")
+            after.write_text("{}", encoding="utf-8")
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+
+            exit_code = agent_equipment_config.run(
+                ["config-diff", "--before", str(before), "--after", str(after)],
+                stdout=stdout,
+                stderr=stderr,
+            )
+
+        self.assertEqual(exit_code, 2)
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertIn("error:", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
 
     def test_cli_config_diff_redacts_secret_reference_names(self):
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -5,6 +5,7 @@ import argparse
 import json
 import sys
 import tomllib
+from json import JSONDecodeError
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Iterable, TextIO
@@ -35,6 +36,7 @@ SOURCE_CATEGORIES = {
 SECRET_REFERENCE_KINDS = {"env", "keychain", "vault", "harness-secret", "external"}
 SENSITIVE_KEYWORDS = ("secret", "token", "credential", "password", "api_key", "private_key")
 REDACTED = "<redacted>"
+REQUIRED_FOR_VALUES = {"advisory", "mutation", "always"}
 
 
 class ConfigError(Exception):
@@ -160,6 +162,10 @@ def policy_locks(layer: Layer) -> dict[tuple[str, str], PolicyLock]:
             required_for = rule.get("required_for", "mutation")
             if not isinstance(required_for, str):
                 raise ConfigError(f"{layer.path}: agent_equipment_config.policy.{namespace}.{field_name}.required_for must be a string")
+            if required_for not in REQUIRED_FOR_VALUES:
+                raise ConfigError(
+                    f"{layer.path}: agent_equipment_config.policy.{namespace}.{field_name}.required_for must be one of {sorted(REQUIRED_FOR_VALUES)!r}"
+                )
             if non_overridable or isinstance(authority, str):
                 locks[(namespace, field_name)] = PolicyLock(
                     namespace=namespace,
@@ -174,7 +180,14 @@ def policy_locks(layer: Layer) -> dict[tuple[str, str], PolicyLock]:
 
 def fragment_versions(layer: Layer) -> dict[str, int]:
     versions = layer.metadata.get("fragment_versions", {})
-    return {str(key): int(value) for key, value in versions.items()} if isinstance(versions, dict) else {}
+    if not isinstance(versions, dict):
+        raise ConfigError(f"{layer.path}: agent_equipment_config.fragment_versions must be a table")
+    parsed: dict[str, int] = {}
+    for key, value in versions.items():
+        if not isinstance(value, int) or isinstance(value, bool):
+            raise ConfigError(f"{layer.path}: agent_equipment_config.fragment_versions.{key} must be an integer")
+        parsed[str(key)] = value
+    return parsed
 
 
 def raw_values_for_namespace(effective_namespace: dict[str, Any]) -> dict[str, JSONValue]:
@@ -600,22 +613,37 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def run(argv: list[str] | None = None, *, stdout: TextIO | None = None, stdout_text: bool = False) -> int | str:
+def run(
+    argv: list[str] | None = None,
+    *,
+    stdout: TextIO | None = None,
+    stderr: TextIO | None = None,
+    stdout_text: bool = False,
+) -> int | str:
     parser = build_parser()
     args = parser.parse_args(argv)
     output = stdout or sys.stdout
-    if args.command == "config-diff":
-        before = json.loads(Path(args.before).read_text(encoding="utf-8"))
-        after = json.loads(Path(args.after).read_text(encoding="utf-8"))
-        payload = config_diff(before, after)
-    else:
-        fragments = [issue_tracker_ops_fragment()] if args.issue_tracker_ops else []
-        payload = effective_config(
-            [Path(path) for path in args.layer],
-            fragments,
-            requested_behavior=args.requested_behavior,
-            plain_handoff_paths=[Path(path) for path in args.plain_handoff],
-        )
+    error_output = stderr or sys.stderr
+    try:
+        if args.command == "config-diff":
+            before = json.loads(Path(args.before).read_text(encoding="utf-8"))
+            after = json.loads(Path(args.after).read_text(encoding="utf-8"))
+            payload = config_diff(before, after)
+        else:
+            fragments = [issue_tracker_ops_fragment()] if args.issue_tracker_ops else []
+            if not fragments:
+                raise ConfigError("effective-config requires at least one schema fragment flag")
+            payload = effective_config(
+                [Path(path) for path in args.layer],
+                fragments,
+                requested_behavior=args.requested_behavior,
+                plain_handoff_paths=[Path(path) for path in args.plain_handoff],
+            )
+    except (ConfigError, OSError, JSONDecodeError, UnicodeDecodeError) as exc:
+        if stdout_text:
+            raise
+        error_output.write(f"error: {exc}\n")
+        return 2
     text = json.dumps(redact_for_cli(payload), indent=2, sort_keys=True) + "\n"
     if stdout_text:
         return text
