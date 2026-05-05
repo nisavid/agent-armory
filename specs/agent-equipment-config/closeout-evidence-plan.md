@@ -24,15 +24,15 @@ Record:
 - source-shape migration from `specs/agent-equipment-config.md` to
   `specs/agent-equipment-config/`;
 - validator and test changes;
-- deterministic effective-config engine evidence through
-  `python3.14 -m unittest tests.test_agent_equipment_config`;
+- Agent Equipment Config runtime-slice command
+  `python3.14 -m unittest tests.test_agent_equipment_config` and the focused
+  security review conclusion for executable parsing, merge, diff, migration
+  preview, plain handoff, authority, projection-classification, and
+  secret-reference behavior;
 - validation commands and results;
 - security review scope, artifact disposition, and findings disposition;
 - documentation closeout scope and unchanged rationale where applicable;
-- child issue projection for follow-on implementation slices.
-- focused security review conclusion for executable parsing, merge, diff,
-  migration preview, plain handoff, authority, projection-classification, and
-  secret-reference behavior.
+- child issue projection for follow-on implementation slices;
 - Change Set Security Closeout for the runtime slice, including scope, action
   performed, artifact durability classification, finding disposition, fixes,
   suppressions, deferments, or explicit non-applicability notes.

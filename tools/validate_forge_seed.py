@@ -766,6 +766,7 @@ CONFIG_BUNDLE_REQUIRED_TEXT = [
     "plain equipment-specific config handoff",
     "secret references",
     "Issue Tracker Ops",
+    "python3.14 -m unittest tests.test_agent_equipment_config",
     "policy",
     "Codex",
     "OpenClaw",

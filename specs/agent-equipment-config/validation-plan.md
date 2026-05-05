@@ -46,7 +46,7 @@ OpenClaw, Hermes Agent, Claude Code, Cursor, and OpenCode.
 
 ## Runtime cases
 
-The first effective-config engine should validate:
+Runtime coverage tracks these current and follow-on cases:
 
 - absent shared Config equipment with equipment-specific session-scoped fallback;
 - partial config that stays schema-valid but reports `incomplete`;

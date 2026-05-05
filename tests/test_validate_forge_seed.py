@@ -9015,6 +9015,7 @@ class SpecValidationTests(unittest.TestCase):
                 """\
                 ## Deterministic checks
 
+                python3.14 -m unittest tests.test_agent_equipment_config
                 Validation covers absent config equipment, partial config,
                 conflicting layers, semantic validators, schema migration,
                 session overrides, local-only overrides, committed config,
@@ -9212,6 +9213,7 @@ class SpecValidationTests(unittest.TestCase):
             "plain equipment-specific config handoff",
             "secret references",
             "Issue Tracker Ops",
+            "python3.14 -m unittest tests.test_agent_equipment_config",
             "policy",
             "Codex",
             "OpenClaw",
