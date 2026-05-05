@@ -151,10 +151,10 @@ _Avoid_: prompt style when deterministic support, durable capture, policy, or
 validation is the needed surface
 
 **Head Gear**:
-The Armory's generic Cognition Enhancement Equipment for translating
-underspecified but realizable operator intent into high-quality outcomes by
-inducing reflection, imagination, questioning, bookkeeping, knowledge retrieval,
-capability prediction, and self-outfitting.
+The planned name for the Armory's generic Cognition Enhancement Equipment for
+translating underspecified but realizable operator intent into high-quality
+outcomes by inducing reflection, imagination, questioning, bookkeeping,
+knowledge retrieval, capability prediction, and self-outfitting.
 _Avoid_: domain-specific equipment, style-only prompting, one-off instruction
 to think harder
 
