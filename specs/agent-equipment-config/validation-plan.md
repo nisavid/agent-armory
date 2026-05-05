@@ -78,6 +78,9 @@ Implemented by the v0 engine slice:
 - plain Issue Tracker Ops handoff fallback and promotion;
 - missing-authority diagnostics for mutation-gated settings;
 - enforcement projection classification as `blocking` or `advisory`;
+- onboarding-plan output for missing shared Config, missing config data,
+  interrupted partial config, resumed handoff completion, and restarted
+  section revision;
 - Issue Tracker Ops pressure scenario for blocked live mutation.
 
 ## Pressure validation

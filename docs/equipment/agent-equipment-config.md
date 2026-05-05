@@ -7,7 +7,8 @@ Agent Equipment Config is the shared configuration primitive for Agent
 Equipment. The published runtime slice provides a local, standard-library
 Python engine for loading authored TOML layers, composing schema fragments,
 explaining effective configuration, comparing config outputs, and preserving
-plain equipment-specific handoffs.
+plain equipment-specific handoffs. It also exposes onboarding-plan output for
+first-run, interrupted, resumed, and restarted configuration flows.
 
 Use this guide when a Smith is making Config-aware equipment or when a Wielder
 needs to provide local or session configuration for equipment that already
@@ -83,12 +84,47 @@ The output should be `usable` for advisory dry-run behavior. Mutation behavior
 remains governed by the consuming equipment's semantic validators and the
 selected harness projection.
 
+## Onboarding and authoring
+
+Use `onboarding-plan` when a Smith or Wielder needs machine-visible next steps
+instead of hidden preference. The command reports:
+
+- `onboarding_status` for missing shared Config, missing config data,
+  interrupted partial output, resumed completion, restarted authoring, or
+  complete config;
+- `partial_config` with schema-valid sections, missing required fields, and
+  unsafe write modes blocked while policy is incomplete;
+- `handoff_behavior` for plain session handoffs and mutation-capable behavior;
+- `discovery_proposals` for committed durable config, local-only operator
+  config, checkout-local state, generated cache or state, and session override
+  categories supplied by the caller;
+- `revision_plan` for re-onboarding selected sections while preserving
+  unrelated policy.
+
+Example:
+
+```bash
+python3 tools/agent_equipment_config.py onboarding-plan \
+  --layer templates/config/agent-equipment-config-example.toml \
+  --issue-tracker-ops \
+  --requested-behavior mutation \
+  --onboarding-state resume \
+  --revise-section issue_tracker_ops
+```
+
+Smiths author the equipment namespace: schema fragments, defaults, semantic
+validators, policy gates, and any equipment-specific safety rules. Wielders
+supply local, checkout, or session values without weakening committed policy
+authority. Re-onboarding should revise the selected section and preserve
+unselected sections unless a policy owner deliberately changes them.
+
 ## Review and maintenance
 
 Update this guide when:
 
 - a new Config runtime command becomes the supported entry point;
 - an equipment line consumes Config directly;
+- onboarding-plan status, handoff, discovery, or revision output changes;
 - a harness projection turns advisory classification into blocking behavior;
 - secret-reference handling changes;
 - migration behavior begins writing source config.

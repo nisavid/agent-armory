@@ -6,9 +6,10 @@ Promotion state: planned
 This Forge Entry Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for effective-config, config-diff,
 diagnostics, plain handoff promotion, authority checks, and projection
-classification. It does not implement Agent Equipment beyond this runtime
-slice, publish assets, resolve secrets, mutate source config, mutate external
-systems, or implement harness controls.
+classification, plus onboarding-plan output for first-run and re-onboarding
+flows. It does not implement Agent Equipment beyond this runtime slice, publish
+assets, resolve secrets, mutate source config, mutate external systems, or
+implement harness controls.
 
 ## Purpose
 
@@ -93,6 +94,7 @@ Future deterministic surfaces should emit JSON-compatible objects for:
 - semantic validator diagnostics,
 - migration previews,
 - secret reference resolution status,
+- onboarding status and partial config handoff plans,
 - policy decision audit records.
 
 ## Failure modes

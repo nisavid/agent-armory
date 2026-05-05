@@ -72,6 +72,121 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(mutation_result["effective"]["issue_tracker_ops"]["mode"]["value"], "dry-run")
         self.assertEqual(mutation_result["effective"]["issue_tracker_ops"]["external_disclosure"]["value"], "blocked")
 
+    def test_onboarding_reports_missing_shared_config_handoff_behavior(self):
+        result = agent_equipment_config.config_onboarding_plan(
+            [],
+            [self.issue_ops_fragment()],
+            requested_behavior="mutation",
+            shared_config_present=False,
+        )
+
+        self.assertEqual(result["onboarding_status"], "missing_shared_config")
+        self.assertEqual(result["handoff_behavior"]["plain_handoff"], "required")
+        self.assertEqual(result["handoff_behavior"]["mutation_capable_behavior"], "blocked")
+        self.assertTrue(result["partial_config"]["schema_valid"])
+
+    def test_onboarding_reports_missing_config_data_as_partial_output(self):
+        result = agent_equipment_config.config_onboarding_plan(
+            [],
+            [self.issue_ops_fragment()],
+            requested_behavior="mutation",
+        )
+
+        self.assertEqual(result["onboarding_status"], "missing_config_data")
+        self.assertEqual(result["effective_config"]["safety_status"], "incomplete")
+        self.assertEqual(
+            result["partial_config"]["sections"]["issue_tracker_ops"]["missing_required"],
+            ["external_disclosure", "mode"],
+        )
+        self.assertEqual(result["handoff_behavior"]["mutation_capable_behavior"], "blocked")
+        self.assertIn("committed durable config", [item["source_category"] for item in result["discovery_proposals"]])
+
+    def test_interrupted_onboarding_keeps_partial_output_and_blocks_mutation(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            partial = self.write_layer(root, "partial.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+            """)
+
+            result = agent_equipment_config.config_onboarding_plan(
+                [partial],
+                [self.issue_ops_fragment()],
+                requested_behavior="mutation",
+                onboarding_state="interrupted",
+            )
+
+        self.assertEqual(result["onboarding_status"], "interrupted_partial")
+        self.assertTrue(result["partial_config"]["schema_valid"])
+        self.assertEqual(result["partial_config"]["unsafe_write_modes"], "blocked")
+        self.assertEqual(result["partial_config"]["sections"]["issue_tracker_ops"]["missing_required"], ["external_disclosure"])
+
+    def test_resumed_onboarding_can_complete_from_plain_handoff(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            partial = self.write_layer(root, "partial.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+            """)
+            handoff = self.write_layer(root, "handoff.toml", """
+                [issue_tracker_ops]
+                external_disclosure = "blocked"
+            """)
+
+            result = agent_equipment_config.config_onboarding_plan(
+                [partial],
+                [self.issue_ops_fragment()],
+                requested_behavior="mutation",
+                onboarding_state="resume",
+                plain_handoff_paths=[handoff],
+            )
+
+        self.assertEqual(result["onboarding_status"], "resumed_complete")
+        self.assertEqual(result["effective_config"]["safety_status"], "usable")
+        self.assertEqual(result["effective_config"]["plain_handoffs"][0]["source"], handoff.as_posix())
+
+    def test_restarted_onboarding_preserves_unselected_sections(self):
+        docs_research = agent_equipment_config.SchemaFragment(
+            namespace="docs_research",
+            version=1,
+            fields={"citation_policy": agent_equipment_config.FieldSpec(type="string", required=True)},
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+
+                [docs_research]
+                citation_policy = "source-backed"
+            """)
+
+            result = agent_equipment_config.config_onboarding_plan(
+                [layer],
+                [self.issue_ops_fragment(), docs_research],
+                requested_behavior="advisory",
+                onboarding_state="restart",
+                revise_sections=["issue_tracker_ops"],
+            )
+
+        self.assertEqual(result["onboarding_status"], "restart_ready")
+        self.assertTrue(result["revision_plan"]["preserve_unselected_sections"])
+        self.assertEqual(result["revision_plan"]["selected_sections"], ["issue_tracker_ops"])
+        self.assertEqual(result["revision_plan"]["unselected_sections"], ["docs_research"])
+
     def test_schema_fragment_applies_defaults_and_reports_missing_required_keys(self):
         fragment = agent_equipment_config.SchemaFragment(
             namespace="issue_tracker_ops",

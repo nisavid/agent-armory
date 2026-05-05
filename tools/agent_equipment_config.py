@@ -37,6 +37,7 @@ SECRET_REFERENCE_KINDS = {"env", "keychain", "vault", "harness-secret", "externa
 SENSITIVE_KEYWORDS = ("secret", "token", "credential", "password", "api_key", "private_key")
 REDACTED = "<redacted>"
 REQUIRED_FOR_VALUES = {"advisory", "mutation", "always"}
+ONBOARDING_STATES = {"first-run", "interrupted", "resume", "restart"}
 ABSENT = {"presence": "absent"}
 MISSING = object()
 
@@ -495,6 +496,191 @@ def enforcement_projection(safety_status: str, requested_behavior: str) -> dict[
     }
 
 
+def onboarding_status(shared_config_present: bool, onboarding_state: str, safety_status: str) -> str:
+    if not shared_config_present:
+        return "missing_shared_config"
+    if onboarding_state == "restart":
+        return "restart_ready"
+    if onboarding_state == "interrupted":
+        return "interrupted_partial" if safety_status != "usable" else "interrupted_complete"
+    if onboarding_state == "resume":
+        return "resumed_complete" if safety_status == "usable" else "resume_needs_input"
+    if safety_status == "incomplete":
+        return "missing_config_data"
+    return "complete" if safety_status == "usable" else safety_status
+
+
+def partial_config_from_effective(effective: dict[str, Any], fragments: list[SchemaFragment], diagnostics: list[dict[str, Any]]) -> dict[str, Any]:
+    sections: dict[str, Any] = {}
+    invalid_diagnostics = [
+        item
+        for item in diagnostics
+        if not (item.get("kind") == "schema conflict" and "missing required" in str(item.get("detail", "")))
+    ]
+    for fragment in fragments:
+        effective_section = effective.get(fragment.namespace, {})
+        missing_required = sorted(
+            field_name
+            for field_name, field_spec in fragment.fields.items()
+            if field_spec.required
+            and isinstance(effective_section.get(field_name), dict)
+            and effective_section[field_name].get("value") is None
+        )
+        fields: dict[str, Any] = {}
+        for field_name, field_spec in fragment.fields.items():
+            wrapped = effective_section.get(field_name, {})
+            if isinstance(wrapped, dict):
+                value = wrapped.get("secret_reference", wrapped.get("value"))
+                layer = wrapped.get("layer", "schema default")
+            else:
+                value = None
+                layer = "missing"
+            fields[field_name] = {
+                "presence": "missing" if field_spec.required and value is None else "present",
+                "value": value,
+                "layer": layer,
+            }
+        sections[fragment.namespace] = {
+            "status": "partial" if missing_required else "complete",
+            "missing_required": missing_required,
+            "fields": fields,
+        }
+    return {
+        "schema_valid": not invalid_diagnostics,
+        "unsafe_write_modes": "blocked" if any(section["missing_required"] for section in sections.values()) else "available",
+        "sections": sections,
+    }
+
+
+def empty_partial_config(fragments: list[SchemaFragment]) -> dict[str, Any]:
+    sections = {
+        fragment.namespace: {
+            "status": "partial",
+            "missing_required": sorted(field_name for field_name, field_spec in fragment.fields.items() if field_spec.required),
+            "fields": {
+                field_name: {
+                    "presence": "missing" if field_spec.required else "present",
+                    "value": field_spec.default,
+                    "layer": "plain handoff",
+                }
+                for field_name, field_spec in fragment.fields.items()
+            },
+        }
+        for fragment in fragments
+    }
+    return {
+        "schema_valid": True,
+        "unsafe_write_modes": "blocked",
+        "sections": sections,
+    }
+
+
+def discovery_proposals(layers: list[Layer]) -> list[dict[str, Any]]:
+    categories = [
+        "committed durable config",
+        "local-only operator config",
+        "checkout-local state",
+        "generated cache or state",
+        "session override",
+    ]
+    found_by_category: dict[str, list[Layer]] = {category: [] for category in categories}
+    for layer in layers:
+        if layer.category in found_by_category:
+            found_by_category[layer.category].append(layer)
+    proposals: list[dict[str, Any]] = []
+    for category in categories:
+        found_layers = found_by_category[category]
+        proposals.append(
+            {
+                "source_category": category,
+                "status": "found" if found_layers else "proposed",
+                "layers": [
+                    {"name": layer.name, "source": layer.path}
+                    for layer in found_layers
+                ],
+                "path_owner": "harness or equipment projection",
+            }
+        )
+    return proposals
+
+
+def revision_plan(fragments: list[SchemaFragment], revise_sections: list[str] | None) -> dict[str, Any]:
+    selected = sorted(set(revise_sections or []))
+    namespaces = sorted(fragment.namespace for fragment in fragments)
+    return {
+        "selected_sections": selected,
+        "unselected_sections": [namespace for namespace in namespaces if namespace not in selected],
+        "preserve_unselected_sections": bool(selected),
+    }
+
+
+def config_onboarding_plan(
+    layer_paths: list[Path],
+    fragments: list[SchemaFragment],
+    *,
+    requested_behavior: str,
+    plain_handoff_paths: list[Path] | None = None,
+    shared_config_present: bool = True,
+    onboarding_state: str = "first-run",
+    revise_sections: list[str] | None = None,
+) -> dict[str, Any]:
+    if onboarding_state not in ONBOARDING_STATES:
+        raise ConfigError(f"unknown onboarding state {onboarding_state!r}")
+    if not shared_config_present:
+        return {
+            "onboarding_status": "missing_shared_config",
+            "effective_config": None,
+            "partial_config": empty_partial_config(fragments),
+            "handoff_behavior": {
+                "plain_handoff": "required",
+                "mutation_capable_behavior": "blocked",
+                "reason": "shared Config equipment is absent",
+            },
+            "discovery_proposals": discovery_proposals([]),
+            "revision_plan": revision_plan(fragments, revise_sections),
+            "authoring_roles": authoring_roles(),
+        }
+    layers = load_layers(layer_paths)
+    handoff_layers, _ = load_plain_handoff_layers(plain_handoff_paths or [])
+    effective = effective_config(
+        layer_paths,
+        fragments,
+        requested_behavior=requested_behavior,
+        plain_handoff_paths=plain_handoff_paths,
+    )
+    partial = partial_config_from_effective(effective["effective"], fragments, effective["diagnostics"])
+    mutation_allowed = effective["safety_status"] == "usable"
+    return {
+        "onboarding_status": onboarding_status(shared_config_present, onboarding_state, effective["safety_status"]),
+        "effective_config": effective,
+        "partial_config": {
+            **partial,
+            "unsafe_write_modes": "available" if mutation_allowed else "blocked",
+        },
+        "handoff_behavior": {
+            "plain_handoff": "optional" if mutation_allowed else "available",
+            "mutation_capable_behavior": "allowed" if mutation_allowed else "blocked",
+            "reason": "effective Config Safety Status is usable" if mutation_allowed else "effective Config Safety Status is not usable",
+        },
+        "discovery_proposals": discovery_proposals(sorted([*layers, *handoff_layers], key=lambda layer: (layer.precedence, layer.source_order))),
+        "revision_plan": revision_plan(fragments, revise_sections),
+        "authoring_roles": authoring_roles(),
+    }
+
+
+def authoring_roles() -> list[dict[str, str]]:
+    return [
+        {
+            "role": "Smith",
+            "responsibility": "define schema fragments, defaults, semantic validators, and policy gates for the equipment namespace",
+        },
+        {
+            "role": "Wielder",
+            "responsibility": "supply local, checkout, or session values without weakening committed policy authority",
+        },
+    ]
+
+
 def load_toml(path: Path) -> dict[str, Any]:
     try:
         return tomllib.loads(path.read_text(encoding="utf-8"))
@@ -704,6 +890,14 @@ def build_parser() -> argparse.ArgumentParser:
     effective.add_argument("--plain-handoff", action="append", default=[])
     effective.add_argument("--requested-behavior", choices=["advisory", "mutation"], default="advisory")
     effective.add_argument("--issue-tracker-ops", action="store_true")
+    onboarding = subparsers.add_parser("onboarding-plan")
+    onboarding.add_argument("--layer", action="append", default=[])
+    onboarding.add_argument("--plain-handoff", action="append", default=[])
+    onboarding.add_argument("--requested-behavior", choices=["advisory", "mutation"], default="advisory")
+    onboarding.add_argument("--issue-tracker-ops", action="store_true")
+    onboarding.add_argument("--shared-config-missing", dest="shared_config_present", action="store_false", default=True)
+    onboarding.add_argument("--onboarding-state", choices=sorted(ONBOARDING_STATES), default="first-run")
+    onboarding.add_argument("--revise-section", action="append", default=[])
     diff = subparsers.add_parser("config-diff")
     diff.add_argument("--before", required=True)
     diff.add_argument("--after", required=True)
@@ -729,13 +923,24 @@ def run(
         else:
             fragments = [issue_tracker_ops_fragment()] if args.issue_tracker_ops else []
             if not fragments:
-                raise ConfigError("effective-config requires at least one schema fragment flag")
-            payload = effective_config(
-                [Path(path) for path in args.layer],
-                fragments,
-                requested_behavior=args.requested_behavior,
-                plain_handoff_paths=[Path(path) for path in args.plain_handoff],
-            )
+                raise ConfigError(f"{args.command} requires at least one schema fragment flag")
+            if args.command == "onboarding-plan":
+                payload = config_onboarding_plan(
+                    [Path(path) for path in args.layer],
+                    fragments,
+                    requested_behavior=args.requested_behavior,
+                    plain_handoff_paths=[Path(path) for path in args.plain_handoff],
+                    shared_config_present=args.shared_config_present,
+                    onboarding_state=args.onboarding_state,
+                    revise_sections=args.revise_section,
+                )
+            else:
+                payload = effective_config(
+                    [Path(path) for path in args.layer],
+                    fragments,
+                    requested_behavior=args.requested_behavior,
+                    plain_handoff_paths=[Path(path) for path in args.plain_handoff],
+                )
     except (ConfigError, OSError, JSONDecodeError, UnicodeDecodeError) as exc:
         if stdout_text:
             raise
