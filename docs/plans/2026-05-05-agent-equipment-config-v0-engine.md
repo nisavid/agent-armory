@@ -411,6 +411,7 @@ class Diagnostic:
     detail: str
     layer: str | None = None
     source: str | None = None
+    evidence: dict[str, Any] = field(default_factory=dict)
 
 
 TYPE_CHECKS: dict[str, type | tuple[type, ...]] = {
@@ -421,13 +422,14 @@ TYPE_CHECKS: dict[str, type | tuple[type, ...]] = {
 }
 
 
-def diagnostic(kind: str, path: str, detail: str, layer: Layer | None = None) -> Diagnostic:
+def diagnostic(kind: str, path: str, detail: str, layer: Layer | None = None, *, evidence: dict[str, Any] | None = None) -> Diagnostic:
     return Diagnostic(
         kind=kind,
         path=path,
         detail=detail,
         layer=layer.name if layer else None,
         source=layer.path if layer else None,
+        evidence=evidence or {},
     )
 
 
@@ -597,6 +599,9 @@ Append:
         self.assertEqual(result["safety_status"], "conflicted")
         self.assertEqual(result["diagnostics"][0]["kind"], "blocked override")
         self.assertEqual(result["diagnostics"][0]["path"], "issue_tracker_ops.mode")
+        self.assertEqual(result["diagnostics"][0]["evidence"]["blocked_value"], "execute")
+        self.assertEqual(result["diagnostics"][0]["evidence"]["blocked_by"]["layer"], "organization or tracker policy")
+        self.assertEqual(result["diagnostics"][0]["evidence"]["blocked_by"]["source"], policy.as_posix())
 
     def test_same_precedence_collision_reports_conflict_without_silent_winner(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -716,6 +721,13 @@ def effective_config(layer_paths: list[Path], fragments: list[SchemaFragment], *
                             path,
                             f"{layer.name} cannot override non-overridable value from {active_lock.layer.name}",
                             layer,
+                            evidence={
+                                "blocked_value": candidate,
+                                "blocked_by": {
+                                    "layer": active_lock.layer.name,
+                                    "source": active_lock.layer.path,
+                                },
+                            },
                         )
                     )
                     continue
@@ -843,8 +855,9 @@ Append:
             original_text = layer.read_text(encoding="utf-8")
 
             result = agent_equipment_config.effective_config([layer], [fragment], requested_behavior="mutation")
+            rewritten_text = layer.read_text(encoding="utf-8")
 
-        self.assertEqual(layer.read_text(encoding="utf-8"), original_text)
+        self.assertEqual(rewritten_text, original_text)
         self.assertEqual(result["safety_status"], "stale")
         self.assertEqual(
             result["migration_previews"][0]["changes"][0],
@@ -884,6 +897,38 @@ Append:
 
         self.assertEqual(result["safety_status"], "unsafe")
         self.assertEqual(result["diagnostics"][0]["kind"], "semantic conflict")
+
+    def test_safety_status_precedence_is_explicit_for_mixed_diagnostics(self):
+        self.assertEqual(
+            agent_equipment_config.safety_status_from_diagnostics(
+                [
+                    agent_equipment_config.Diagnostic("semantic conflict", "issue_tracker_ops.external_disclosure", "unsafe"),
+                    agent_equipment_config.Diagnostic("blocked override", "issue_tracker_ops.mode", "blocked"),
+                ],
+                requested_behavior="mutation",
+            ),
+            "conflicted",
+        )
+        self.assertEqual(
+            agent_equipment_config.safety_status_from_diagnostics(
+                [
+                    agent_equipment_config.Diagnostic("stale schema", "issue_tracker_ops", "stale"),
+                    agent_equipment_config.Diagnostic("schema conflict", "issue_tracker_ops.mode", "missing required value"),
+                ],
+                requested_behavior="mutation",
+            ),
+            "incomplete",
+        )
+        self.assertEqual(
+            agent_equipment_config.safety_status_from_diagnostics(
+                [
+                    agent_equipment_config.Diagnostic("semantic conflict", "issue_tracker_ops.external_disclosure", "unsafe"),
+                    agent_equipment_config.Diagnostic("untrusted source", "issue_tracker_ops", "untrusted"),
+                ],
+                requested_behavior="mutation",
+            ),
+            "untrusted",
+        )
 ```
 
 - [ ] **Step 2: Run tests to verify they fail**
@@ -891,7 +936,7 @@ Append:
 Run:
 
 ```bash
-python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_untrusted_layer_sets_untrusted_for_mutation tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_stale_fragment_version_reports_stale_without_rewriting_source tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_migration_preview_reports_audit_shape_without_rewriting_source tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_semantic_validator_can_mark_config_unsafe
+python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_untrusted_layer_sets_untrusted_for_mutation tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_stale_fragment_version_reports_stale_without_rewriting_source tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_migration_preview_reports_audit_shape_without_rewriting_source tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_semantic_validator_can_mark_config_unsafe tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_safety_status_precedence_is_explicit_for_mixed_diagnostics
 ```
 
 Expected: failures because untrusted, stale, migration preview, and semantic validators are not complete.
@@ -1035,6 +1080,13 @@ def effective_config(layer_paths: list[Path], fragments: list[SchemaFragment], *
                             path,
                             f"{layer.name} cannot override non-overridable value from {active_lock.layer.name}",
                             layer,
+                            evidence={
+                                "blocked_value": candidate,
+                                "blocked_by": {
+                                    "layer": active_lock.layer.name,
+                                    "source": active_lock.layer.path,
+                                },
+                            },
                         )
                     )
                     continue
@@ -1075,6 +1127,8 @@ Replace `safety_status_from_diagnostics` with:
 ```python
 def safety_status_from_diagnostics(diagnostics: list[Diagnostic], *, requested_behavior: str) -> str:
     kinds = {item.kind for item in diagnostics}
+    # Precedence is intentional: structural conflicts first, then incomplete schema,
+    # then provenance/version hazards, then semantic unsafety.
     if "blocked override" in kinds or "same-precedence collision" in kinds:
         return "conflicted"
     if "schema conflict" in kinds and any("missing required" in item.detail for item in diagnostics):
@@ -1095,7 +1149,7 @@ def safety_status_from_diagnostics(diagnostics: list[Diagnostic], *, requested_b
 Run:
 
 ```bash
-python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_untrusted_layer_sets_untrusted_for_mutation tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_stale_fragment_version_reports_stale_without_rewriting_source tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_migration_preview_reports_audit_shape_without_rewriting_source tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_semantic_validator_can_mark_config_unsafe
+python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_untrusted_layer_sets_untrusted_for_mutation tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_stale_fragment_version_reports_stale_without_rewriting_source tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_migration_preview_reports_audit_shape_without_rewriting_source tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_semantic_validator_can_mark_config_unsafe tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_safety_status_precedence_is_explicit_for_mixed_diagnostics
 ```
 
 Expected: `OK`.
@@ -1196,6 +1250,40 @@ Append:
         self.assertEqual(diff["changes"][0]["before"]["secret_reference"]["name"], "OLD_GITHUB_TOKEN")
         self.assertEqual(diff["changes"][0]["after"]["secret_reference"]["name"], "NEW_GITHUB_TOKEN")
 
+    def test_config_diff_reports_status_and_diagnostic_changes(self):
+        before = {
+            "safety_status": "usable",
+            "effective": {"issue_tracker_ops": {"mode": {"value": "dry-run"}}},
+            "diagnostics": [],
+        }
+        after = {
+            "safety_status": "conflicted",
+            "effective": {"issue_tracker_ops": {"mode": {"value": "dry-run"}}},
+            "diagnostics": [
+                {
+                    "kind": "blocked override",
+                    "path": "issue_tracker_ops.mode",
+                    "detail": "session overrides cannot override non-overridable value from organization or tracker policy",
+                    "evidence": {
+                        "blocked_value": "execute",
+                        "blocked_by": {"layer": "organization or tracker policy", "source": "org.toml"},
+                    },
+                },
+                {
+                    "kind": "same-precedence collision",
+                    "path": "issue_tracker_ops.priority_policy",
+                    "detail": "repository policy has multiple values at the same precedence",
+                    "evidence": {},
+                },
+            ],
+        }
+
+        diff = agent_equipment_config.config_diff(before, after)
+
+        self.assertEqual(diff["status_change"], {"before": "usable", "after": "conflicted"})
+        self.assertEqual([item["kind"] for item in diff["diagnostic_changes"]["after"]], ["blocked override", "same-precedence collision"])
+        self.assertEqual(diff["diagnostic_changes"]["after"][0]["evidence"]["blocked_value"], "execute")
+
     def test_cli_effective_config_outputs_json(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -1220,7 +1308,7 @@ Append:
 Run:
 
 ```bash
-python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_secret_reference_is_reported_without_value_resolution tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_changed_values tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_changed_secret_references tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_cli_effective_config_outputs_json
+python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_secret_reference_is_reported_without_value_resolution tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_changed_values tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_changed_secret_references tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_status_and_diagnostic_changes tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_cli_effective_config_outputs_json
 ```
 
 Expected: failures because secret reference handling, diff, and CLI are missing.
@@ -1255,18 +1343,29 @@ def diffable_wrapped_value(wrapped: dict[str, Any]) -> JSONValue | dict[str, Any
     return wrapped.get("value")
 
 
+def effective_section(payload: dict[str, Any]) -> dict[str, Any]:
+    return payload.get("effective", payload)
+
+
 def config_diff(before: dict[str, Any], after: dict[str, Any]) -> dict[str, Any]:
     changes: list[dict[str, Any]] = []
-    namespaces = sorted(set(before) | set(after))
+    before_effective = effective_section(before)
+    after_effective = effective_section(after)
+    namespaces = sorted(set(before_effective) | set(after_effective))
     for namespace in namespaces:
-        before_fields = before.get(namespace, {})
-        after_fields = after.get(namespace, {})
+        before_fields = before_effective.get(namespace, {})
+        after_fields = after_effective.get(namespace, {})
         for field_name in sorted(set(before_fields) | set(after_fields)):
             before_value = diffable_wrapped_value(before_fields.get(field_name, {}))
             after_value = diffable_wrapped_value(after_fields.get(field_name, {}))
             if before_value != after_value:
                 changes.append({"path": f"{namespace}.{field_name}", "before": before_value, "after": after_value})
-    return {"changes": changes}
+    diff: dict[str, Any] = {"changes": changes}
+    if before.get("safety_status") != after.get("safety_status"):
+        diff["status_change"] = {"before": before.get("safety_status"), "after": after.get("safety_status")}
+    if before.get("diagnostics", []) != after.get("diagnostics", []):
+        diff["diagnostic_changes"] = {"before": before.get("diagnostics", []), "after": after.get("diagnostics", [])}
+    return diff
 ```
 
 When wrapping field values in `effective_config`, include:
@@ -1344,7 +1443,7 @@ if __name__ == "__main__":
 Run:
 
 ```bash
-python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_secret_reference_is_reported_without_value_resolution tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_changed_values tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_changed_secret_references tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_cli_effective_config_outputs_json
+python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_secret_reference_is_reported_without_value_resolution tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_changed_values tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_changed_secret_references tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_status_and_diagnostic_changes tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_cli_effective_config_outputs_json
 ```
 
 Expected: `OK`.
@@ -1401,6 +1500,9 @@ Append:
         self.assertEqual(result["effective"]["issue_tracker_ops"]["mode"]["value"], "dry-run")
         self.assertEqual(result["safety_status"], "conflicted")
         self.assertEqual(result["diagnostics"][0]["kind"], "blocked override")
+        self.assertEqual(result["diagnostics"][0]["evidence"]["blocked_value"], "execute")
+        self.assertEqual(result["diagnostics"][0]["evidence"]["blocked_by"]["layer"], "organization or tracker policy")
+        self.assertEqual(result["diagnostics"][0]["evidence"]["blocked_by"]["source"], org.as_posix())
 ```
 
 - [ ] **Step 2: Run pressure scenario regression test**
@@ -1429,7 +1531,7 @@ Implemented by the v0 engine slice:
 - TOML layer loading;
 - schema fragment validation;
 - effective-config output;
-- config-diff output;
+- config-diff output for values, secret-reference identity, status changes, and diagnostic changes;
 - Config Safety Status classification;
 - deprecation diagnostics and migration-preview output with audit-preview shape;
 - Issue Tracker Ops pressure scenario for blocked live mutation.
@@ -1565,7 +1667,7 @@ git commit -m "test(config): validate runtime slice coverage" -m "Co-authored-by
 
 ## Self-Review Checklist
 
-- Spec coverage: tasks cover schema fragments, layered config, Layer Precedence, Policy Authority, same-precedence collisions, effective-config, config-diff, semantic validators, Config Safety Status, deprecation diagnostics, migration previews with audit-preview shape, secret references, session-scoped behavior, plain Issue Tracker Ops handoff pressure, and validation commands.
+- Spec coverage: tasks cover schema fragments, layered config, Layer Precedence, Policy Authority, same-precedence collisions, effective-config, config-diff for values/status/diagnostics, semantic validators, Config Safety Status precedence, deprecation diagnostics, migration previews with audit-preview shape, secret references, session-scoped behavior, plain Issue Tracker Ops handoff pressure, and validation commands.
 - Deliberate deferrals: source rewrites, provider-specific secret fetching, and harness blocking enforcement remain out of scope and are named in the plan.
 - Type consistency: `Layer`, `FieldSpec`, `SchemaFragment`, `MigrationPreview`, `Diagnostic`, `effective_config`, `config_diff`, and `issue_tracker_ops_fragment` are introduced before use in later tasks.
 - Security boundary: no network, subprocess, secret fetching, or source mutation is part of the runtime slice.
