@@ -1363,17 +1363,18 @@ def validate_final_source_retired_stamp(root: Path) -> list[CheckResult]:
         return [CheckResult("source_retired_stamp:path", False, detail, SOURCE_DISPOSITION_PATH)]
     markdown = path.read_text(encoding="utf-8")
     results: list[CheckResult] = []
-    if markdown_section(markdown, "## Final Source-Retired Stamp") is None:
-        results.append(
+    stamp_section = markdown_section(markdown, "## Final Source-Retired Stamp")
+    if stamp_section is None:
+        return [
             CheckResult(
                 "source_retired_stamp:section",
                 False,
                 "missing Final Source-Retired Stamp section",
                 SOURCE_DISPOSITION_PATH,
             )
-        )
+        ]
     for volatile_field in ("stamp_target", "canonical_tree_digest", "timestamp"):
-        if final_stamp_field(markdown, volatile_field) is not None:
+        if final_stamp_field(stamp_section, volatile_field) is not None:
             results.append(
                 CheckResult(
                     f"source_retired_stamp:{volatile_field}",
@@ -1382,7 +1383,7 @@ def validate_final_source_retired_stamp(root: Path) -> list[CheckResult]:
                     SOURCE_DISPOSITION_PATH,
                 )
             )
-    if final_stamp_field(markdown, "source_retired") != "true":
+    if final_stamp_field(stamp_section, "source_retired") != "true":
         results.append(
             CheckResult("source_retired_stamp:source_retired", False, "source_retired must be true", SOURCE_DISPOSITION_PATH)
         )

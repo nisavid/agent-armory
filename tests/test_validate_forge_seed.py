@@ -1510,6 +1510,41 @@ class SourceDispositionTests(unittest.TestCase):
             results,
         )
 
+    def test_validate_final_source_retired_stamp_scopes_fields_to_final_section(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_source_disposition(root)
+            path = root / SOURCE_DISPOSITION_PATH
+            markdown = path.read_text(encoding="utf-8")
+            path.write_text(
+                markdown.replace(
+                    "## Final Source-Retired Stamp",
+                    "\n".join(
+                        [
+                            "stamp_target: source-bearing tree",
+                            "canonical_tree_digest: legacy-source-bearing-digest",
+                            "timestamp: 2026-05-04T00:00:00Z",
+                            "",
+                            "## Final Source-Retired Stamp",
+                        ]
+                    ),
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_final_source_retired_stamp(root)
+
+        self.assertTrue(all(result.ok for result in results), results)
+        self.assertIn(
+            CheckResult(
+                "source_retired_stamp:source_retired",
+                True,
+                "true",
+                SOURCE_DISPOSITION_PATH,
+            ),
+            results,
+        )
+
     def test_validate_final_source_retired_stamp_rejects_volatile_digest_fields(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -1599,6 +1634,10 @@ class SourceDispositionTests(unittest.TestCase):
                 "missing",
                 "docs/metasmith/source-projection.md",
             ),
+            results,
+        )
+        self.assertFalse(
+            any(result.name.startswith(("source_projection:", "source_handoff:")) for result in results),
             results,
         )
         self.assertIn(
