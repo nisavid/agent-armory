@@ -433,8 +433,8 @@ def toml_key_line_index(lines: list[str], start: int, end: int, key: str) -> int
         stripped = lines[index].lstrip()
         if not stripped.startswith(key):
             continue
-        remainder = stripped[len(key):].lstrip()
-        if remainder.startswith("="):
+        remainder = stripped[len(key):]
+        if remainder and (remainder[0].isspace() or remainder.lstrip().startswith("=")):
             return index
     raise ConfigError(f"could not find TOML key {key!r}")
 
@@ -572,7 +572,7 @@ def migration_apply(
                 "to_version": fragment.version,
                 "decision": decision,
                 "write_authorized": authorized,
-                "would_write": not apply,
+                "dry_run_would_write": not apply,
                 "write_performed": False,
                 "changes": changes,
                 "audit_record": record,

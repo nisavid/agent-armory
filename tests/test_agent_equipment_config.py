@@ -1143,7 +1143,7 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertFalse(result["applied"])
         self.assertEqual(result["applications"][0]["decision"], "dry-run")
         self.assertFalse(result["applications"][0]["write_authorized"])
-        self.assertTrue(result["applications"][0]["would_write"])
+        self.assertTrue(result["applications"][0]["dry_run_would_write"])
         self.assertFalse(result["applications"][0]["write_performed"])
         self.assertEqual(
             result["applications"][0]["changes"],
@@ -1192,13 +1192,45 @@ class AgentEquipmentConfigTests(unittest.TestCase):
 
         self.assertTrue(result["applied"])
         self.assertEqual(result["applications"][0]["decision"], "applied")
-        self.assertFalse(result["applications"][0]["would_write"])
+        self.assertFalse(result["applications"][0]["dry_run_would_write"])
         self.assertTrue(result["applications"][0]["write_performed"])
         self.assertIn("issue_tracker_ops = 2  # v1", rewritten_text)
         self.assertIn('mode = "dry-run"', rewritten_text)
         self.assertNotIn("operation_mode", rewritten_text)
         self.assertEqual(result["audit_records"][-1]["action"], "migration apply mutation")
         self.assertEqual(result["audit_records"][-1]["result"], "applied")
+
+    def test_migration_apply_rewrites_exact_toml_key_only(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.fragment_versions]
+                issue_tracker_ops_extra = 99
+                issue_tracker_ops = 1
+
+                [issue_tracker_ops]
+                operation_mode_extra = "keep"
+                operation_mode = "dry-run"
+            """)
+
+            result = agent_equipment_config.migration_apply(
+                [layer],
+                [self.renamed_mode_fragment()],
+                apply=True,
+                apply_authority="operator",
+            )
+            rewritten_text = layer.read_text(encoding="utf-8")
+
+        self.assertTrue(result["applied"])
+        self.assertIn("issue_tracker_ops_extra = 99", rewritten_text)
+        self.assertIn("issue_tracker_ops = 2", rewritten_text)
+        self.assertIn('operation_mode_extra = "keep"', rewritten_text)
+        self.assertIn('mode = "dry-run"', rewritten_text)
+        self.assertNotIn('operation_mode = "dry-run"', rewritten_text)
 
     def test_migration_apply_accepts_trusted_configured_authority(self):
         with tempfile.TemporaryDirectory() as tmpdir:
