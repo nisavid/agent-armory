@@ -26,6 +26,7 @@ FENCE_START_RE = re.compile(r"(`{3,}|~{3,})")
 HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 BACKTICK_PATH_RE = re.compile(r"`([^`]+)`")
 REFERENCE_DEFINITION_RE = re.compile(r"(?m)^[ \t]{0,3}\[([^\]\n]+)\]:[ \t]*(.+?)\s*$")
+PYTHON_RUNTIME_REFERENCE_RE = re.compile(r"\b(?:python|Python)\s*(\d+\.\d+)\b")
 
 
 def strip_fenced_code_blocks(markdown: str) -> str:
@@ -392,6 +393,7 @@ HEX64_RE = re.compile(r"^[0-9a-f]{64}$")
 SOURCE_HANDOFF_DIR = "docs/metasmith/handoff/2026-05-02"
 SOURCE_HANDOFF_MANIFEST = f"{SOURCE_HANDOFF_DIR}/manifest.json"
 SOURCE_HANDOFF_PROVENANCE_NOTICE = f"{SOURCE_HANDOFF_DIR}/AGENTS.md"
+PYTHON_VERSION_DECLARATION_PATH = ".python-version"
 REQUIRED_PRELOADED_ROUTES = [
     "docs/vision.md",
     "docs/agent-equipment-forge.md",
@@ -520,6 +522,7 @@ CANONICAL_DOC_REQUIRED_TEXT = {
         "Before committing or externally projecting closeout evidence, classify evidence artifacts by durability.",
         "Durable project evidence and portable review summaries may be committed or projected.",
         "Instance-scoped scratch artifacts, including raw tool reports, local scan bundles, copied diffs, host-local paths, screenshots, or work directories, should be summarized by scope, disposition, and durable conclusions instead of treated as project truth.",
+        "Classify privacy and disclosure limits for actionable Reflection Findings",
         "Run Cross-Boundary Coherence before Story Quality because quality review depends on coherent process evidence.",
         "Intent Model Refresh is the first closeout gate.",
         "Update the agent's model of Underlying Intent by reviewing recent operator input, accepted ADR/PRD/spec/plan changes, review dispositions, handoff notes, and observed corrections relevant to the story before running downstream closeout gates.",
@@ -532,6 +535,7 @@ CANONICAL_DOC_REQUIRED_TEXT = {
         "When the model remains uncertain, the case depends on internal-state inference, or the evidence otherwise creates a non-dismissible likelihood of misalignment without certainty, raise a concise question to the operator, using an interactive question tool when available.",
         "If a revision changes security, documentation, validation, PRD/spec/plan scope, or issue/PR projection, rerun the affected upstream gate before the next closeout review.",
         "Evidence-artifact durability changes rerun the closeout gate that owns the artifact and any projection surface that carries its claims.",
+        "after privacy and disclosure limits are classified",
         "Recording the latest clean review result is bookkeeping and does not reopen the full review loop unless it changes substantive claims.",
         "Published issue, PR, release, or handoff corrections rerun a projection consistency check and a narrow Cross-Boundary Coherence review for the corrected surface.",
         "closeout evidence artifacts are classified by durability",
@@ -545,7 +549,7 @@ STORY_CLOSEOUT_GATE_ORDER_TOKENS = [
     "complete change set security closeout",
     "complete change set documentation closeout",
     "prepare projection drafts",
-    "route actionable reflection findings",
+    "classify privacy and disclosure limits",
     "run cross-boundary coherence",
     "run story quality ralph review",
     "run final validation",
@@ -1594,6 +1598,75 @@ def markdown_files(root: Path) -> list[Path]:
             continue
         files.append(path)
     return sorted(files)
+
+
+def text_files(root: Path) -> list[Path]:
+    files: list[Path] = []
+    excluded_roots = {".git", ".mypy_cache", ".pytest_cache", "__pycache__"}
+    for path in root.rglob("*"):
+        relative = path.relative_to(root)
+        if relative.parts and relative.parts[0] in excluded_roots:
+            continue
+        if not path.is_file():
+            continue
+        try:
+            path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        files.append(path)
+    return sorted(files)
+
+
+def validate_python_runtime_declaration(root: Path) -> list[CheckResult]:
+    ok, detail, path = repo_relative_path_status(root, PYTHON_VERSION_DECLARATION_PATH, "file")
+    if not ok:
+        return [
+            CheckResult(
+                "python_runtime:.python-version",
+                False,
+                detail,
+                PYTHON_VERSION_DECLARATION_PATH,
+            )
+        ]
+    declared_version = path.read_text(encoding="utf-8").strip()
+    if not re.fullmatch(r"\d+\.\d+", declared_version):
+        return [
+            CheckResult(
+                "python_runtime:.python-version",
+                False,
+                "must contain MAJOR.MINOR",
+                PYTHON_VERSION_DECLARATION_PATH,
+            )
+        ]
+
+    results: list[CheckResult] = []
+    for text_path in text_files(root):
+        relative_path = text_path.relative_to(root).as_posix()
+        text = text_path.read_text(encoding="utf-8")
+        observed_versions = {
+            match.group(1)
+            for match in PYTHON_RUNTIME_REFERENCE_RE.finditer(text)
+            if match.group(1) != declared_version
+        }
+        for observed_version in sorted(observed_versions):
+            results.append(
+                CheckResult(
+                    f"python_runtime:reference:{relative_path}:{observed_version}",
+                    False,
+                    f"Python runtime reference {observed_version} does not match .python-version {declared_version}",
+                    relative_path,
+                )
+            )
+    if not results:
+        results.append(
+            CheckResult(
+                "python_runtime:.python-version",
+                True,
+                f"declares Python {declared_version}",
+                PYTHON_VERSION_DECLARATION_PATH,
+            )
+        )
+    return results
 
 
 def markdown_link_target_status(root: Path, source_path: Path, target: str) -> bool:
@@ -4623,6 +4696,7 @@ def run(root: Path, *, final_closeout: bool = False, source_mode: str = "auto") 
     resolved_source_mode = resolve_source_mode(root, source_mode, final_closeout)
     required_paths = [
         "README.md",
+        PYTHON_VERSION_DECLARATION_PATH,
         "AGENTS.md",
         "CONTEXT.md",
         "docs/prd/forge-seed.md",
@@ -4642,6 +4716,7 @@ def run(root: Path, *, final_closeout: bool = False, source_mode: str = "auto") 
         required_paths.append("docs/metasmith/source-projection.md")
     results = [
         *validate_required_paths(root, required_paths),
+        *validate_python_runtime_declaration(root),
         *validate_forge_routes(root),
         *validate_canonical_docs(root),
         *validate_threat_model(root),
