@@ -8683,33 +8683,24 @@ class SpecValidationTests(unittest.TestCase):
 
             results = validate_specs(root)
 
-        self.assertIn(
-            CheckResult(
-                "spec:text:specs/agent-equipment-config.md:schema fragments",
-                False,
-                "missing schema fragments",
-                "specs/agent-equipment-config.md",
-            ),
-            results,
-        )
-        self.assertIn(
-            CheckResult(
-                "spec:text:specs/agent-equipment-config.md:effective-config",
-                False,
-                "missing effective-config",
-                "specs/agent-equipment-config.md",
-            ),
-            results,
-        )
-        self.assertIn(
-            CheckResult(
-                "spec:text:specs/agent-equipment-config.md:plain equipment-specific config handoff",
-                False,
-                "missing plain equipment-specific config handoff",
-                "specs/agent-equipment-config.md",
-            ),
-            results,
-        )
+        for required_term in [
+            "schema fragments",
+            "layered config",
+            "effective-config",
+            "session-scoped",
+            "plain equipment-specific config handoff",
+            "secret",
+        ]:
+            with self.subTest(required_term=required_term):
+                self.assertIn(
+                    CheckResult(
+                        f"spec:text:specs/agent-equipment-config.md:{required_term}",
+                        False,
+                        f"missing {required_term}",
+                        "specs/agent-equipment-config.md",
+                    ),
+                    results,
+                )
 
     def test_validate_specs_requires_periodic_actions_content(self):
         with tempfile.TemporaryDirectory() as tmpdir:
