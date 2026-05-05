@@ -19,7 +19,7 @@ In scope:
 - TOML layer loading.
 - Canonical Layer Precedence.
 - JSON-compatible schema fragments.
-- Required-key, type, enum, default, deprecation, version, and migration-preview metadata.
+- Required-key, type, enum, default, deprecation, version, migration-preview metadata/output, and migration audit-preview shape.
 - Diagnostic-only semantic validators.
 - Effective-config JSON output with value provenance.
 - Config-diff JSON output.
@@ -30,6 +30,7 @@ In scope:
 Out of scope:
 
 - Source config rewrites.
+- Migration apply execution.
 - Provider-specific secret fetching.
 - Hook, permission, approval, sandbox, or tool enforcement.
 - Harness-specific installation.
@@ -308,6 +309,66 @@ Append these tests inside `AgentEquipmentConfigTests`:
 
         self.assertEqual(result["safety_status"], "conflicted")
         self.assertEqual(result["diagnostics"][0]["detail"], "expected boolean")
+
+    def test_numeric_fields_reject_boolean_values(self):
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=1,
+            fields={
+                "retry_count": agent_equipment_config.FieldSpec(type="integer"),
+                "risk_score": agent_equipment_config.FieldSpec(type="number"),
+            },
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(
+                root,
+                "repo.toml",
+                """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                retry_count = true
+                risk_score = false
+                """,
+            )
+
+            result = agent_equipment_config.effective_config([layer], [fragment], requested_behavior="advisory")
+
+        self.assertEqual(result["safety_status"], "conflicted")
+        self.assertEqual([item["detail"] for item in result["diagnostics"]], ["expected integer", "expected number"])
+
+    def test_deprecated_field_reports_diagnostic_without_blocking_config(self):
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=1,
+            fields={
+                "old_mode": agent_equipment_config.FieldSpec(type="string", deprecated=True, replacement="mode"),
+                "mode": agent_equipment_config.FieldSpec(type="string", default="dry-run"),
+            },
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(
+                root,
+                "repo.toml",
+                """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                old_mode = "dry-run"
+                """,
+            )
+
+            result = agent_equipment_config.effective_config([layer], [fragment], requested_behavior="advisory")
+
+        self.assertEqual(result["safety_status"], "usable")
+        self.assertEqual(result["diagnostics"][0]["kind"], "deprecated field")
+        self.assertEqual(result["diagnostics"][0]["detail"], "use issue_tracker_ops.mode instead")
 ```
 
 - [ ] **Step 2: Run the tests to verify they fail**
@@ -315,7 +376,7 @@ Append these tests inside `AgentEquipmentConfigTests`:
 Run:
 
 ```bash
-python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_schema_fragment_applies_defaults_and_reports_missing_required_keys tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_schema_fragment_rejects_wrong_type
+python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_schema_fragment_applies_defaults_and_reports_missing_required_keys tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_schema_fragment_rejects_wrong_type tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_numeric_fields_reject_boolean_values tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_deprecated_field_reports_diagnostic_without_blocking_config
 ```
 
 Expected: failure because `SchemaFragment`, `FieldSpec`, and `effective_config` are missing.
@@ -332,6 +393,7 @@ class FieldSpec:
     default: JSONValue = None
     enum: list[JSONValue] | None = None
     deprecated: bool = False
+    replacement: str | None = None
 
 
 @dataclass(frozen=True)
@@ -354,8 +416,6 @@ class Diagnostic:
 TYPE_CHECKS: dict[str, type | tuple[type, ...]] = {
     "string": str,
     "boolean": bool,
-    "integer": int,
-    "number": (int, float),
     "object": dict,
     "array": list,
 }
@@ -371,13 +431,25 @@ def diagnostic(kind: str, path: str, detail: str, layer: Layer | None = None) ->
     )
 
 
+def type_matches(value: JSONValue, field_type: str) -> bool:
+    if value is None:
+        return True
+    if field_type == "integer":
+        return isinstance(value, int) and not isinstance(value, bool)
+    if field_type == "number":
+        return isinstance(value, (int, float)) and not isinstance(value, bool)
+    return isinstance(value, TYPE_CHECKS[field_type])
+
+
 def validate_field(value: JSONValue, field: FieldSpec, path: str, layer: Layer | None) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
-    expected = TYPE_CHECKS[field.type]
-    if value is not None and not isinstance(value, expected):
+    if not type_matches(value, field.type):
         diagnostics.append(diagnostic("schema conflict", path, f"expected {field.type}", layer))
     if field.enum is not None and value is not None and value not in field.enum:
         diagnostics.append(diagnostic("schema conflict", path, f"expected one of {field.enum!r}", layer))
+    if field.deprecated and layer is not None:
+        replacement = f"use {path.rsplit('.', 1)[0]}.{field.replacement} instead" if field.replacement else "field is deprecated"
+        diagnostics.append(diagnostic("deprecated field", path, replacement, layer))
     return diagnostics
 ```
 
@@ -419,9 +491,10 @@ def effective_config(layer_paths: list[Path], fragments: list[SchemaFragment], *
 
 
 def safety_status_from_diagnostics(diagnostics: list[Diagnostic], *, requested_behavior: str) -> str:
-    if any(item.kind == "schema conflict" and "missing required" in item.detail for item in diagnostics):
+    blocking_diagnostics = [item for item in diagnostics if item.kind != "deprecated field"]
+    if any(item.kind == "schema conflict" and "missing required" in item.detail for item in blocking_diagnostics):
         return "incomplete"
-    if diagnostics:
+    if blocking_diagnostics:
         return "conflicted"
     return "usable"
 ```
@@ -431,7 +504,7 @@ def safety_status_from_diagnostics(diagnostics: list[Diagnostic], *, requested_b
 Run:
 
 ```bash
-python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_schema_fragment_applies_defaults_and_reports_missing_required_keys tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_schema_fragment_rejects_wrong_type
+python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_schema_fragment_applies_defaults_and_reports_missing_required_keys tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_schema_fragment_rejects_wrong_type tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_numeric_fields_reject_boolean_values tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_deprecated_field_reports_diagnostic_without_blocking_config
 ```
 
 Expected: `OK`.
@@ -524,6 +597,34 @@ Append:
         self.assertEqual(result["safety_status"], "conflicted")
         self.assertEqual(result["diagnostics"][0]["kind"], "blocked override")
         self.assertEqual(result["diagnostics"][0]["path"], "issue_tracker_ops.mode")
+
+    def test_same_precedence_collision_reports_conflict_without_silent_winner(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            repo_a = self.write_layer(root, "repo-a.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            repo_b = self.write_layer(root, "repo-b.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "execute"
+            """)
+
+            result = agent_equipment_config.effective_config([repo_a, repo_b], [self.issue_ops_fragment()], requested_behavior="advisory")
+
+        self.assertEqual(result["effective"]["issue_tracker_ops"]["mode"]["value"], None)
+        self.assertEqual(result["safety_status"], "conflicted")
+        self.assertEqual(result["diagnostics"][0]["kind"], "same-precedence collision")
+        self.assertEqual(result["diagnostics"][0]["path"], "issue_tracker_ops.mode")
 ```
 
 - [ ] **Step 2: Run tests to verify they fail**
@@ -531,10 +632,10 @@ Append:
 Run:
 
 ```bash
-python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_later_layer_wins_when_not_locked tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_policy_authority_blocks_lower_authority_override_for_mutation
+python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_later_layer_wins_when_not_locked tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_policy_authority_blocks_lower_authority_override_for_mutation tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_same_precedence_collision_reports_conflict_without_silent_winner
 ```
 
-Expected: second test fails because policy locks are not implemented.
+Expected: failures because policy locks and same-precedence collision detection are not implemented.
 
 - [ ] **Step 3: Implement Policy Authority lock handling**
 
@@ -568,10 +669,22 @@ def policy_locks(layer: Layer) -> dict[tuple[str, str], PolicyLock]:
 
 Task 1 stores the full `agent_equipment_config` table in `Layer.metadata`, while `Layer.data` contains only equipment namespaces. Keep that separation here so policy metadata cannot be confused with configurable equipment values.
 
-Replace field merge logic inside `effective_config` with:
+Replace the whole `effective_config` function with:
 
 ```python
+def effective_config(layer_paths: list[Path], fragments: list[SchemaFragment], *, requested_behavior: str) -> dict[str, Any]:
+    layers = load_layers(layer_paths)
+    effective: dict[str, dict[str, Any]] = {}
+    diagnostics: list[Diagnostic] = []
+    for fragment in fragments:
+        namespace_values: dict[str, Any] = {}
+        for field_name, field in fragment.fields.items():
+            value = field.default
+            source_layer: Layer | None = None
             active_lock: PolicyLock | None = None
+            values_by_precedence: dict[int, tuple[JSONValue, Layer]] = {}
+            field_conflicted = False
+            path = f"{fragment.namespace}.{field_name}"
             for layer in layers:
                 locks = policy_locks(layer)
                 if (fragment.namespace, field_name) in locks:
@@ -580,19 +693,51 @@ Replace field merge logic inside `effective_config` with:
                 if field_name not in section:
                     continue
                 candidate = section[field_name]
+                prior_value = values_by_precedence.get(layer.precedence)
+                if prior_value is not None and prior_value[0] != candidate:
+                    diagnostics.append(
+                        diagnostic(
+                            "same-precedence collision",
+                            path,
+                            f"{layer.name} has multiple values at the same precedence",
+                            layer,
+                        )
+                    )
+                    value = None
+                    source_layer = None
+                    field_conflicted = True
+                    continue
+                values_by_precedence[layer.precedence] = (candidate, layer)
                 lock_applies = active_lock is not None and active_lock.required_for in {requested_behavior, "always"}
                 if lock_applies and layer.precedence > active_lock.layer.precedence:
                     diagnostics.append(
                         diagnostic(
                             "blocked override",
-                            f"{fragment.namespace}.{field_name}",
+                            path,
                             f"{layer.name} cannot override non-overridable value from {active_lock.layer.name}",
                             layer,
                         )
                     )
                     continue
-                value = candidate
-                source_layer = layer
+                if not field_conflicted:
+                    value = candidate
+                    source_layer = layer
+            if value is None and field.required and not field_conflicted:
+                diagnostics.append(diagnostic("schema conflict", path, "missing required value", source_layer))
+            if not field_conflicted:
+                diagnostics.extend(validate_field(value, field, path, source_layer))
+            namespace_values[field_name] = {
+                "value": value,
+                "source": source_layer.path if source_layer else "schema default",
+                "layer": source_layer.name if source_layer else "schema default",
+            }
+        effective[fragment.namespace] = namespace_values
+    safety_status = safety_status_from_diagnostics(diagnostics, requested_behavior=requested_behavior)
+    return {
+        "safety_status": safety_status,
+        "effective": effective,
+        "diagnostics": [asdict(item) for item in diagnostics],
+    }
 ```
 
 - [ ] **Step 4: Run precedence tests**
@@ -600,7 +745,7 @@ Replace field merge logic inside `effective_config` with:
 Run:
 
 ```bash
-python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_later_layer_wins_when_not_locked tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_policy_authority_blocks_lower_authority_override_for_mutation
+python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_later_layer_wins_when_not_locked tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_policy_authority_blocks_lower_authority_override_for_mutation tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_same_precedence_collision_reports_conflict_without_silent_winner
 ```
 
 Expected: `OK`.
@@ -669,6 +814,45 @@ Append:
         self.assertEqual(result["safety_status"], "stale")
         self.assertEqual(result["diagnostics"][0]["kind"], "stale schema")
 
+    def test_migration_preview_reports_audit_shape_without_rewriting_source(self):
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=2,
+            fields={"mode": agent_equipment_config.FieldSpec(type="string", enum=["dry-run", "execute"])},
+            migrations=(
+                agent_equipment_config.MigrationPreview(
+                    from_version=1,
+                    field_renames={"operation_mode": "mode"},
+                    note="rename operation_mode to mode",
+                ),
+            ),
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.fragment_versions]
+                issue_tracker_ops = 1
+
+                [issue_tracker_ops]
+                operation_mode = "dry-run"
+            """)
+            original_text = layer.read_text(encoding="utf-8")
+
+            result = agent_equipment_config.effective_config([layer], [fragment], requested_behavior="mutation")
+
+        self.assertEqual(layer.read_text(encoding="utf-8"), original_text)
+        self.assertEqual(result["safety_status"], "stale")
+        self.assertEqual(
+            result["migration_previews"][0]["changes"][0],
+            {"from": "issue_tracker_ops.operation_mode", "to": "issue_tracker_ops.mode", "value": "dry-run"},
+        )
+        self.assertEqual(result["migration_previews"][0]["audit_preview"]["action"], "migration apply preview")
+        self.assertFalse(result["migration_previews"][0]["audit_preview"]["would_rewrite_source"])
+
     def test_semantic_validator_can_mark_config_unsafe(self):
         def execute_requires_disclosure(values):
             if values.get("mode") == "execute" and values.get("external_disclosure") != "allowed":
@@ -707,16 +891,32 @@ Append:
 Run:
 
 ```bash
-python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_untrusted_layer_sets_untrusted_for_mutation tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_stale_fragment_version_reports_stale_without_rewriting_source tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_semantic_validator_can_mark_config_unsafe
+python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_untrusted_layer_sets_untrusted_for_mutation tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_stale_fragment_version_reports_stale_without_rewriting_source tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_migration_preview_reports_audit_shape_without_rewriting_source tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_semantic_validator_can_mark_config_unsafe
 ```
 
-Expected: failures because untrusted, stale, and semantic validators are not complete.
+Expected: failures because untrusted, stale, migration preview, and semantic validators are not complete.
 
 - [ ] **Step 3: Implement remaining safety logic**
 
-Add helpers:
+Add `MigrationPreview`, replace the existing `SchemaFragment` definition with the version below, and then add the helper functions:
 
 ```python
+@dataclass(frozen=True)
+class MigrationPreview:
+    from_version: int
+    field_renames: dict[str, str]
+    note: str
+
+
+@dataclass(frozen=True)
+class SchemaFragment:
+    namespace: str
+    version: int
+    fields: dict[str, FieldSpec]
+    semantic_validators: tuple[Callable[[dict[str, Any]], list["Diagnostic"]], ...] = ()
+    migrations: tuple[MigrationPreview, ...] = ()
+
+
 def fragment_versions(layer: Layer) -> dict[str, int]:
     versions = layer.metadata.get("fragment_versions", {})
     return {str(key): int(value) for key, value in versions.items()} if isinstance(versions, dict) else {}
@@ -727,20 +927,147 @@ def raw_values_for_namespace(effective_namespace: dict[str, Any]) -> dict[str, J
         field_name: wrapped.get("value")
         for field_name, wrapped in effective_namespace.items()
     }
+
+
+def migration_previews_for_layer(layer: Layer, fragment: SchemaFragment) -> list[dict[str, Any]]:
+    source_version = fragment_versions(layer).get(fragment.namespace)
+    if source_version is None or source_version >= fragment.version:
+        return []
+    section = layer.data.get(fragment.namespace, {})
+    previews: list[dict[str, Any]] = []
+    for migration in fragment.migrations:
+        if migration.from_version != source_version:
+            continue
+        changes = [
+            {
+                "from": f"{fragment.namespace}.{old_name}",
+                "to": f"{fragment.namespace}.{new_name}",
+                "value": section[old_name],
+            }
+            for old_name, new_name in migration.field_renames.items()
+            if old_name in section
+        ]
+        previews.append(
+            {
+                "namespace": fragment.namespace,
+                "source": layer.path,
+                "from_version": source_version,
+                "to_version": fragment.version,
+                "note": migration.note,
+                "changes": changes,
+                "audit_preview": {
+                    "action": "migration apply preview",
+                    "source": layer.path,
+                    "namespace": fragment.namespace,
+                    "from_version": source_version,
+                    "to_version": fragment.version,
+                    "would_rewrite_source": False,
+                },
+            }
+        )
+    if previews:
+        return previews
+    return [
+        {
+            "namespace": fragment.namespace,
+            "source": layer.path,
+            "from_version": source_version,
+            "to_version": fragment.version,
+            "note": "no registered migration preview",
+            "changes": [],
+            "audit_preview": {
+                "action": "migration apply preview",
+                "source": layer.path,
+                "namespace": fragment.namespace,
+                "from_version": source_version,
+                "to_version": fragment.version,
+                "would_rewrite_source": False,
+            },
+        }
+    ]
 ```
 
-Before returning from each namespace loop in `effective_config`, add:
+Replace the whole `effective_config` function with:
 
 ```python
+def effective_config(layer_paths: list[Path], fragments: list[SchemaFragment], *, requested_behavior: str) -> dict[str, Any]:
+    layers = load_layers(layer_paths)
+    effective: dict[str, dict[str, Any]] = {}
+    diagnostics: list[Diagnostic] = []
+    migration_previews: list[dict[str, Any]] = []
+    for fragment in fragments:
+        namespace_values: dict[str, Any] = {}
+        for field_name, field in fragment.fields.items():
+            value = field.default
+            source_layer: Layer | None = None
+            active_lock: PolicyLock | None = None
+            values_by_precedence: dict[int, tuple[JSONValue, Layer]] = {}
+            field_conflicted = False
+            path = f"{fragment.namespace}.{field_name}"
+            for layer in layers:
+                locks = policy_locks(layer)
+                if (fragment.namespace, field_name) in locks:
+                    active_lock = locks[(fragment.namespace, field_name)]
+                section = layer.data.get(fragment.namespace, {})
+                if field_name not in section:
+                    continue
+                candidate = section[field_name]
+                prior_value = values_by_precedence.get(layer.precedence)
+                if prior_value is not None and prior_value[0] != candidate:
+                    diagnostics.append(
+                        diagnostic(
+                            "same-precedence collision",
+                            path,
+                            f"{layer.name} has multiple values at the same precedence",
+                            layer,
+                        )
+                    )
+                    value = None
+                    source_layer = None
+                    field_conflicted = True
+                    continue
+                values_by_precedence[layer.precedence] = (candidate, layer)
+                lock_applies = active_lock is not None and active_lock.required_for in {requested_behavior, "always"}
+                if lock_applies and layer.precedence > active_lock.layer.precedence:
+                    diagnostics.append(
+                        diagnostic(
+                            "blocked override",
+                            path,
+                            f"{layer.name} cannot override non-overridable value from {active_lock.layer.name}",
+                            layer,
+                        )
+                    )
+                    continue
+                if not field_conflicted:
+                    value = candidate
+                    source_layer = layer
+            if value is None and field.required and not field_conflicted:
+                diagnostics.append(diagnostic("schema conflict", path, "missing required value", source_layer))
+            if not field_conflicted:
+                diagnostics.extend(validate_field(value, field, path, source_layer))
+            namespace_values[field_name] = {
+                "value": value,
+                "source": source_layer.path if source_layer else "schema default",
+                "layer": source_layer.name if source_layer else "schema default",
+            }
         for layer in layers:
             if not layer.trusted and fragment.namespace in layer.data and requested_behavior == "mutation":
                 diagnostics.append(diagnostic("untrusted source", fragment.namespace, f"{layer.name} is not trusted for mutation", layer))
             versions = fragment_versions(layer)
             if fragment.namespace in versions and versions[fragment.namespace] < fragment.version:
                 diagnostics.append(diagnostic("stale schema", fragment.namespace, f"source version {versions[fragment.namespace]} is older than schema version {fragment.version}", layer))
+                migration_previews.extend(migration_previews_for_layer(layer, fragment))
         plain_values = raw_values_for_namespace(namespace_values)
         for validator in fragment.semantic_validators:
             diagnostics.extend(validator(plain_values))
+        effective[fragment.namespace] = namespace_values
+    safety_status = safety_status_from_diagnostics(diagnostics, requested_behavior=requested_behavior)
+    return {
+        "safety_status": safety_status,
+        "effective": effective,
+        "diagnostics": [asdict(item) for item in diagnostics],
+        "migration_previews": migration_previews,
+    }
 ```
 
 Replace `safety_status_from_diagnostics` with:
@@ -768,7 +1095,7 @@ def safety_status_from_diagnostics(diagnostics: list[Diagnostic], *, requested_b
 Run:
 
 ```bash
-python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_untrusted_layer_sets_untrusted_for_mutation tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_stale_fragment_version_reports_stale_without_rewriting_source tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_semantic_validator_can_mark_config_unsafe
+python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_untrusted_layer_sets_untrusted_for_mutation tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_stale_fragment_version_reports_stale_without_rewriting_source tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_migration_preview_reports_audit_shape_without_rewriting_source tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_semantic_validator_can_mark_config_unsafe
 ```
 
 Expected: `OK`.
@@ -839,6 +1166,36 @@ Append:
             },
         )
 
+    def test_config_diff_reports_changed_secret_references(self):
+        before = {
+            "issue_tracker_ops": {
+                "github_token": {
+                    "secret_reference": {
+                        "kind": "env",
+                        "name": "OLD_GITHUB_TOKEN",
+                        "resolution_status": "unresolved",
+                    }
+                }
+            }
+        }
+        after = {
+            "issue_tracker_ops": {
+                "github_token": {
+                    "secret_reference": {
+                        "kind": "env",
+                        "name": "NEW_GITHUB_TOKEN",
+                        "resolution_status": "unresolved",
+                    }
+                }
+            }
+        }
+
+        diff = agent_equipment_config.config_diff(before, after)
+
+        self.assertEqual(diff["changes"][0]["path"], "issue_tracker_ops.github_token")
+        self.assertEqual(diff["changes"][0]["before"]["secret_reference"]["name"], "OLD_GITHUB_TOKEN")
+        self.assertEqual(diff["changes"][0]["after"]["secret_reference"]["name"], "NEW_GITHUB_TOKEN")
+
     def test_cli_effective_config_outputs_json(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -863,7 +1220,7 @@ Append:
 Run:
 
 ```bash
-python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_secret_reference_is_reported_without_value_resolution tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_changed_values tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_cli_effective_config_outputs_json
+python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_secret_reference_is_reported_without_value_resolution tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_changed_values tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_changed_secret_references tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_cli_effective_config_outputs_json
 ```
 
 Expected: failures because secret reference handling, diff, and CLI are missing.
@@ -892,6 +1249,12 @@ def secret_reference(value: JSONValue) -> dict[str, Any] | None:
     return None
 
 
+def diffable_wrapped_value(wrapped: dict[str, Any]) -> JSONValue | dict[str, Any]:
+    if "secret_reference" in wrapped:
+        return {"secret_reference": wrapped["secret_reference"]}
+    return wrapped.get("value")
+
+
 def config_diff(before: dict[str, Any], after: dict[str, Any]) -> dict[str, Any]:
     changes: list[dict[str, Any]] = []
     namespaces = sorted(set(before) | set(after))
@@ -899,8 +1262,8 @@ def config_diff(before: dict[str, Any], after: dict[str, Any]) -> dict[str, Any]
         before_fields = before.get(namespace, {})
         after_fields = after.get(namespace, {})
         for field_name in sorted(set(before_fields) | set(after_fields)):
-            before_value = before_fields.get(field_name, {}).get("value")
-            after_value = after_fields.get(field_name, {}).get("value")
+            before_value = diffable_wrapped_value(before_fields.get(field_name, {}))
+            after_value = diffable_wrapped_value(after_fields.get(field_name, {}))
             if before_value != after_value:
                 changes.append({"path": f"{namespace}.{field_name}", "before": before_value, "after": after_value})
     return {"changes": changes}
@@ -981,7 +1344,7 @@ if __name__ == "__main__":
 Run:
 
 ```bash
-python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_secret_reference_is_reported_without_value_resolution tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_changed_values tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_cli_effective_config_outputs_json
+python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_secret_reference_is_reported_without_value_resolution tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_changed_values tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_changed_secret_references tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_cli_effective_config_outputs_json
 ```
 
 Expected: `OK`.
@@ -1068,6 +1431,7 @@ Implemented by the v0 engine slice:
 - effective-config output;
 - config-diff output;
 - Config Safety Status classification;
+- deprecation diagnostics and migration-preview output with audit-preview shape;
 - Issue Tracker Ops pressure scenario for blocked live mutation.
 ```
 
@@ -1079,8 +1443,9 @@ In `specs/agent-equipment-config/README.md`, add this section after "V0 contract
 ## Runtime slice
 
 The first runtime slice provides a standard-library Python effective-config
-engine for deterministic validation and pressure coverage. It does not apply
-source migrations, resolve secrets, or enforce harness controls.
+engine for deterministic validation and pressure coverage. It previews source
+migrations but does not rewrite source config, resolve secrets, or enforce
+harness controls.
 ```
 
 - [ ] **Step 5: Update pressure scenario status**
@@ -1134,7 +1499,18 @@ In `tools/validate_forge_seed.py`, add to `CONFIG_BUNDLE_REQUIRED_TEXT`:
 "python3.14 -m unittest tests.test_agent_equipment_config",
 ```
 
-- [ ] **Step 3: Run focused validator tests**
+- [ ] **Step 3: Update closeout evidence plan**
+
+In `specs/agent-equipment-config/closeout-evidence-plan.md`, add this bullet to "Required evidence":
+
+```markdown
+- Agent Equipment Config runtime-slice command
+  `python3.14 -m unittest tests.test_agent_equipment_config` and the focused
+  security review conclusion for executable parsing, merge, diff, migration
+  preview, and secret-reference behavior.
+```
+
+- [ ] **Step 4: Run focused validator tests**
 
 Run:
 
@@ -1144,7 +1520,7 @@ python3.14 -m unittest tests.test_validate_forge_seed.SpecValidationTests
 
 Expected: `OK`.
 
-- [ ] **Step 4: Run full verification**
+- [ ] **Step 5: Run full verification**
 
 Run:
 
@@ -1162,7 +1538,7 @@ Expected:
 - final-closeout validation: `0 failed`.
 - `git diff --check`: no output and exit 0.
 
-- [ ] **Step 5: Perform focused security review**
+- [ ] **Step 6: Perform focused security review**
 
 Inspect this diff for:
 
@@ -1171,13 +1547,14 @@ Inspect this diff for:
 - no network access;
 - no subprocess calls;
 - no source config rewrite;
+- migration preview and audit-preview output remaining diagnostic-only;
 - no secret value logging or resolution;
-- JSON output not exposing secret values;
+- JSON and config-diff output not exposing secret values;
 - mutation behavior remaining diagnostic-only.
 
 Record the conclusion in the final change summary or PR body. If a reportable issue is found, fix it before this task is complete.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add tools/validate_forge_seed.py tests/test_validate_forge_seed.py specs/agent-equipment-config/closeout-evidence-plan.md
@@ -1188,9 +1565,9 @@ git commit -m "test(config): validate runtime slice coverage" -m "Co-authored-by
 
 ## Self-Review Checklist
 
-- Spec coverage: tasks cover schema fragments, layered config, Layer Precedence, Policy Authority, effective-config, config-diff, semantic validators, Config Safety Status, migrations as stale previews, secret references, session-scoped behavior, plain Issue Tracker Ops handoff pressure, and validation commands.
+- Spec coverage: tasks cover schema fragments, layered config, Layer Precedence, Policy Authority, same-precedence collisions, effective-config, config-diff, semantic validators, Config Safety Status, deprecation diagnostics, migration previews with audit-preview shape, secret references, session-scoped behavior, plain Issue Tracker Ops handoff pressure, and validation commands.
 - Deliberate deferrals: source rewrites, provider-specific secret fetching, and harness blocking enforcement remain out of scope and are named in the plan.
-- Type consistency: `Layer`, `FieldSpec`, `SchemaFragment`, `Diagnostic`, `effective_config`, `config_diff`, and `issue_tracker_ops_fragment` are introduced before use in later tasks.
+- Type consistency: `Layer`, `FieldSpec`, `SchemaFragment`, `MigrationPreview`, `Diagnostic`, `effective_config`, `config_diff`, and `issue_tracker_ops_fragment` are introduced before use in later tasks.
 - Security boundary: no network, subprocess, secret fetching, or source mutation is part of the runtime slice.
 
 ## Execution Handoff
