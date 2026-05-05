@@ -89,6 +89,8 @@ agent equipment.
 The current roadmap points to written future-equipment ideas. These are not
 inventory items yet:
 
+- [Issue Tracker Ops](../specs/issue-tracker-ops/): direct GitHub
+  Issues bootstrap operations and future issue lifecycle equipment.
 - [Agent Ops](../specs/agent-ops.md): repository framework for agentic
   operations.
 - [Periodic Actions](../specs/periodic-actions.md): recurring agent actions

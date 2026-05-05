@@ -12,6 +12,8 @@ This document is the canonical vocabulary surface for Smiths and Forgewrights. U
 
 **Equipment Candidate** is proposed, specified, planned, or implemented equipment that has not completed validation and publication.
 
+**Forge Entry Bundle** gathers the early design and validation-planning artifacts for one Equipment Candidate before implementation surfaces are projected into component paths.
+
 **Published Agent Equipment** is Agent Equipment that has completed the Equipment Promotion Path and is intended to be equipped.
 
 **Agent Equipment Forge** is the Armory method and supporting artifacts for designing, building, validating, and maintaining Agent Equipment.
@@ -52,6 +54,10 @@ use `agents/` for source paths that follow harness/plugin convention.
 
 **Equipment Promotion Path** is the lifecycle that moves an equipment idea from example or spec toward Published Agent Equipment.
 
+**Issue Tracker Ops** is Agent Equipment for issue-tracked follow-ups
+that should be created, reviewed, repaired, enriched, organized, assigned,
+worked, and orchestrated directly in an issue tracker.
+
 **Forge Conveyor** is the preloaded agent-facing route from root `AGENTS.md` into the Forge Canon, without scouting.
 
 **Forge Tour** is the Forge's exclusively human-facing documentation set. In this repo, `docs/forge-tour.md` is the Forge README and initial Tour entry.
@@ -85,6 +91,10 @@ use `agents/` for source paths that follow harness/plugin convention.
 - The Agent Armory contains Agent Equipment and the Agent Equipment Forge.
 - The Agent Equipment Forge is created by Forgewrights and used by Smiths.
 - Smiths create Agent Equipment for one or more Agent Harnesses.
+- A Forge Entry Bundle keeps one Equipment Candidate's capability card,
+  interface decision, security/control classification, pressure scenarios,
+  validation plan, closeout evidence plan, and related design records together
+  in a neutral project path.
 - Outfitters select Agent Equipment from the Armory and assemble Loadouts.
 - Wielders use Loadouts to perform work.
 - Equipment Candidates may become Published Agent Equipment after validation and publication.
@@ -105,6 +115,8 @@ use `agents/` for source paths that follow harness/plugin convention.
 - Use **Agent Profile** for a reusable identity, mission, tool, permission, or model configuration. Use `agents/` for source paths when following harness/plugin convention.
 - Use **Agent Harness** for the runtime or orchestration system that mediates the Agent.
 - Use **Agent Equipment** for reusable capability; use **Equipment Candidate** until validation and publication are complete.
+- Use **Forge Entry Bundle** for early design and validation-planning records,
+  not for an Inventory or implemented component path.
 - Use **Published Agent Equipment** only after the promotion path reaches `published`.
 - Use **Outfitter** for equipment selection and Loadout assembly, not for Equipment creation.
 - Use **Wielder** for the equipped Agent using a Loadout, not for the Loadout itself.
@@ -112,3 +124,6 @@ use `agents/` for source paths that follow harness/plugin convention.
 - Use **Forge Canon** for current guidance.
 - Use **Forge Seed** for this first Forge pass; name downstream equipment separately.
 - Use **Harness Fact Refresh** for catalog updates and **Harness Capability Refresh** for the downstream equipment that maintains the catalog over time.
+- Use **Issue Tracker Ops** for broad issue lifecycle equipment; use
+  **Issue Projection** only for post-review PRD publication into the issue
+  tracker.

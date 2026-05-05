@@ -107,8 +107,11 @@ If your agent is making equipment, start it with the
 
 ## Roadmap
 
-The first inventory items are not published yet. The current roadmap starts
-with three planned lines of equipment:
+The first inventory items are not published yet. The current roadmap includes
+these equipment lines:
+
+- [Issue Tracker Ops](specs/issue-tracker-ops/), for direct
+  GitHub Issues bootstrap operations and future issue lifecycle equipment.
 
 - [Agent Ops](specs/agent-ops.md), for repository operations performed by
   agents.

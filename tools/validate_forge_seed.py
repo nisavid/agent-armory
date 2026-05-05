@@ -6,7 +6,6 @@ import ast
 import hashlib
 import json
 import re
-import subprocess
 import sys
 import tomllib
 from dataclasses import asdict, dataclass
@@ -323,7 +322,6 @@ SOURCE_DISPOSITION_MATRIX = {
     "obsolete": {"obsolete"},
     "intentionally_deferred": {"deferred"},
 }
-FINAL_STAMP_CANONICAL_TREE_DIGEST_PLACEHOLDER = "STAMP_CANONICAL_TREE_DIGEST"
 SOURCE_BEARING_STAMP_FIELDS = [
     "source_bearing_snapshot_tree_id",
     "source_bearing_stamp_id",
@@ -1354,127 +1352,43 @@ def validate_source_retired_tree(root: Path) -> list[CheckResult]:
     return results
 
 
-def normalized_stamp_text(text: str) -> str:
-    text = re.sub(
-        r"(?m)^canonical_tree_digest:\s*\S+\s*$",
-        f"canonical_tree_digest: {FINAL_STAMP_CANONICAL_TREE_DIGEST_PLACEHOLDER}",
-        text,
-    )
-    text = re.sub(r"(?m)^timestamp:\s*\S+\s*$", "timestamp: STAMP_TIMESTAMP", text)
-    return text
-
-
-def git_tracked_files(root: Path) -> list[Path] | None:
-    try:
-        completed = subprocess.run(
-            ["git", "-C", str(root), "ls-files", "-z"],
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-        )
-    except (OSError, subprocess.CalledProcessError):
-        return None
-    entries = [entry for entry in completed.stdout.decode("utf-8").split("\0") if entry]
-    return [root / entry for entry in entries]
-
-
-def placeholder_normalized_tree_digest(root: Path) -> str:
-    digest = hashlib.sha256()
-    tracked_files = git_tracked_files(root)
-    paths = tracked_files if tracked_files is not None else sorted(root.rglob("*"))
-    for path in paths:
-        try:
-            relative = path.relative_to(root)
-        except ValueError:
-            continue
-        if ".git" in relative.parts or "__pycache__" in relative.parts:
-            continue
-        if path.is_symlink():
-            normalized = f"symlink:{path.readlink().as_posix()}".encode("utf-8")
-        elif path.is_file():
-            data = path.read_bytes()
-            try:
-                normalized = normalized_stamp_text(data.decode("utf-8")).encode("utf-8")
-            except UnicodeDecodeError:
-                normalized = data
-        else:
-            continue
-        digest.update(relative.as_posix().encode("utf-8"))
-        digest.update(b"\0")
-        digest.update(normalized)
-        digest.update(b"\0")
-    return digest.hexdigest()
-
-
 def final_stamp_field(markdown: str, field: str) -> str | None:
-    match = re.search(rf"(?m)^{re.escape(field)}:\s*(\S+)\s*$", markdown)
+    match = re.search(rf"(?m)^{re.escape(field)}:\s*(.*?)\s*$", markdown)
     return match.group(1) if match else None
 
 
-def validate_final_source_retired_stamp(root: Path, *, pre_stamp: bool = False) -> list[CheckResult]:
+def validate_final_source_retired_stamp(root: Path) -> list[CheckResult]:
     ok, detail, path = repo_relative_path_status(root, SOURCE_DISPOSITION_PATH, "file")
     if not ok:
         return [CheckResult("source_retired_stamp:path", False, detail, SOURCE_DISPOSITION_PATH)]
     markdown = path.read_text(encoding="utf-8")
-    computed_digest = placeholder_normalized_tree_digest(root)
-    if pre_stamp:
+    results: list[CheckResult] = []
+    stamp_section = markdown_section(markdown, "## Final Source-Retired Stamp")
+    if stamp_section is None:
         return [
             CheckResult(
-                "source_retired_stamp:canonical_tree_digest",
-                True,
-                computed_digest,
+                "source_retired_stamp:section",
+                False,
+                "missing Final Source-Retired Stamp section",
                 SOURCE_DISPOSITION_PATH,
             )
         ]
-    results: list[CheckResult] = []
-    if "stamp_target: placeholder-normalized canonical tree" not in markdown:
-        results.append(
-            CheckResult(
-                "source_retired_stamp:target",
-                False,
-                "missing placeholder-normalized stamp target",
-                SOURCE_DISPOSITION_PATH,
+    for volatile_field in ("stamp_target", "canonical_tree_digest", "timestamp"):
+        if final_stamp_field(stamp_section, volatile_field) is not None:
+            results.append(
+                CheckResult(
+                    f"source_retired_stamp:{volatile_field}",
+                    False,
+                    f"{volatile_field} is volatile and must be removed",
+                    SOURCE_DISPOSITION_PATH,
+                )
             )
-        )
-    recorded_digest = final_stamp_field(markdown, "canonical_tree_digest")
-    if recorded_digest is None:
-        results.append(
-            CheckResult(
-                "source_retired_stamp:canonical_tree_digest",
-                False,
-                "missing canonical_tree_digest",
-                SOURCE_DISPOSITION_PATH,
-            )
-        )
-    elif recorded_digest == FINAL_STAMP_CANONICAL_TREE_DIGEST_PLACEHOLDER:
-        results.append(
-            CheckResult(
-                "source_retired_stamp:canonical_tree_digest",
-                False,
-                "canonical tree digest still placeholder",
-                SOURCE_DISPOSITION_PATH,
-            )
-        )
-    elif recorded_digest != computed_digest:
-        results.append(
-            CheckResult(
-                "source_retired_stamp:canonical_tree_digest",
-                False,
-                "canonical tree digest mismatch",
-                SOURCE_DISPOSITION_PATH,
-            )
-        )
-    if final_stamp_field(markdown, "source_retired") != "true":
+    if final_stamp_field(stamp_section, "source_retired") != "true":
         results.append(
             CheckResult("source_retired_stamp:source_retired", False, "source_retired must be true", SOURCE_DISPOSITION_PATH)
         )
-    timestamp = final_stamp_field(markdown, "timestamp")
-    if timestamp is None or not re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$", timestamp):
-        results.append(
-            CheckResult("source_retired_stamp:timestamp", False, "timestamp must be UTC second precision", SOURCE_DISPOSITION_PATH)
-        )
     if not any(result.name.startswith("source_retired_stamp:") and not result.ok for result in results):
-        results.append(CheckResult("source_retired_stamp:canonical_tree_digest", True, "matches", SOURCE_DISPOSITION_PATH))
+        results.append(CheckResult("source_retired_stamp:source_retired", True, "true", SOURCE_DISPOSITION_PATH))
     return results
 
 
@@ -4648,7 +4562,7 @@ def resolve_source_mode(root: Path, source_mode: str, final_closeout: bool) -> s
         return "source-retired-final"
     if source_mode == "auto":
         return "source-bearing" if (root / "docs/metasmith").exists() else "source-retired-final"
-    if source_mode in {"source-bearing", "source-retired-pre-stamp", "source-retired-final"}:
+    if source_mode in {"source-bearing", "source-retired-final"}:
         return source_mode
     raise ValueError(f"unknown source mode: {source_mode}")
 
@@ -4692,9 +4606,6 @@ def run(root: Path, *, final_closeout: bool = False, source_mode: str = "auto") 
         results.extend(validate_source_handoff_provenance(root))
         results.extend(validate_source_projection(root))
         results.extend(validate_source_disposition(root))
-    elif resolved_source_mode == "source-retired-pre-stamp":
-        results.extend(validate_source_retired_tree(root))
-        results.extend(validate_final_source_retired_stamp(root, pre_stamp=True))
     else:
         results.extend(validate_source_retired_tree(root))
         results.extend(validate_final_source_retired_stamp(root))
@@ -4713,26 +4624,14 @@ def main(argv: list[str] | None = None) -> int:
         help="Require raw source handoff/projection inputs and the source disposition ledger.",
     )
     parser.add_argument(
-        "--source-retired-pre-stamp",
-        action="store_true",
-        help="Require raw sources to be retired and print the placeholder-normalized tree digest.",
-    )
-    parser.add_argument(
         "--final-closeout",
         action="store_true",
         help="Require final closeout evidence before branch push or external projection.",
     )
     args = parser.parse_args(argv)
 
-    selected_source_modes = [args.source_bearing, args.source_retired_pre_stamp]
-    if sum(1 for selected in selected_source_modes if selected) > 1:
-        parser.error("--source-bearing and --source-retired-pre-stamp are mutually exclusive")
-    if args.final_closeout and args.source_retired_pre_stamp:
-        parser.error("--final-closeout requires the final source-retired stamp, not pre-stamp mode")
     if args.source_bearing:
         source_mode = "source-bearing"
-    elif args.source_retired_pre_stamp:
-        source_mode = "source-retired-pre-stamp"
     else:
         source_mode = "auto"
 
