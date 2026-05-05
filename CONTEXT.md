@@ -337,9 +337,9 @@ _Avoid_: chat-only conclusion, undocumented resume instruction
 - A **Published PRD Issue** is the tracking surface; material repo-draft changes need explicit issue re-projection.
 - **Issue Projection** happens after repo-draft review; closeout records either the issue update or the reason projection remains pending.
 - **Reflection Findings** are source material for future **Cognition Enhancement Equipment** and may also induce **Tooling Requests**, **Equipment Candidates**, or issue-tracked work in narrower equipment stories.
-- **Head Gear** is generic **Cognition Enhancement Equipment**; it prepares the
-  Agent to clarify, equip, execute, and reflect before domain-specific equipment
-  takes over.
+- **Head Gear** is the planned generic **Cognition Enhancement Equipment** line;
+  it is intended to prepare the Agent to clarify, equip, execute, and reflect
+  before domain-specific equipment takes over.
 - A **Forgewright Runbook** guides Forge maintenance without replacing ADRs, PRDs, implementation plans, or Smith runbooks.
 - A **Target Structure** can guide a PRD, but the **Forge Seed** creates only **Seed Surfaces**.
 - A **Seed Validation Tool** implements **Seed Validation** without adding runtime dependencies.
