@@ -512,10 +512,10 @@ def onboarding_status(shared_config_present: bool, onboarding_state: str, safety
 
 def partial_config_from_effective(effective: dict[str, Any], fragments: list[SchemaFragment], diagnostics: list[dict[str, Any]]) -> dict[str, Any]:
     sections: dict[str, Any] = {}
-    invalid_diagnostics = [
+    invalid_schema_diagnostics = [
         item
         for item in diagnostics
-        if not (item.get("kind") == "schema conflict" and "missing required" in str(item.get("detail", "")))
+        if item.get("kind") == "schema conflict" and "missing required" not in str(item.get("detail", ""))
     ]
     for fragment in fragments:
         effective_section = effective.get(fragment.namespace, {})
@@ -525,28 +525,33 @@ def partial_config_from_effective(effective: dict[str, Any], fragments: list[Sch
             if field_spec.required
             and isinstance(effective_section.get(field_name), dict)
             and effective_section[field_name].get("value") is None
+            and "secret_reference" not in effective_section[field_name]
         )
         fields: dict[str, Any] = {}
         for field_name, field_spec in fragment.fields.items():
             wrapped = effective_section.get(field_name, {})
             if isinstance(wrapped, dict):
-                value = wrapped.get("secret_reference", wrapped.get("value"))
                 layer = wrapped.get("layer", "schema default")
+                presence_value = wrapped.get("secret_reference", wrapped.get("value"))
             else:
-                value = None
                 layer = "missing"
-            fields[field_name] = {
-                "presence": "missing" if field_spec.required and value is None else "present",
-                "value": value,
+                presence_value = None
+            field = {
+                "presence": "missing" if field_spec.required and presence_value is None else "present",
                 "layer": layer,
             }
+            if isinstance(wrapped, dict) and "secret_reference" in wrapped:
+                field["secret_reference"] = wrapped["secret_reference"]
+            else:
+                field["value"] = presence_value
+            fields[field_name] = field
         sections[fragment.namespace] = {
             "status": "partial" if missing_required else "complete",
             "missing_required": missing_required,
             "fields": fields,
         }
     return {
-        "schema_valid": not invalid_diagnostics,
+        "schema_valid": not invalid_schema_diagnostics,
         "unsafe_write_modes": "blocked" if any(section["missing_required"] for section in sections.values()) else "available",
         "sections": sections,
     }

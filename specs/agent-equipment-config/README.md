@@ -8,8 +8,8 @@ standard-library runtime engine slice for effective-config, config-diff,
 diagnostics, plain handoff promotion, authority checks, projection
 classification, onboarding-plan output, and the published runtime guide. It
 does not resolve secrets, mutate source config, mutate external systems, or
-implement harness controls. The Blueprint itself does not implement Agent Equipment;
-the runtime guide names the currently published slice.
+implement harness controls. The Blueprint itself does not implement Agent Equipment.
+The runtime guide names the currently published slice.
 
 Issue: [#23](https://github.com/nisavid/agent-armory/issues/23)
 

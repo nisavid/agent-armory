@@ -187,6 +187,69 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(result["revision_plan"]["selected_sections"], ["issue_tracker_ops"])
         self.assertEqual(result["revision_plan"]["unselected_sections"], ["docs_research"])
 
+    def test_onboarding_partial_config_treats_required_secret_reference_as_present(self):
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=1,
+            fields={"github_token": agent_equipment_config.FieldSpec(type="object", required=True)},
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops.github_token]
+                kind = "env"
+                name = "GITHUB_TOKEN"
+            """)
+
+            result = agent_equipment_config.config_onboarding_plan(
+                [layer],
+                [fragment],
+                requested_behavior="mutation",
+            )
+
+        field = result["partial_config"]["sections"]["issue_tracker_ops"]["fields"]["github_token"]
+        self.assertEqual(result["partial_config"]["sections"]["issue_tracker_ops"]["missing_required"], [])
+        self.assertEqual(field["presence"], "present")
+        self.assertEqual(field["secret_reference"]["kind"], "env")
+
+    def test_cli_emits_redacted_onboarding_plan_json(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+
+                [issue_tracker_ops.github_token]
+                kind = "env"
+                name = "GITHUB_TOKEN"
+            """)
+
+            payload = json.loads(agent_equipment_config.run(
+                [
+                    "onboarding-plan",
+                    "--layer",
+                    str(layer),
+                    "--issue-tracker-ops",
+                    "--requested-behavior",
+                    "mutation",
+                ],
+                stdout_text=True,
+            ))
+
+        self.assertEqual(payload["onboarding_status"], "complete")
+        self.assertEqual(payload["effective_config"]["safety_status"], "usable")
+        token_field = payload["partial_config"]["sections"]["issue_tracker_ops"]["fields"]["github_token"]
+        self.assertEqual(token_field["secret_reference"]["name"], "<redacted>")
+
     def test_schema_fragment_applies_defaults_and_reports_missing_required_keys(self):
         fragment = agent_equipment_config.SchemaFragment(
             namespace="issue_tracker_ops",
