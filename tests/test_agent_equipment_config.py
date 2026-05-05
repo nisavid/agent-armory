@@ -518,3 +518,149 @@ class AgentEquipmentConfigTests(unittest.TestCase):
             ),
             "untrusted",
         )
+
+    def test_secret_reference_is_reported_without_value_resolution(self):
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=1,
+            fields={"github_token": agent_equipment_config.FieldSpec(type="object", required=True)},
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "local.toml", """
+                [agent_equipment_config.layer]
+                name = "user/operator local overrides"
+                category = "local-only operator config"
+
+                [issue_tracker_ops.github_token]
+                kind = "env"
+                name = "GITHUB_TOKEN"
+                scope = "session"
+                required_for = "tracker write"
+            """)
+
+            result = agent_equipment_config.effective_config([layer], [fragment], requested_behavior="mutation")
+
+        token = result["effective"]["issue_tracker_ops"]["github_token"]
+        self.assertEqual(token["secret_reference"]["kind"], "env")
+        self.assertEqual(token["secret_reference"]["resolution_status"], "unresolved")
+        self.assertNotIn("value", token["secret_reference"])
+
+    def test_config_diff_reports_changed_values(self):
+        before = {"issue_tracker_ops": {"mode": {"value": "dry-run"}}}
+        after = {"issue_tracker_ops": {"mode": {"value": "execute"}}}
+
+        diff = agent_equipment_config.config_diff(before, after)
+
+        self.assertEqual(
+            diff,
+            {
+                "changes": [
+                    {
+                        "path": "issue_tracker_ops.mode",
+                        "before": "dry-run",
+                        "after": "execute",
+                    }
+                ]
+            },
+        )
+
+    def test_config_diff_reports_changed_secret_references(self):
+        before = {
+            "issue_tracker_ops": {
+                "github_token": {
+                    "secret_reference": {
+                        "kind": "env",
+                        "name": "OLD_GITHUB_TOKEN",
+                        "resolution_status": "unresolved",
+                    }
+                }
+            }
+        }
+        after = {
+            "issue_tracker_ops": {
+                "github_token": {
+                    "secret_reference": {
+                        "kind": "env",
+                        "name": "NEW_GITHUB_TOKEN",
+                        "resolution_status": "unresolved",
+                    }
+                }
+            }
+        }
+
+        diff = agent_equipment_config.config_diff(before, after)
+
+        self.assertEqual(diff["changes"][0]["path"], "issue_tracker_ops.github_token")
+        self.assertEqual(diff["changes"][0]["before"]["secret_reference"]["name"], "OLD_GITHUB_TOKEN")
+        self.assertEqual(diff["changes"][0]["after"]["secret_reference"]["name"], "NEW_GITHUB_TOKEN")
+
+    def test_config_diff_reports_status_and_diagnostic_changes(self):
+        before = {
+            "safety_status": "usable",
+            "effective": {"issue_tracker_ops": {"mode": {"value": "dry-run"}}},
+            "diagnostics": [],
+        }
+        after = {
+            "safety_status": "conflicted",
+            "effective": {"issue_tracker_ops": {"mode": {"value": "dry-run"}}},
+            "diagnostics": [
+                {
+                    "kind": "blocked override",
+                    "path": "issue_tracker_ops.mode",
+                    "detail": "session overrides cannot override non-overridable value from organization or tracker policy",
+                    "evidence": {
+                        "blocked_value": "execute",
+                        "blocked_by": {"layer": "organization or tracker policy", "source": "org.toml"},
+                    },
+                },
+                {
+                    "kind": "same-precedence collision",
+                    "path": "issue_tracker_ops.priority_policy",
+                    "detail": "repository policy has multiple values at the same precedence",
+                    "evidence": {},
+                },
+            ],
+        }
+
+        diff = agent_equipment_config.config_diff(before, after)
+
+        self.assertEqual(diff["status_change"], {"before": "usable", "after": "conflicted"})
+        self.assertEqual([item["kind"] for item in diff["diagnostic_changes"]["after"]], ["blocked override", "same-precedence collision"])
+        self.assertEqual(diff["diagnostic_changes"]["after"][0]["evidence"]["blocked_value"], "execute")
+
+    def test_cli_effective_config_outputs_json(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            stdout = agent_equipment_config.run(["effective-config", "--layer", str(layer), "--issue-tracker-ops"], stdout_text=True)
+
+        payload = json.loads(stdout)
+        self.assertEqual(payload["safety_status"], "usable")
+        self.assertEqual(payload["effective"]["issue_tracker_ops"]["mode"]["value"], "dry-run")
+
+    def test_cli_config_diff_outputs_json(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            before = root / "before.json"
+            after = root / "after.json"
+            before.write_text(json.dumps({"effective": {"issue_tracker_ops": {"mode": {"value": "dry-run"}}}}), encoding="utf-8")
+            after.write_text(json.dumps({"effective": {"issue_tracker_ops": {"mode": {"value": "execute"}}}}), encoding="utf-8")
+
+            stdout = agent_equipment_config.run(
+                ["config-diff", "--before", str(before), "--after", str(after)],
+                stdout_text=True,
+            )
+
+        payload = json.loads(stdout)
+        self.assertEqual(payload["changes"][0]["path"], "issue_tracker_ops.mode")
+        self.assertEqual(payload["changes"][0]["before"], "dry-run")
+        self.assertEqual(payload["changes"][0]["after"], "execute")

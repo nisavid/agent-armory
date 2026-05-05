@@ -32,6 +32,8 @@ SOURCE_CATEGORIES = {
     "secret reference source",
 }
 
+SECRET_REFERENCE_KINDS = {"env", "keychain", "vault", "harness-secret", "external"}
+
 
 class ConfigError(Exception):
     pass
@@ -221,6 +223,53 @@ def migration_previews_for_layer(layer: Layer, fragment: SchemaFragment) -> list
     ]
 
 
+def secret_reference(value: JSONValue) -> dict[str, Any] | None:
+    if not isinstance(value, dict):
+        return None
+    kind = value.get("kind")
+    name = value.get("name")
+    if kind in SECRET_REFERENCE_KINDS and isinstance(name, str):
+        return {
+            "kind": kind,
+            "name": name,
+            "scope": value.get("scope"),
+            "required_for": value.get("required_for"),
+            "resolution_status": "unresolved",
+        }
+    return None
+
+
+def diffable_wrapped_value(wrapped: dict[str, Any]) -> JSONValue | dict[str, Any]:
+    if "secret_reference" in wrapped:
+        return {"secret_reference": wrapped["secret_reference"]}
+    return wrapped.get("value")
+
+
+def effective_section(payload: dict[str, Any]) -> dict[str, Any]:
+    return payload.get("effective", payload)
+
+
+def config_diff(before: dict[str, Any], after: dict[str, Any]) -> dict[str, Any]:
+    changes: list[dict[str, Any]] = []
+    before_effective = effective_section(before)
+    after_effective = effective_section(after)
+    namespaces = sorted(set(before_effective) | set(after_effective))
+    for namespace in namespaces:
+        before_fields = before_effective.get(namespace, {})
+        after_fields = after_effective.get(namespace, {})
+        for field_name in sorted(set(before_fields) | set(after_fields)):
+            before_value = diffable_wrapped_value(before_fields.get(field_name, {}))
+            after_value = diffable_wrapped_value(after_fields.get(field_name, {}))
+            if before_value != after_value:
+                changes.append({"path": f"{namespace}.{field_name}", "before": before_value, "after": after_value})
+    diff: dict[str, Any] = {"changes": changes}
+    if before.get("safety_status") != after.get("safety_status"):
+        diff["status_change"] = {"before": before.get("safety_status"), "after": after.get("safety_status")}
+    if before.get("diagnostics", []) != after.get("diagnostics", []):
+        diff["diagnostic_changes"] = {"before": before.get("diagnostics", []), "after": after.get("diagnostics", [])}
+    return diff
+
+
 def load_toml(path: Path) -> dict[str, Any]:
     try:
         return tomllib.loads(path.read_text(encoding="utf-8"))
@@ -335,11 +384,16 @@ def effective_config(layer_paths: list[Path], fragments: list[SchemaFragment], *
                 diagnostics.append(diagnostic("schema conflict", path, "missing required value", source_layer))
             if not field_conflicted:
                 diagnostics.extend(validate_field(value, field, path, source_layer))
-            namespace_values[field_name] = {
+            wrapped_value = {
                 "value": value,
                 "source": source_layer.path if source_layer else "schema default",
                 "layer": source_layer.name if source_layer else "schema default",
             }
+            reference = secret_reference(value)
+            if reference is not None:
+                wrapped_value.pop("value", None)
+                wrapped_value["secret_reference"] = reference
+            namespace_values[field_name] = wrapped_value
         for layer in layers:
             if not layer.trusted and fragment.namespace in layer.data and requested_behavior == "mutation":
                 diagnostics.append(diagnostic("untrusted source", fragment.namespace, f"{layer.name} is not trusted for mutation", layer))
@@ -377,3 +431,61 @@ def safety_status_from_diagnostics(diagnostics: list[Diagnostic], *, requested_b
     if "semantic conflict" in kinds:
         return "unsafe"
     return "usable"
+
+
+def issue_tracker_ops_fragment() -> SchemaFragment:
+    def execute_requires_disclosure(values: dict[str, Any], requested_behavior: str) -> list[Diagnostic]:
+        if requested_behavior == "mutation" and values.get("mode") == "execute" and values.get("external_disclosure") != "allowed":
+            return [Diagnostic("semantic conflict", "issue_tracker_ops.external_disclosure", "execute requires external disclosure policy")]
+        return []
+
+    return SchemaFragment(
+        namespace="issue_tracker_ops",
+        version=1,
+        fields={
+            "mode": FieldSpec(type="string", required=True, enum=["dry-run", "execute"]),
+            "external_disclosure": FieldSpec(type="string", required=True, enum=["blocked", "allowed"]),
+            "github_token": FieldSpec(type="object", required=False),
+        },
+        semantic_validators=(execute_requires_disclosure,),
+    )
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Compute Agent Equipment Config v0 outputs.")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    effective = subparsers.add_parser("effective-config")
+    effective.add_argument("--layer", action="append", required=True)
+    effective.add_argument("--requested-behavior", choices=["advisory", "mutation"], default="advisory")
+    effective.add_argument("--issue-tracker-ops", action="store_true")
+    diff = subparsers.add_parser("config-diff")
+    diff.add_argument("--before", required=True)
+    diff.add_argument("--after", required=True)
+    return parser
+
+
+def run(argv: list[str] | None = None, *, stdout: TextIO | None = None, stdout_text: bool = False) -> int | str:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    output = stdout or sys.stdout
+    if args.command == "config-diff":
+        before = json.loads(Path(args.before).read_text(encoding="utf-8"))
+        after = json.loads(Path(args.after).read_text(encoding="utf-8"))
+        payload = config_diff(before, after)
+    else:
+        fragments = [issue_tracker_ops_fragment()] if args.issue_tracker_ops else []
+        payload = effective_config([Path(path) for path in args.layer], fragments, requested_behavior=args.requested_behavior)
+    text = json.dumps(payload, indent=2, sort_keys=True) + "\n"
+    if stdout_text:
+        return text
+    output.write(text)
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    result = run(argv)
+    return result if isinstance(result, int) else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
