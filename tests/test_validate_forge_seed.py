@@ -36,6 +36,7 @@ from tools.validate_forge_seed import (
     SOURCE_PROJECTION_PLANNED_REQUIREMENTS,
     validate_required_paths,
     validate_security_closeout,
+    validate_templates,
     validate_threat_model,
 )
 
@@ -4425,6 +4426,52 @@ class TemplateValidationTests(unittest.TestCase):
                     ),
                     results,
                 )
+
+    def test_validate_templates_requires_capability_card_vision_alignment(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            path = root / "templates/capability-card.md"
+            self.write_template(
+                root,
+                "templates/capability-card.md",
+                path.read_text(encoding="utf-8").replace("## Vision alignment\n\n", ""),
+            )
+
+            results = validate_templates(root)
+
+        self.assertIn(
+            CheckResult(
+                name="template:section:templates/capability-card.md:Vision alignment",
+                ok=False,
+                detail="missing section: Vision alignment",
+                path="templates/capability-card.md",
+            ),
+            results,
+        )
+
+    def test_validate_templates_requires_interface_decision_vision_alignment(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            path = root / "templates/interface-decision-record.md"
+            self.write_template(
+                root,
+                "templates/interface-decision-record.md",
+                path.read_text(encoding="utf-8").replace("## Vision alignment\n\n", ""),
+            )
+
+            results = validate_templates(root)
+
+        self.assertIn(
+            CheckResult(
+                name="template:section:templates/interface-decision-record.md:Vision alignment",
+                ok=False,
+                detail="missing section: Vision alignment",
+                path="templates/interface-decision-record.md",
+            ),
+            results,
+        )
 
     def test_validate_templates_requires_external_disclosure_side_effect_prompt(self):
         cases = [
