@@ -375,6 +375,46 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(result["diagnostics"][0]["kind"], "same-precedence collision")
         self.assertEqual(result["diagnostics"][0]["path"], "issue_tracker_ops.mode")
 
+    def test_higher_precedence_layer_resolves_lower_same_precedence_collision(self):
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=1,
+            fields={"mode": agent_equipment_config.FieldSpec(type="string", required=True, enum=["dry-run", "execute"])},
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            repo_a = self.write_layer(root, "repo-a.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+            """)
+            repo_b = self.write_layer(root, "repo-b.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "execute"
+            """)
+            session = self.write_layer(root, "session.toml", """
+                [agent_equipment_config.layer]
+                name = "session overrides"
+                category = "session override"
+
+                [issue_tracker_ops]
+                mode = "execute"
+            """)
+
+            result = agent_equipment_config.effective_config([repo_a, repo_b, session], [fragment], requested_behavior="advisory")
+
+        self.assertEqual(result["effective"]["issue_tracker_ops"]["mode"]["value"], "execute")
+        self.assertEqual(result["effective"]["issue_tracker_ops"]["mode"]["source"], session.as_posix())
+        self.assertEqual(result["safety_status"], "conflicted")
+        self.assertIn("same-precedence collision", [item["kind"] for item in result["diagnostics"]])
+
     def test_policy_value_survives_lower_authority_same_precedence_collision(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -434,6 +474,52 @@ class AgentEquipmentConfigTests(unittest.TestCase):
 
         self.assertEqual(result["safety_status"], "untrusted")
         self.assertEqual(result["diagnostics"][0]["kind"], "untrusted source")
+
+    def test_trusted_metadata_must_be_boolean(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "checkout.toml", """
+                [agent_equipment_config.layer]
+                name = "checkout-local state"
+                category = "checkout-local state"
+                trusted = "false"
+
+                [issue_tracker_ops]
+                mode = "execute"
+            """)
+
+            with self.assertRaisesRegex(agent_equipment_config.ConfigError, "agent_equipment_config.layer.trusted must be a boolean"):
+                agent_equipment_config.load_layers([layer])
+
+    def test_policy_rule_metadata_must_use_declared_types(self):
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=1,
+            fields={"mode": agent_equipment_config.FieldSpec(type="string", required=True, enum=["dry-run", "execute"])},
+        )
+        cases = (
+            ("non_overridable", '"yes"', "must be a boolean"),
+            ("authority", "true", "must be a string"),
+            ("required_for", "true", "must be a string"),
+        )
+        for key, value, message in cases:
+            with self.subTest(key=key):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    root = Path(tmpdir)
+                    layer = self.write_layer(root, "org.toml", f"""
+                        [agent_equipment_config.layer]
+                        name = "organization or tracker policy"
+                        category = "committed durable config"
+
+                        [agent_equipment_config.policy.issue_tracker_ops.mode]
+                        {key} = {value}
+
+                        [issue_tracker_ops]
+                        mode = "dry-run"
+                    """)
+
+                    with self.assertRaisesRegex(agent_equipment_config.ConfigError, f"policy.issue_tracker_ops.mode.{key} {message}"):
+                        agent_equipment_config.effective_config([layer], [fragment], requested_behavior="mutation")
 
     def test_stale_fragment_version_reports_stale_without_rewriting_source(self):
         fragment = agent_equipment_config.SchemaFragment(

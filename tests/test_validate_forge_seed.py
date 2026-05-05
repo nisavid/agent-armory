@@ -8843,7 +8843,7 @@ class ExampleValidationTests(unittest.TestCase):
 
 
 class SpecValidationTests(unittest.TestCase):
-    config_bundle_paths = [
+    config_bundle_paths = (
         "specs/agent-equipment-config/README.md",
         "specs/agent-equipment-config/capability-card.md",
         "specs/agent-equipment-config/interface-decision-record.md",
@@ -8851,13 +8851,13 @@ class SpecValidationTests(unittest.TestCase):
         "specs/agent-equipment-config/pressure-scenarios.md",
         "specs/agent-equipment-config/validation-plan.md",
         "specs/agent-equipment-config/closeout-evidence-plan.md",
-    ]
-    required_spec_paths = [
+    )
+    required_spec_paths = (
         *config_bundle_paths,
         "specs/agent-ops.md",
         "specs/periodic-actions.md",
         "specs/harness-capability-refresh.md",
-    ]
+    )
 
     def write_spec(self, root: Path, relative_path: str, content: str) -> None:
         path = root / relative_path

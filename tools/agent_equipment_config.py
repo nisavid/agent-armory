@@ -149,16 +149,25 @@ def policy_locks(layer: Layer) -> dict[tuple[str, str], PolicyLock]:
         for field_name, rule in fields.items():
             if not isinstance(rule, dict):
                 continue
-            non_overridable = bool(rule.get("non_overridable", False))
+            non_overridable = rule.get("non_overridable", False)
+            if not isinstance(non_overridable, bool):
+                raise ConfigError(
+                    f"{layer.path}: agent_equipment_config.policy.{namespace}.{field_name}.non_overridable must be a boolean"
+                )
             authority = rule.get("authority")
+            if authority is not None and not isinstance(authority, str):
+                raise ConfigError(f"{layer.path}: agent_equipment_config.policy.{namespace}.{field_name}.authority must be a string")
+            required_for = rule.get("required_for", "mutation")
+            if not isinstance(required_for, str):
+                raise ConfigError(f"{layer.path}: agent_equipment_config.policy.{namespace}.{field_name}.required_for must be a string")
             if non_overridable or isinstance(authority, str):
                 locks[(namespace, field_name)] = PolicyLock(
                     namespace=namespace,
                     field=field_name,
                     layer=layer,
-                    required_for=str(rule.get("required_for", "mutation")),
+                    required_for=required_for,
                     non_overridable=non_overridable,
-                    authority=authority if isinstance(authority, str) else None,
+                    authority=authority,
                 )
     return locks
 
@@ -393,7 +402,9 @@ def load_layers(paths: Iterable[Path]) -> list[Layer]:
             raise ConfigError(f"{path}: unknown layer name {name!r}")
         if category not in SOURCE_CATEGORIES:
             raise ConfigError(f"{path}: unknown source category {category!r}")
-        trusted = bool(layer_metadata.get("trusted", True))
+        trusted = layer_metadata.get("trusted", True)
+        if not isinstance(trusted, bool):
+            raise ConfigError(f"{path}: agent_equipment_config.layer.trusted must be a boolean")
         data = {
             key: value
             for key, value in document.items()
@@ -433,7 +444,7 @@ def effective_config(
             source_layer: Layer | None = None
             active_lock: PolicyLock | None = None
             values_by_precedence: dict[int, tuple[JSONValue, Layer]] = {}
-            field_conflicted = False
+            conflicted_precedences: set[int] = set()
             path = f"{fragment.namespace}.{field_name}"
             for layer in layers:
                 locks = policy_locks(layer)
@@ -464,9 +475,11 @@ def effective_config(
                     ):
                         value = None
                         source_layer = None
-                    field_conflicted = True
+                    conflicted_precedences.add(layer.precedence)
                     continue
                 values_by_precedence[layer.precedence] = (candidate, layer)
+                if layer.precedence in conflicted_precedences:
+                    continue
                 lock_applies = active_lock is not None and active_lock.required_for in {requested_behavior, "always"}
                 if lock_applies and active_lock.non_overridable and layer.precedence > active_lock.layer.precedence:
                     diagnostics.append(
@@ -485,9 +498,8 @@ def effective_config(
                         )
                     )
                     continue
-                if not field_conflicted:
-                    value = candidate
-                    source_layer = layer
+                value = candidate
+                source_layer = layer
             if active_lock is not None and active_lock.required_for in {requested_behavior, "always"} and active_lock.authority:
                 diagnostics.extend(untrusted_authority_diagnostics(layers, active_lock.authority))
                 if not authority_is_usable(layers, active_lock.authority, active_lock):
@@ -500,9 +512,10 @@ def effective_config(
                             evidence={"authority": active_lock.authority, "required_for": active_lock.required_for},
                         )
                     )
-            if value is None and field.required and not field_conflicted:
+            unresolved_conflict = value is None and bool(conflicted_precedences)
+            if value is None and field.required and not unresolved_conflict:
                 diagnostics.append(diagnostic("schema conflict", path, "missing required value", source_layer))
-            if not field_conflicted:
+            if not unresolved_conflict:
                 diagnostics.extend(validate_field(value, field, path, source_layer))
             wrapped_value = {
                 "value": value,
