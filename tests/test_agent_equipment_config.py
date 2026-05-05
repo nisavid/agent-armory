@@ -245,6 +245,10 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         with self.assertRaisesRegex(agent_equipment_config.ConfigError, "unknown Config Safety Status"):
             agent_equipment_config.onboarding_status(True, "first-run", "new-status")
 
+    def test_onboarding_status_rejects_unknown_onboarding_state(self):
+        with self.assertRaisesRegex(agent_equipment_config.ConfigError, "unknown onboarding state"):
+            agent_equipment_config.onboarding_status(True, "unknown-state", "usable")
+
     def test_partial_config_treats_omitted_required_fields_as_missing(self):
         result = agent_equipment_config.partial_config_from_effective(
             {},

@@ -505,6 +505,8 @@ def enforcement_projection(safety_status: str, requested_behavior: str) -> dict[
 
 
 def onboarding_status(shared_config_present: bool, onboarding_state: str, safety_status: str) -> str:
+    if onboarding_state not in ONBOARDING_STATES:
+        raise ConfigError(f"unknown onboarding state {onboarding_state!r}")
     if safety_status not in FIRST_RUN_ONBOARDING_STATUSES:
         raise ConfigError(f"unknown Config Safety Status {safety_status!r}")
     if not shared_config_present:
