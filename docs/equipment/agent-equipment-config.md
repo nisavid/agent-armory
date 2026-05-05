@@ -116,7 +116,8 @@ Smiths author the equipment namespace: schema fragments, defaults, semantic
 validators, policy gates, and any equipment-specific safety rules. Wielders
 supply local, checkout, or session values without weakening committed policy
 authority. Re-onboarding should revise the selected section and preserve
-unselected sections unless a policy owner deliberately changes them.
+unselected sections unless a policy owner deliberately changes them. Unknown
+section names fail before emitting a plan.
 
 ## Review and maintenance
 

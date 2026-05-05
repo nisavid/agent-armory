@@ -612,11 +612,13 @@ def discovery_proposals(layers: list[Layer]) -> list[dict[str, Any]]:
 def revision_plan(fragments: list[SchemaFragment], revise_sections: list[str] | None) -> dict[str, Any]:
     requested = sorted(set(revise_sections or []))
     namespaces = sorted(fragment.namespace for fragment in fragments)
+    unknown = [namespace for namespace in requested if namespace not in namespaces]
+    if unknown:
+        raise ConfigError(f"unknown revise section(s): {', '.join(unknown)}")
     selected = [namespace for namespace in requested if namespace in namespaces]
     return {
         "selected_sections": selected,
         "unselected_sections": [namespace for namespace in namespaces if namespace not in selected],
-        "unknown_sections": [namespace for namespace in requested if namespace not in namespaces],
         "preserve_unselected_sections": bool(requested),
     }
 

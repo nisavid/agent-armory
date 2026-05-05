@@ -186,19 +186,16 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertTrue(result["revision_plan"]["preserve_unselected_sections"])
         self.assertEqual(result["revision_plan"]["selected_sections"], ["issue_tracker_ops"])
         self.assertEqual(result["revision_plan"]["unselected_sections"], ["docs_research"])
-        self.assertEqual(result["revision_plan"]["unknown_sections"], [])
 
-    def test_restarted_onboarding_reports_unknown_revision_sections(self):
-        result = agent_equipment_config.config_onboarding_plan(
-            [],
-            [self.issue_ops_fragment()],
-            requested_behavior="advisory",
-            onboarding_state="restart",
-            revise_sections=["missing_equipment"],
-        )
-
-        self.assertEqual(result["revision_plan"]["selected_sections"], [])
-        self.assertEqual(result["revision_plan"]["unknown_sections"], ["missing_equipment"])
+    def test_restarted_onboarding_rejects_unknown_revision_sections(self):
+        with self.assertRaisesRegex(agent_equipment_config.ConfigError, "unknown revise section"):
+            agent_equipment_config.config_onboarding_plan(
+                [],
+                [self.issue_ops_fragment()],
+                requested_behavior="advisory",
+                onboarding_state="restart",
+                revise_sections=["missing_equipment"],
+            )
 
     def test_onboarding_missing_shared_config_labels_defaults_as_schema_defaults(self):
         result = agent_equipment_config.config_onboarding_plan(
