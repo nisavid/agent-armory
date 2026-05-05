@@ -97,9 +97,12 @@ instead of hidden preference. The command reports:
 - `handoff_behavior` for plain session handoffs and mutation-capable behavior;
 - `discovery_proposals` for committed durable config, local-only operator
   config, checkout-local state, generated cache or state, secret reference
-  source, and session override categories supplied by the caller;
+source, and session override categories supplied by the caller;
 - `revision_plan` for re-onboarding selected sections while preserving
   unrelated policy.
+
+When shared Config is absent, omit layer and plain-handoff paths; the runtime
+fails instead of returning a plan that ignores supplied inputs.
 
 Example:
 

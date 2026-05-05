@@ -775,6 +775,8 @@ def config_onboarding_plan(
     if onboarding_state not in ONBOARDING_STATES:
         raise ConfigError(f"unknown onboarding state {onboarding_state!r}")
     if not shared_config_present:
+        if layer_paths or plain_handoff_paths:
+            raise ConfigError("shared Config is absent; omit layer and plain handoff paths")
         return {
             "onboarding_status": "missing_shared_config",
             "effective_config": None,

@@ -86,6 +86,23 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertTrue(result["partial_config"]["schema_valid"])
         self.assertIn("secret reference source", [item["source_category"] for item in result["discovery_proposals"]])
 
+    def test_onboarding_missing_shared_config_rejects_ignored_inputs(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+            """)
+
+            with self.assertRaisesRegex(agent_equipment_config.ConfigError, "shared Config is absent"):
+                agent_equipment_config.config_onboarding_plan(
+                    [layer],
+                    [self.issue_ops_fragment()],
+                    requested_behavior="mutation",
+                    shared_config_present=False,
+                )
+
     def test_onboarding_reports_missing_config_data_as_partial_output(self):
         result = agent_equipment_config.config_onboarding_plan(
             [],
