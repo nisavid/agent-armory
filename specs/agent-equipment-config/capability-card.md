@@ -108,8 +108,9 @@ Future deterministic surfaces should emit JSON-compatible objects for:
 - Untrusted source: output is `untrusted` for behavior that requires accepted
   provenance.
 - Conflict: output is `conflicted` until blocked override, same-precedence
-  collision, schema conflict, semantic conflict, or missing authority is
-  resolved.
+  collision, or schema conflict is resolved.
+- Semantic conflict or missing authority: output is `unsafe` until the
+  behavior policy or authority gap is resolved.
 
 ## Evidence
 
