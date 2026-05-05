@@ -93,6 +93,8 @@ class PolicyLock:
     field: str
     layer: Layer
     required_for: str
+    non_overridable: bool = False
+    authority: str | None = None
 
 
 TYPE_CHECKS: dict[str, type | tuple[type, ...]] = {
@@ -143,12 +145,18 @@ def policy_locks(layer: Layer) -> dict[tuple[str, str], PolicyLock]:
         if not isinstance(fields, dict):
             continue
         for field_name, rule in fields.items():
-            if isinstance(rule, dict) and rule.get("non_overridable"):
+            if not isinstance(rule, dict):
+                continue
+            non_overridable = bool(rule.get("non_overridable", False))
+            authority = rule.get("authority")
+            if non_overridable or isinstance(authority, str):
                 locks[(namespace, field_name)] = PolicyLock(
                     namespace=namespace,
                     field=field_name,
                     layer=layer,
                     required_for=str(rule.get("required_for", "mutation")),
+                    non_overridable=non_overridable,
+                    authority=authority if isinstance(authority, str) else None,
                 )
     return locks
 
@@ -270,6 +278,64 @@ def config_diff(before: dict[str, Any], after: dict[str, Any]) -> dict[str, Any]
     return diff
 
 
+def load_plain_handoff_layers(paths: Iterable[Path]) -> tuple[list[Layer], list[dict[str, Any]]]:
+    layers: list[Layer] = []
+    summaries: list[dict[str, Any]] = []
+    for index, path in enumerate(paths):
+        document = load_toml(path)
+        layer = Layer(
+            name="session overrides",
+            category="session override",
+            path=path.as_posix(),
+            precedence=LAYER_PRECEDENCE.index("session overrides"),
+            source_order=10_000 + index,
+            data=document,
+            metadata={"plain_handoff": True},
+            trusted=True,
+        )
+        layers.append(layer)
+        summaries.append({"source": path.as_posix(), "promoted_to": "session overrides", "category": "session override"})
+    return layers, summaries
+
+
+def authority_is_usable(layers: list[Layer], authority: str) -> bool:
+    for layer in layers:
+        if not layer.trusted:
+            continue
+        authority_table = layer.metadata.get("authority", {})
+        if isinstance(authority_table, dict) and authority_table.get(authority) == "usable":
+            return True
+    return False
+
+
+def untrusted_authority_diagnostics(layers: list[Layer], authority: str) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    for layer in layers:
+        if layer.trusted:
+            continue
+        authority_table = layer.metadata.get("authority", {})
+        if isinstance(authority_table, dict) and authority_table.get(authority) == "usable":
+            diagnostics.append(
+                diagnostic(
+                    "untrusted source",
+                    f"agent_equipment_config.authority.{authority}",
+                    f"{layer.name} is not trusted to authorize mutation",
+                    layer,
+                    evidence={"authority": authority},
+                )
+            )
+    return diagnostics
+
+
+def enforcement_projection(safety_status: str, requested_behavior: str) -> dict[str, Any]:
+    classification = "blocking" if requested_behavior == "mutation" and safety_status != "usable" else "advisory"
+    return {
+        "requested_behavior": requested_behavior,
+        "classification": classification,
+        "enforced_by_harness": False,
+    }
+
+
 def load_toml(path: Path) -> dict[str, Any]:
     try:
         return tomllib.loads(path.read_text(encoding="utf-8"))
@@ -317,8 +383,15 @@ def load_layers(paths: Iterable[Path]) -> list[Layer]:
     return sorted(layers, key=lambda layer: (layer.precedence, layer.source_order))
 
 
-def effective_config(layer_paths: list[Path], fragments: list[SchemaFragment], *, requested_behavior: str) -> dict[str, Any]:
-    layers = load_layers(layer_paths)
+def effective_config(
+    layer_paths: list[Path],
+    fragments: list[SchemaFragment],
+    *,
+    requested_behavior: str,
+    plain_handoff_paths: list[Path] | None = None,
+) -> dict[str, Any]:
+    handoff_layers, plain_handoffs = load_plain_handoff_layers(plain_handoff_paths or [])
+    layers = sorted([*load_layers(layer_paths), *handoff_layers], key=lambda layer: (layer.precedence, layer.source_order))
     effective: dict[str, dict[str, Any]] = {}
     diagnostics: list[Diagnostic] = []
     migration_previews: list[dict[str, Any]] = []
@@ -360,7 +433,7 @@ def effective_config(layer_paths: list[Path], fragments: list[SchemaFragment], *
                     continue
                 values_by_precedence[layer.precedence] = (candidate, layer)
                 lock_applies = active_lock is not None and active_lock.required_for in {requested_behavior, "always"}
-                if lock_applies and layer.precedence > active_lock.layer.precedence:
+                if lock_applies and active_lock.non_overridable and layer.precedence > active_lock.layer.precedence:
                     diagnostics.append(
                         diagnostic(
                             "blocked override",
@@ -380,6 +453,18 @@ def effective_config(layer_paths: list[Path], fragments: list[SchemaFragment], *
                 if not field_conflicted:
                     value = candidate
                     source_layer = layer
+            if active_lock is not None and active_lock.required_for in {requested_behavior, "always"} and active_lock.authority:
+                diagnostics.extend(untrusted_authority_diagnostics(layers, active_lock.authority))
+                if not authority_is_usable(layers, active_lock.authority):
+                    diagnostics.append(
+                        diagnostic(
+                            "missing authority",
+                            path,
+                            f"missing usable authority {active_lock.authority!r} for {active_lock.required_for}",
+                            active_lock.layer,
+                            evidence={"authority": active_lock.authority, "required_for": active_lock.required_for},
+                        )
+                    )
             if value is None and field.required and not field_conflicted:
                 diagnostics.append(diagnostic("schema conflict", path, "missing required value", source_layer))
             if not field_conflicted:
@@ -411,6 +496,8 @@ def effective_config(layer_paths: list[Path], fragments: list[SchemaFragment], *
         "effective": effective,
         "diagnostics": [asdict(item) for item in diagnostics],
         "migration_previews": migration_previews,
+        "plain_handoffs": plain_handoffs,
+        "enforcement_projection": enforcement_projection(safety_status, requested_behavior),
     }
 
 
@@ -428,7 +515,7 @@ def safety_status_from_diagnostics(diagnostics: list[Diagnostic], *, requested_b
         return "untrusted"
     if "stale schema" in kinds:
         return "stale"
-    if "semantic conflict" in kinds:
+    if "semantic conflict" in kinds or "missing authority" in kinds:
         return "unsafe"
     return "usable"
 
@@ -455,7 +542,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Compute Agent Equipment Config v0 outputs.")
     subparsers = parser.add_subparsers(dest="command", required=True)
     effective = subparsers.add_parser("effective-config")
-    effective.add_argument("--layer", action="append", required=True)
+    effective.add_argument("--layer", action="append", default=[])
+    effective.add_argument("--plain-handoff", action="append", default=[])
     effective.add_argument("--requested-behavior", choices=["advisory", "mutation"], default="advisory")
     effective.add_argument("--issue-tracker-ops", action="store_true")
     diff = subparsers.add_parser("config-diff")
@@ -474,7 +562,12 @@ def run(argv: list[str] | None = None, *, stdout: TextIO | None = None, stdout_t
         payload = config_diff(before, after)
     else:
         fragments = [issue_tracker_ops_fragment()] if args.issue_tracker_ops else []
-        payload = effective_config([Path(path) for path in args.layer], fragments, requested_behavior=args.requested_behavior)
+        payload = effective_config(
+            [Path(path) for path in args.layer],
+            fragments,
+            requested_behavior=args.requested_behavior,
+            plain_handoff_paths=[Path(path) for path in args.plain_handoff],
+        )
     text = json.dumps(payload, indent=2, sort_keys=True) + "\n"
     if stdout_text:
         return text

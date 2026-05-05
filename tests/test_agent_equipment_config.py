@@ -664,3 +664,127 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(payload["changes"][0]["path"], "issue_tracker_ops.mode")
         self.assertEqual(payload["changes"][0]["before"], "dry-run")
         self.assertEqual(payload["changes"][0]["after"], "execute")
+
+    def test_plain_issue_tracker_ops_handoff_promotes_without_shared_config_layer(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            handoff = self.write_layer(root, "issue-tracker-handoff.toml", """
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+
+            result = agent_equipment_config.effective_config(
+                [],
+                [agent_equipment_config.issue_tracker_ops_fragment()],
+                requested_behavior="advisory",
+                plain_handoff_paths=[handoff],
+            )
+
+        self.assertEqual(result["safety_status"], "usable")
+        self.assertEqual(result["effective"]["issue_tracker_ops"]["mode"]["value"], "dry-run")
+        self.assertEqual(result["plain_handoffs"][0]["source"], handoff.as_posix())
+        self.assertEqual(result["plain_handoffs"][0]["promoted_to"], "session overrides")
+        self.assertEqual(result["enforcement_projection"]["classification"], "advisory")
+
+    def test_cli_accepts_plain_handoff_without_layer(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            handoff = self.write_layer(root, "issue-tracker-handoff.toml", """
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+
+            stdout = agent_equipment_config.run(
+                ["effective-config", "--plain-handoff", str(handoff), "--issue-tracker-ops"],
+                stdout_text=True,
+            )
+
+        payload = json.loads(stdout)
+        self.assertEqual(payload["safety_status"], "usable")
+        self.assertEqual(payload["plain_handoffs"][0]["source"], handoff.as_posix())
+
+    def test_missing_authority_blocks_mutation_projection_without_harness_enforcement(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy = self.write_layer(root, "org.toml", """
+                [agent_equipment_config.layer]
+                name = "organization or tracker policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.policy.issue_tracker_ops.mode]
+                required_for = "mutation"
+                authority = "live_tracker_write"
+
+                [issue_tracker_ops]
+                mode = "execute"
+                external_disclosure = "allowed"
+            """)
+
+            result = agent_equipment_config.effective_config([policy], [self.issue_ops_fragment()], requested_behavior="mutation")
+
+        self.assertEqual(result["safety_status"], "unsafe")
+        self.assertEqual(result["diagnostics"][0]["kind"], "missing authority")
+        self.assertEqual(result["diagnostics"][0]["evidence"]["authority"], "live_tracker_write")
+        self.assertEqual(result["enforcement_projection"]["classification"], "blocking")
+        self.assertEqual(result["enforcement_projection"]["enforced_by_harness"], False)
+
+    def test_usable_authority_allows_mutation_projection_to_remain_advisory(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy = self.write_layer(root, "org.toml", """
+                [agent_equipment_config.layer]
+                name = "organization or tracker policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.policy.issue_tracker_ops.mode]
+                required_for = "mutation"
+                authority = "live_tracker_write"
+
+                [agent_equipment_config.authority]
+                live_tracker_write = "usable"
+
+                [issue_tracker_ops]
+                mode = "execute"
+                external_disclosure = "allowed"
+            """)
+
+            result = agent_equipment_config.effective_config([policy], [self.issue_ops_fragment()], requested_behavior="mutation")
+
+        self.assertEqual(result["safety_status"], "usable")
+        self.assertEqual(result["diagnostics"], [])
+        self.assertEqual(result["enforcement_projection"]["classification"], "advisory")
+
+    def test_untrusted_metadata_only_authority_cannot_authorize_mutation(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy = self.write_layer(root, "org.toml", """
+                [agent_equipment_config.layer]
+                name = "organization or tracker policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.policy.issue_tracker_ops.mode]
+                required_for = "mutation"
+                authority = "live_tracker_write"
+
+                [issue_tracker_ops]
+                mode = "execute"
+                external_disclosure = "allowed"
+            """)
+            untrusted_authority = self.write_layer(root, "local.toml", """
+                [agent_equipment_config.layer]
+                name = "user/operator local overrides"
+                category = "local-only operator config"
+                trusted = false
+
+                [agent_equipment_config.authority]
+                live_tracker_write = "usable"
+            """)
+
+            result = agent_equipment_config.effective_config([policy, untrusted_authority], [self.issue_ops_fragment()], requested_behavior="mutation")
+
+        self.assertEqual(result["safety_status"], "untrusted")
+        self.assertIn("untrusted source", [item["kind"] for item in result["diagnostics"]])
+        self.assertIn("missing authority", [item["kind"] for item in result["diagnostics"]])
+        self.assertEqual(result["enforcement_projection"]["classification"], "blocking")
