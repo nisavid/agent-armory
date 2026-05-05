@@ -757,6 +757,7 @@ CONFIG_BUNDLE_REQUIRED_TEXT = [
     "config-diff",
     "Layer Precedence",
     "Policy Authority",
+    "later overrides",
     "Config Safety Status",
     "semantic validators",
     "conflict diagnostics",
@@ -772,6 +773,10 @@ CONFIG_BUNDLE_REQUIRED_TEXT = [
     "Claude Code",
     "Cursor",
     "OpenCode",
+]
+CONFIG_BUNDLE_FORBIDDEN_TEXT = [
+    "lower-precedence layers",
+    "lower precedence layers",
 ]
 SPEC_REQUIRED_PATHS = [
     "specs/agent-ops.md",
@@ -4661,6 +4666,16 @@ def validate_specs(root: Path) -> list[CheckResult]:
                         f"spec:text:{CONFIG_BUNDLE_PATH}:{required_text}",
                         False,
                         f"missing {required_text}",
+                        CONFIG_BUNDLE_PATH,
+                    )
+                )
+        for forbidden_text in CONFIG_BUNDLE_FORBIDDEN_TEXT:
+            if forbidden_text.casefold() in config_bundle_text.casefold():
+                results.append(
+                    CheckResult(
+                        f"spec:text:{CONFIG_BUNDLE_PATH}:forbidden:{forbidden_text}",
+                        False,
+                        f"forbidden {forbidden_text}",
                         CONFIG_BUNDLE_PATH,
                     )
                 )

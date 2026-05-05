@@ -30,7 +30,7 @@ permission gate, sandbox, approval integration, plugin, or secret provider.
 - Equipment schema fragment to shared Config merge behavior.
 - Semantic validator diagnostics to mutation decision.
 - Committed config to local-only and session-scoped overrides.
-- Policy Authority to lower-precedence layers.
+- Policy Authority to later overrides and lower-authority layers.
 - Secret reference metadata to harness-specific secret resolution.
 - Effective-config output to Agents, humans, tools, hooks, and review evidence.
 - Issue Tracker Ops policy to external GitHub mutation behavior.

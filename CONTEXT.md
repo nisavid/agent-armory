@@ -150,8 +150,9 @@ value would win when no policy lock blocks it.
 _Avoid_: policy authority, when the point is the value merge order
 
 **Policy Authority**:
-The right of a configuration layer to constrain lower-precedence layers by
-marking a setting non-overridable or requiring a mutation gate.
+The right of a configuration layer to constrain later overrides or
+lower-authority layers by marking a setting non-overridable or requiring a
+mutation gate.
 _Avoid_: layer precedence, when the point is who may constrain later overrides
 
 **Config Safety Status**:

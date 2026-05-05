@@ -8995,7 +8995,8 @@ class SpecValidationTests(unittest.TestCase):
 
                 Secret references do not store secret values. Non-overridable
                 policy, untrusted config, local-only state, and mutation gates
-                are represented in structured diagnostics.
+                are represented in structured diagnostics. Policy Authority
+                constrains later overrides and lower-authority layers.
                 """,
             ),
             "specs/agent-equipment-config/pressure-scenarios.md": bundle_doc(
@@ -9202,6 +9203,7 @@ class SpecValidationTests(unittest.TestCase):
             "config-diff",
             "Layer Precedence",
             "Policy Authority",
+            "later overrides",
             "Config Safety Status",
             "semantic validators",
             "conflict diagnostics",
@@ -9244,6 +9246,29 @@ class SpecValidationTests(unittest.TestCase):
                     )
                 for path, original_text in original_texts.items():
                     path.write_text(original_text, encoding="utf-8")
+
+    def test_validate_specs_rejects_config_policy_authority_direction_conflict(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_specs(root)
+            security_path = root / "specs/agent-equipment-config/security-control-classification.md"
+            security_path.write_text(
+                security_path.read_text(encoding="utf-8")
+                + "\nPolicy Authority to lower-precedence layers.\n",
+                encoding="utf-8",
+            )
+
+            results = validate_specs(root)
+
+        self.assertIn(
+            CheckResult(
+                name="spec:text:specs/agent-equipment-config:forbidden:lower-precedence layers",
+                ok=False,
+                detail="forbidden lower-precedence layers",
+                path="specs/agent-equipment-config",
+            ),
+            results,
+        )
 
     def test_validate_specs_requires_periodic_actions_content(self):
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -70,8 +70,8 @@ composable, adaptable, and enforceable configuration across Agent Equipment.
 which configuration value would win when no policy lock blocks it.
 
 **Policy Authority** is the right of a configuration layer to constrain
-lower-precedence layers by marking a setting non-overridable or requiring a
-mutation gate.
+later overrides or lower-authority layers by marking a setting
+non-overridable or requiring a mutation gate.
 
 **Config Safety Status** is the machine-visible Agent Equipment Config
 classification that states whether a configuration is usable, incomplete,
