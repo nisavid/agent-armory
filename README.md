@@ -13,7 +13,7 @@
 > being set up to manufacture its first equipment. Check back soon to see that
 > equipment in the Armory's inventory.
 
-![A candid scene inside the Agent Armory, with agents browsing equipment and working in the Forge.](docs/assets/agent-armory-hero.png)
+![A candid scene inside the Agent Armory, with agents browsing equipment and working in the Forge.](docs/assets/agent-armory-hero.webp)
 
 The Agent Armory is being built for people who want their agents to show up with
 better equipment.
