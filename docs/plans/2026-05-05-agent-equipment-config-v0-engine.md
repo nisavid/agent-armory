@@ -1620,6 +1620,38 @@ Append:
         self.assertEqual(result["safety_status"], "usable")
         self.assertEqual(result["diagnostics"], [])
         self.assertEqual(result["enforcement_projection"]["classification"], "advisory")
+
+    def test_untrusted_metadata_only_authority_cannot_authorize_mutation(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy = self.write_layer(root, "org.toml", """
+                [agent_equipment_config.layer]
+                name = "organization or tracker policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.policy.issue_tracker_ops.mode]
+                required_for = "mutation"
+                authority = "live_tracker_write"
+
+                [issue_tracker_ops]
+                mode = "execute"
+                external_disclosure = "allowed"
+            """)
+            untrusted_authority = self.write_layer(root, "local.toml", """
+                [agent_equipment_config.layer]
+                name = "user/operator local overrides"
+                category = "local-only operator config"
+                trusted = false
+
+                [agent_equipment_config.authority]
+                live_tracker_write = "usable"
+            """)
+
+            result = agent_equipment_config.effective_config([policy, untrusted_authority], [self.issue_ops_fragment()], requested_behavior="mutation")
+
+        self.assertEqual(result["safety_status"], "unsafe")
+        self.assertIn("missing authority", [item["kind"] for item in result["diagnostics"]])
+        self.assertEqual(result["enforcement_projection"]["classification"], "blocking")
 ```
 
 - [ ] **Step 2: Run tests to verify they fail**
@@ -1627,7 +1659,7 @@ Append:
 Run:
 
 ```bash
-python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_plain_issue_tracker_ops_handoff_promotes_without_shared_config_layer tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_cli_accepts_plain_handoff_without_layer tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_missing_authority_blocks_mutation_projection_without_harness_enforcement tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_usable_authority_allows_mutation_projection_to_remain_advisory
+python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_plain_issue_tracker_ops_handoff_promotes_without_shared_config_layer tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_cli_accepts_plain_handoff_without_layer tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_missing_authority_blocks_mutation_projection_without_harness_enforcement tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_usable_authority_allows_mutation_projection_to_remain_advisory tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_untrusted_metadata_only_authority_cannot_authorize_mutation
 ```
 
 Expected: failures because plain handoff loading, authority status, and enforcement projection classification are missing.
@@ -1695,6 +1727,8 @@ def load_plain_handoff_layers(paths: Iterable[Path]) -> tuple[list[Layer], list[
 
 def authority_is_usable(layers: list[Layer], authority: str) -> bool:
     for layer in layers:
+        if not layer.trusted:
+            continue
         authority_table = layer.metadata.get("authority", {})
         if isinstance(authority_table, dict) and authority_table.get(authority) == "usable":
             return True
@@ -1892,7 +1926,7 @@ def run(argv: list[str] | None = None, *, stdout: TextIO | None = None, stdout_t
 Run:
 
 ```bash
-python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_plain_issue_tracker_ops_handoff_promotes_without_shared_config_layer tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_cli_accepts_plain_handoff_without_layer tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_missing_authority_blocks_mutation_projection_without_harness_enforcement tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_usable_authority_allows_mutation_projection_to_remain_advisory
+python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_plain_issue_tracker_ops_handoff_promotes_without_shared_config_layer tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_cli_accepts_plain_handoff_without_layer tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_missing_authority_blocks_mutation_projection_without_harness_enforcement tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_usable_authority_allows_mutation_projection_to_remain_advisory tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_untrusted_metadata_only_authority_cannot_authorize_mutation
 ```
 
 Expected: `OK`.
@@ -2101,8 +2135,12 @@ In `specs/agent-equipment-config/closeout-evidence-plan.md`, add this bullet to 
 - Change Set Documentation Closeout for affected agent-facing and human-facing
   docs, including updated surfaces or a no-change rationale for each plausible
   affected surface.
-- Latest clean Cross-Boundary Coherence Ralph Review and Story Quality Ralph
-  Review cycles before merge-readiness.
+- Full `docs/story-closeout.md` gate order before merge-readiness, including
+  Intent Model Refresh, scope/validation coherence, security closeout,
+  documentation closeout, projection draft or pending-projection rationale,
+  Reflection Finding disclosure/routing, latest clean Cross-Boundary Coherence
+  and Story Quality Ralph Review cycles, final validation, and publication
+  readiness checks.
 ```
 
 - [ ] **Step 4: Run focused validator tests**
@@ -2177,10 +2215,26 @@ Update stale or incomplete surfaces, or record a no-change rationale for each
 plausible affected surface in the PR body, final change summary, issue tracker,
 or a neutral committed closeout document.
 
-- [ ] **Step 8: Run repo-required story closeout Ralph reviews**
+- [ ] **Step 8: Run repo-required story closeout gates**
 
 After deterministic validation, security closeout, and documentation closeout
-are current, run the repo-required review loops from `docs/story-closeout.md`:
+are current, complete the repo-required gate order from `docs/story-closeout.md`:
+
+- Refresh the Intent Model from current operator input, accepted spec/plan
+  changes, review dispositions, handoff notes, and observed corrections.
+- Confirm implementation, specs, plan, and deterministic validation reflect the
+  same scope.
+- Prepare projection drafts for issues, PR bodies, handoff notes, and release
+  summaries from current story evidence, or record a pending-projection
+  rationale.
+- Classify privacy and disclosure limits for actionable Reflection Findings,
+  then route publishable findings or record why the insight is not durable or
+  projectable.
+- Run final validation and publication-readiness checks required by this plan
+  and repository policy, including `python3.14 tools/validate_forge_seed.py
+  --final-closeout`.
+
+Run the repo-required review loops after the upstream gates are current:
 
 - Cross-Boundary Coherence Ralph Review across PRD, specs, plan,
   implementation, deterministic validation, security, documentation, issue/PR
@@ -2208,7 +2262,8 @@ git commit -m "test(config): validate runtime slice coverage" -m "Co-authored-by
 - Spec coverage: tasks cover schema fragments, layered config, Layer Precedence, Policy Authority, same-precedence collisions, effective-config, config-diff for values/status/diagnostics, behavior-aware semantic validators, Config Safety Status precedence, deprecation diagnostics, migration previews with audit-preview shape, secret references, session-scoped behavior, plain Issue Tracker Ops handoff fallback/promotion, missing authority, enforcement projection classification, Issue Tracker Ops pressure, and validation commands.
 - Deliberate deferrals: source rewrites, migration apply execution, provider-specific secret fetching, and harness blocking-control implementation remain out of scope and are named in the plan.
 - Type consistency: `Layer`, `FieldSpec`, `SchemaFragment`, `MigrationPreview`, `Diagnostic`, `PolicyLock`, `effective_config`, `config_diff`, `enforcement_projection`, and `issue_tracker_ops_fragment` are introduced before use in later tasks.
-- Security boundary: no network, subprocess, secret fetching, or source mutation is part of the runtime slice.
+- Security boundary: no network, subprocess, secret fetching, or source mutation is part of the runtime slice; untrusted layers cannot supply usable authority for mutation.
+- Closeout boundary: merge-readiness requires the full `docs/story-closeout.md` gate order, not only deterministic checks and review summaries.
 
 ## Execution Handoff
 
