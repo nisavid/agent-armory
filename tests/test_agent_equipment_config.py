@@ -724,6 +724,32 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(payload["safety_status"], "usable")
         self.assertEqual(payload["effective"]["issue_tracker_ops"]["mode"]["value"], "dry-run")
 
+    def test_cli_effective_config_redacts_secret_reference_names(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "local.toml", """
+                [agent_equipment_config.layer]
+                name = "user/operator local overrides"
+                category = "local-only operator config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+
+                [issue_tracker_ops.github_token]
+                kind = "env"
+                name = "GITHUB_TOKEN"
+                scope = "session"
+                required_for = "tracker write"
+            """)
+            stdout = agent_equipment_config.run(["effective-config", "--layer", str(layer), "--issue-tracker-ops"], stdout_text=True)
+
+        payload = json.loads(stdout)
+        token = payload["effective"]["issue_tracker_ops"]["github_token"]
+        self.assertEqual(token["secret_reference"]["kind"], "env")
+        self.assertEqual(token["secret_reference"]["name"], agent_equipment_config.REDACTED)
+        self.assertNotIn("GITHUB_TOKEN", stdout)
+
     def test_cli_config_diff_outputs_json(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -741,6 +767,60 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(payload["changes"][0]["path"], "issue_tracker_ops.mode")
         self.assertEqual(payload["changes"][0]["before"], "dry-run")
         self.assertEqual(payload["changes"][0]["after"], "execute")
+
+    def test_cli_config_diff_redacts_secret_reference_names(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            before = root / "before.json"
+            after = root / "after.json"
+            before.write_text(
+                json.dumps(
+                    {
+                        "effective": {
+                            "issue_tracker_ops": {
+                                "github_token": {
+                                    "secret_reference": {
+                                        "kind": "env",
+                                        "name": "OLD_GITHUB_TOKEN",
+                                        "resolution_status": "unresolved",
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            after.write_text(
+                json.dumps(
+                    {
+                        "effective": {
+                            "issue_tracker_ops": {
+                                "github_token": {
+                                    "secret_reference": {
+                                        "kind": "env",
+                                        "name": "NEW_GITHUB_TOKEN",
+                                        "resolution_status": "unresolved",
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            stdout = agent_equipment_config.run(
+                ["config-diff", "--before", str(before), "--after", str(after)],
+                stdout_text=True,
+            )
+
+        payload = json.loads(stdout)
+        self.assertEqual(payload["changes"][0]["path"], "issue_tracker_ops.github_token")
+        self.assertEqual(payload["changes"][0]["before"]["secret_reference"]["name"], agent_equipment_config.REDACTED)
+        self.assertEqual(payload["changes"][0]["after"]["secret_reference"]["name"], agent_equipment_config.REDACTED)
+        self.assertNotIn("OLD_GITHUB_TOKEN", stdout)
+        self.assertNotIn("NEW_GITHUB_TOKEN", stdout)
 
     def test_plain_issue_tracker_ops_handoff_promotes_without_shared_config_layer(self):
         with tempfile.TemporaryDirectory() as tmpdir:

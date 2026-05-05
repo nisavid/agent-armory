@@ -33,6 +33,8 @@ SOURCE_CATEGORIES = {
 }
 
 SECRET_REFERENCE_KINDS = {"env", "keychain", "vault", "harness-secret", "external"}
+SENSITIVE_KEYWORDS = ("secret", "token", "credential", "password", "api_key", "private_key")
+REDACTED = "<redacted>"
 
 
 class ConfigError(Exception):
@@ -245,6 +247,31 @@ def secret_reference(value: JSONValue) -> dict[str, Any] | None:
             "resolution_status": "unresolved",
         }
     return None
+
+
+def sensitive_key(key: str) -> bool:
+    normalized = key.lower().replace("-", "_")
+    return any(keyword in normalized for keyword in SENSITIVE_KEYWORDS)
+
+
+def redact_for_cli(value: Any, path: tuple[str, ...] = ()) -> Any:
+    if isinstance(value, dict):
+        redacted: dict[str, Any] = {}
+        for key, item in value.items():
+            key_text = str(key)
+            child_path = (*path, key_text)
+            if key_text == "name" and path and path[-1] == "secret_reference":
+                redacted[key] = REDACTED
+            elif key_text == "value" and any(sensitive_key(part) for part in path):
+                redacted[key] = REDACTED
+            elif sensitive_key(key_text) and not isinstance(item, (dict, list)):
+                redacted[key] = REDACTED
+            else:
+                redacted[key] = redact_for_cli(item, child_path)
+        return redacted
+    if isinstance(value, list):
+        return [redact_for_cli(item, (*path, "[]")) for item in value]
+    return value
 
 
 def diffable_wrapped_value(wrapped: dict[str, Any]) -> JSONValue | dict[str, Any]:
@@ -576,7 +603,7 @@ def run(argv: list[str] | None = None, *, stdout: TextIO | None = None, stdout_t
             requested_behavior=args.requested_behavior,
             plain_handoff_paths=[Path(path) for path in args.plain_handoff],
         )
-    text = json.dumps(payload, indent=2, sort_keys=True) + "\n"
+    text = json.dumps(redact_for_cli(payload), indent=2, sort_keys=True) + "\n"
     if stdout_text:
         return text
     output.write(text)
