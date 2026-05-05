@@ -42,8 +42,8 @@ Forge to create missing equipment before the missing capability becomes a
 quality failure.
 
 The first major equipment lines are meant to make that possible: Agent
-Equipment Config for layered and enforceable policy, Issue Ops for durable
-issue-tracked operations, Agent Ops for repository work, and supporting
+Equipment Config for layered and enforceable policy, Issue Tracker Ops for
+durable issue-tracked operations, Agent Ops for repository work, and supporting
 operational equipment for schedules and harness facts. The longer arc
 culminates in Head Gear: generic cognition equipment meant to turn vibes into
 bounded, evidence-backed outcomes instead of slop.
