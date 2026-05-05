@@ -1679,6 +1679,7 @@ class ForgeRouteTests(unittest.TestCase):
 
                     ## Forge Conveyor
 
+                    - `docs/vision.md`
                     - `docs/agent-equipment-forge.md`
                     - `docs/smith-runbook.md`
                     - `docs/harness-capabilities.md`
@@ -1712,6 +1713,7 @@ class ForgeRouteTests(unittest.TestCase):
             (root / "templates").mkdir()
             (root / "specs").mkdir()
             for path in [
+                "docs/vision.md",
                 "docs/agent-equipment-forge.md",
                 "docs/smith-runbook.md",
                 "docs/interface-decision-guide.md",
@@ -1724,6 +1726,7 @@ class ForgeRouteTests(unittest.TestCase):
 
                     ## Forge Conveyor
 
+                    - `docs/vision.md`
                     - `docs/agent-equipment-forge.md`
                     - `docs/smith-runbook.md`
                     - `docs/interface-decision-guide.md`
@@ -1754,7 +1757,9 @@ class ForgeRouteTests(unittest.TestCase):
     def test_validate_forge_routes_rejects_wrong_route_target_kind(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
-            (root / "docs/agent-equipment-forge.md").mkdir(parents=True)
+            (root / "docs").mkdir()
+            (root / "docs/vision.md").write_text("# Fixture\n", encoding="utf-8")
+            (root / "docs/agent-equipment-forge.md").mkdir()
             (root / "docs/smith-runbook.md").write_text("# Fixture\n", encoding="utf-8")
             (root / "docs/interface-decision-guide.md").write_text("# Fixture\n", encoding="utf-8")
             (root / "docs/harness-capabilities.md").write_text("# Fixture\n", encoding="utf-8")
@@ -1767,6 +1772,7 @@ class ForgeRouteTests(unittest.TestCase):
 
                     ## Forge Conveyor
 
+                    - `docs/vision.md`
                     - `docs/agent-equipment-forge.md`
                     - `docs/smith-runbook.md`
                     - `docs/interface-decision-guide.md`
@@ -1806,9 +1812,19 @@ class ForgeRouteTests(unittest.TestCase):
 
 class CanonicalDocTests(unittest.TestCase):
     canonical_docs = {
+        "docs/vision.md": [
+            "Experience",
+            "Equipment",
+            "Deterministic boundaries",
+            "Harness lifecycle",
+            "Self-onboarding",
+            "Reflection",
+            "Lifecycle use",
+        ],
         "docs/ubiquitous-language.md": ["Language", "Relationships", "Precision rules"],
         "docs/agent-equipment-forge.md": [
             "Purpose",
+            "Vision alignment",
             "Least cognitive privilege",
             "Component model",
             "Context management",
@@ -1889,6 +1905,10 @@ class CanonicalDocTests(unittest.TestCase):
         ],
     }
     canonical_doc_required_text = {
+        "docs/vision.md": [
+            "autonomous self-onboarding to purpose-built assemblies of harness components",
+            "Use this vision as an input throughout the engineering lifecycle.",
+        ],
         "docs/smith-runbook.md": [
             "When a Smith finds an unsatisfied Tooling Gap that blocks or materially weakens the current equipment task, treat the Tooling Work as a dependency and escalate to a Forgewright before continuing.",
             "Choose the least disruptive Forgewright path supported by the harness and operator policy: current session, subagent session, peer agent session, forked session, or new session.",
@@ -3910,6 +3930,8 @@ class TemplateValidationTests(unittest.TestCase):
 
             ## Purpose
 
+            ## Vision alignment
+
             ## Users
 
             ## Target harnesses
@@ -3946,6 +3968,8 @@ class TemplateValidationTests(unittest.TestCase):
             Status: Template
 
             ## Requirement
+
+            ## Vision alignment
 
             ## Decision
 

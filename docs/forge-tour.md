@@ -13,6 +13,11 @@ The Forge is the Armory's construction system. It helps agents design, build,
 check, and care for equipment so the result is predictable, evidence-aware, and
 reviewable before anyone relies on it.
 
+The [Armory Vision](vision.md) describes the intended experience behind that
+construction system: Agents should be able to outfit themselves with the right
+equipment, use deterministic support where it belongs, and improve the equipment
+ecosystem when a task reveals a gap.
+
 The current Forge gives agents the shared vocabulary, templates, examples,
 planned blueprints, harness facts, checks, and safeguards they need to start
 manufacturing equipment.
@@ -79,6 +84,8 @@ future equipment.
 ## Where to go next
 
 - [Documentation map](README.md): choose a path by goal.
+- [Armory Vision](vision.md): understand the experience the Armory, Forge, and
+  Agent Equipment are meant to create.
 - [Forge Canon](agent-equipment-forge.md): the primary overview of the Forge.
 - [Smith runbook](smith-runbook.md): give this to an agent making equipment.
 - [Forgewright runbook](forgewright-runbook.md): give this to an agent improving

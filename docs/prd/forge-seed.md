@@ -64,7 +64,7 @@ Status: Repo Draft PRD
 - Documentation closeout removes or revises early language that says nothing is established or everything is up in the air when the Forge Seed has established a precedent, while preserving explicit uncertainty for unresolved ambiguities.
 - Forge Seed closeout follows `docs/story-closeout.md`: security and documentation closeout finish before projection drafts; projection drafts are checked during Cross-Boundary Coherence review; Cross-Boundary Coherence review finishes before Story Quality review; final validation, including strict final-closeout validation, confirms the evidence; issue, PR, release, and handoff publication follows clean final story evidence.
 - Forge Seed closeout includes a Cross-Boundary Coherence Ralph Review that verifies PRD, specs, plan, implementation, validation, security, docs, issue or PR projection, and release or handoff surfaces agree on current behavior and evidence.
-- Forge Seed closeout includes a Story Quality Ralph Review that verifies DX, UX, code quality, clean architecture, robustness against unspecified interactions, user personas, and attack paths, mitigations for pathological dev/ops cycles, and alignment with a coherent strategic vision.
+- Forge Seed closeout includes a Story Quality Ralph Review that verifies DX, UX, code quality, clean architecture, robustness against unspecified interactions, user personas, and attack paths, mitigations for pathological dev/ops cycles, and alignment with `docs/vision.md`.
 - Issue Projection happens only after the Repo Draft PRD has completed review-until-clean; closeout creates or updates the Published PRD Issue or records why projection remains pending.
 
 **Non-Goals**:

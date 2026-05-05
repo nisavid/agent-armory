@@ -4,6 +4,11 @@ Status: Forge Seed
 
 Use this guide after the capability card identifies what the equipment must do. The goal is to put each requirement in the lowest reliable surface.
 
+Use `docs/vision.md` while making the decision. The architecture should keep
+probabilistic judgment in model context, deterministic work in software, durable
+truth in docs or typed data, local variation in config, and enforceable policy
+in hooks, permissions, sandboxes, approvals, tools, or other hard boundaries.
+
 ## Decision tree
 
 1. Is violation dangerous, costly, irreversible, or security-relevant?

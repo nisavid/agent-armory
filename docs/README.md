@@ -6,29 +6,35 @@ and the first equipment has not yet been published into the inventory.
 
 ## Choose a path
 
-- **Wielding a loadout**: start with the [Forge Tour](forge-tour.md). Published
-  loadouts are not in the inventory yet.
+- **Wielding a loadout**: start with the [Armory Vision](vision.md), then the
+  [Forge Tour](forge-tour.md). Published loadouts are not in the inventory yet.
 - **Outfitting a harness**: ask an outfitter to compare
   [harness capabilities](harness-capabilities.md),
   [harness components](harness-components.md), and
-  [security and control](security-and-control.md) before selecting a future
-  loadout.
-- **Evaluating the Armory**: start with the [Forge Tour](forge-tour.md), then
-  use the [Forge Canon](agent-equipment-forge.md) and current [roadmap](#roadmap)
-  to see what exists now, how equipment is made, and what is planned.
+  [security and control](security-and-control.md) against the
+  [Armory Vision](vision.md) before selecting a future loadout.
+- **Evaluating the Armory**: start with the [Armory Vision](vision.md) and the
+  [Forge Tour](forge-tour.md), then use the
+  [Forge Canon](agent-equipment-forge.md) and current [roadmap](#roadmap) to see
+  what exists now, how equipment is made, and what is planned.
 - **Procuring equipment**: check the current inventory note in the
-  [Forge Tour](forge-tour.md), then review [equipment promotion](equipment-promotion.md)
-  to see what must be true before equipment is ready to use.
+  [Forge Tour](forge-tour.md), then review
+  [equipment promotion](equipment-promotion.md) to see what must be true before
+  equipment is ready to use.
 - **Commissioning new equipment**: have a smith start with the
-  [smith runbook](smith-runbook.md), [interface decision guide](interface-decision-guide.md),
-  and [templates](../templates/).
-- **Keeping equipment current**: ask the responsible agent to compare current
+  [Armory Vision](vision.md), [smith runbook](smith-runbook.md),
+  [interface decision guide](interface-decision-guide.md), and
+  [templates](../templates/).
+- **Keeping equipment current**: ask the responsible agent to compare the
+  [Armory Vision](vision.md),
   [harness capabilities](harness-capabilities.md),
   [security and control](security-and-control.md), and
   [equipment promotion](equipment-promotion.md).
 
 ## Start here
 
+- [Armory Vision](vision.md): the intended agent and human experience behind the
+  Armory, the Forge, and Agent Equipment.
 - [Forge Tour](forge-tour.md): human-facing orientation to the Armory, the Forge,
   agent roles, and current construction state.
 - [Forge Canon](agent-equipment-forge.md): core method for the Forge and component
@@ -75,6 +81,8 @@ agent equipment.
 
 ## Explanation
 
+- [Armory Vision](vision.md): the experience, architecture, strategy, design,
+  validation, and maintenance north star for the Armory.
 - [Forge Canon](agent-equipment-forge.md): the deeper explanation of how the
   Forge turns ideas into trustworthy equipment.
 - [Forgewright runbook](forgewright-runbook.md): give this to an agent when the

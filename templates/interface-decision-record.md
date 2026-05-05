@@ -7,6 +7,12 @@ Status: Template
 Describe the behavior, audience, autonomy level, and validation need that force
 an interface decision.
 
+## Vision alignment
+
+Name the part of `docs/vision.md` this decision supports. State how the chosen
+surface keeps the Agent experience reliable, adaptable, policy-respecting, or
+properly deterministic.
+
 ## Decision
 
 State the chosen surface and the shortest reason it is correct now.
