@@ -70,10 +70,11 @@ composable, adaptable, and enforceable configuration across Agent Equipment.
 reasons, reflects, remembers, routes insight, right-sizes cognition, or
 improves its future harness behavior.
 
-**Head Gear** is the Armory's generic Cognition Enhancement Equipment for
-translating underspecified but realizable operator intent into high-quality
-outcomes by inducing reflection, imagination, questioning, bookkeeping,
-knowledge retrieval, capability prediction, and self-outfitting.
+**Head Gear** is the planned name for the Armory's generic Cognition
+Enhancement Equipment for translating underspecified but realizable operator
+intent into high-quality outcomes by inducing reflection, imagination,
+questioning, bookkeeping, knowledge retrieval, capability prediction, and
+self-outfitting.
 
 **Reflection** is Agent activity that inspects recent experience, extracts
 reusable lessons, and routes durable follow-up into equipment, issues, config,

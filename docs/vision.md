@@ -7,12 +7,13 @@ experience possible.
 
 The intended experience starts with intent. An operator can express what they
 want before every criterion, tool, risk, stakeholder constraint, or success
-measure is known. In the target Armory experience, an underspecified but
-realizable operator intent received by an Agent wielding only the Armory's
-generic Head Gear is translated into a high-quality outcome.
+measure is known. The target Armory experience is that generic cognition
+equipment can let an Agent translate underspecified but realizable operator
+intent into a high-quality outcome.
 
-That is the slop-solving claim. The input may be vibes; the output should be a
-useful, well-shaped, evidence-backed result.
+That is the slop-solving hypothesis the Armory is being built to test. The
+input may be vibes; the output should become a useful, well-shaped,
+evidence-backed result.
 
 ## Experience
 
@@ -57,10 +58,10 @@ should not have to keep reminding the Agent to think critically, reflect,
 anticipate, track context, prepare for the next phase, or keep itself aligned
 with the active values and constraints.
 
-Head Gear is the Armory's name for that generic cognition equipment: the
-loadout that induces reflection, imagination, questioning, bookkeeping,
-knowledge retrieval, capability prediction, and self-outfitting before the
-Agent reaches for domain-specific equipment.
+That planned generic cognition equipment will need to induce reflection,
+imagination, questioning, bookkeeping, knowledge retrieval, capability
+prediction, and self-outfitting before the Agent reaches for domain-specific
+equipment.
 
 ## Equipment
 
@@ -183,9 +184,10 @@ Use this vision as an input throughout the engineering lifecycle.
 - Maintenance asks what drift, repeated failures, stale assumptions, or awkward
   handoffs reveal about missing equipment or missing Forge support.
 
-The Armory's hypothesis is that Head Gear solves the slop problem: it makes the
-process productive, reliable, observable, controllable, accessible, and
-enjoyable. The Armory succeeds when an Agent wielding generic Head Gear can move
-from underspecified but realizable intent to high-quality outcome by clarifying
-the solution space, outfitting the work, using deterministic support where it
-belongs, and improving the equipment ecosystem when the work reveals a gap.
+The Armory's hypothesis is that generic cognition equipment can solve the slop
+problem by making the process productive, reliable, observable, controllable,
+accessible, and enjoyable. The Armory succeeds when that hypothesis is tested
+and an Agent can move from underspecified but realizable intent to high-quality
+outcome by clarifying the solution space, outfitting the work, using
+deterministic support where it belongs, and improving the equipment ecosystem
+when the work reveals a gap.
