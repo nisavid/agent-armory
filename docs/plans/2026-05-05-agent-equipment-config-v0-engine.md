@@ -44,7 +44,7 @@ Out of scope:
 ## File Structure
 
 - Create `tools/agent_equipment_config.py`: CLI, data model, TOML loading, fragment registration, validation, merge, diff, and JSON output.
-- Create `tests/test_agent_equipment_config.py`: behavior tests for each v0 contract case.
+- Create `tests/test_agent_equipment_config.py`: behavior tests for the v0 runtime contract, including neutral multi-equipment composition.
 - Modify `specs/agent-equipment-config/validation-plan.md`: add the new test command and note the implemented runtime subset.
 - Modify `specs/agent-equipment-config/README.md`: update promotion language only if the engine slice completes and remains consistent with the promotion path.
 
@@ -372,6 +372,37 @@ Append these tests inside `AgentEquipmentConfigTests`:
         self.assertEqual(result["safety_status"], "usable")
         self.assertEqual(result["diagnostics"][0]["kind"], "deprecated field")
         self.assertEqual(result["diagnostics"][0]["detail"], "use issue_tracker_ops.mode instead")
+
+    def test_multi_equipment_composition_keeps_neutral_fragments_separate(self):
+        issue_ops = agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=1,
+            fields={"mode": agent_equipment_config.FieldSpec(type="string", required=True)},
+        )
+        docs_research = agent_equipment_config.SchemaFragment(
+            namespace="docs_research",
+            version=1,
+            fields={"citation_policy": agent_equipment_config.FieldSpec(type="string", default="required")},
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+
+                [docs_research]
+                citation_policy = "source-backed"
+            """)
+
+            result = agent_equipment_config.effective_config([layer], [issue_ops, docs_research], requested_behavior="advisory")
+
+        self.assertEqual(result["effective"]["issue_tracker_ops"]["mode"]["value"], "dry-run")
+        self.assertEqual(result["effective"]["docs_research"]["citation_policy"]["value"], "source-backed")
+        self.assertEqual(result["safety_status"], "usable")
 ```
 
 - [ ] **Step 2: Run the tests to verify they fail**
@@ -379,7 +410,7 @@ Append these tests inside `AgentEquipmentConfigTests`:
 Run:
 
 ```bash
-python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_schema_fragment_applies_defaults_and_reports_missing_required_keys tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_schema_fragment_rejects_wrong_type tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_numeric_fields_reject_boolean_values tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_deprecated_field_reports_diagnostic_without_blocking_config
+python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_schema_fragment_applies_defaults_and_reports_missing_required_keys tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_schema_fragment_rejects_wrong_type tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_numeric_fields_reject_boolean_values tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_deprecated_field_reports_diagnostic_without_blocking_config tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_multi_equipment_composition_keeps_neutral_fragments_separate
 ```
 
 Expected: failure because `SchemaFragment`, `FieldSpec`, and `effective_config` are missing.
@@ -509,7 +540,7 @@ def safety_status_from_diagnostics(diagnostics: list[Diagnostic], *, requested_b
 Run:
 
 ```bash
-python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_schema_fragment_applies_defaults_and_reports_missing_required_keys tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_schema_fragment_rejects_wrong_type tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_numeric_fields_reject_boolean_values tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_deprecated_field_reports_diagnostic_without_blocking_config
+python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_schema_fragment_applies_defaults_and_reports_missing_required_keys tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_schema_fragment_rejects_wrong_type tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_numeric_fields_reject_boolean_values tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_deprecated_field_reports_diagnostic_without_blocking_config tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_multi_equipment_composition_keeps_neutral_fragments_separate
 ```
 
 Expected: `OK`.
@@ -2092,6 +2123,7 @@ Expected: `OK` if Task 3, Task 5, and Task 6 are correct. If it fails, fix the i
 Replace the opening implementation-status sentence in these files:
 
 - `specs/agent-equipment-config/README.md`
+- `specs/agent-equipment-config/capability-card.md`
 - `specs/agent-equipment-config/validation-plan.md`
 - `specs/agent-equipment-config/pressure-scenarios.md`
 - `specs/agent-equipment-config/interface-decision-record.md`
@@ -2104,8 +2136,9 @@ Use this current status:
 This Forge Entry Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for effective-config, config-diff,
 diagnostics, plain handoff promotion, authority checks, and projection
-classification. It does not publish Agent Equipment assets, resolve secrets,
-mutate source config, mutate external systems, or implement harness controls.
+classification. It does not implement Agent Equipment beyond this runtime
+slice, publish assets, resolve secrets, mutate source config, mutate external
+systems, or implement harness controls.
 ```
 
 Also make these targeted updates:
@@ -2206,7 +2239,7 @@ enforcement implementation before promotion beyond `planned`.
 - [ ] **Step 8: Commit**
 
 ```bash
-git add tests/test_agent_equipment_config.py specs/agent-equipment-config/validation-plan.md specs/agent-equipment-config/README.md specs/agent-equipment-config/pressure-scenarios.md specs/agent-equipment-config/interface-decision-record.md specs/agent-equipment-config/security-control-classification.md specs/agent-equipment-config/closeout-evidence-plan.md
+git add tests/test_agent_equipment_config.py specs/agent-equipment-config/validation-plan.md specs/agent-equipment-config/README.md specs/agent-equipment-config/capability-card.md specs/agent-equipment-config/pressure-scenarios.md specs/agent-equipment-config/interface-decision-record.md specs/agent-equipment-config/security-control-classification.md specs/agent-equipment-config/closeout-evidence-plan.md
 git commit -m "test(config): cover issue tracker pressure scenario" -m "Co-authored-by: Codex <noreply@openai.com>"
 ```
 
@@ -2226,6 +2259,12 @@ In `tests/test_validate_forge_seed.py`, extend `CONFIG_BUNDLE_REQUIRED_TEXT` fix
 ```python
 "python3.14 -m unittest tests.test_agent_equipment_config",
 ```
+
+Also update `valid_config_bundle()` so its validation-plan fixture contains
+`python3.14 -m unittest tests.test_agent_equipment_config`, and keep the shared
+fixture header containing the exact phrase `does not implement Agent Equipment`.
+This keeps `test_validate_specs_accepts_complete_specs` aligned with the new
+required term and with the bundle-level implementation-status validator.
 
 Run:
 
