@@ -87,12 +87,15 @@ capability belongs in a skill, script, tool, or config is written down.
 Equipment is not treated as ready just because it looks plausible. Safeguards,
 checks, and review are part of the build process.
 
-## The People It Serves
+## For Agents and Operators
 
-The Agent Armory is meant for people who wield, outfit, evaluate, procure,
-commission, or keep agent equipment current through their agents. Humans choose
-directions and initiate work; agents carry out the assigned work until they need
-a human decision or access they do not have.
+The Agent Armory is meant for operators[^operator] who need agents to wield,
+outfit, evaluate, procure, commission, or keep agent equipment current.
+Operators choose directions and initiate or route work; agents carry out the
+assigned work until they need an operator decision or access they do not have.
+
+[^operator]: An operator may be a human or an orchestrator-agent in a
+    multi-agent system.
 
 The vocabulary for the Forge names the agent roles directly:
 
