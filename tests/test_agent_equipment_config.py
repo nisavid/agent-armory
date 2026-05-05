@@ -338,3 +338,183 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(result["safety_status"], "conflicted")
         self.assertIn("blocked override", [item["kind"] for item in result["diagnostics"]])
         self.assertIn("same-precedence collision", [item["kind"] for item in result["diagnostics"]])
+
+    def test_untrusted_layer_sets_untrusted_for_mutation(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "checkout.toml", """
+                [agent_equipment_config.layer]
+                name = "checkout-local state"
+                category = "checkout-local state"
+                trusted = false
+
+                [issue_tracker_ops]
+                mode = "execute"
+                external_disclosure = "allowed"
+            """)
+
+            result = agent_equipment_config.effective_config([layer], [self.issue_ops_fragment()], requested_behavior="mutation")
+
+        self.assertEqual(result["safety_status"], "untrusted")
+        self.assertEqual(result["diagnostics"][0]["kind"], "untrusted source")
+
+    def test_stale_fragment_version_reports_stale_without_rewriting_source(self):
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=2,
+            fields={"mode": agent_equipment_config.FieldSpec(type="string", required=True, enum=["dry-run", "execute"])},
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.fragment_versions]
+                issue_tracker_ops = 1
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+            """)
+
+            result = agent_equipment_config.effective_config([layer], [fragment], requested_behavior="mutation")
+
+        self.assertEqual(result["safety_status"], "stale")
+        self.assertEqual(result["diagnostics"][0]["kind"], "stale schema")
+
+    def test_migration_preview_reports_audit_shape_without_rewriting_source(self):
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=2,
+            fields={"mode": agent_equipment_config.FieldSpec(type="string", enum=["dry-run", "execute"])},
+            migrations=(
+                agent_equipment_config.MigrationPreview(
+                    from_version=1,
+                    field_renames={"operation_mode": "mode"},
+                    note="rename operation_mode to mode",
+                ),
+            ),
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.fragment_versions]
+                issue_tracker_ops = 1
+
+                [issue_tracker_ops]
+                operation_mode = "dry-run"
+            """)
+            original_text = layer.read_text(encoding="utf-8")
+
+            result = agent_equipment_config.effective_config([layer], [fragment], requested_behavior="mutation")
+            rewritten_text = layer.read_text(encoding="utf-8")
+
+        self.assertEqual(rewritten_text, original_text)
+        self.assertEqual(result["safety_status"], "stale")
+        self.assertEqual(
+            result["migration_previews"][0]["changes"][0],
+            {"from": "issue_tracker_ops.operation_mode", "to": "issue_tracker_ops.mode", "value": "dry-run"},
+        )
+        self.assertEqual(result["migration_previews"][0]["audit_preview"]["action"], "migration apply preview")
+        self.assertFalse(result["migration_previews"][0]["audit_preview"]["would_rewrite_source"])
+
+    def test_semantic_validator_can_mark_config_unsafe(self):
+        def execute_requires_disclosure(values, requested_behavior):
+            if requested_behavior == "mutation" and values.get("mode") == "execute" and values.get("external_disclosure") != "allowed":
+                return [agent_equipment_config.Diagnostic("semantic conflict", "issue_tracker_ops.external_disclosure", "execute requires external disclosure policy")]
+            return []
+
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=1,
+            fields={
+                "mode": agent_equipment_config.FieldSpec(type="string", required=True, enum=["dry-run", "execute"]),
+                "external_disclosure": agent_equipment_config.FieldSpec(type="string", required=True, enum=["blocked", "allowed"]),
+            },
+            semantic_validators=(execute_requires_disclosure,),
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "session.toml", """
+                [agent_equipment_config.layer]
+                name = "session overrides"
+                category = "session override"
+
+                [issue_tracker_ops]
+                mode = "execute"
+                external_disclosure = "blocked"
+            """)
+
+            result = agent_equipment_config.effective_config([layer], [fragment], requested_behavior="mutation")
+
+        self.assertEqual(result["safety_status"], "unsafe")
+        self.assertEqual(result["diagnostics"][0]["kind"], "semantic conflict")
+
+    def test_mutation_only_semantic_validator_does_not_block_advisory_behavior(self):
+        def execute_requires_disclosure(values, requested_behavior):
+            if requested_behavior == "mutation" and values.get("mode") == "execute" and values.get("external_disclosure") != "allowed":
+                return [agent_equipment_config.Diagnostic("semantic conflict", "issue_tracker_ops.external_disclosure", "execute requires external disclosure policy")]
+            return []
+
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=1,
+            fields={
+                "mode": agent_equipment_config.FieldSpec(type="string", required=True, enum=["dry-run", "execute"]),
+                "external_disclosure": agent_equipment_config.FieldSpec(type="string", required=True, enum=["blocked", "allowed"]),
+            },
+            semantic_validators=(execute_requires_disclosure,),
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "session.toml", """
+                [agent_equipment_config.layer]
+                name = "session overrides"
+                category = "session override"
+
+                [issue_tracker_ops]
+                mode = "execute"
+                external_disclosure = "blocked"
+            """)
+
+            result = agent_equipment_config.effective_config([layer], [fragment], requested_behavior="advisory")
+
+        self.assertEqual(result["safety_status"], "usable")
+        self.assertEqual(result["diagnostics"], [])
+
+    def test_safety_status_precedence_is_explicit_for_mixed_diagnostics(self):
+        self.assertEqual(
+            agent_equipment_config.safety_status_from_diagnostics(
+                [
+                    agent_equipment_config.Diagnostic("semantic conflict", "issue_tracker_ops.external_disclosure", "unsafe"),
+                    agent_equipment_config.Diagnostic("blocked override", "issue_tracker_ops.mode", "blocked"),
+                ],
+                requested_behavior="mutation",
+            ),
+            "conflicted",
+        )
+        self.assertEqual(
+            agent_equipment_config.safety_status_from_diagnostics(
+                [
+                    agent_equipment_config.Diagnostic("stale schema", "issue_tracker_ops", "stale"),
+                    agent_equipment_config.Diagnostic("schema conflict", "issue_tracker_ops.mode", "missing required value"),
+                ],
+                requested_behavior="mutation",
+            ),
+            "incomplete",
+        )
+        self.assertEqual(
+            agent_equipment_config.safety_status_from_diagnostics(
+                [
+                    agent_equipment_config.Diagnostic("semantic conflict", "issue_tracker_ops.external_disclosure", "unsafe"),
+                    agent_equipment_config.Diagnostic("untrusted source", "issue_tracker_ops", "untrusted"),
+                ],
+                requested_behavior="mutation",
+            ),
+            "untrusted",
+        )

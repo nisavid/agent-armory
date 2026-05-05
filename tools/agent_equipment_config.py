@@ -60,11 +60,19 @@ class FieldSpec:
 
 
 @dataclass(frozen=True)
+class MigrationPreview:
+    from_version: int
+    field_renames: dict[str, str]
+    note: str
+
+
+@dataclass(frozen=True)
 class SchemaFragment:
     namespace: str
     version: int
     fields: dict[str, FieldSpec]
     semantic_validators: tuple[Callable[[dict[str, Any], str], list["Diagnostic"]], ...] = ()
+    migrations: tuple[MigrationPreview, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -143,6 +151,76 @@ def policy_locks(layer: Layer) -> dict[tuple[str, str], PolicyLock]:
     return locks
 
 
+def fragment_versions(layer: Layer) -> dict[str, int]:
+    versions = layer.metadata.get("fragment_versions", {})
+    return {str(key): int(value) for key, value in versions.items()} if isinstance(versions, dict) else {}
+
+
+def raw_values_for_namespace(effective_namespace: dict[str, Any]) -> dict[str, JSONValue]:
+    return {
+        field_name: wrapped.get("value")
+        for field_name, wrapped in effective_namespace.items()
+    }
+
+
+def migration_previews_for_layer(layer: Layer, fragment: SchemaFragment) -> list[dict[str, Any]]:
+    source_version = fragment_versions(layer).get(fragment.namespace)
+    if source_version is None or source_version >= fragment.version:
+        return []
+    section = layer.data.get(fragment.namespace, {})
+    previews: list[dict[str, Any]] = []
+    for migration in fragment.migrations:
+        if migration.from_version != source_version:
+            continue
+        changes = [
+            {
+                "from": f"{fragment.namespace}.{old_name}",
+                "to": f"{fragment.namespace}.{new_name}",
+                "value": section[old_name],
+            }
+            for old_name, new_name in migration.field_renames.items()
+            if old_name in section
+        ]
+        previews.append(
+            {
+                "namespace": fragment.namespace,
+                "source": layer.path,
+                "from_version": source_version,
+                "to_version": fragment.version,
+                "note": migration.note,
+                "changes": changes,
+                "audit_preview": {
+                    "action": "migration apply preview",
+                    "source": layer.path,
+                    "namespace": fragment.namespace,
+                    "from_version": source_version,
+                    "to_version": fragment.version,
+                    "would_rewrite_source": False,
+                },
+            }
+        )
+    if previews:
+        return previews
+    return [
+        {
+            "namespace": fragment.namespace,
+            "source": layer.path,
+            "from_version": source_version,
+            "to_version": fragment.version,
+            "note": "no registered migration preview",
+            "changes": [],
+            "audit_preview": {
+                "action": "migration apply preview",
+                "source": layer.path,
+                "namespace": fragment.namespace,
+                "from_version": source_version,
+                "to_version": fragment.version,
+                "would_rewrite_source": False,
+            },
+        }
+    ]
+
+
 def load_toml(path: Path) -> dict[str, Any]:
     try:
         return tomllib.loads(path.read_text(encoding="utf-8"))
@@ -194,6 +272,7 @@ def effective_config(layer_paths: list[Path], fragments: list[SchemaFragment], *
     layers = load_layers(layer_paths)
     effective: dict[str, dict[str, Any]] = {}
     diagnostics: list[Diagnostic] = []
+    migration_previews: list[dict[str, Any]] = []
     for fragment in fragments:
         namespace_values: dict[str, Any] = {}
         for field_name, field in fragment.fields.items():
@@ -261,19 +340,40 @@ def effective_config(layer_paths: list[Path], fragments: list[SchemaFragment], *
                 "source": source_layer.path if source_layer else "schema default",
                 "layer": source_layer.name if source_layer else "schema default",
             }
+        for layer in layers:
+            if not layer.trusted and fragment.namespace in layer.data and requested_behavior == "mutation":
+                diagnostics.append(diagnostic("untrusted source", fragment.namespace, f"{layer.name} is not trusted for mutation", layer))
+            versions = fragment_versions(layer)
+            if fragment.namespace in versions and versions[fragment.namespace] < fragment.version:
+                diagnostics.append(diagnostic("stale schema", fragment.namespace, f"source version {versions[fragment.namespace]} is older than schema version {fragment.version}", layer))
+                migration_previews.extend(migration_previews_for_layer(layer, fragment))
+        plain_values = raw_values_for_namespace(namespace_values)
+        for validator in fragment.semantic_validators:
+            diagnostics.extend(validator(plain_values, requested_behavior))
         effective[fragment.namespace] = namespace_values
     safety_status = safety_status_from_diagnostics(diagnostics, requested_behavior=requested_behavior)
     return {
         "safety_status": safety_status,
         "effective": effective,
         "diagnostics": [asdict(item) for item in diagnostics],
+        "migration_previews": migration_previews,
     }
 
 
 def safety_status_from_diagnostics(diagnostics: list[Diagnostic], *, requested_behavior: str) -> str:
-    blocking_diagnostics = [item for item in diagnostics if item.kind != "deprecated field"]
-    if any(item.kind == "schema conflict" and "missing required" in item.detail for item in blocking_diagnostics):
-        return "incomplete"
-    if blocking_diagnostics:
+    kinds = {item.kind for item in diagnostics}
+    # Precedence is intentional: structural conflicts first, then incomplete schema,
+    # then provenance/version hazards, then semantic unsafety.
+    if "blocked override" in kinds or "same-precedence collision" in kinds:
         return "conflicted"
+    if "schema conflict" in kinds and any("missing required" in item.detail for item in diagnostics):
+        return "incomplete"
+    if "schema conflict" in kinds:
+        return "conflicted"
+    if "untrusted source" in kinds:
+        return "untrusted"
+    if "stale schema" in kinds:
+        return "stale"
+    if "semantic conflict" in kinds:
+        return "unsafe"
     return "usable"
