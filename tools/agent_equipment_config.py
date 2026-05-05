@@ -473,6 +473,19 @@ def untrusted_authority_diagnostics(layers: list[Layer], authority: str) -> list
     return diagnostics
 
 
+def dedupe_diagnostics(diagnostics: list[Diagnostic]) -> list[Diagnostic]:
+    deduped: list[Diagnostic] = []
+    seen: set[tuple[str, str, str, str | None, str | None, str]] = set()
+    for item in diagnostics:
+        evidence_key = json.dumps(item.evidence, sort_keys=True)
+        key = (item.kind, item.path, item.detail, item.layer, item.source, evidence_key)
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(item)
+    return deduped
+
+
 def enforcement_projection(safety_status: str, requested_behavior: str) -> dict[str, Any]:
     classification = "blocking" if requested_behavior == "mutation" and safety_status != "usable" else "advisory"
     return {
@@ -540,6 +553,7 @@ def effective_config(
 ) -> dict[str, Any]:
     handoff_layers, plain_handoffs = load_plain_handoff_layers(plain_handoff_paths or [])
     layers = sorted([*load_layers(layer_paths), *handoff_layers], key=lambda layer: (layer.precedence, layer.source_order))
+    locks_by_layer = [policy_locks(layer) for layer in layers]
     effective: dict[str, dict[str, Any]] = {}
     diagnostics: list[Diagnostic] = []
     migration_previews: list[dict[str, Any]] = []
@@ -552,8 +566,7 @@ def effective_config(
             values_by_precedence: dict[int, tuple[JSONValue, Layer]] = {}
             conflicted_precedences: set[int] = set()
             path = f"{fragment.namespace}.{field_name}"
-            for layer in layers:
-                locks = policy_locks(layer)
+            for layer, locks in zip(layers, locks_by_layer, strict=True):
                 candidate_lock = locks.get((fragment.namespace, field_name))
                 if candidate_lock is not None and (
                     active_lock is None
@@ -632,6 +645,7 @@ def effective_config(
         for validator in fragment.semantic_validators:
             diagnostics.extend(validator(plain_values, requested_behavior))
         effective[fragment.namespace] = namespace_values
+    diagnostics = dedupe_diagnostics(diagnostics)
     safety_status = safety_status_from_diagnostics(diagnostics, requested_behavior=requested_behavior)
     return {
         "safety_status": safety_status,

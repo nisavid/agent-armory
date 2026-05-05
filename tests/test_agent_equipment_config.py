@@ -1334,6 +1334,52 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertIn("missing authority", [item["kind"] for item in result["diagnostics"]])
         self.assertEqual(result["enforcement_projection"]["classification"], "blocking")
 
+    def test_untrusted_authority_diagnostic_is_not_repeated_per_field(self):
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=1,
+            fields={
+                "mode": agent_equipment_config.FieldSpec(type="string", required=True),
+                "external_disclosure": agent_equipment_config.FieldSpec(type="string", required=True),
+            },
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy = self.write_layer(root, "org.toml", """
+                [agent_equipment_config.layer]
+                name = "organization or tracker policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.policy.issue_tracker_ops.mode]
+                required_for = "mutation"
+                authority = "live_tracker_write"
+
+                [agent_equipment_config.policy.issue_tracker_ops.external_disclosure]
+                required_for = "mutation"
+                authority = "live_tracker_write"
+
+                [issue_tracker_ops]
+                mode = "execute"
+                external_disclosure = "allowed"
+            """)
+            untrusted_authority = self.write_layer(root, "local.toml", """
+                [agent_equipment_config.layer]
+                name = "user/operator local overrides"
+                category = "local-only operator config"
+                trusted = false
+
+                [agent_equipment_config.authority]
+                live_tracker_write = "usable"
+            """)
+
+            result = agent_equipment_config.effective_config([policy, untrusted_authority], [fragment], requested_behavior="mutation")
+
+        untrusted_authority_diagnostics = [
+            item for item in result["diagnostics"]
+            if item["kind"] == "untrusted source" and item["path"] == "agent_equipment_config.authority.live_tracker_write"
+        ]
+        self.assertEqual(len(untrusted_authority_diagnostics), 1)
+
     def test_issue_tracker_ops_pressure_scenario_blocks_execute_without_authority(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
