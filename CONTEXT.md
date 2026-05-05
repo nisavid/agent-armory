@@ -150,6 +150,14 @@ insight, right-sizes cognition, or improves its future harness behavior.
 _Avoid_: prompt style when deterministic support, durable capture, policy, or
 validation is the needed surface
 
+**Head Gear**:
+The Armory's generic Cognition Enhancement Equipment for translating
+underspecified but realizable operator intent into high-quality outcomes by
+inducing reflection, imagination, questioning, bookkeeping, knowledge retrieval,
+capability prediction, and self-outfitting.
+_Avoid_: domain-specific equipment, style-only prompting, one-off instruction
+to think harder
+
 **Reflection**:
 An Agent activity that inspects recent experience, extracts reusable lessons,
 and routes durable follow-up into Agent Equipment, issue tracker records,
@@ -329,6 +337,9 @@ _Avoid_: chat-only conclusion, undocumented resume instruction
 - A **Published PRD Issue** is the tracking surface; material repo-draft changes need explicit issue re-projection.
 - **Issue Projection** happens after repo-draft review; closeout records either the issue update or the reason projection remains pending.
 - **Reflection Findings** are source material for future **Cognition Enhancement Equipment** and may also induce **Tooling Requests**, **Equipment Candidates**, or issue-tracked work in narrower equipment stories.
+- **Head Gear** is generic **Cognition Enhancement Equipment**; it prepares the
+  Agent to clarify, equip, execute, and reflect before domain-specific equipment
+  takes over.
 - A **Forgewright Runbook** guides Forge maintenance without replacing ADRs, PRDs, implementation plans, or Smith runbooks.
 - A **Target Structure** can guide a PRD, but the **Forge Seed** creates only **Seed Surfaces**.
 - A **Seed Validation Tool** implements **Seed Validation** without adding runtime dependencies.

@@ -70,6 +70,11 @@ composable, adaptable, and enforceable configuration across Agent Equipment.
 reasons, reflects, remembers, routes insight, right-sizes cognition, or
 improves its future harness behavior.
 
+**Head Gear** is the Armory's generic Cognition Enhancement Equipment for
+translating underspecified but realizable operator intent into high-quality
+outcomes by inducing reflection, imagination, questioning, bookkeeping,
+knowledge retrieval, capability prediction, and self-outfitting.
+
 **Reflection** is Agent activity that inspects recent experience, extracts
 reusable lessons, and routes durable follow-up into equipment, issues, config,
 docs, validators, workflows, policy, or Forge Tooling.
@@ -131,6 +136,9 @@ induced candidate for future work.
 - Reflection Findings are source material for future Cognition Enhancement
   Equipment and may also induce Tooling Requests, Equipment Candidates, or
   issue-tracked work in narrower equipment stories.
+- Head Gear is generic Cognition Enhancement Equipment; it prepares the Agent to
+  clarify, equip, execute, and reflect before domain-specific equipment takes
+  over.
 - A Tooling Request moves a Tooling Gap into Tooling Work for a Forgewright.
 - The Source Disposition Ledger replaces raw source-handoff preservation after source retirement.
 

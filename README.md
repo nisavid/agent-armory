@@ -25,9 +25,13 @@ operator stays in control. The Agent Armory is where that gear will live.
 
 ## Vision
 
-The Armory's long-range vision is an agent experience where an operator can
-state intent before every criterion is known, and an adequately equipped agent
-can turn that underspecified intent into a high-quality outcome.
+The Armory's long-range vision is stronger than better prompting. In the
+completed Armory, an agent wielding the generic **Head Gear** will translate an
+operator's underspecified but realizable intent into a high-quality outcome.
+
+Even when the input starts as vibes, Head Gear's promise is that the equipped
+agent will not produce slop. It will clarify the intent, find the boundaries,
+equip itself, do the work, and leave evidence behind.
 
 The agent first makes the solution space legible. It asks enough questions to
 understand the shape, extent, and boundaries of the work, then outfits the work
@@ -149,9 +153,9 @@ these equipment lines:
 - [Harness Capability Refresh](specs/harness-capability-refresh.md), for keeping
   harness facts current.
 - [Reflection and cognition equipment](https://github.com/nisavid/agent-armory/issues/25),
-  for turning recent agent experience into durable insight, routed follow-up,
-  and harness improvements after enough rudimentary engineering, operations, and
-  tooling equipment exists.
+  or Head Gear, for turning recent agent experience into durable insight,
+  routed follow-up, and harness improvements after enough rudimentary
+  engineering, operations, and tooling equipment exists.
 
 The active story structure lives in the
 [issue tracker](https://github.com/nisavid/agent-armory/issues). The notes under
