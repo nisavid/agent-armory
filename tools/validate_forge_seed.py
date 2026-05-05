@@ -739,8 +739,41 @@ EXAMPLE_REQUIRED_PATHS = [
     for example_directory in EXAMPLE_DIRECTORIES
     for example_file in EXAMPLE_FILES
 ]
+CONFIG_BUNDLE_PATH = "specs/agent-equipment-config"
+CONFIG_BUNDLE_REQUIRED_PATHS = [
+    f"{CONFIG_BUNDLE_PATH}/README.md",
+    f"{CONFIG_BUNDLE_PATH}/capability-card.md",
+    f"{CONFIG_BUNDLE_PATH}/interface-decision-record.md",
+    f"{CONFIG_BUNDLE_PATH}/security-control-classification.md",
+    f"{CONFIG_BUNDLE_PATH}/pressure-scenarios.md",
+    f"{CONFIG_BUNDLE_PATH}/validation-plan.md",
+    f"{CONFIG_BUNDLE_PATH}/closeout-evidence-plan.md",
+]
+CONFIG_BUNDLE_REQUIRED_TEXT = [
+    "typed schemas",
+    "schema fragments",
+    "layered config",
+    "effective-config",
+    "config-diff",
+    "Layer Precedence",
+    "Policy Authority",
+    "Config Safety Status",
+    "semantic validators",
+    "conflict diagnostics",
+    "migrations",
+    "session-scoped",
+    "plain equipment-specific config handoff",
+    "secret references",
+    "Issue Tracker Ops",
+    "policy",
+    "Codex",
+    "OpenClaw",
+    "Hermes Agent",
+    "Claude Code",
+    "Cursor",
+    "OpenCode",
+]
 SPEC_REQUIRED_PATHS = [
-    "specs/agent-equipment-config.md",
     "specs/agent-ops.md",
     "specs/periodic-actions.md",
     "specs/harness-capability-refresh.md",
@@ -756,22 +789,6 @@ SPEC_HARNESS_SECTION_ALTERNATIVES = [
     "Harness-specific starting points",
 ]
 SPEC_REQUIRED_TEXT = {
-    "specs/agent-equipment-config.md": [
-        "typed schemas",
-        "schema fragments",
-        "layered config",
-        "effective-config",
-        "session-scoped",
-        "plain equipment-specific config handoff",
-        "secret",
-        "policy",
-        "Codex",
-        "OpenClaw",
-        "Hermes Agent",
-        "Claude Code",
-        "Cursor",
-        "OpenCode",
-    ],
     "specs/agent-ops.md": [
         "TOML",
         "hook behavior",
@@ -4596,6 +4613,57 @@ def validate_examples(root: Path) -> list[CheckResult]:
 
 def validate_specs(root: Path) -> list[CheckResult]:
     results: list[CheckResult] = []
+    config_bundle_markdown_parts: list[str] = []
+    for relative_path in CONFIG_BUNDLE_REQUIRED_PATHS:
+        ok, detail, path = repo_relative_path_status(root, relative_path, "file")
+        if not ok:
+            if detail == "path contains symlink":
+                detail = "spec path contains symlink"
+            results.append(CheckResult(f"spec:path:{relative_path}", False, detail, relative_path))
+            continue
+        markdown = path.read_text(encoding="utf-8")
+        visible_markdown = markdown_visible_text(markdown)
+        config_bundle_markdown_parts.append(visible_markdown)
+        if "Promotion state: planned".casefold() not in visible_markdown.casefold():
+            results.append(
+                CheckResult(
+                    f"spec:promotion:{relative_path}",
+                    False,
+                    "missing Promotion state: planned",
+                    relative_path,
+                )
+            )
+        if "does not implement Agent Equipment".casefold() not in visible_markdown.casefold():
+            results.append(
+                CheckResult(
+                    f"spec:boundary:{relative_path}",
+                    False,
+                    "missing non-implementation boundary",
+                    relative_path,
+                )
+            )
+        for forbidden_claim in FORBIDDEN_SPEC_CLAIMS:
+            if forbidden_claim.casefold() in visible_markdown.casefold():
+                results.append(
+                    CheckResult(
+                        f"spec:claim:{relative_path}:{forbidden_claim}",
+                        False,
+                        f"forbidden readiness claim: {forbidden_claim}",
+                        relative_path,
+                    )
+                )
+    config_bundle_text = "\n".join(config_bundle_markdown_parts)
+    if config_bundle_text:
+        for required_text in CONFIG_BUNDLE_REQUIRED_TEXT:
+            if required_text.casefold() not in config_bundle_text.casefold():
+                results.append(
+                    CheckResult(
+                        f"spec:text:{CONFIG_BUNDLE_PATH}:{required_text}",
+                        False,
+                        f"missing {required_text}",
+                        CONFIG_BUNDLE_PATH,
+                    )
+                )
     for relative_path in SPEC_REQUIRED_PATHS:
         ok, detail, path = repo_relative_path_status(root, relative_path, "file")
         if not ok:
@@ -4750,6 +4818,7 @@ def run(root: Path, *, final_closeout: bool = False, source_mode: str = "auto") 
         *CANONICAL_DOC_REQUIRED_SECTIONS,
         *TEMPLATE_REQUIRED_PATHS,
         *EXAMPLE_REQUIRED_PATHS,
+        *CONFIG_BUNDLE_REQUIRED_PATHS,
         *SPEC_REQUIRED_PATHS,
     ]
     if resolved_source_mode == "source-bearing":

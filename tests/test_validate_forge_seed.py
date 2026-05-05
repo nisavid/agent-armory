@@ -8843,8 +8843,17 @@ class ExampleValidationTests(unittest.TestCase):
 
 
 class SpecValidationTests(unittest.TestCase):
+    config_bundle_paths = [
+        "specs/agent-equipment-config/README.md",
+        "specs/agent-equipment-config/capability-card.md",
+        "specs/agent-equipment-config/interface-decision-record.md",
+        "specs/agent-equipment-config/security-control-classification.md",
+        "specs/agent-equipment-config/pressure-scenarios.md",
+        "specs/agent-equipment-config/validation-plan.md",
+        "specs/agent-equipment-config/closeout-evidence-plan.md",
+    ]
     required_spec_paths = [
-        "specs/agent-equipment-config.md",
+        *config_bundle_paths,
         "specs/agent-ops.md",
         "specs/periodic-actions.md",
         "specs/harness-capability-refresh.md",
@@ -8896,18 +8905,137 @@ class SpecValidationTests(unittest.TestCase):
             ]
         )
 
-    def write_all_specs(self, root: Path, overrides: dict[str, str] | None = None) -> None:
-        specs = {
-            "specs/agent-equipment-config.md": self.valid_spec(
-                "Agent Equipment Config Spec",
+    def valid_config_bundle(self) -> dict[str, str]:
+        common_header = textwrap.dedent(
+            """\
+            Status: Equipment Blueprint
+            Promotion state: planned
+
+            This Forge Entry Bundle describes desired behavior only. It does not implement Agent Equipment.
+            """
+        ).strip()
+
+        def bundle_doc(title: str, body: str) -> str:
+            return f"# {title}\n\n{common_header}\n\n{textwrap.dedent(body).strip()}\n"
+
+        return {
+            "specs/agent-equipment-config/README.md": bundle_doc(
+                "Agent Equipment Config",
                 """\
-                Typed schemas compose schema fragments into layered config.
-                Effective-config output explains policy decisions.
-                Session-scoped behavior accepts a plain equipment-specific config handoff.
-                Secret references are stored instead of secrets.
-                Required harnesses: Codex, OpenClaw, Hermes Agent, Claude Code, Cursor, OpenCode.
+                ## Bundle map
+
+                The bundle links the capability card, interface decision record,
+                security/control classification, pressure scenarios, validation
+                plan, and closeout evidence plan for issue #23.
+
+                ## V0 scope
+
+                Agent Equipment Config v0 defines the explainable effective-config
+                contract for typed schemas, schema fragments, layered config,
+                config-diff output, Layer Precedence, Policy Authority, Config Safety Status,
+                semantic validators, conflict diagnostics, migrations, secret references,
+                session-scoped behavior, and plain equipment-specific config handoff
+                promotion.
+
+                ## Harness projections
+
+                Required harnesses: Codex, OpenClaw, Hermes Agent, Claude Code,
+                Cursor, OpenCode.
                 """,
             ),
+            "specs/agent-equipment-config/capability-card.md": bundle_doc(
+                "Capability Card: Agent Equipment Config",
+                """\
+                ## Purpose
+
+                Shared, layerable, composable, adaptable, and enforceable
+                configuration across Agent Equipment.
+
+                ## Vision alignment
+
+                Config keeps deterministic policy, local choices, schema
+                validation, and effective-config explanation out of hidden model
+                preference.
+
+                ## Hard rules
+
+                Mutation-capable behavior fails closed unless the effective
+                configuration is usable.
+                """,
+            ),
+            "specs/agent-equipment-config/interface-decision-record.md": bundle_doc(
+                "Interface Decision Record: Agent Equipment Config",
+                """\
+                ## Requirement
+
+                Agent Equipment Config needs typed schema fragment registration,
+                deterministic merge behavior, config-diff output, and
+                effective-config output.
+
+                ## Vision alignment
+
+                The equipment projects deterministic configuration concerns into
+                typed data, scripts, tools, hooks, approvals, and config rather
+                than a single skill.
+
+                ## Decision
+
+                Use TOML for human-authored config and JSON-compatible objects
+                for schemas, diagnostics, audit records, and tool output.
+                """,
+            ),
+            "specs/agent-equipment-config/security-control-classification.md": bundle_doc(
+                "Security and Control Classification: Agent Equipment Config",
+                """\
+                ## Scope
+
+                This classification covers the v0 contract, not a runtime engine.
+
+                ## Controls
+
+                Secret references do not store secret values. Non-overridable
+                policy, untrusted config, local-only state, and mutation gates
+                are represented in structured diagnostics.
+                """,
+            ),
+            "specs/agent-equipment-config/pressure-scenarios.md": bundle_doc(
+                "Pressure Scenarios: Agent Equipment Config",
+                """\
+                ## Issue Tracker Ops effective config
+
+                Issue Tracker Ops is the primary pressure scenario for tracker
+                write policy, priority selection, dependency feasibility,
+                dry-run versus execute behavior, external disclosure, partial
+                onboarding, and stale config.
+                """,
+            ),
+            "specs/agent-equipment-config/validation-plan.md": bundle_doc(
+                "Validation Plan: Agent Equipment Config",
+                """\
+                ## Deterministic checks
+
+                Validation covers absent config equipment, partial config,
+                conflicting layers, semantic validators, schema migration,
+                session overrides, local-only overrides, committed config,
+                multi-equipment composition, enforcement projection, secret
+                references, and handoff ingestion.
+                """,
+            ),
+            "specs/agent-equipment-config/closeout-evidence-plan.md": bundle_doc(
+                "Closeout Evidence Plan: Agent Equipment Config",
+                """\
+                ## Evidence
+
+                Closeout records validator results, config-diff and
+                effective-config contract coverage, Issue Tracker Ops pressure
+                scenario coverage, child issue projection, and security review
+                disposition.
+                """,
+            ),
+        }
+
+    def write_all_specs(self, root: Path, overrides: dict[str, str] | None = None) -> None:
+        specs = {
             "specs/agent-ops.md": self.valid_spec(
                 "Agent Ops Spec",
                 """\
@@ -8940,6 +9068,7 @@ class SpecValidationTests(unittest.TestCase):
                 """,
             ),
         }
+        specs.update(self.valid_config_bundle())
         specs.update(overrides or {})
         for relative_path, content in specs.items():
             self.write_spec(root, relative_path, content)
@@ -9070,9 +9199,17 @@ class SpecValidationTests(unittest.TestCase):
             "schema fragments",
             "layered config",
             "effective-config",
+            "config-diff",
+            "Layer Precedence",
+            "Policy Authority",
+            "Config Safety Status",
+            "semantic validators",
+            "conflict diagnostics",
+            "migrations",
             "session-scoped",
             "plain equipment-specific config handoff",
-            "secret",
+            "secret references",
+            "Issue Tracker Ops",
             "policy",
             "Codex",
             "OpenClaw",
@@ -9084,26 +9221,29 @@ class SpecValidationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             self.write_all_specs(root)
-            path = root / "specs/agent-equipment-config.md"
-            spec_text = path.read_text(encoding="utf-8")
+            bundle_paths = [root / path for path in self.config_bundle_paths]
             for required_term in required_terms:
-                mutated_text = spec_text
-                for variant in {required_term, required_term[:1].upper() + required_term[1:]}:
-                    mutated_text = mutated_text.replace(variant, "")
-                if required_term == "secret":
-                    mutated_text = mutated_text.replace("secrets", "")
-                path.write_text(mutated_text, encoding="utf-8")
+                original_texts = {path: path.read_text(encoding="utf-8") for path in bundle_paths}
+                for path, original_text in original_texts.items():
+                    mutated_text = original_text
+                    for variant in {required_term, required_term[:1].upper() + required_term[1:]}:
+                        mutated_text = mutated_text.replace(variant, "")
+                    if required_term == "secret references":
+                        mutated_text = mutated_text.replace("secret reference", "")
+                    path.write_text(mutated_text, encoding="utf-8")
                 with self.subTest(required_term=required_term):
                     results = validate_specs(root)
                     self.assertIn(
                         CheckResult(
-                            name=f"spec:text:specs/agent-equipment-config.md:{required_term}",
+                            name=f"spec:text:specs/agent-equipment-config:{required_term}",
                             ok=False,
                             detail=f"missing {required_term}",
-                            path="specs/agent-equipment-config.md",
+                            path="specs/agent-equipment-config",
                         ),
                         results,
                     )
+                for path, original_text in original_texts.items():
+                    path.write_text(original_text, encoding="utf-8")
 
     def test_validate_specs_requires_periodic_actions_content(self):
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -1,0 +1,122 @@
+# Capability Card: Agent Equipment Config
+
+Status: Equipment Blueprint
+Promotion state: planned
+
+This Forge Entry Bundle describes desired behavior only. It does not implement Agent Equipment, publish assets, or provide a runtime config engine.
+
+## Purpose
+
+Provide shared, layerable, composable, adaptable, and enforceable configuration
+across Agent Equipment.
+
+Config lets equipment lines declare typed schemas, register namespaced schema
+fragments, merge layered config, explain effective-config and config-diff
+results, and surface policy decisions without hard-coding generic configuration
+machinery into higher-level equipment.
+
+## Vision alignment
+
+Agent Equipment Config supports least cognitive privilege by moving durable
+policy, local choices, schema validation, merge behavior, conflict diagnostics,
+secret references, migrations, and safety status into typed data and
+deterministic checks instead of hidden model preference.
+
+It helps Outfitters assemble Loadouts that can adapt to organization,
+repository, checkout, issue-set, session, harness, and operator policy without
+copying all of that variation into prompt text.
+
+## Users
+
+- Smith: defines an equipment-specific config shape without inventing a new
+  config system.
+- Outfitter: combines equipment into a Loadout and needs explainable effective
+  policy across the selected items.
+- Wielder: uses configured equipment and needs safe behavior when config is
+  missing, partial, stale, untrusted, or conflicted.
+- Repository owner or operator: supplies policy, local choices, and authority
+  boundaries.
+- Harness projection author: maps Config categories to Codex, OpenClaw, Hermes
+  Agent, Claude Code, Cursor, OpenCode, and future harnesses.
+
+## Target harnesses
+
+The v0 contract must be projectable to Codex, OpenClaw, Hermes Agent, Claude
+Code, Cursor, and OpenCode. The first pressure scenario uses Issue Tracker Ops
+because tracker writes, priority selection, dependency feasibility, dry-run or
+execute behavior, external disclosure, and partial onboarding exercise the
+policy model without making Config depend on Issue Tracker Ops.
+
+## Needed surfaces
+
+- Docs: this Forge Entry Bundle and future usage docs.
+- Config: TOML authored layers and plain equipment-specific config handoff
+  records.
+- Scripts/tools: future deterministic effective-config, config-diff, validation,
+  and migration commands.
+- Hooks, permissions, approvals, sandboxes, or tool gates: future enforcement
+  projections for mutation-capable behavior.
+- Skills: future Smith and Wielder judgment around design, onboarding, and
+  remediation.
+- Agent Profiles and plugins: future packaging and specialized operating roles.
+
+## Hard rules
+
+- Agent Equipment Config remains independent equipment.
+- Equipment-specific config shapes remain usable in session scope when Config is
+  absent.
+- Shared Config consumes equipment-specific plain shapes as schema fragments
+  when Config is present.
+- Schema fragments are namespaced to avoid collisions.
+- TOML is the v0 human-authored format; JSON-compatible objects are the v0
+  machine contract format.
+- Config Safety Status is machine-visible.
+- Mutation-capable behavior fails closed unless the effective configuration is
+  `usable`.
+- Secret references may appear in config; secret values must not.
+- Read-time migrations may explain stale config; source rewrites require an
+  explicit audited mutation.
+
+## Output contract
+
+Future deterministic surfaces should emit JSON-compatible objects for:
+
+- schema registration results,
+- effective-config output with value provenance,
+- config-diff output,
+- conflict diagnostics,
+- semantic validator diagnostics,
+- migration previews,
+- secret reference resolution status,
+- policy decision audit records.
+
+## Failure modes
+
+- Missing shared Config equipment: equipment falls back to explicit
+  session-scoped behavior and plain equipment-specific config handoff.
+- Partial config: output is schema-valid but has Config Safety Status
+  `incomplete`.
+- Unsafe policy: output is `unsafe` and mutation-capable behavior fails closed.
+- Stale schema version: read-time migrations may preview results, but
+  mutation-capable behavior remains `stale` until policy accepts or applies the
+  migration.
+- Untrusted source: output is `untrusted` for behavior that requires accepted
+  provenance.
+- Conflict: output is `conflicted` until blocked override, same-precedence
+  collision, schema conflict, semantic conflict, or missing authority is
+  resolved.
+
+## Evidence
+
+- Source-supported: this repository's Config template, Agent Ops spec, Issue
+  Tracker Ops bundle, Forge runbooks, security guidance, and validator.
+- Implementation inference: TOML matches existing human-authored config
+  examples; JSON-compatible output matches deterministic tool and agent
+  consumption needs.
+
+## Open questions
+
+- Which implementation slice owns the first effective-config command?
+- Which harness projection should gain blocking enforcement before advisory
+  fallback documentation?
+- Which child issue owns the first onboarding and re-onboarding flow?

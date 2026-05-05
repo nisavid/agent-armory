@@ -97,7 +97,7 @@ agent equipment.
 The current roadmap points to written future-equipment ideas. These are not
 inventory items yet:
 
-- [Agent Equipment Config](../specs/agent-equipment-config.md): shared,
+- [Agent Equipment Config](../specs/agent-equipment-config/): shared,
   layerable, enforceable configuration across equipment.
 - [Issue Tracker Ops](../specs/issue-tracker-ops/): direct GitHub
   Issues bootstrap operations and future issue lifecycle equipment. Issue Ops
