@@ -7,8 +7,9 @@ This Forge Entry Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for effective-config, config-diff,
 diagnostics, plain handoff promotion, authority checks, and projection
 classification. It does not implement Agent Equipment beyond this runtime
-slice, publish assets, resolve secrets, mutate source config, mutate external
-systems, or implement harness controls.
+slice, publish assets, resolve secrets, mutate external systems, or implement
+harness controls. Source mutation is limited to explicit migration apply for
+eligible local TOML sources.
 
 ## Scope
 
@@ -75,6 +76,8 @@ Implemented by the v0 engine slice:
 - config-diff output for values, secret-reference identity, status changes, and diagnostic changes;
 - Config Safety Status classification;
 - deprecation diagnostics and migration-preview output with audit-preview shape;
+- migration-apply dry-run, write authority, source eligibility, refusal, and
+  audit-record behavior;
 - plain Issue Tracker Ops handoff fallback and promotion;
 - missing-authority diagnostics for mutation-gated settings;
 - enforcement projection classification as `blocking` or `advisory`;
@@ -102,5 +105,5 @@ security action.
 
 The runtime slice proves only the deterministic CLI behaviors covered by
 `tests.test_agent_equipment_config`. It does not prove external enforcement,
-provider secret resolution, source mutation, or harness-specific control
-projection.
+provider secret resolution, migration behavior outside eligible local TOML
+sources, or harness-specific control projection.
