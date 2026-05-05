@@ -58,6 +58,11 @@ use `agents/` for source paths that follow harness/plugin convention.
 that should be created, reviewed, repaired, enriched, organized, assigned,
 worked, and orchestrated directly in an issue tracker.
 
+**Issue Ops** is accepted shorthand for Issue Tracker Ops.
+
+**Agent Equipment Config** is Agent Equipment for shared, layerable,
+composable, adaptable, and enforceable configuration across Agent Equipment.
+
 **Forge Conveyor** is the preloaded agent-facing route from root `AGENTS.md` into the Forge Canon, without scouting.
 
 **Forge Tour** is the Forge's exclusively human-facing documentation set. In this repo, `docs/forge-tour.md` is the Forge README and initial Tour entry.
@@ -127,3 +132,8 @@ worked, and orchestrated directly in an issue tracker.
 - Use **Issue Tracker Ops** for broad issue lifecycle equipment; use
   **Issue Projection** only for post-review PRD publication into the issue
   tracker.
+- Use **Issue Ops** as shorthand only after the full Issue Tracker Ops name is
+  clear in the current context.
+- Use **Agent Equipment Config** for the shared equipment config primitive; use
+  equipment-specific config for one equipment line's schema fragment or plain
+  handoff shape.

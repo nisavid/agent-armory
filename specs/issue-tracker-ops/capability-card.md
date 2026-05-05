@@ -9,6 +9,8 @@ Record, review, repair, enrich, organize, assign, select, work, and orchestrate
 issue-tracked follow-ups directly in an issue tracker without requiring
 intermediate in-tree tracking state.
 
+`Issue Ops` is accepted shorthand for Issue Tracker Ops.
+
 ## Users
 
 - Human operator: wants durable issue-tracker artifacts instead of scattered
@@ -65,9 +67,9 @@ intermediate in-tree tracking state.
 - Agent Profiles: future bounded issue reviewer or orchestrator profiles.
 - Plugins: future portable Issue Tracker Ops bundle.
 - Scripts: bootstrap GitHub Issues adapter and deterministic validation.
-- Config: layered policy, taxonomy, priority scale, workflow status or board
-  column model, readiness signals, authority, onboarding, safety, and adapter
-  capability configuration.
+- Config: Agent Equipment Config for durable layered policy, plus an Issue
+  Ops-specific plain config shape for session-scoped operation, handoff, and
+  later ingestion when shared config equipment is unavailable.
 - Docs: this Forge Entry Bundle, user guidance, adapter boundaries, security
   rules, and validation evidence.
 
@@ -80,6 +82,10 @@ intermediate in-tree tracking state.
 - Mutation-capable modes default to dry-run or advisory behavior until policy and
   invocation explicitly allow writes.
 - Hidden agent preferences must not become issue policy.
+- Issue Ops must remain usable in session scope when Agent Equipment Config is
+  unavailable.
+- Issue Ops must know enough of its own config shape to serialize, hand off, and
+  ingest plain Issue Ops config without shared config equipment.
 - Configured tracker priority and selection policy governs issue pick order;
   dependency relations determine feasibility unless the configured policy says
   they also change priority.
@@ -104,8 +110,9 @@ The bootstrap adapter emits JSON for every operation. Dry-run output records the
 request that would be sent and the provisional policy. Execute output records
 the request, result, resolved dependency IDs when applicable, and errors.
 
-Full Equipment delivery will add typed configuration, onboarding, tracker-neutral
-core contracts, richer repair/orchestration modes, fallback reconciliation, and
+Full Equipment delivery will add Agent Equipment Config integration, Issue
+Ops-specific plain config serialization, onboarding, tracker-neutral core
+contracts, richer repair/orchestration modes, fallback reconciliation, and
 publication guidance.
 
 ## Failure modes
@@ -130,7 +137,7 @@ publication guidance.
 
 ## Open questions
 
-- Which policy layers become mandatory for the first complete configuration
-  schema?
-- Which child issues own GitHub Projects, onboarding, duplicate detection,
-  fallback reconciliation, and tracker-neutral adapters after the bootstrap MVP?
+- Which Issue Ops policy settings must exist in the first plain config shape
+  before Agent Equipment Config integration lands?
+- Which child issues own GitHub Projects, duplicate detection, fallback
+  reconciliation, and tracker-neutral adapters after the bootstrap MVP?

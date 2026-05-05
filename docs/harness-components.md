@@ -69,9 +69,17 @@ Use docs when humans and Agents need the same current rule. Link or route to doc
 
 ## config
 
-Config stores durable parameters and local choices: thresholds, timeouts, allowlists, autonomy levels, enabled tools, hook modes, model selections, scheduling periods, and install preferences.
+Config stores durable parameters and local choices: thresholds, timeouts,
+allowlists, autonomy levels, enabled tools, hook modes, model selections,
+scheduling periods, and install preferences.
 
-Config should use typed values and human-friendly names. Store secret references, not secrets.
+Config should use typed values and human-friendly names. Store secret
+references, not secrets.
+
+Agent Equipment Config is the planned shared equipment for robust, layerable,
+composable, adaptable, and enforceable config. Equipment-specific config should
+still have a plain session-scoped shape so the equipment can run, hand off, and
+later ingest config when shared config equipment is unavailable.
 
 Use `templates/config/` to capture ownership, autonomy, enabled state, review,
 and approval boundaries.

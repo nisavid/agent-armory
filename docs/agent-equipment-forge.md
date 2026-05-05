@@ -13,7 +13,9 @@ The Forge answers four questions for each equipment idea:
 - What evidence supports the harness and security claims?
 - What validation is required before the equipment can be promoted?
 
-The Forge Seed supplies the first canonical docs, templates, examples, specs, and validation checks. It does not implement downstream equipment such as Agent Ops, Periodic Actions, or Harness Capability Refresh.
+The Forge Seed supplies the first canonical docs, templates, examples, specs,
+and validation checks. It does not implement downstream equipment such as Agent
+Equipment Config, Agent Ops, Periodic Actions, or Harness Capability Refresh.
 
 ## Least cognitive privilege
 
@@ -43,7 +45,9 @@ Primary component types:
 - **Harness Plugins** package components for installation, versioning, sharing, and reuse.
 - **Scripts** perform deterministic parsing, validation, inspection, formatting, or safe explicit side effects.
 - **Local docs** store canonical project truth that humans or Agents need to read.
-- **Config** stores typed parameters, thresholds, allowlists, autonomy levels, and local choices.
+- **Config** stores typed parameters, thresholds, allowlists, autonomy levels,
+  and local choices. Agent Equipment Config is the planned shared equipment for
+  layerable, composable, enforceable equipment config.
 
 ## Context management
 

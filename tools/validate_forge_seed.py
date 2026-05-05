@@ -718,6 +718,7 @@ EXAMPLE_REQUIRED_PATHS = [
     for example_file in EXAMPLE_FILES
 ]
 SPEC_REQUIRED_PATHS = [
+    "specs/agent-equipment-config.md",
     "specs/agent-ops.md",
     "specs/periodic-actions.md",
     "specs/harness-capability-refresh.md",
@@ -733,6 +734,22 @@ SPEC_HARNESS_SECTION_ALTERNATIVES = [
     "Harness-specific starting points",
 ]
 SPEC_REQUIRED_TEXT = {
+    "specs/agent-equipment-config.md": [
+        "typed schemas",
+        "schema fragments",
+        "layered config",
+        "effective-config",
+        "session-scoped",
+        "plain equipment-specific config handoff",
+        "secret",
+        "policy",
+        "Codex",
+        "OpenClaw",
+        "Hermes Agent",
+        "Claude Code",
+        "Cursor",
+        "OpenCode",
+    ],
     "specs/agent-ops.md": [
         "TOML",
         "hook behavior",

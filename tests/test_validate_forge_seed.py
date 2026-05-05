@@ -8448,6 +8448,7 @@ class ExampleValidationTests(unittest.TestCase):
 
 class SpecValidationTests(unittest.TestCase):
     required_spec_paths = [
+        "specs/agent-equipment-config.md",
         "specs/agent-ops.md",
         "specs/periodic-actions.md",
         "specs/harness-capability-refresh.md",
@@ -8501,6 +8502,16 @@ class SpecValidationTests(unittest.TestCase):
 
     def write_all_specs(self, root: Path, overrides: dict[str, str] | None = None) -> None:
         specs = {
+            "specs/agent-equipment-config.md": self.valid_spec(
+                "Agent Equipment Config Spec",
+                """\
+                Typed schemas compose schema fragments into layered config.
+                Effective-config output explains policy decisions.
+                Session-scoped behavior accepts a plain equipment-specific config handoff.
+                Secret references are stored instead of secrets.
+                Required harnesses: Codex, OpenClaw, Hermes Agent, Claude Code, Cursor, OpenCode.
+                """,
+            ),
             "specs/agent-ops.md": self.valid_spec(
                 "Agent Ops Spec",
                 """\
@@ -8653,6 +8664,49 @@ class SpecValidationTests(unittest.TestCase):
                 False,
                 "missing hook behavior",
                 "specs/agent-ops.md",
+            ),
+            results,
+        )
+
+    def test_validate_specs_requires_agent_equipment_config_content(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_specs(
+                root,
+                {
+                    "specs/agent-equipment-config.md": self.valid_spec(
+                        "Agent Equipment Config Spec",
+                        "Typed schemas and policy are required.",
+                    )
+                },
+            )
+
+            results = validate_specs(root)
+
+        self.assertIn(
+            CheckResult(
+                "spec:text:specs/agent-equipment-config.md:schema fragments",
+                False,
+                "missing schema fragments",
+                "specs/agent-equipment-config.md",
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                "spec:text:specs/agent-equipment-config.md:effective-config",
+                False,
+                "missing effective-config",
+                "specs/agent-equipment-config.md",
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                "spec:text:specs/agent-equipment-config.md:plain equipment-specific config handoff",
+                False,
+                "missing plain equipment-specific config handoff",
+                "specs/agent-equipment-config.md",
             ),
             results,
         )
