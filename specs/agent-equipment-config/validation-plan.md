@@ -23,6 +23,7 @@ standard-library engine behaviors covered by `tests.test_agent_equipment_config`
 - `python3.14 -m unittest tests.test_validate_forge_seed`
 - `python3.14 -m unittest`
 - `python3.14 tools/validate_forge_seed.py`
+- `python3.14 tools/validate_forge_seed.py --final-closeout`
 - `git diff --check`
 
 ## Bundle validation
@@ -49,7 +50,8 @@ OpenClaw, Hermes Agent, Claude Code, Cursor, and OpenCode.
 Runtime coverage tracks these current and follow-on cases:
 
 - absent shared Config equipment with equipment-specific session-scoped fallback;
-- partial config that stays schema-valid but reports `incomplete`;
+- partial config that keeps machine-shaped effective-config output while
+  reporting `incomplete` with missing-required diagnostics;
 - conflicting layers that report `conflicted`;
 - blocked override diagnostics;
 - schema conflict diagnostics;
