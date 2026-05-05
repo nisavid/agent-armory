@@ -136,7 +136,7 @@ Issue Tracker Ops, or Issue Ops, makes follow-up durable. It gives Agents a way
 to create, repair, enrich, organize, select, work, and orchestrate issue-tracked
 work directly in an issue tracker. Reflection Findings, equipment candidates,
 dependencies, and handoffs need this kind of durable routing so they do not
-remain chat-only insight.
+remain chat-only insights.
 
 Agent Ops builds on lower-level equipment rather than owning it. It gives
 repositories a framework for agentic operations: runbook discovery, autonomy
