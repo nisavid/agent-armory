@@ -1818,6 +1818,7 @@ class CanonicalDocTests(unittest.TestCase):
             "Deterministic boundaries",
             "Harness lifecycle",
             "Self-onboarding",
+            "Metacognitive loop",
             "Reflection",
             "Lifecycle use",
         ],
@@ -1963,11 +1964,13 @@ class CanonicalDocTests(unittest.TestCase):
                 3. Complete Change Set Security Closeout for the current change set.
                 4. Complete Change Set Documentation Closeout for affected human-facing and agent-facing docs.
                 5. Prepare projection drafts for issues, PR bodies, handoff notes, and release summaries from the current story evidence.
-                6. Run Cross-Boundary Coherence before Story Quality because quality review depends on coherent process evidence.
-                7. Run Story Quality Ralph Review after coherence findings are fixed or soundly rejected.
-                8. Run final validation and publication-readiness checks required by the active plan or repository policy.
-                9. Publish or update issue, PR, release, and handoff surfaces from the clean final story evidence.
-                10. Perform publication actions that remain in scope.
+                6. Route actionable Reflection Findings discovered during the story into the issue tracker, Tooling Request, or the relevant Equipment Candidate, or record why the insight is not durable.
+                7. Run Cross-Boundary Coherence before Story Quality because quality review depends on coherent process evidence.
+                8. Run Story Quality Ralph Review after coherence findings are fixed or soundly rejected.
+                9. Run final validation and publication-readiness checks required by the active plan or repository policy.
+                10. Push or otherwise publish the branch only when the active plan, operator direction, or issue-projection surface needs a pushed commit before PR creation.
+                11. Publish or update issue, PR, release, and handoff surfaces from the clean final story evidence.
+                12. Perform publication actions that remain in scope.
 
                 ## Interdependency rules
 
@@ -2040,8 +2043,54 @@ class CanonicalDocTests(unittest.TestCase):
                 "5. Prepare projection drafts for issues, PR bodies, handoff notes, and release summaries from the current story evidence.",
                 "5. Run Cross-Boundary Coherence before Story Quality because quality review depends on coherent process evidence.",
             ).replace(
-                "6. Run Cross-Boundary Coherence before Story Quality because quality review depends on coherent process evidence.",
-                "6. Prepare projection drafts for issues, PR bodies, handoff notes, and release summaries from the current story evidence.",
+                "7. Run Cross-Boundary Coherence before Story Quality because quality review depends on coherent process evidence.",
+                "7. Prepare projection drafts for issues, PR bodies, handoff notes, and release summaries from the current story evidence.",
+            )
+            story_path.write_text(story_text, encoding="utf-8")
+
+            results = validate_canonical_docs(root)
+
+        self.assertIn(
+            CheckResult(
+                "canonical_doc:story_closeout_gate_order:docs/story-closeout.md",
+                False,
+                "gate order must include required items in order",
+                "docs/story-closeout.md",
+            ),
+            results,
+        )
+
+    def test_validate_canonical_docs_rejects_story_closeout_missing_reflection_route(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_canonical_docs(root)
+            story_path = root / "docs/story-closeout.md"
+            story_text = story_path.read_text(encoding="utf-8").replace(
+                "6. Route actionable Reflection Findings discovered during the story into the issue tracker, Tooling Request, or the relevant Equipment Candidate, or record why the insight is not durable.",
+                "6. Record workflow observations before review.",
+            )
+            story_path.write_text(story_text, encoding="utf-8")
+
+            results = validate_canonical_docs(root)
+
+        self.assertIn(
+            CheckResult(
+                "canonical_doc:story_closeout_gate_order:docs/story-closeout.md",
+                False,
+                "gate order must include required items in order",
+                "docs/story-closeout.md",
+            ),
+            results,
+        )
+
+    def test_validate_canonical_docs_rejects_story_closeout_missing_branch_push_gate(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_canonical_docs(root)
+            story_path = root / "docs/story-closeout.md"
+            story_text = story_path.read_text(encoding="utf-8").replace(
+                "10. Push or otherwise publish the branch only when the active plan, operator direction, or issue-projection surface needs a pushed commit before PR creation.",
+                "10. Record local publication notes.",
             )
             story_path.write_text(story_text, encoding="utf-8")
 
@@ -8184,6 +8233,10 @@ class ExampleValidationTests(unittest.TestCase):
                 Status: Forge Example
                 Promotion state: example
 
+                ## Vision alignment
+
+                This example shows how a Forge capability supports `docs/vision.md`.
+
                 This Forge Example is not Published Agent Equipment and is not installable.
                 Trace: capability card -> [interface decision record](interface-decision-record.md) -> projected components.
                 """,
@@ -8192,6 +8245,10 @@ class ExampleValidationTests(unittest.TestCase):
 
                 Status: Forge Example
                 Promotion state: example
+
+                ## Vision alignment
+
+                This example records why the interface keeps the Armory experience reliable.
 
                 This Forge Example is not Published Agent Equipment and is not installable.
                 Trace: [capability card](capability-card.md) -> interface decision record -> [projected components](projected-components.md).
@@ -8399,6 +8456,70 @@ class ExampleValidationTests(unittest.TestCase):
                 False,
                 "missing trace link: projected-components.md",
                 "examples/pr-review/interface-decision-record.md",
+            ),
+            results,
+        )
+
+    def test_validate_examples_requires_capability_card_vision_alignment(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_examples(
+                root,
+                {
+                    "pr-review": {
+                        "capability-card.md": """\
+                            # Capability Card: PR review
+
+                            Status: Forge Example
+                            Promotion state: example
+
+                            This Forge Example is not Published Agent Equipment and is not installable.
+                            Trace: capability card -> [interface decision record](interface-decision-record.md) -> projected components.
+                            """
+                    }
+                },
+            )
+
+            results = validate_examples(root)
+
+        self.assertIn(
+            CheckResult(
+                "example:section:examples/pr-review/capability-card.md:Vision alignment",
+                False,
+                "missing section: Vision alignment",
+                "examples/pr-review/capability-card.md",
+            ),
+            results,
+        )
+
+    def test_validate_examples_requires_interface_decision_vision_alignment(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_examples(
+                root,
+                {
+                    "docs-research": {
+                        "interface-decision-record.md": """\
+                            # Interface Decision Record: Docs research
+
+                            Status: Forge Example
+                            Promotion state: example
+
+                            This Forge Example is not Published Agent Equipment and is not installable.
+                            Trace: [capability card](capability-card.md) -> interface decision record -> [projected components](projected-components.md).
+                            """
+                    }
+                },
+            )
+
+            results = validate_examples(root)
+
+        self.assertIn(
+            CheckResult(
+                "example:section:examples/docs-research/interface-decision-record.md:Vision alignment",
+                False,
+                "missing section: Vision alignment",
+                "examples/docs-research/interface-decision-record.md",
             ),
             results,
         )
