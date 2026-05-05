@@ -1700,7 +1700,8 @@ Append:
 
             result = agent_equipment_config.effective_config([policy, untrusted_authority], [self.issue_ops_fragment()], requested_behavior="mutation")
 
-        self.assertEqual(result["safety_status"], "unsafe")
+        self.assertEqual(result["safety_status"], "untrusted")
+        self.assertIn("untrusted source", [item["kind"] for item in result["diagnostics"]])
         self.assertIn("missing authority", [item["kind"] for item in result["diagnostics"]])
         self.assertEqual(result["enforcement_projection"]["classification"], "blocking")
 ```
@@ -1786,6 +1787,25 @@ def authority_is_usable(layers: list[Layer], authority: str) -> bool:
     return False
 
 
+def untrusted_authority_diagnostics(layers: list[Layer], authority: str) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    for layer in layers:
+        if layer.trusted:
+            continue
+        authority_table = layer.metadata.get("authority", {})
+        if isinstance(authority_table, dict) and authority_table.get(authority) == "usable":
+            diagnostics.append(
+                diagnostic(
+                    "untrusted source",
+                    f"agent_equipment_config.authority.{authority}",
+                    f"{layer.name} is not trusted to authorize mutation",
+                    layer,
+                    evidence={"authority": authority},
+                )
+            )
+    return diagnostics
+
+
 def enforcement_projection(safety_status: str, requested_behavior: str) -> dict[str, Any]:
     classification = "blocking" if requested_behavior == "mutation" and safety_status != "usable" else "advisory"
     return {
@@ -1837,8 +1857,13 @@ def effective_config(
                             layer,
                         )
                     )
-                    value = None
-                    source_layer = None
+                    if not (
+                        active_lock is not None
+                        and active_lock.required_for in {requested_behavior, "always"}
+                        and active_lock.layer.precedence < layer.precedence
+                    ):
+                        value = None
+                        source_layer = None
                     field_conflicted = True
                     continue
                 values_by_precedence[layer.precedence] = (candidate, layer)
@@ -1864,6 +1889,7 @@ def effective_config(
                     value = candidate
                     source_layer = layer
             if active_lock is not None and active_lock.required_for in {requested_behavior, "always"} and active_lock.authority:
+                diagnostics.extend(untrusted_authority_diagnostics(layers, active_lock.authority))
                 if not authority_is_usable(layers, active_lock.authority):
                     diagnostics.append(
                         diagnostic(
@@ -2269,7 +2295,19 @@ Expected:
 - final-closeout validation: `0 failed`.
 - `git diff --check`: no output and exit 0.
 
-- [ ] **Step 6: Perform security closeout**
+- [ ] **Step 6: Refresh intent model and confirm scope coherence**
+
+Begin story closeout with the first two gates from `docs/story-closeout.md`:
+
+- Refresh the Intent Model from current operator input, accepted spec/plan
+  changes, review dispositions, handoff notes, and observed corrections.
+- Confirm implementation, specs, plan, and deterministic validation reflect the
+  same scope.
+
+Record the conclusion in the PR body, final change summary, issue tracker, or a
+neutral committed closeout document.
+
+- [ ] **Step 7: Perform security closeout**
 
 Inspect this diff for:
 
@@ -2296,7 +2334,7 @@ focused security review is the selected narrower security action. Record:
 
 If a reportable issue is found, fix it before this task is complete.
 
-- [ ] **Step 7: Perform documentation closeout**
+- [ ] **Step 8: Perform documentation closeout**
 
 Inspect affected agent-facing and human-facing docs before merge-readiness:
 
@@ -2313,15 +2351,12 @@ Update stale or incomplete surfaces, or record a no-change rationale for each
 plausible affected surface in the PR body, final change summary, issue tracker,
 or a neutral committed closeout document.
 
-- [ ] **Step 8: Run repo-required story closeout gates**
+- [ ] **Step 9: Run remaining repo-required story closeout gates**
 
-After deterministic validation, security closeout, and documentation closeout
-are current, complete the repo-required gate order from `docs/story-closeout.md`:
+After intent refresh, scope coherence, security closeout, and documentation
+closeout are current, complete the remaining gate order from
+`docs/story-closeout.md`:
 
-- Refresh the Intent Model from current operator input, accepted spec/plan
-  changes, review dispositions, handoff notes, and observed corrections.
-- Confirm implementation, specs, plan, and deterministic validation reflect the
-  same scope.
 - Prepare projection drafts for issues, PR bodies, handoff notes, and release
   summaries from current story evidence, or record a pending-projection
   rationale.
@@ -2347,7 +2382,7 @@ After both review loops have latest clean cycles, run final validation and
 publication-readiness checks required by this plan and repository policy,
 including `python3.14 tools/validate_forge_seed.py --final-closeout`.
 
-- [ ] **Step 9: Commit**
+- [ ] **Step 10: Commit**
 
 ```bash
 git add tools/validate_forge_seed.py tests/test_validate_forge_seed.py specs/agent-equipment-config/closeout-evidence-plan.md
@@ -2361,7 +2396,7 @@ git commit -m "test(config): validate runtime slice coverage" -m "Co-authored-by
 - Spec coverage: tasks cover schema fragments, layered config, Layer Precedence, Policy Authority, same-precedence collisions, higher-authority policy preservation over lower-authority collisions, effective-config, config-diff for values/status/diagnostics, behavior-aware semantic validators, Config Safety Status precedence, deprecation diagnostics, migration previews with audit-preview shape, secret references, session-scoped behavior, plain Issue Tracker Ops handoff fallback/promotion, missing authority, enforcement projection classification, Issue Tracker Ops pressure, bundle runtime-status updates, and validation commands.
 - Deliberate deferrals: source rewrites, migration apply execution, provider-specific secret fetching, and harness blocking-control implementation remain out of scope and are named in the plan.
 - Type consistency: `Layer`, `FieldSpec`, `SchemaFragment`, `MigrationPreview`, `Diagnostic`, `PolicyLock`, `effective_config`, `config_diff`, `enforcement_projection`, and `issue_tracker_ops_fragment` are introduced before use in later tasks.
-- Security boundary: no network, subprocess, secret fetching, or source mutation is part of the runtime slice; untrusted layers cannot supply usable authority for mutation.
+- Security boundary: no network, subprocess, secret fetching, or source mutation is part of the runtime slice; untrusted layers cannot supply usable authority for mutation and are reported when they try to do so.
 - Closeout boundary: merge-readiness requires the full `docs/story-closeout.md` gate order, not only deterministic checks and review summaries.
 
 ## Execution Handoff
