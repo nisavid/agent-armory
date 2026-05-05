@@ -462,8 +462,8 @@ def effective_config(
     migration_previews: list[dict[str, Any]] = []
     for fragment in fragments:
         namespace_values: dict[str, Any] = {}
-        for field_name, field in fragment.fields.items():
-            value = field.default
+        for field_name, field_spec in fragment.fields.items():
+            value = field_spec.default
             source_layer: Layer | None = None
             active_lock: PolicyLock | None = None
             values_by_precedence: dict[int, tuple[JSONValue, Layer]] = {}
@@ -536,10 +536,10 @@ def effective_config(
                         )
                     )
             unresolved_conflict = value is None and bool(conflicted_precedences)
-            if value is None and field.required and not unresolved_conflict:
+            if value is None and field_spec.required and not unresolved_conflict:
                 diagnostics.append(diagnostic("schema conflict", path, "missing required value", source_layer))
             if not unresolved_conflict:
-                diagnostics.extend(validate_field(value, field, path, source_layer))
+                diagnostics.extend(validate_field(value, field_spec, path, source_layer))
             wrapped_value = {
                 "value": value,
                 "source": source_layer.path if source_layer else "schema default",
@@ -573,6 +573,8 @@ def effective_config(
 
 
 def safety_status_from_diagnostics(diagnostics: list[Diagnostic], *, requested_behavior: str) -> str:
+    # Reserved for API symmetry with enforcement projection decisions.
+    _ = requested_behavior
     kinds = {item.kind for item in diagnostics}
     # Precedence is intentional: structural conflicts first, then incomplete schema,
     # then provenance/version hazards, then semantic unsafety.

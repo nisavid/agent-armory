@@ -967,7 +967,7 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertNotIn("OLD_GITHUB_TOKEN", stdout)
         self.assertNotIn("NEW_GITHUB_TOKEN", stdout)
 
-    def test_cli_config_diff_redacts_scalar_secret_values_by_diff_path(self):
+    def test_cli_config_diff_redacts_sensitive_scalar_values(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             before = root / "before.json"
