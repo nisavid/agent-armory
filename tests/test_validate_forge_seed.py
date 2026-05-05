@@ -8694,10 +8694,10 @@ class SpecValidationTests(unittest.TestCase):
             with self.subTest(required_term=required_term):
                 self.assertIn(
                     CheckResult(
-                        f"spec:text:specs/agent-equipment-config.md:{required_term}",
-                        False,
-                        f"missing {required_term}",
-                        "specs/agent-equipment-config.md",
+                        name=f"spec:text:specs/agent-equipment-config.md:{required_term}",
+                        ok=False,
+                        detail=f"missing {required_term}",
+                        path="specs/agent-equipment-config.md",
                     ),
                     results,
                 )
