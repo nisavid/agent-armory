@@ -25,29 +25,27 @@ operator stays in control. The Agent Armory is where that gear will live.
 
 ## Vision
 
-The Armory's long-range vision is stronger than better prompting. The target is
-an agent experience where an operator can give underspecified but realizable
-intent, even if it starts as vibes, and an appropriately equipped agent can turn
-it into a high-quality, evidence-backed outcome instead of slop.
+The Armory is not trying to make a bigger pile of skills. Its vision is a
+coherent equipment layer for agents: skills, tools, hooks, config, validators,
+docs, profiles, plugins, policies, workflows, and typed data working together
+instead of sitting beside each other as disconnected helpers.
 
-That is not a claim about published equipment today. The current repository is
-building the Forge and the first equipment needed to make that claim precise,
-testable, and eventually reliable.
+Equipment should assemble into loadouts and plugins that enhance an agent's
+behavior automatically inside its harness. The operator should not need a
+special incantation for the agent to ask better questions, respect policy, find
+durable knowledge, run deterministic checks, or prepare for the next stage.
 
-The agent first makes the solution space legible. It asks enough questions to
-understand the shape, extent, and boundaries of the work, then outfits the work
-by choosing or assembling the right equipment, routing companion agents when
-needed, and using the Forge to create missing equipment before solving the task.
+The Armory and the Forge add self-outfitting and self-onboarding to that model.
+An agent should be able to clarify underspecified intent, choose or assemble the
+right loadout, route companion agents when needed, and use the Forge to create
+missing equipment before the missing capability becomes a quality failure.
 
-That experience depends on more than skills. Equipment gives agents durable
-knowledge, typed data, deterministic checks, enforceable policy boundaries,
-configurable behavior, reflection loops, and loadouts that fit the task instead
-of leaving every responsibility inside model context.
-
-Between stages, the agent reflects on what just happened, imagines the next
-stage, asks new questions, predicts the capabilities it will need, and adjusts
-its loadout. The operator should not have to remind it to think critically,
-track context, prepare, or keep itself aligned.
+The first major equipment lines make that possible: Agent Equipment Config for
+layered and enforceable policy, Issue Ops for durable issue-tracked operations,
+Agent Ops for repository work, and supporting operational equipment for
+schedules and harness facts. The longer arc culminates in Head Gear: generic
+cognition equipment meant to turn vibes into bounded, evidence-backed outcomes
+instead of slop.
 
 Read the full [Armory Vision](docs/vision.md) for the user experience and
 engineering north star behind the Armory, the Forge, and Agent Equipment.
