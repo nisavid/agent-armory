@@ -33,6 +33,11 @@ SOURCE_CATEGORIES = {
     "secret reference source",
 }
 
+MIGRATION_APPLY_SOURCE_CATEGORIES = {
+    "committed durable config",
+    "local-only operator config",
+}
+
 SECRET_REFERENCE_KINDS = {"env", "keychain", "vault", "harness-secret", "external"}
 SENSITIVE_KEYWORDS = ("secret", "token", "credential", "password", "api_key", "private_key")
 REDACTED = "<redacted>"
@@ -269,6 +274,353 @@ def migration_previews_for_layer(layer: Layer, fragment: SchemaFragment) -> list
             },
         }
     ]
+
+
+def migration_for_version(fragment: SchemaFragment, source_version: int) -> MigrationPreview | None:
+    for migration in fragment.migrations:
+        if migration.from_version == source_version:
+            return migration
+    return None
+
+
+def migration_source_durability(layer: Layer) -> tuple[str, bool]:
+    if layer.category == "committed durable config":
+        return ("durable project evidence", True)
+    return ("instance-scoped local evidence", False)
+
+
+def migration_apply_authorized(layers: list[Layer], apply_authority: str | None, target_layer: Layer) -> bool:
+    if apply_authority == "operator":
+        return True
+    for layer in layers:
+        if not layer.trusted:
+            continue
+        if layer.precedence > target_layer.precedence:
+            continue
+        if layer.precedence == target_layer.precedence and layer.source_order > target_layer.source_order:
+            continue
+        authority_table = layer.metadata.get("authority", {})
+        if isinstance(authority_table, dict) and authority_table.get("config_migration_apply") == "usable":
+            return True
+    return False
+
+
+def migration_apply_audit_record(
+    layer: Layer,
+    fragment: SchemaFragment,
+    *,
+    from_version: int,
+    decision: str,
+    authority: str | None,
+    action: str = "migration apply decision",
+    reason: str | None = None,
+    result: str | None = None,
+) -> dict[str, Any]:
+    durability, project_truth = migration_source_durability(layer)
+    record: dict[str, Any] = {
+        "action": action,
+        "decision": decision,
+        "source": layer.path,
+        "source_layer": layer.name,
+        "source_category": layer.category,
+        "namespace": fragment.namespace,
+        "from_version": from_version,
+        "to_version": fragment.version,
+        "write_target": layer.path if layer.category in MIGRATION_APPLY_SOURCE_CATEGORIES else None,
+        "authority": authority or "not supplied",
+        "artifact_durability": durability,
+        "project_truth": project_truth,
+        "rollback": "restore the source file from version control or the recorded diff",
+    }
+    if reason is not None:
+        record["reason"] = reason
+    if result is not None:
+        record["result"] = result
+    return record
+
+
+def migration_change_set(layer: Layer, fragment: SchemaFragment, migration: MigrationPreview, source_version: int) -> tuple[list[dict[str, Any]], str | None]:
+    section = namespace_section(layer, fragment.namespace)
+    changes: list[dict[str, Any]] = []
+    for old_name, new_name in migration.field_renames.items():
+        if old_name not in section:
+            continue
+        if new_name in section:
+            return ([], f"migration target field already exists: {fragment.namespace}.{new_name}")
+        changes.append(
+            {
+                "operation": "rename field",
+                "from": f"{fragment.namespace}.{old_name}",
+                "to": f"{fragment.namespace}.{new_name}",
+                "value": section[old_name],
+            }
+        )
+    changes.append(
+        {
+            "operation": "update fragment version",
+            "path": f"agent_equipment_config.fragment_versions.{fragment.namespace}",
+            "from": source_version,
+            "to": fragment.version,
+        }
+    )
+    return (changes, None)
+
+
+def projected_migrated_layer(layer: Layer, fragment: SchemaFragment, migration: MigrationPreview) -> Layer:
+    data = dict(layer.data)
+    section = dict(namespace_section(layer, fragment.namespace))
+    for old_name, new_name in migration.field_renames.items():
+        if old_name in section and new_name not in section:
+            section[new_name] = section.pop(old_name)
+    data[fragment.namespace] = section
+    metadata = dict(layer.metadata)
+    versions = dict(fragment_versions(layer))
+    versions[fragment.namespace] = fragment.version
+    metadata["fragment_versions"] = versions
+    return Layer(
+        name=layer.name,
+        category=layer.category,
+        path=layer.path,
+        precedence=layer.precedence,
+        source_order=layer.source_order,
+        data=data,
+        metadata=metadata,
+        trusted=layer.trusted,
+    )
+
+
+def projected_migration_layers(layers: list[Layer], fragments: list[SchemaFragment]) -> list[Layer]:
+    projected: list[Layer] = []
+    for layer in layers:
+        next_layer = layer
+        for fragment in fragments:
+            versions = fragment_versions(next_layer)
+            source_version = versions.get(fragment.namespace)
+            if source_version is None or source_version >= fragment.version:
+                continue
+            migration = migration_for_version(fragment, source_version)
+            if migration is None:
+                continue
+            next_layer = projected_migrated_layer(next_layer, fragment, migration)
+        projected.append(next_layer)
+    return projected
+
+
+def toml_header_text(line: str) -> str:
+    return line.split("#", 1)[0].strip()
+
+
+def toml_table_bounds(lines: list[str], table_name: str) -> tuple[int, int]:
+    header = f"[{table_name}]"
+    start = None
+    for index, line in enumerate(lines):
+        if toml_header_text(line) == header:
+            start = index
+            break
+    if start is None:
+        raise ConfigError(f"could not find TOML table {header}")
+    end = len(lines)
+    for index in range(start + 1, len(lines)):
+        stripped = toml_header_text(lines[index])
+        if stripped.startswith("[") and stripped.endswith("]"):
+            end = index
+            break
+    return start, end
+
+
+def toml_key_line_index(lines: list[str], start: int, end: int, key: str) -> int:
+    for index in range(start + 1, end):
+        stripped = lines[index].lstrip()
+        if not stripped.startswith(key):
+            continue
+        remainder = stripped[len(key):].lstrip()
+        if remainder.startswith("="):
+            return index
+    raise ConfigError(f"could not find TOML key {key!r}")
+
+
+def rename_toml_key(lines: list[str], table_name: str, old_name: str, new_name: str) -> None:
+    start, end = toml_table_bounds(lines, table_name)
+    index = toml_key_line_index(lines, start, end, old_name)
+    line = lines[index]
+    stripped = line.lstrip()
+    indent = line[: len(line) - len(stripped)]
+    lines[index] = f"{indent}{new_name}{stripped[len(old_name):]}"
+
+
+def update_toml_integer_key(lines: list[str], table_name: str, key: str, value: int) -> None:
+    start, end = toml_table_bounds(lines, table_name)
+    index = toml_key_line_index(lines, start, end, key)
+    line = lines[index]
+    stripped = line.lstrip()
+    indent = line[: len(line) - len(stripped)]
+    newline = "\n" if line.endswith("\n") else ""
+    body = line[:-1] if newline else line
+    comment_index = body.find("#")
+    comment = f"  {body[comment_index:].strip()}" if comment_index >= 0 else ""
+    lines[index] = f"{indent}{key} = {value}{comment}{newline}"
+
+
+def render_migration_source(layer: Layer, fragment: SchemaFragment, migration: MigrationPreview) -> str:
+    path = Path(layer.path)
+    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+    for old_name, new_name in migration.field_renames.items():
+        if old_name in namespace_section(layer, fragment.namespace):
+            rename_toml_key(lines, fragment.namespace, old_name, new_name)
+    update_toml_integer_key(lines, "agent_equipment_config.fragment_versions", fragment.namespace, fragment.version)
+    return "".join(lines)
+
+
+def migration_refusal(
+    layer: Layer,
+    fragment: SchemaFragment,
+    *,
+    from_version: int,
+    reason: str,
+    authority: str | None,
+) -> dict[str, Any]:
+    record = migration_apply_audit_record(
+        layer,
+        fragment,
+        from_version=from_version,
+        decision="refused",
+        authority=authority,
+        reason=reason,
+    )
+    return {
+        "source": layer.path,
+        "source_category": layer.category,
+        "namespace": fragment.namespace,
+        "from_version": from_version,
+        "to_version": fragment.version,
+        "reason": reason,
+        "audit_record": record,
+    }
+
+
+def migration_apply_safety_refusal_reason(effective: dict[str, Any]) -> str | None:
+    diagnostic_kinds = {item.get("kind") for item in effective.get("diagnostics", [])}
+    if diagnostic_kinds & {"semantic conflict", "missing authority"}:
+        return "effective Config Safety Status is unsafe"
+    safety_status = effective["safety_status"]
+    if safety_status not in {"stale", "usable"}:
+        return f"effective Config Safety Status is {safety_status}"
+    return None
+
+
+def migration_apply(
+    layer_paths: list[Path],
+    fragments: list[SchemaFragment],
+    *,
+    apply: bool = False,
+    apply_authority: str | None = None,
+) -> dict[str, Any]:
+    layers = load_layers(layer_paths)
+    effective = effective_config_from_layers(layers, fragments, requested_behavior="mutation")
+    projected_effective = effective_config_from_layers(projected_migration_layers(layers, fragments), fragments, requested_behavior="mutation")
+    applications: list[dict[str, Any]] = []
+    refusals: list[dict[str, Any]] = []
+    audit_records: list[dict[str, Any]] = []
+    pending_writes: list[tuple[Path, str, dict[str, Any], Layer, SchemaFragment, int]] = []
+    for layer in layers:
+        authorized = migration_apply_authorized(layers, apply_authority, layer)
+        versions = fragment_versions(layer)
+        for fragment in fragments:
+            source_version = versions.get(fragment.namespace)
+            if source_version is None or source_version >= fragment.version:
+                continue
+            migration = migration_for_version(fragment, source_version)
+            reason: str | None = None
+            if not layer.trusted:
+                reason = "source is not trusted for migration apply"
+            elif layer.category not in MIGRATION_APPLY_SOURCE_CATEGORIES:
+                reason = "source category is not eligible for migration apply"
+            elif migration is None:
+                reason = "no registered migration for stale schema"
+            elif (safety_reason := migration_apply_safety_refusal_reason(projected_effective)) is not None:
+                reason = safety_reason
+            elif apply and not authorized:
+                reason = "missing migration apply authority"
+            changes: list[dict[str, Any]] = []
+            if reason is None and migration is not None:
+                changes, reason = migration_change_set(layer, fragment, migration, source_version)
+            if reason is not None:
+                refusal = migration_refusal(
+                    layer,
+                    fragment,
+                    from_version=source_version,
+                    reason=reason,
+                    authority=apply_authority,
+                )
+                refusals.append(refusal)
+                audit_records.append(refusal["audit_record"])
+                continue
+            decision = "applied" if apply else "dry-run"
+            record = migration_apply_audit_record(
+                layer,
+                fragment,
+                from_version=source_version,
+                decision=decision,
+                authority=apply_authority,
+            )
+            application = {
+                "source": layer.path,
+                "source_layer": layer.name,
+                "source_category": layer.category,
+                "namespace": fragment.namespace,
+                "from_version": source_version,
+                "to_version": fragment.version,
+                "decision": decision,
+                "write_authorized": authorized,
+                "would_write": not apply,
+                "write_performed": False,
+                "changes": changes,
+                "audit_record": record,
+            }
+            if apply:
+                pending_writes.append((Path(layer.path), render_migration_source(layer, fragment, migration), application, layer, fragment, source_version))
+                audit_records.append(record)
+            else:
+                audit_records.append(record)
+            applications.append(application)
+    partial_application = False
+    write_failures: list[dict[str, Any]] = []
+    if apply and not refusals:
+        for path, text, application, layer, fragment, source_version in pending_writes:
+            try:
+                path.write_text(text, encoding="utf-8")
+            except OSError as exc:
+                partial_application = any(item["write_performed"] for item in applications)
+                write_failures.append(
+                    {
+                        "source": path.as_posix(),
+                        "reason": exc.strerror or str(exc),
+                    }
+                )
+                break
+            application["write_performed"] = True
+            mutation_record = migration_apply_audit_record(
+                layer,
+                fragment,
+                from_version=source_version,
+                decision="applied",
+                authority=apply_authority,
+                action="migration apply mutation",
+                result="applied",
+            )
+            application["mutation_audit_record"] = mutation_record
+            audit_records.append(mutation_record)
+    return {
+        "mode": "apply" if apply else "dry-run",
+        "applied": any(application["write_performed"] for application in applications),
+        "partial_application": partial_application,
+        "applications": applications,
+        "refusals": refusals,
+        "write_failures": write_failures,
+        "audit_records": audit_records,
+        "effective_config": effective,
+        "projected_effective_config": projected_effective,
+    }
 
 
 def secret_reference(value: JSONValue) -> dict[str, Any] | None:
@@ -953,6 +1305,11 @@ def build_parser() -> argparse.ArgumentParser:
     onboarding.add_argument("--shared-config-missing", dest="shared_config_present", action="store_false", default=True)
     onboarding.add_argument("--onboarding-state", choices=sorted(ONBOARDING_STATES), default="first-run")
     onboarding.add_argument("--revise-section", action="append", default=[])
+    migration = subparsers.add_parser("migration-apply")
+    migration.add_argument("--layer", action="append", default=[])
+    migration.add_argument("--issue-tracker-ops", action="store_true")
+    migration.add_argument("--apply", action="store_true")
+    migration.add_argument("--apply-authority", choices=["operator"])
     diff = subparsers.add_parser("config-diff")
     diff.add_argument("--before", required=True)
     diff.add_argument("--after", required=True)
@@ -988,6 +1345,13 @@ def run(
                     shared_config_present=args.shared_config_present,
                     onboarding_state=args.onboarding_state,
                     revise_sections=args.revise_section,
+                )
+            elif args.command == "migration-apply":
+                payload = migration_apply(
+                    [Path(path) for path in args.layer],
+                    fragments,
+                    apply=args.apply,
+                    apply_authority=args.apply_authority,
                 )
             else:
                 payload = effective_config(

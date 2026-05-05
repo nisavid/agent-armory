@@ -6,9 +6,9 @@ Promotion state: planned
 This Forge Entry Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for effective-config, config-diff,
 diagnostics, plain handoff promotion, authority checks, projection
-classification, onboarding-plan output, and the published runtime guide. It
-does not resolve secrets, mutate source config, mutate external systems, or
-implement harness controls. The Blueprint itself does not implement Agent Equipment.
+classification, onboarding-plan output, explicit migration apply, and the
+published runtime guide. It does not resolve secrets, mutate external systems,
+or implement harness controls. The Blueprint itself does not implement Agent Equipment.
 The runtime guide names the currently published slice.
 
 Issue: [#23](https://github.com/nisavid/agent-armory/issues/23)
@@ -62,8 +62,9 @@ The first runtime slice provides a standard-library Python effective-config
 engine for deterministic validation and pressure coverage. It previews source
 migrations, classifies enforcement projections, and emits onboarding-plan
 output for missing, partial, interrupted, resumed, and restarted configuration
-flows, but does not rewrite source config, resolve secrets, or implement
-harness controls.
+flows. It also applies registered source migrations to eligible TOML sources
+after dry-run review and an explicit authority gate. It does not resolve
+secrets, mutate external systems, or implement harness controls.
 
 Published usage guidance lives in
 [docs/equipment/agent-equipment-config.md](../../docs/equipment/agent-equipment-config.md).
@@ -71,8 +72,8 @@ Published usage guidance lives in
 ### Runtime-slice harness projections
 
 The runtime slice exposes one portable CLI. Each harness projection invokes the
-CLI with the layer paths it can discover, receives effective-config or
-config-diff JSON, and treats `blocking` classifications as decision evidence
+CLI with the layer paths it can discover, receives effective-config,
+config-diff, or migration-apply JSON, and treats `blocking` classifications as decision evidence
 until a later harness adapter implements blocking controls.
 
 | Harness | Discovery and exposure for this slice | Blocking and advisory boundary |

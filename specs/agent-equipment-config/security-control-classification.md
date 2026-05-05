@@ -7,15 +7,16 @@ This Forge Entry Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for effective-config, config-diff,
 diagnostics, plain handoff promotion, authority checks, and projection
 classification. It does not implement Agent Equipment beyond this runtime
-slice, publish assets, resolve secrets, mutate source config, mutate external
-systems, or implement harness controls.
+slice, publish assets, resolve secrets, mutate external systems, or implement
+harness controls. Source mutation is limited to explicit migration apply for
+eligible local TOML sources.
 
 ## Scope
 
 This classification covers the v0 contract, bundle source shape, and first
-portable parser and merge engine slice. It does not certify a config mutation
-command, hook, permission gate, sandbox, approval integration, plugin, harness
-control, or secret provider.
+portable parser, merge engine, and migration-apply slice. It does not certify a
+hook, permission gate, sandbox, approval integration, plugin, harness control,
+external write, or secret provider.
 
 ## Assets
 
@@ -49,7 +50,7 @@ control, or secret provider.
 | Effective-config generation | Read or policy decision | Explain value provenance, safety status, and diagnostics. |
 | Config-diff generation | Read | Explain changed values, policy effects, and unresolved conflicts. |
 | Migration preview | Read | Do not rewrite source config. |
-| Source migration apply | Local or network write | Require explicit audited mutation. |
+| Source migration apply | Local write | Require eligible source category, trusted provenance, dry-run-first output, explicit authority, and audit records. |
 | Enforcement projection | Advisory or blocking control | Label blocking support versus advisory fallback. |
 | Secret reference resolution | Sensitive read | Report reference and status, never secret value. |
 
@@ -62,7 +63,8 @@ control, or secret provider.
 - Same-precedence collisions remain unresolved until the operator, policy, or a
   higher-authority layer resolves them.
 - Read-time migrations do not mutate source config.
-- Config mutations produce decision/mutation audit records.
+- Migration apply writes only eligible local TOML sources and produces
+  decision/mutation audit records.
 - Untrusted config cannot authorize mutation-capable behavior.
 - Later or lower-authority layers cannot mint authority for an earlier Policy
   Authority gate.
@@ -99,15 +101,16 @@ to the v0 contract itself.
 - The parser and merge behavior are limited to the tested portable CLI slice.
 - No hook or approval gate consumes these diagnostics yet.
 - No provider-specific secret resolver exists yet.
-- No config mutation command exists yet.
-- No onboarding flow produces partial valid config yet.
+- Onboarding output is deterministic JSON; no interactive harness projection
+  consumes it yet.
 - No harness projection has been verified against current harness versions for
   this equipment.
 
 ## Security decision
 
 The current runtime slice is acceptable as a deterministic local parser, merge,
-diff, migration-preview, plain-handoff, authority, projection-classification,
-and secret-reference reporting surface. Later implementation slices that add
-source mutation, provider-specific secret resolution, external mutation, or
-harness controls must receive their own security review.
+diff, migration-preview, migration-apply, plain-handoff, authority,
+projection-classification, and secret-reference reporting surface. Later
+implementation slices that add provider-specific secret resolution, external
+mutation, broader source mutation, or harness controls must receive their own
+security review.
