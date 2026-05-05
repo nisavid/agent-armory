@@ -64,7 +64,7 @@ when the model must actively reason. Put repeatability, policy, state,
 serialization, and side effects into the harness surfaces that can make them
 explicit, inspectable, and enforceable.
 
-## Self-Outfitting
+## Self-outfitting
 
 An equipped Agent should not begin by merely generating a plausible answer. It
 also should not always begin by doing the apparent task. It should begin by
@@ -108,7 +108,7 @@ Given a missing capability, a Smith should be able to use the Forge to shape
 that capability into equipment. Given a Forge limitation, a Forgewright should
 be able to improve the Forge before equipment work continues.
 
-The killer feature of the Armory's methodology is autonomous self-onboarding to purpose-built assemblies of harness components.
+The killer feature is autonomous self-onboarding to purpose-built assemblies of harness components.
 
 The same methodology applies across use, procurement, and manufacturing:
 
