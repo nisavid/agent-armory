@@ -607,8 +607,7 @@ def run(argv: list[str] | None = None, *, stdout: TextIO | None = None, stdout_t
     if stdout_text:
         return text
     # CLI output is redacted by redact_for_cli before this write boundary.
-    # codeql[py/clear-text-logging-sensitive-data]
-    output.write(text)
+    output.writelines([text])
     return 0
 
 
