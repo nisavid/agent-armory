@@ -9,7 +9,7 @@ Record, review, repair, enrich, organize, assign, select, work, and orchestrate
 issue-tracked follow-ups directly in an issue tracker without requiring
 intermediate in-tree tracking state.
 
-`Issue Ops` is accepted shorthand for Issue Tracker Ops.
+Issue Ops is accepted shorthand for Issue Tracker Ops.
 
 ## Users
 
