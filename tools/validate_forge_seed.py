@@ -410,6 +410,7 @@ CANONICAL_DOC_REQUIRED_SECTIONS = {
         "Deterministic boundaries",
         "Harness lifecycle",
         "Self-onboarding",
+        "Metacognitive loop",
         "Reflection",
         "Lifecycle use",
     ],
@@ -544,9 +545,11 @@ STORY_CLOSEOUT_GATE_ORDER_TOKENS = [
     "complete change set security closeout",
     "complete change set documentation closeout",
     "prepare projection drafts",
+    "route actionable reflection findings",
     "run cross-boundary coherence",
     "run story quality ralph review",
     "run final validation",
+    "push or otherwise publish the branch",
     "publish or update issue",
     "perform publication actions",
 ]
@@ -831,6 +834,10 @@ EXAMPLE_TRACE_LINKS = {
     "capability-card.md": ["interface-decision-record.md"],
     "interface-decision-record.md": ["capability-card.md", "projected-components.md"],
     "projected-components.md": ["capability-card.md", "interface-decision-record.md"],
+}
+EXAMPLE_REQUIRED_SECTIONS = {
+    "capability-card.md": ["Vision alignment"],
+    "interface-decision-record.md": ["Vision alignment"],
 }
 FORBIDDEN_EXAMPLE_CLAIMS = [
     "production-ready",
@@ -4445,6 +4452,17 @@ def validate_examples(root: Path) -> list[CheckResult]:
                             f"example:trace:{relative_path}:{required_link}",
                             False,
                             f"missing trace link: {required_link}",
+                            relative_path,
+                        )
+                    )
+            headings = markdown_heading_texts(markdown)
+            for required_section in EXAMPLE_REQUIRED_SECTIONS.get(example_file, []):
+                if normalize_reference_label(required_section) not in headings:
+                    results.append(
+                        CheckResult(
+                            f"example:section:{relative_path}:{required_section}",
+                            False,
+                            f"missing section: {required_section}",
                             relative_path,
                         )
                     )

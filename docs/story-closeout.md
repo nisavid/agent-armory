@@ -22,7 +22,7 @@ Run closeout gates in this order:
    record why the insight is not durable.
 7. Run Cross-Boundary Coherence before Story Quality because quality review depends on coherent process evidence.
 8. Run Story Quality Ralph Review after coherence findings are fixed or soundly rejected.
-9. Run final validation and publication-readiness checks required by the active plan or repository policy. For the Forge Seed, `python3.14 tools/validate_forge_seed.py --final-closeout` is the branch-push and external-projection readiness check.
+9. Run final validation and publication-readiness checks required by the active plan or repository policy. For the Forge Seed, `.python-version` declares the Python 3.14 runtime and `python3.14 tools/validate_forge_seed.py --final-closeout` is the branch-push and external-projection readiness check.
 10. Push or otherwise publish the branch only when the active plan, operator direction, or issue-projection surface needs a pushed commit before PR creation. A stated operator pause point may occur here.
 11. Publish or update issue, PR, release, and handoff surfaces from the clean final story evidence.
 12. Perform publication actions that remain in scope, respecting repository policy and stated operator pause points.
