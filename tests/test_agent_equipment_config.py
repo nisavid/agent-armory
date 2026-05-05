@@ -49,6 +49,29 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(layers[0].data["issue_tracker_ops"]["mode"], "dry-run")
         self.assertEqual(layers[1].data["issue_tracker_ops"]["mode"], "execute")
 
+    def test_published_config_example_loads_as_repository_policy(self):
+        root = Path(__file__).parents[1]
+        example = root / "templates/config/agent-equipment-config-example.toml"
+
+        advisory_result = agent_equipment_config.effective_config(
+            [example],
+            [self.issue_ops_fragment()],
+            requested_behavior="advisory",
+        )
+        mutation_result = agent_equipment_config.effective_config(
+            [example],
+            [self.issue_ops_fragment()],
+            requested_behavior="mutation",
+        )
+
+        self.assertEqual(advisory_result["safety_status"], "usable")
+        self.assertEqual(advisory_result["effective"]["issue_tracker_ops"]["mode"]["value"], "dry-run")
+        self.assertEqual(advisory_result["effective"]["issue_tracker_ops"]["mode"]["layer"], "repository policy")
+        self.assertEqual(advisory_result["effective"]["issue_tracker_ops"]["external_disclosure"]["value"], "blocked")
+        self.assertEqual(mutation_result["safety_status"], "usable")
+        self.assertEqual(mutation_result["effective"]["issue_tracker_ops"]["mode"]["value"], "dry-run")
+        self.assertEqual(mutation_result["effective"]["issue_tracker_ops"]["external_disclosure"]["value"], "blocked")
+
     def test_schema_fragment_applies_defaults_and_reports_missing_required_keys(self):
         fragment = agent_equipment_config.SchemaFragment(
             namespace="issue_tracker_ops",

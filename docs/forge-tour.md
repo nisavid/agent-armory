@@ -19,8 +19,8 @@ outfit themselves with the right equipment, use deterministic support where it
 belongs, and improve the equipment ecosystem when a task reveals a gap.
 
 The current Forge gives agents the shared vocabulary, templates, examples,
-planned blueprints, harness facts, checks, and safeguards they need to start
-manufacturing equipment.
+planned blueprints, harness facts, checks, safeguards, and the first published
+Config runtime slice they need to start manufacturing equipment.
 
 ## The agent roles
 
@@ -58,7 +58,9 @@ equipment from being treated as the same thing.
 
 The Forge separates equipment manufacturing from future outfitting and use.
 Examples, blueprints, and candidates remain construction material until they
-reach the readiness state that makes them safe to select.
+reach the readiness state that makes them safe to select. The first selectable
+surface is [Agent Equipment Config](equipment/agent-equipment-config.md), a
+published runtime slice for effective-config and config-diff behavior.
 
 When equipment reaches the right readiness state, an outfitter will be able to
 select equipment from the Armory and assemble a loadout for a role, task,

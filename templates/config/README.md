@@ -5,6 +5,9 @@
 Use this template for configuration that controls equipment enablement,
 ownership, autonomy, review, and approval boundaries.
 
+Use `agent-equipment-config-example.toml` when a Smith or Wielder needs a
+loadable Agent Equipment Config layer that exercises the v0 runtime.
+
 ## Required fields
 
 - Ownership.
@@ -31,6 +34,7 @@ ownership, autonomy, review, and approval boundaries.
 ## Validation expectations
 
 - The TOML parses.
+- The Agent Equipment Config example loads through `tools/agent_equipment_config.py`.
 - Disabled-by-default examples stay disabled unless the doc states otherwise.
 - Review and approval settings match the capability card.
 - Harness-specific overrides do not weaken global policy silently.

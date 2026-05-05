@@ -9,9 +9,8 @@
 </div>
 
 > [!NOTE]
-> The Agent Armory is under construction. The Forge has just come online and is
-> being set up to manufacture its first equipment. Check back soon to see that
-> equipment in the Armory's inventory.
+> The Agent Armory is under construction. The Forge has just come online, and
+> Agent Equipment Config has its first published runtime slice.
 
 ![A candid scene inside the Agent Armory, with agents browsing equipment and working in the Forge.](docs/assets/agent-armory-hero.webp)
 
@@ -67,8 +66,8 @@ Start with the [Forge Tour](docs/forge-tour.md), or use the
 
 ## What you can use now
 
-The current value is the manufacturing setup rather than a shelf of finished
-equipment.
+The current value is the manufacturing setup plus the first reusable Config
+runtime slice.
 
 The Forge already gives your agents a way to see how equipment is supposed to
 be made, compare evidence-backed harness facts, start from templates, learn from
@@ -77,9 +76,15 @@ settled. It is useful today if you want to understand how equipment will be
 made, commission new equipment, or evaluate whether a future item was made with
 enough discipline to trust.
 
+[Agent Equipment Config](docs/equipment/agent-equipment-config.md) is available
+as a local runtime slice for effective-config and config-diff behavior. It gives
+Smiths and Wielders a concrete way to load authored TOML layers, register schema
+fragments, explain policy decisions, and keep secret references unresolved.
+
 > [!IMPORTANT]
 > The examples and blueprints are not published agent equipment. They are
-> construction material for future equipment work.
+> construction material for future equipment work. The Config runtime guide is
+> the current published equipment surface.
 
 ## Why this matters
 
@@ -116,11 +121,13 @@ If your agent is making equipment, start it with the
 
 ## Roadmap
 
-The first inventory items are not published yet. The current roadmap includes
-these equipment lines:
+The current roadmap includes these equipment lines:
 
 - [Agent Equipment Config](specs/agent-equipment-config/), for shared,
-  layerable, enforceable configuration across equipment.
+  layerable, enforceable configuration across equipment. Its
+  [published runtime slice](docs/equipment/agent-equipment-config.md) is
+  available now, and follow-up cards carry onboarding, migration, enforcement,
+  and secret-reference provider boundaries.
 - [Issue Tracker Ops](specs/issue-tracker-ops/), for direct
   GitHub Issues bootstrap operations and future issue lifecycle equipment.
   Issue Ops is the accepted shorthand.
