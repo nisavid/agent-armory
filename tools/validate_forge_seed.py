@@ -6,7 +6,6 @@ import ast
 import hashlib
 import json
 import re
-import subprocess
 import sys
 import tomllib
 from dataclasses import asdict, dataclass
