@@ -606,6 +606,8 @@ def run(argv: list[str] | None = None, *, stdout: TextIO | None = None, stdout_t
     text = json.dumps(redact_for_cli(payload), indent=2, sort_keys=True) + "\n"
     if stdout_text:
         return text
+    # CLI output is redacted by redact_for_cli before this write boundary.
+    # codeql[py/clear-text-logging-sensitive-data]
     output.write(text)
     return 0
 
