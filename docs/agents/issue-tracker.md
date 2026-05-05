@@ -23,6 +23,28 @@ Use the `gh` CLI directly when a needed GitHub Issues operation is outside the
 bootstrap adapter's current modes, or when a skill needs a read-only query that
 is simpler through `gh`.
 
+## Reflection Findings
+
+A Reflection Finding is durable output from manual or ad hoc reflection that
+may inform future equipment, Forge policy, validation, config, workflow, or
+documentation.
+
+Create or update a GitHub issue when a reflection produces an actionable
+candidate. Route the finding to the narrowest owner issue when one is clear.
+When the finding informs generic Reflection or cognition equipment, link it to
+[#25](https://github.com/nisavid/agent-armory/issues/25).
+
+Capture:
+
+- session or work context;
+- observed friction, failure, repeated pattern, or insight;
+- induced equipment, policy, validator, config, workflow, or documentation
+  candidate;
+- routing target, parent issue, dependency, or deferment reason;
+- evidence or source surface to scout later;
+- confidence, urgency, and readiness;
+- privacy or disclosure limits before external projection.
+
 ## Follow-Up Captures
 
 `docs/follow-ups/*.md` files are governed local captures for deferred work that

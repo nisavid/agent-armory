@@ -10,6 +10,13 @@ Trace: capability card -> [interface decision record](interface-decision-record.
 
 Retrieve current library, SDK, API, CLI, or cloud-service documentation before an agent answers or implements behavior that may have changed.
 
+## Vision alignment
+
+This example shows how equipment preserves durable knowledge discipline without
+stuffing current docs into always-loaded context. The Agent decides when a claim
+needs current evidence, while tools, scripts, config, and citation checks keep
+version-sensitive facts inspectable and refreshable.
+
 ## Users
 
 - Human operator: wants answers and implementation choices grounded in current primary docs.

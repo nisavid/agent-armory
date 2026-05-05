@@ -10,6 +10,14 @@ Trace: capability card -> [interface decision record](interface-decision-record.
 
 Review pull requests, local diffs, and branches for defects, regressions, security risk, missing tests, and repo convention drift.
 
+## Vision alignment
+
+This example shows how a review Assembly keeps judgment in an Agent while
+moving changed-file selection, disclosure checks, mutation gates, evidence, and
+repo policy into deterministic or durable surfaces. It protects the Armory
+experience in which an Agent reviews methodically instead of improvising from a
+raw diff.
+
 ## Users
 
 - Human operator: wants risk-focused findings before merge or handoff.

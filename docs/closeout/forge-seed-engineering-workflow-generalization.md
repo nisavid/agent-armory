@@ -8,9 +8,9 @@ that emerged while refining the human-facing documentation spine, closeout
 evidence, validation contracts, review loops, and publication state for the
 Forge Seed.
 
-The later Portable Agentic Engineering Workflow Equipment story should ingest
-this addendum as source material. Treat it as reflection evidence, not as final
-equipment design.
+The later Portable Agentic Engineering Workflow Equipment and Reflection and
+cognition equipment stories should ingest this addendum as source material.
+Treat it as reflection evidence, not as final equipment design.
 
 ## Core Pattern
 
@@ -232,6 +232,15 @@ capabilities without relying on the operator's memory.
 - A capture surface that records the pattern, pressure cases, possible
   equipment, and what not to promote yet.
 - A follow-up route that turns capture into engineered equipment later.
+
+### Reflection Finding Capture
+
+- A durable issue-tracked form for manually produced reflection findings.
+- A route from observed friction or insight to the narrowest owning equipment
+  story, including generic Reflection and cognition equipment when no narrower
+  owner exists.
+- A privacy and disclosure classification before session context is projected
+  into public or shared tracking surfaces.
 
 ## Portable Equipment Architecture
 

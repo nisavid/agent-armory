@@ -13,8 +13,9 @@ policy, report effective configuration, and project enforceable controls without
 making any higher-level equipment own the generic config system.
 
 Agent Equipment Config is independent equipment. Agent Ops, Issue Tracker Ops
-or Issue Ops, Periodic Actions, Harness Capability Refresh, and future equipment
-may consume it, but they must not be prerequisites for it.
+or Issue Ops, Periodic Actions, Harness Capability Refresh, Reflection and
+cognition equipment, and future equipment may consume it, but they must not be
+prerequisites for it.
 
 ## User stories
 

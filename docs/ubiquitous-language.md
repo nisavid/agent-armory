@@ -63,6 +63,18 @@ worked, and orchestrated directly in an issue tracker.
 **Agent Equipment Config** is Agent Equipment for shared, layerable,
 composable, adaptable, and enforceable configuration across Agent Equipment.
 
+**Cognition Enhancement Equipment** is Agent Equipment that shapes how an Agent
+reasons, reflects, remembers, routes insight, right-sizes cognition, or
+improves its future harness behavior.
+
+**Reflection** is Agent activity that inspects recent experience, extracts
+reusable lessons, and routes durable follow-up into equipment, issues, config,
+docs, validators, workflows, policy, or Forge Tooling.
+
+**Reflection Finding** is an issue-tracked or otherwise durable output of
+Reflection that captures observed friction, failure, pattern, or insight and an
+induced candidate for future work.
+
 **Forge Conveyor** is the preloaded agent-facing route from root `AGENTS.md` into the Forge Canon, without scouting.
 
 **Forge Tour** is the Forge's exclusively human-facing documentation set. In this repo, `docs/forge-tour.md` is the Forge README and initial Tour entry.
@@ -111,6 +123,9 @@ composable, adaptable, and enforceable configuration across Agent Equipment.
 - Seed Validation checks Forge Seed integrity; downstream equipment needs equipment-specific validation.
 - The Forge Conveyor routes Smiths from preloaded agent instructions into the Forge Canon.
 - The Forge Tour routes human readers into the Forge without exposing agent-only machinery first.
+- Reflection Findings are source material for future Cognition Enhancement
+  Equipment and may also induce Tooling Requests, Equipment Candidates, or
+  issue-tracked work in narrower equipment stories.
 - A Tooling Request moves a Tooling Gap into Tooling Work for a Forgewright.
 - The Source Disposition Ledger replaces raw source-handoff preservation after source retirement.
 
@@ -137,3 +152,5 @@ composable, adaptable, and enforceable configuration across Agent Equipment.
 - Use **Agent Equipment Config** for the shared equipment config primitive; use
   equipment-specific config for one equipment line's schema fragment or plain
   handoff shape.
+- Use **Reflection Finding** for durable reflection output, not for private
+  reasoning or final equipment design.

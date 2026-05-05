@@ -10,6 +10,12 @@ Trace: [capability card](capability-card.md) -> interface decision record -> [pr
 
 The PR review capability needs procedural judgment, repository-local policy, deterministic changed-file support, optional forge reads, and tightly gated write actions.
 
+## Vision alignment
+
+The decision right-sizes PR review cognition: the Agent reasons about risk and
+impact, while scripts, tools, hooks, config, and docs carry repeatable
+selection, policy, evidence, and mutation boundaries.
+
 ## Decision
 
 Use a skill for review judgment, scripts for deterministic file and test selection, local docs for policy, a read-only Agent Profile for specialist review, and gated tools or hooks for any forge mutation.

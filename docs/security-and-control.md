@@ -36,6 +36,16 @@ Every MCP/tool definition records read/write classification, side effects, auth 
 
 Mutation-capable tools need control surfaces outside model memory. Use permissions, hooks, approvals, sandboxing, or scoped credentials rather than relying on skill prose alone.
 
+## reflection and cognition equipment
+
+Reflection and cognition equipment can expose private session context, create
+issue noise, change future routing, or mutate policy and priority surfaces.
+
+Treat reflected content as sensitive until classified. Before projecting a
+Reflection Finding outside the local session, decide what context may be
+disclosed, whether the finding is advisory or authoritative, and which control
+surface is allowed to route, prioritize, or mutate follow-up work.
+
 ## examples caveat
 
 Forge Examples demonstrate the decision method. They are not installable, validated, or published equipment unless they move through the Equipment Promotion Path.

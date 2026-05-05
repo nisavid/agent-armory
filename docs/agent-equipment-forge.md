@@ -73,4 +73,9 @@ Smiths classify read/write behavior, side effects, secrets, approval requirement
 
 Harness facts are volatile. Canonical guidance records evidence category, source, checked date, version basis, and uncertainty where the source is incomplete or inconsistent.
 
-Forgewrights keep source handoffs as provenance, project accepted decisions into canonical surfaces, refresh harness facts before relying on moving affordances, and update downstream specs when Forge decisions change.
+Forgewrights keep source handoffs as provenance, project accepted decisions
+into canonical surfaces, refresh harness facts before relying on moving
+affordances, and update downstream specs when Forge decisions change.
+Reflection Findings are maintenance evidence: route them through the issue
+tracker, Tooling Request, or the relevant Equipment Candidate instead of leaving
+reusable lessons in chat.

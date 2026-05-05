@@ -119,6 +119,12 @@ The Agent reflects, identifies the harness adjustment that would make future
 behavior more reliable, and routes that adjustment through the same Forge
 discipline used for any other equipment.
 
+Until generic Reflection equipment exists, manually invoked reflection should
+still produce durable source material when it finds actionable work. Record the
+finding in the issue tracker, route it to the relevant equipment story, and
+preserve enough context for a future Smith to evaluate the induced equipment,
+policy, validator, config, workflow, or documentation candidate.
+
 ## Lifecycle use
 
 Use this vision as an input throughout the engineering lifecycle.

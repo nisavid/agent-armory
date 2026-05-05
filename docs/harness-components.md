@@ -52,6 +52,18 @@ A plugin may include skills, hooks, MCP/tool definitions, Agent Profiles, script
 Use `templates/plugin/manifest.toml` to state components, version, and permissions
 at the plugin boundary.
 
+## cognition enhancement equipment
+
+Cognition enhancement equipment usually spans more than one component. A
+reflection loop may need a skill for judgment, issue operations for durable
+capture, config for routing policy, hooks or tools for mutation gates, docs for
+source truth, and validators for checking that future agents actually changed
+behavior under task pressure.
+
+Do not treat cognition equipment as prompt style alone when the intended
+behavior needs deterministic capture, typed data, enforceable policy, or durable
+maintenance.
+
 ## scripts
 
 Scripts perform deterministic work: parsing, validation, changed-file mapping, source inspection, formatting, report generation, or safe explicit side effects.

@@ -11,6 +11,15 @@ intermediate in-tree tracking state.
 
 Issue Ops is accepted shorthand for Issue Tracker Ops.
 
+## Vision alignment
+
+Issue Ops supports the Armory vision by keeping follow-up capture,
+dependencies, repair, enrichment, selection, orchestration, and Reflection
+Findings in a durable tracker instead of scattered through chat or in-tree
+fallback state. It lets agents route work systematically while deterministic
+adapter operations, dry-run previews, audit output, and future config policy
+keep tracker mutations explicit and governable.
+
 ## Users
 
 - Human operator: wants durable issue-tracker artifacts instead of scattered
@@ -86,6 +95,9 @@ Issue Ops is accepted shorthand for Issue Tracker Ops.
   unavailable.
 - Issue Ops must know enough of its own config shape to serialize, hand off, and
   ingest plain Issue Ops config without Agent Equipment Config.
+- Reflection Findings discovered during manual or ad hoc reflection must be
+  routed to the narrowest relevant issue, with generic cognition-equipment
+  findings linked to issue #25.
 - Configured tracker priority and selection policy governs issue pick order;
   dependency relations determine feasibility unless the configured policy says
   they also change priority.

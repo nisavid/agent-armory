@@ -10,6 +10,12 @@ Trace: [capability card](capability-card.md) -> interface decision record -> [pr
 
 The observability investigation capability needs procedural investigation judgment, typed read-only observability tools, strict query bounds, redaction, audit evidence, local service knowledge, and a specialist profile with scoped access.
 
+## Vision alignment
+
+The decision keeps incident reasoning in the Agent and puts live data access,
+query bounds, redaction, audit records, local service truth, and scoped identity
+in the surfaces that can enforce or validate them.
+
 ## Decision
 
 Use a skill for the investigation sequence, MCP/tools for metrics, traces, logs, and deploy history, hooks for bounds and redaction gates, config for environment limits, local docs for service truth, scripts for deterministic summarization, and an Agent Profile for scoped investigator identity.

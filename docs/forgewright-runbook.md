@@ -75,11 +75,15 @@ Each Blueprint names its promotion state, target harness assumptions, required F
 A Forgewright intake from a Smith starts by preserving the Smith handoff, refining the Tooling Gap, updating canonical surfaces and validation, and returning a hand-back note.
 
 Treat the Smith handoff as active task context, not as durable doctrine. Project only accepted Forge decisions into the narrowest live surface. If the requirement is not accepted, record the deferment reason, tracking surface, and Smith resume guidance.
+Treat Reflection Findings the same way: use them as evidence to scout, route,
+or refine, then project only accepted decisions into Forge Canon, specs,
+validation, issues, or Tooling Work.
 
 Before editing, identify:
 
 - the blocked Smith task and tracking surface;
 - the unsatisfied Tooling Gap;
+- any Reflection Finding or source evidence that explains why the gap matters;
 - the dependency impact on the current equipment work;
 - the selected session path: current session, subagent session, peer agent session, forked session, or new session;
 - harness and operator constraints that affect the Forgewright path;

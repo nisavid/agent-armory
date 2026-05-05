@@ -29,13 +29,18 @@ in hooks, permissions, sandboxes, approvals, tools, or other hard boundaries.
 6. Does the model need to apply procedural judgment?
    Use a skill. Keep the skill thin and point to docs, scripts, tools, and templates.
 
-7. Does the task need a distinct identity, authority, context, model, or toolset?
+7. Does the requirement shape future reasoning, reflection, memory, or routing?
+   Treat it as cognition enhancement equipment, then split its responsibilities
+   across skills, typed operations, docs, config, validators, hooks, and issue
+   capture rather than leaving it as prompt style.
+
+8. Does the task need a distinct identity, authority, context, model, or toolset?
    Use an Agent Profile.
 
-8. Does the behavior need to run around lifecycle events?
+9. Does the behavior need to run around lifecycle events?
    Use hooks.
 
-9. Does the equipment need installation, versioning, sharing, or distribution as a bundle?
+10. Does the equipment need installation, versioning, sharing, or distribution as a bundle?
    Use a Harness Plugin.
 
 ## placement guide

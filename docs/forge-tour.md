@@ -72,14 +72,21 @@ harness.
 
 ## How the Forge learns from equipment work
 
-The Forge also improves itself through reflection. When a smith finds that the
-Forge is missing a tool needed for good equipment work, a forgewright can
-improve the Forge before that work continues.
+The Forge also improves itself through reflection. When a smith sees repeated
+friction, weak routing, stale facts, missing policy, or an absent tool, that
+lesson should become source material for better equipment rather than a
+chat-only takeaway.
+
+Until generic Reflection equipment exists, agents should capture actionable
+reflection findings in the issue tracker and route them to the relevant
+equipment story. Future Reflection and cognition equipment will automate more
+of that loop: inspecting recent work, extracting reusable lessons, and routing
+the resulting equipment, policy, config, validator, or documentation candidates.
 
 The Agent Armory also keeps written notes for larger future work, including
 portable workflow equipment, side-thread hand-back, and ephemeral workflow
-opportunity capture. These notes are not inventory items. They are ideas for
-future equipment.
+opportunity capture. These notes are not inventory items. They are source
+material for future equipment.
 
 ## Where to go next
 
