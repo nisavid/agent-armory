@@ -1044,6 +1044,29 @@ EXTERNAL_DISCLOSURE_TEMPLATES = [
 MARKDOWN_LINK_EXCLUDED_DIRS = [
     Path("docs/metasmith/handoff/2026-05-02"),
 ]
+PYTHON_RUNTIME_REFERENCE_EXCLUDED_DIRS = [
+    Path("docs/adr"),
+    Path("docs/closeout"),
+    Path("docs/metasmith"),
+]
+PYTHON_RUNTIME_REFERENCE_EXCLUDED_DIR_NAMES = {
+    ".cache",
+    ".git",
+    ".mypy_cache",
+    ".nox",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".scratch",
+    ".tox",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+    "node_modules",
+    "scratch",
+    "tmp",
+    "venv",
+}
 
 
 def parse_markdown_table(markdown: str) -> list[dict[str, str]]:
@@ -1602,10 +1625,14 @@ def markdown_files(root: Path) -> list[Path]:
 
 def text_files(root: Path) -> list[Path]:
     files: list[Path] = []
-    excluded_roots = {".git", ".mypy_cache", ".pytest_cache", "__pycache__"}
     for path in root.rglob("*"):
         relative = path.relative_to(root)
-        if relative.parts and relative.parts[0] in excluded_roots:
+        if any(part in PYTHON_RUNTIME_REFERENCE_EXCLUDED_DIR_NAMES for part in relative.parts):
+            continue
+        if any(
+            relative == excluded or relative.is_relative_to(excluded)
+            for excluded in PYTHON_RUNTIME_REFERENCE_EXCLUDED_DIRS
+        ):
             continue
         if not path.is_file():
             continue

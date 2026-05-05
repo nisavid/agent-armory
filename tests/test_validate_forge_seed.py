@@ -165,6 +165,70 @@ class ValidatorPrimitiveTests(unittest.TestCase):
             ],
         )
 
+    def test_validate_python_runtime_declaration_ignores_historical_and_source_bearing_docs(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            drifted_reference = "Python " + "3.13"
+            (root / ".python-version").write_text("3.14\n", encoding="utf-8")
+            (root / "tools").mkdir()
+            (root / "tools/validate.py").write_text("#!/usr/bin/env python3.14\n", encoding="utf-8")
+            (root / "docs/adr").mkdir(parents=True)
+            (root / "docs/adr/0001-runtime-history.md").write_text(
+                f"This historical decision mentioned {drifted_reference}.\n",
+                encoding="utf-8",
+            )
+            (root / "docs/metasmith/handoff/2026-05-02").mkdir(parents=True)
+            (root / "docs/metasmith/handoff/2026-05-02/provenance.md").write_text(
+                f"Source-bearing provenance mentioned {drifted_reference}.\n",
+                encoding="utf-8",
+            )
+
+            results = validate_python_runtime_declaration(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="python_runtime:.python-version",
+                    ok=True,
+                    detail="declares Python 3.14",
+                    path=".python-version",
+                )
+            ],
+        )
+
+    def test_validate_python_runtime_declaration_ignores_local_work_directories(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            drifted_reference = "Python " + "3.13"
+            (root / ".python-version").write_text("3.14\n", encoding="utf-8")
+            (root / "tools").mkdir()
+            (root / "tools/validate.py").write_text("#!/usr/bin/env python3.14\n", encoding="utf-8")
+            (root / ".venv/lib").mkdir(parents=True)
+            (root / ".venv/lib/runtime.txt").write_text(
+                f"Tool output mentioned {drifted_reference}.\n",
+                encoding="utf-8",
+            )
+            (root / "scratch").mkdir()
+            (root / "scratch/runtime.txt").write_text(
+                f"Scratch notes mentioned {drifted_reference}.\n",
+                encoding="utf-8",
+            )
+
+            results = validate_python_runtime_declaration(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="python_runtime:.python-version",
+                    ok=True,
+                    detail="declares Python 3.14",
+                    path=".python-version",
+                )
+            ],
+        )
+
     def test_find_markdown_links_includes_local_image_targets(self):
         markdown = "![Diagram](docs/diagram.png)\n"
 
