@@ -634,6 +634,47 @@ Append:
         self.assertEqual(result["safety_status"], "conflicted")
         self.assertEqual(result["diagnostics"][0]["kind"], "same-precedence collision")
         self.assertEqual(result["diagnostics"][0]["path"], "issue_tracker_ops.mode")
+
+    def test_policy_value_survives_lower_authority_same_precedence_collision(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy = self.write_layer(root, "org.toml", """
+                [agent_equipment_config.layer]
+                name = "organization or tracker policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.policy.issue_tracker_ops.mode]
+                non_overridable = true
+                required_for = "mutation"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            repo_a = self.write_layer(root, "repo-a.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "execute"
+            """)
+            repo_b = self.write_layer(root, "repo-b.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+            """)
+
+            result = agent_equipment_config.effective_config([policy, repo_a, repo_b], [self.issue_ops_fragment()], requested_behavior="mutation")
+
+        self.assertEqual(result["effective"]["issue_tracker_ops"]["mode"]["value"], "dry-run")
+        self.assertEqual(result["effective"]["issue_tracker_ops"]["mode"]["source"], policy.as_posix())
+        self.assertEqual(result["safety_status"], "conflicted")
+        self.assertIn("blocked override", [item["kind"] for item in result["diagnostics"]])
+        self.assertIn("same-precedence collision", [item["kind"] for item in result["diagnostics"]])
 ```
 
 - [ ] **Step 2: Run tests to verify they fail**
@@ -641,7 +682,7 @@ Append:
 Run:
 
 ```bash
-python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_later_layer_wins_when_not_locked tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_policy_authority_blocks_lower_authority_override_for_mutation tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_same_precedence_collision_reports_conflict_without_silent_winner
+python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_later_layer_wins_when_not_locked tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_policy_authority_blocks_lower_authority_override_for_mutation tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_same_precedence_collision_reports_conflict_without_silent_winner tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_policy_value_survives_lower_authority_same_precedence_collision
 ```
 
 Expected: failures because policy locks and same-precedence collision detection are not implemented.
@@ -712,8 +753,13 @@ def effective_config(layer_paths: list[Path], fragments: list[SchemaFragment], *
                             layer,
                         )
                     )
-                    value = None
-                    source_layer = None
+                    if not (
+                        active_lock is not None
+                        and active_lock.required_for in {requested_behavior, "always"}
+                        and active_lock.layer.precedence < layer.precedence
+                    ):
+                        value = None
+                        source_layer = None
                     field_conflicted = True
                     continue
                 values_by_precedence[layer.precedence] = (candidate, layer)
@@ -761,7 +807,7 @@ def effective_config(layer_paths: list[Path], fragments: list[SchemaFragment], *
 Run:
 
 ```bash
-python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_later_layer_wins_when_not_locked tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_policy_authority_blocks_lower_authority_override_for_mutation tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_same_precedence_collision_reports_conflict_without_silent_winner
+python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_later_layer_wins_when_not_locked tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_policy_authority_blocks_lower_authority_override_for_mutation tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_same_precedence_collision_reports_conflict_without_silent_winner tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_policy_value_survives_lower_authority_same_precedence_collision
 ```
 
 Expected: `OK`.
@@ -1103,8 +1149,13 @@ def effective_config(layer_paths: list[Path], fragments: list[SchemaFragment], *
                             layer,
                         )
                     )
-                    value = None
-                    source_layer = None
+                    if not (
+                        active_lock is not None
+                        and active_lock.required_for in {requested_behavior, "always"}
+                        and active_lock.layer.precedence < layer.precedence
+                    ):
+                        value = None
+                        source_layer = None
                     field_conflicted = True
                     continue
                 values_by_precedence[layer.precedence] = (candidate, layer)
@@ -1947,6 +1998,9 @@ git commit -m "feat(config): support handoff and authority projection" -m "Co-au
 - Modify: `specs/agent-equipment-config/validation-plan.md`
 - Modify: `specs/agent-equipment-config/README.md`
 - Modify: `specs/agent-equipment-config/pressure-scenarios.md`
+- Modify: `specs/agent-equipment-config/interface-decision-record.md`
+- Modify: `specs/agent-equipment-config/security-control-classification.md`
+- Modify: `specs/agent-equipment-config/closeout-evidence-plan.md`
 
 - [ ] **Step 1: Write pressure scenario regression test**
 
@@ -2007,7 +2061,50 @@ python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTes
 
 Expected: `OK` if Task 3, Task 5, and Task 6 are correct. If it fails, fix the implementation rather than weakening the test.
 
-- [ ] **Step 3: Update validation plan command list**
+- [ ] **Step 3: Update runtime status claims across the bundle**
+
+Replace the opening implementation-status sentence in these files:
+
+- `specs/agent-equipment-config/README.md`
+- `specs/agent-equipment-config/validation-plan.md`
+- `specs/agent-equipment-config/pressure-scenarios.md`
+- `specs/agent-equipment-config/interface-decision-record.md`
+- `specs/agent-equipment-config/security-control-classification.md`
+- `specs/agent-equipment-config/closeout-evidence-plan.md`
+
+Use this current status:
+
+```markdown
+This Forge Entry Bundle describes desired behavior and includes the first
+standard-library runtime engine slice for effective-config, config-diff,
+diagnostics, plain handoff promotion, authority checks, and projection
+classification. It does not publish Agent Equipment assets, resolve secrets,
+mutate source config, mutate external systems, or implement harness controls.
+```
+
+Also make these targeted updates:
+
+- In `specs/agent-equipment-config/interface-decision-record.md`, replace claims
+  that the change set only defines source shape or does not build a runtime
+  engine with language that names the implemented portable runtime slice and
+  still defers consumer integration, onboarding, harness adapters, and
+  enforcement.
+- In `specs/agent-equipment-config/security-control-classification.md`, replace
+  residual-risk claims that no parser or merge engine exists with language that
+  limits the implemented parser and merge behavior to the tested portable CLI
+  and keeps config mutation commands, provider-specific secret resolution, and
+  harness controls out of scope.
+- In `specs/agent-equipment-config/validation-plan.md`, replace the residual
+  risk paragraph with language that says the runtime slice proves only the
+  deterministic CLI behaviors covered by `tests.test_agent_equipment_config`;
+  it does not prove external enforcement, provider secret resolution, source
+  mutation, or harness-specific control projection.
+- In `specs/agent-equipment-config/closeout-evidence-plan.md`, update the
+  remaining-evidence list so deterministic effective-config engine evidence is
+  marked complete by the runtime-slice command, while harness projection,
+  external publication, and promotion beyond the runtime slice remain future.
+
+- [ ] **Step 4: Update validation plan command list**
 
 In `specs/agent-equipment-config/validation-plan.md`, add this item to "Current deterministic checks":
 
@@ -2015,7 +2112,8 @@ In `specs/agent-equipment-config/validation-plan.md`, add this item to "Current 
 - `python3.14 -m unittest tests.test_agent_equipment_config`
 ```
 
-Under "Future runtime cases", add this subsection after the existing bullet list:
+Rename "Future runtime cases" to "Runtime cases". Under that section, add this
+subsection after the existing bullet list:
 
 ```markdown
 Implemented by the v0 engine slice:
@@ -2032,7 +2130,7 @@ Implemented by the v0 engine slice:
 - Issue Tracker Ops pressure scenario for blocked live mutation.
 ```
 
-- [ ] **Step 4: Update README bundle status**
+- [ ] **Step 5: Update README bundle status**
 
 In `specs/agent-equipment-config/README.md`, add this section after "V0 contract":
 
@@ -2045,7 +2143,7 @@ migrations and classifies enforcement projections, but does not rewrite source
 config, resolve secrets, or implement harness controls.
 ```
 
-- [ ] **Step 5: Add runtime-slice harness projection discussion**
+- [ ] **Step 6: Add runtime-slice harness projection discussion**
 
 In `specs/agent-equipment-config/README.md`, add this subsection under
 "Runtime slice":
@@ -2068,7 +2166,7 @@ harness adapter implements blocking controls.
 | OpenCode | An OpenCode command template, plugin hook, GitHub Action, external scheduler, or `opencode run` wrapper invokes the CLI with committed, local-only, checkout-local, generated, session, and secret-reference inputs. Effective-config and config-diff JSON are returned to the invoking surface. | Blocking classifications are not enforced by OpenCode in this slice; a future plugin hook, permission, or wrapper may turn them into blocking controls. |
 ```
 
-- [ ] **Step 6: Update pressure scenario status**
+- [ ] **Step 7: Update pressure scenario status**
 
 In `specs/agent-equipment-config/pressure-scenarios.md`, add this paragraph after the "Expected Config behavior" list in "Primary scenario: Issue Tracker Ops":
 
@@ -2079,10 +2177,10 @@ mutation. The broader pressure scenario still needs harness-specific
 enforcement implementation before promotion beyond `planned`.
 ```
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
-git add tests/test_agent_equipment_config.py specs/agent-equipment-config/validation-plan.md specs/agent-equipment-config/README.md specs/agent-equipment-config/pressure-scenarios.md
+git add tests/test_agent_equipment_config.py specs/agent-equipment-config/validation-plan.md specs/agent-equipment-config/README.md specs/agent-equipment-config/pressure-scenarios.md specs/agent-equipment-config/interface-decision-record.md specs/agent-equipment-config/security-control-classification.md specs/agent-equipment-config/closeout-evidence-plan.md
 git commit -m "test(config): cover issue tracker pressure scenario" -m "Co-authored-by: Codex <noreply@openai.com>"
 ```
 
@@ -2230,9 +2328,6 @@ are current, complete the repo-required gate order from `docs/story-closeout.md`
 - Classify privacy and disclosure limits for actionable Reflection Findings,
   then route publishable findings or record why the insight is not durable or
   projectable.
-- Run final validation and publication-readiness checks required by this plan
-  and repository policy, including `python3.14 tools/validate_forge_seed.py
-  --final-closeout`.
 
 Run the repo-required review loops after the upstream gates are current:
 
@@ -2248,6 +2343,10 @@ Use the applicable doc-review guidance where those surfaces are affected:
 `documentation-writer`, and `writing-clearly-and-concisely`. Each loop must have
 a latest clean cycle before merge-readiness.
 
+After both review loops have latest clean cycles, run final validation and
+publication-readiness checks required by this plan and repository policy,
+including `python3.14 tools/validate_forge_seed.py --final-closeout`.
+
 - [ ] **Step 9: Commit**
 
 ```bash
@@ -2259,7 +2358,7 @@ git commit -m "test(config): validate runtime slice coverage" -m "Co-authored-by
 
 ## Self-Review Checklist
 
-- Spec coverage: tasks cover schema fragments, layered config, Layer Precedence, Policy Authority, same-precedence collisions, effective-config, config-diff for values/status/diagnostics, behavior-aware semantic validators, Config Safety Status precedence, deprecation diagnostics, migration previews with audit-preview shape, secret references, session-scoped behavior, plain Issue Tracker Ops handoff fallback/promotion, missing authority, enforcement projection classification, Issue Tracker Ops pressure, and validation commands.
+- Spec coverage: tasks cover schema fragments, layered config, Layer Precedence, Policy Authority, same-precedence collisions, higher-authority policy preservation over lower-authority collisions, effective-config, config-diff for values/status/diagnostics, behavior-aware semantic validators, Config Safety Status precedence, deprecation diagnostics, migration previews with audit-preview shape, secret references, session-scoped behavior, plain Issue Tracker Ops handoff fallback/promotion, missing authority, enforcement projection classification, Issue Tracker Ops pressure, bundle runtime-status updates, and validation commands.
 - Deliberate deferrals: source rewrites, migration apply execution, provider-specific secret fetching, and harness blocking-control implementation remain out of scope and are named in the plan.
 - Type consistency: `Layer`, `FieldSpec`, `SchemaFragment`, `MigrationPreview`, `Diagnostic`, `PolicyLock`, `effective_config`, `config_diff`, `enforcement_projection`, and `issue_tracker_ops_fragment` are introduced before use in later tasks.
 - Security boundary: no network, subprocess, secret fetching, or source mutation is part of the runtime slice; untrusted layers cannot supply usable authority for mutation.
