@@ -241,6 +241,15 @@ class AgentEquipmentConfigTests(unittest.TestCase):
                     "blocked_config",
                 )
 
+    def test_onboarding_status_maps_resumed_and_interrupted_blocked_config(self):
+        for onboarding_state in ["interrupted", "resume"]:
+            for safety_status in ["conflicted", "untrusted", "stale", "unsafe"]:
+                with self.subTest(onboarding_state=onboarding_state, safety_status=safety_status):
+                    self.assertEqual(
+                        agent_equipment_config.onboarding_status(True, onboarding_state, safety_status),
+                        "blocked_config",
+                    )
+
     def test_onboarding_status_rejects_unknown_safety_status(self):
         with self.assertRaisesRegex(agent_equipment_config.ConfigError, "unknown Config Safety Status"):
             agent_equipment_config.onboarding_status(True, "first-run", "new-status")

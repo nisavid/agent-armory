@@ -38,6 +38,7 @@ SENSITIVE_KEYWORDS = ("secret", "token", "credential", "password", "api_key", "p
 REDACTED = "<redacted>"
 REQUIRED_FOR_VALUES = {"advisory", "mutation", "always"}
 ONBOARDING_STATES = {"first-run", "interrupted", "resume", "restart"}
+BLOCKED_CONFIG_SAFETY_STATUSES = {"conflicted", "untrusted", "stale", "unsafe"}
 FIRST_RUN_ONBOARDING_STATUSES = {
     "usable": "complete",
     "incomplete": "missing_config_data",
@@ -514,9 +515,17 @@ def onboarding_status(shared_config_present: bool, onboarding_state: str, safety
     if onboarding_state == "restart":
         return "restart_ready"
     if onboarding_state == "interrupted":
-        return "interrupted_partial" if safety_status != "usable" else "interrupted_complete"
+        if safety_status == "usable":
+            return "interrupted_complete"
+        if safety_status in BLOCKED_CONFIG_SAFETY_STATUSES:
+            return "blocked_config"
+        return "interrupted_partial"
     if onboarding_state == "resume":
-        return "resumed_complete" if safety_status == "usable" else "resume_needs_input"
+        if safety_status == "usable":
+            return "resumed_complete"
+        if safety_status in BLOCKED_CONFIG_SAFETY_STATUSES:
+            return "blocked_config"
+        return "resume_needs_input"
     return FIRST_RUN_ONBOARDING_STATUSES[safety_status]
 
 
