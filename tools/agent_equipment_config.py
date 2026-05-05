@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
+import tempfile
 import tomllib
 from json import JSONDecodeError
 from dataclasses import asdict, dataclass, field
@@ -289,9 +291,9 @@ def migration_source_durability(layer: Layer) -> tuple[str, bool]:
     return ("instance-scoped local evidence", False)
 
 
-def migration_apply_authorized(layers: list[Layer], apply_authority: str | None, target_layer: Layer) -> bool:
+def migration_apply_authority(layers: list[Layer], apply_authority: str | None, target_layer: Layer) -> tuple[bool, str]:
     if apply_authority == "operator":
-        return True
+        return True, "operator"
     for layer in layers:
         if not layer.trusted:
             continue
@@ -301,8 +303,13 @@ def migration_apply_authorized(layers: list[Layer], apply_authority: str | None,
             continue
         authority_table = layer.metadata.get("authority", {})
         if isinstance(authority_table, dict) and authority_table.get("config_migration_apply") == "usable":
-            return True
-    return False
+            return True, f"configured:{layer.name}:{layer.path}"
+    return False, "not supplied"
+
+
+def migration_apply_authorized(layers: list[Layer], apply_authority: str | None, target_layer: Layer) -> bool:
+    authorized, _authority = migration_apply_authority(layers, apply_authority, target_layer)
+    return authorized
 
 
 def migration_apply_audit_record(
@@ -461,14 +468,37 @@ def update_toml_integer_key(lines: list[str], table_name: str, key: str, value: 
     lines[index] = f"{indent}{key} = {value}{comment}{newline}"
 
 
-def render_migration_source(layer: Layer, fragment: SchemaFragment, migration: MigrationPreview) -> str:
-    path = Path(layer.path)
-    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+def render_migration_source_from_text(text: str, layer: Layer, fragment: SchemaFragment, migration: MigrationPreview) -> str:
+    lines = text.splitlines(keepends=True)
     for old_name, new_name in migration.field_renames.items():
         if old_name in namespace_section(layer, fragment.namespace):
             rename_toml_key(lines, fragment.namespace, old_name, new_name)
     update_toml_integer_key(lines, "agent_equipment_config.fragment_versions", fragment.namespace, fragment.version)
     return "".join(lines)
+
+
+def render_migration_source(layer: Layer, fragment: SchemaFragment, migration: MigrationPreview) -> str:
+    path = Path(layer.path)
+    return render_migration_source_from_text(path.read_text(encoding="utf-8"), layer, fragment, migration)
+
+
+def atomic_write_text(path: Path, text: str) -> None:
+    original_mode = path.stat().st_mode
+    temporary_path: str | None = None
+    try:
+        with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, delete=False) as temporary:
+            temporary_path = temporary.name
+            temporary.write(text)
+            temporary.flush()
+            os.fsync(temporary.fileno())
+        os.chmod(temporary_path, original_mode)
+        os.replace(temporary_path, path)
+    finally:
+        if temporary_path is not None:
+            try:
+                os.unlink(temporary_path)
+            except FileNotFoundError:
+                pass
 
 
 def migration_refusal(
@@ -521,9 +551,9 @@ def migration_apply(
     applications: list[dict[str, Any]] = []
     refusals: list[dict[str, Any]] = []
     audit_records: list[dict[str, Any]] = []
-    pending_writes: list[tuple[Path, str, dict[str, Any], Layer, SchemaFragment, int]] = []
+    pending_writes: dict[Path, dict[str, Any]] = {}
     for layer in layers:
-        authorized = migration_apply_authorized(layers, apply_authority, layer)
+        authorized, authority = migration_apply_authority(layers, apply_authority, layer)
         versions = fragment_versions(layer)
         for fragment in fragments:
             source_version = versions.get(fragment.namespace)
@@ -550,18 +580,18 @@ def migration_apply(
                     fragment,
                     from_version=source_version,
                     reason=reason,
-                    authority=apply_authority,
+                    authority=authority,
                 )
                 refusals.append(refusal)
                 audit_records.append(refusal["audit_record"])
                 continue
-            decision = "applied" if apply else "dry-run"
+            decision = "authorized" if apply else "dry-run"
             record = migration_apply_audit_record(
                 layer,
                 fragment,
                 from_version=source_version,
                 decision=decision,
-                authority=apply_authority,
+                authority=authority,
             )
             application = {
                 "source": layer.path,
@@ -578,38 +608,57 @@ def migration_apply(
                 "audit_record": record,
             }
             if apply:
-                pending_writes.append((Path(layer.path), render_migration_source(layer, fragment, migration), application, layer, fragment, source_version))
+                path = Path(layer.path)
+                staged = pending_writes.get(path)
+                base_text = staged["text"] if staged is not None else path.read_text(encoding="utf-8")
+                next_text = render_migration_source_from_text(base_text, layer, fragment, migration)
+                if staged is None:
+                    staged = {"text": next_text, "items": []}
+                    pending_writes[path] = staged
+                else:
+                    staged["text"] = next_text
+                staged["items"].append((application, layer, fragment, source_version, authority))
                 audit_records.append(record)
             else:
                 audit_records.append(record)
             applications.append(application)
     partial_application = False
     write_failures: list[dict[str, Any]] = []
-    if apply and not refusals:
-        for path, text, application, layer, fragment, source_version in pending_writes:
+    if apply and refusals:
+        for staged in pending_writes.values():
+            for application, _layer, _fragment, _source_version, _authority in staged["items"]:
+                application["decision"] = "blocked"
+                application["audit_record"]["decision"] = "blocked"
+                application["audit_record"]["result"] = "blocked by refusal"
+    elif apply:
+        for path, staged in pending_writes.items():
             try:
-                path.write_text(text, encoding="utf-8")
+                atomic_write_text(path, staged["text"])
             except OSError as exc:
                 partial_application = any(item["write_performed"] for item in applications)
-                write_failures.append(
-                    {
-                        "source": path.as_posix(),
-                        "reason": exc.strerror or str(exc),
-                    }
-                )
+                failure = {
+                    "source": path.as_posix(),
+                    "reason": exc.strerror or str(exc),
+                }
+                write_failures.append(failure)
+                for application, _layer, _fragment, _source_version, _authority in staged["items"]:
+                    application["decision"] = "write-failed"
+                    application["write_failure"] = failure
                 break
-            application["write_performed"] = True
-            mutation_record = migration_apply_audit_record(
-                layer,
-                fragment,
-                from_version=source_version,
-                decision="applied",
-                authority=apply_authority,
-                action="migration apply mutation",
-                result="applied",
-            )
-            application["mutation_audit_record"] = mutation_record
-            audit_records.append(mutation_record)
+            for application, layer, fragment, source_version, authority in staged["items"]:
+                application["decision"] = "applied"
+                application["write_performed"] = True
+                mutation_record = migration_apply_audit_record(
+                    layer,
+                    fragment,
+                    from_version=source_version,
+                    decision="applied",
+                    authority=authority,
+                    action="migration apply mutation",
+                    result="applied",
+                )
+                application["mutation_audit_record"] = mutation_record
+                audit_records.append(mutation_record)
     return {
         "mode": "apply" if apply else "dry-run",
         "applied": any(application["write_performed"] for application in applications),

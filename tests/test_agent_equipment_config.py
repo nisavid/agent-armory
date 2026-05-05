@@ -600,6 +600,20 @@ class AgentEquipmentConfigTests(unittest.TestCase):
             ),
         )
 
+    def renamed_agent_ops_state_fragment(self):
+        return agent_equipment_config.SchemaFragment(
+            namespace="agent_ops",
+            version=2,
+            fields={"state": agent_equipment_config.FieldSpec(type="string", enum=["active", "paused"])},
+            migrations=(
+                agent_equipment_config.MigrationPreview(
+                    from_version=1,
+                    field_renames={"run_state": "state"},
+                    note="rename run_state to state",
+                ),
+            ),
+        )
+
     def test_later_layer_wins_when_not_locked(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -1232,6 +1246,43 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertIn('mode = "dry-run"', rewritten_text)
         self.assertNotIn('operation_mode = "dry-run"', rewritten_text)
 
+    def test_migration_apply_preserves_all_changes_when_multiple_fragments_target_same_file(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.fragment_versions]
+                issue_tracker_ops = 1
+                agent_ops = 1
+
+                [issue_tracker_ops]
+                operation_mode = "dry-run"
+
+                [agent_ops]
+                run_state = "active"
+            """)
+
+            result = agent_equipment_config.migration_apply(
+                [layer],
+                [self.renamed_mode_fragment(), self.renamed_agent_ops_state_fragment()],
+                apply=True,
+                apply_authority="operator",
+            )
+            rewritten_text = layer.read_text(encoding="utf-8")
+
+        self.assertTrue(result["applied"])
+        self.assertEqual([application["namespace"] for application in result["applications"]], ["issue_tracker_ops", "agent_ops"])
+        self.assertTrue(all(application["write_performed"] for application in result["applications"]))
+        self.assertIn("issue_tracker_ops = 2", rewritten_text)
+        self.assertIn("agent_ops = 2", rewritten_text)
+        self.assertIn('mode = "dry-run"', rewritten_text)
+        self.assertIn('state = "active"', rewritten_text)
+        self.assertNotIn("operation_mode", rewritten_text)
+        self.assertNotIn("run_state", rewritten_text)
+
     def test_migration_apply_accepts_trusted_configured_authority(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -1258,6 +1309,7 @@ class AgentEquipmentConfigTests(unittest.TestCase):
 
         self.assertTrue(result["applied"])
         self.assertEqual(result["applications"][0]["decision"], "applied")
+        self.assertRegex(result["applications"][0]["audit_record"]["authority"], r"^configured:repository policy:")
 
     def test_migration_apply_rejects_authority_from_later_layer(self):
         with tempfile.TemporaryDirectory() as tmpdir:
