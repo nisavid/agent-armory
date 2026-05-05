@@ -1337,6 +1337,24 @@ Append:
         payload = json.loads(stdout)
         self.assertEqual(payload["safety_status"], "usable")
         self.assertEqual(payload["effective"]["issue_tracker_ops"]["mode"]["value"], "dry-run")
+
+    def test_cli_config_diff_outputs_json(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            before = root / "before.json"
+            after = root / "after.json"
+            before.write_text(json.dumps({"effective": {"issue_tracker_ops": {"mode": {"value": "dry-run"}}}}), encoding="utf-8")
+            after.write_text(json.dumps({"effective": {"issue_tracker_ops": {"mode": {"value": "execute"}}}}), encoding="utf-8")
+
+            stdout = agent_equipment_config.run(
+                ["config-diff", "--before", str(before), "--after", str(after)],
+                stdout_text=True,
+            )
+
+        payload = json.loads(stdout)
+        self.assertEqual(payload["changes"][0]["path"], "issue_tracker_ops.mode")
+        self.assertEqual(payload["changes"][0]["before"], "dry-run")
+        self.assertEqual(payload["changes"][0]["after"], "execute")
 ```
 
 - [ ] **Step 2: Run tests to verify they fail**
@@ -1344,7 +1362,7 @@ Append:
 Run:
 
 ```bash
-python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_secret_reference_is_reported_without_value_resolution tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_changed_values tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_changed_secret_references tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_status_and_diagnostic_changes tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_cli_effective_config_outputs_json
+python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_secret_reference_is_reported_without_value_resolution tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_changed_values tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_changed_secret_references tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_status_and_diagnostic_changes tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_cli_effective_config_outputs_json tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_cli_config_diff_outputs_json
 ```
 
 Expected: failures because secret reference handling, diff, and CLI are missing.
@@ -1449,6 +1467,9 @@ def build_parser() -> argparse.ArgumentParser:
     effective.add_argument("--layer", action="append", required=True)
     effective.add_argument("--requested-behavior", choices=["advisory", "mutation"], default="advisory")
     effective.add_argument("--issue-tracker-ops", action="store_true")
+    diff = subparsers.add_parser("config-diff")
+    diff.add_argument("--before", required=True)
+    diff.add_argument("--after", required=True)
     return parser
 
 
@@ -1456,8 +1477,13 @@ def run(argv: list[str] | None = None, *, stdout: TextIO | None = None, stdout_t
     parser = build_parser()
     args = parser.parse_args(argv)
     output = stdout or sys.stdout
-    fragments = [issue_tracker_ops_fragment()] if args.issue_tracker_ops else []
-    payload = effective_config([Path(path) for path in args.layer], fragments, requested_behavior=args.requested_behavior)
+    if args.command == "config-diff":
+        before = json.loads(Path(args.before).read_text(encoding="utf-8"))
+        after = json.loads(Path(args.after).read_text(encoding="utf-8"))
+        payload = config_diff(before, after)
+    else:
+        fragments = [issue_tracker_ops_fragment()] if args.issue_tracker_ops else []
+        payload = effective_config([Path(path) for path in args.layer], fragments, requested_behavior=args.requested_behavior)
     text = json.dumps(payload, indent=2, sort_keys=True) + "\n"
     if stdout_text:
         return text
@@ -1479,7 +1505,7 @@ if __name__ == "__main__":
 Run:
 
 ```bash
-python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_secret_reference_is_reported_without_value_resolution tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_changed_values tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_changed_secret_references tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_status_and_diagnostic_changes tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_cli_effective_config_outputs_json
+python3.14 -m unittest tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_secret_reference_is_reported_without_value_resolution tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_changed_values tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_changed_secret_references tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_config_diff_reports_status_and_diagnostic_changes tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_cli_effective_config_outputs_json tests.test_agent_equipment_config.AgentEquipmentConfigTests.test_cli_config_diff_outputs_json
 ```
 
 Expected: `OK`.
@@ -1821,7 +1847,7 @@ def safety_status_from_diagnostics(diagnostics: list[Diagnostic], *, requested_b
     return "usable"
 ```
 
-Update `build_parser` and `run`:
+Update `build_parser` and `run` while preserving the `config-diff` subcommand:
 
 ```python
 def build_parser() -> argparse.ArgumentParser:
@@ -1832,6 +1858,9 @@ def build_parser() -> argparse.ArgumentParser:
     effective.add_argument("--plain-handoff", action="append", default=[])
     effective.add_argument("--requested-behavior", choices=["advisory", "mutation"], default="advisory")
     effective.add_argument("--issue-tracker-ops", action="store_true")
+    diff = subparsers.add_parser("config-diff")
+    diff.add_argument("--before", required=True)
+    diff.add_argument("--after", required=True)
     return parser
 
 
@@ -1839,13 +1868,18 @@ def run(argv: list[str] | None = None, *, stdout: TextIO | None = None, stdout_t
     parser = build_parser()
     args = parser.parse_args(argv)
     output = stdout or sys.stdout
-    fragments = [issue_tracker_ops_fragment()] if args.issue_tracker_ops else []
-    payload = effective_config(
-        [Path(path) for path in args.layer],
-        fragments,
-        requested_behavior=args.requested_behavior,
-        plain_handoff_paths=[Path(path) for path in args.plain_handoff],
-    )
+    if args.command == "config-diff":
+        before = json.loads(Path(args.before).read_text(encoding="utf-8"))
+        after = json.loads(Path(args.after).read_text(encoding="utf-8"))
+        payload = config_diff(before, after)
+    else:
+        fragments = [issue_tracker_ops_fragment()] if args.issue_tracker_ops else []
+        payload = effective_config(
+            [Path(path) for path in args.layer],
+            fragments,
+            requested_behavior=args.requested_behavior,
+            plain_handoff_paths=[Path(path) for path in args.plain_handoff],
+        )
     text = json.dumps(payload, indent=2, sort_keys=True) + "\n"
     if stdout_text:
         return text
@@ -1901,6 +1935,7 @@ Append:
                 [agent_equipment_config.policy.issue_tracker_ops.mode]
                 non_overridable = true
                 required_for = "mutation"
+                authority = "live_tracker_write"
 
                 [issue_tracker_ops]
                 mode = "dry-run"
@@ -1976,7 +2011,30 @@ migrations and classifies enforcement projections, but does not rewrite source
 config, resolve secrets, or implement harness controls.
 ```
 
-- [ ] **Step 5: Update pressure scenario status**
+- [ ] **Step 5: Add runtime-slice harness projection discussion**
+
+In `specs/agent-equipment-config/README.md`, add this subsection under
+"Runtime slice":
+
+```markdown
+### Runtime-slice harness projections
+
+The runtime slice exposes one portable CLI. Each harness projection invokes the
+CLI with the layer paths it can discover, receives effective-config or config-diff
+JSON, and treats `blocking` classifications as decision evidence until a later
+harness adapter implements blocking controls.
+
+| Harness | Discovery and exposure for this slice | Blocking and advisory boundary |
+| --- | --- | --- |
+| Codex | A Codex agent, hook, automation, or external `codex exec` wrapper supplies repository-committed TOML, local-only TOML, checkout-local state, generated state, `--plain-handoff` session TOML, and schema fragments through the Python module. Effective-config and config-diff JSON are printed to stdout or captured by the invoking agent surface. Secret references stay unresolved metadata. | The engine classifies mutation-unsafe output as `blocking`, but Codex enforcement remains advisory unless a future hook, permission profile, or automation wrapper consumes the JSON and blocks the action. |
+| OpenClaw | An OpenClaw command, hook, cron job, heartbeat turn, or plugin background service supplies the same layer categories and schema fragments to the portable CLI. Effective-config and config-diff JSON are exposed through the invoking command or plugin surface. Secret references stay unresolved metadata. | The engine classifies blocking conditions deterministically; actual OpenClaw hook, webhook, cron, or plugin blocking remains a future adapter concern. |
+| Hermes Agent | A Hermes Agent gateway hook, plugin hook, cron job, curator job, terminal process, or profile-driven command invokes the CLI with committed, local-only, checkout-local, generated, session, and secret-reference inputs. Effective-config and config-diff JSON are returned to the invoking agent surface. | Blocking classifications are decision evidence only until a Hermes-specific gateway, plugin, toolset, or profile adapter enforces them. |
+| Claude Code | A Claude Code hook, Routine, scheduled task, or command invokes the CLI with the available layer paths and schema fragments. Effective-config and config-diff JSON are visible in the command output or captured task context. Secret references remain typed pointers. | Blocking classifications guide the agent or hook consumer; no Claude Code hook or settings enforcement is implemented in this slice. |
+| Cursor | Cursor rules, hooks, Cloud Agent Automations, SDK agents, or CLI configuration can invoke the CLI with the discovered layer paths and schema fragments. Effective-config and config-diff JSON are exposed through the caller. Secret references remain unresolved metadata. | Blocking classifications are advisory until a Cursor hook, automation, SDK agent, or policy surface consumes the JSON and prevents the action. |
+| OpenCode | An OpenCode command template, plugin hook, GitHub Action, external scheduler, or `opencode run` wrapper invokes the CLI with committed, local-only, checkout-local, generated, session, and secret-reference inputs. Effective-config and config-diff JSON are returned to the invoking surface. | Blocking classifications are not enforced by OpenCode in this slice; a future plugin hook, permission, or wrapper may turn them into blocking controls. |
+```
+
+- [ ] **Step 6: Update pressure scenario status**
 
 In `specs/agent-equipment-config/pressure-scenarios.md`, add this paragraph after the "Expected Config behavior" list in "Primary scenario: Issue Tracker Ops":
 
@@ -1987,7 +2045,7 @@ mutation. The broader pressure scenario still needs harness-specific
 enforcement implementation before promotion beyond `planned`.
 ```
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add tests/test_agent_equipment_config.py specs/agent-equipment-config/validation-plan.md specs/agent-equipment-config/README.md specs/agent-equipment-config/pressure-scenarios.md
@@ -2037,6 +2095,14 @@ In `specs/agent-equipment-config/closeout-evidence-plan.md`, add this bullet to 
   security review conclusion for executable parsing, merge, diff, migration
   preview, plain handoff, authority, projection-classification, and
   secret-reference behavior.
+- Change Set Security Closeout for the runtime slice, including scope,
+  action performed, artifact durability classification, finding disposition,
+  fixes, suppressions, deferments, or explicit non-applicability notes.
+- Change Set Documentation Closeout for affected agent-facing and human-facing
+  docs, including updated surfaces or a no-change rationale for each plausible
+  affected surface.
+- Latest clean Cross-Boundary Coherence Ralph Review and Story Quality Ralph
+  Review cycles before merge-readiness.
 ```
 
 - [ ] **Step 4: Run focused validator tests**
@@ -2067,7 +2133,7 @@ Expected:
 - final-closeout validation: `0 failed`.
 - `git diff --check`: no output and exit 0.
 
-- [ ] **Step 6: Perform focused security review**
+- [ ] **Step 6: Perform security closeout**
 
 Inspect this diff for:
 
@@ -2084,9 +2150,51 @@ Inspect this diff for:
 - JSON and config-diff output not exposing secret values;
 - mutation behavior remaining diagnostic-only.
 
-Record the conclusion in the final change summary or PR body. If a reportable issue is found, fix it before this task is complete.
+Run the Codex Security workflow for the executable diff, or record why a
+focused security review is the selected narrower security action. Record:
 
-- [ ] **Step 7: Commit**
+- security scope;
+- command, workflow, or manual review method;
+- artifact durability classification;
+- findings, fixes, suppressions, approved deferments, or no-findings conclusion.
+
+If a reportable issue is found, fix it before this task is complete.
+
+- [ ] **Step 7: Perform documentation closeout**
+
+Inspect affected agent-facing and human-facing docs before merge-readiness:
+
+- `AGENTS.md`;
+- `CONTEXT.md`;
+- `docs/ubiquitous-language.md`;
+- Forge Canon under `docs/`;
+- `specs/agent-equipment-config/`;
+- `templates/`;
+- `examples/`;
+- validator tests and closeout/security docs when changed.
+
+Update stale or incomplete surfaces, or record a no-change rationale for each
+plausible affected surface in the PR body, final change summary, issue tracker,
+or a neutral committed closeout document.
+
+- [ ] **Step 8: Run repo-required story closeout Ralph reviews**
+
+After deterministic validation, security closeout, and documentation closeout
+are current, run the repo-required review loops from `docs/story-closeout.md`:
+
+- Cross-Boundary Coherence Ralph Review across PRD, specs, plan,
+  implementation, deterministic validation, security, documentation, issue/PR
+  projection, and handoff surfaces.
+- Story Quality Ralph Review for DX, UX, code quality, architecture,
+  robustness against unspecified interactions and attack paths, lessons from
+  prior dev/ops cycles, and alignment with `docs/vision.md`.
+
+Use the applicable doc-review guidance where those surfaces are affected:
+`honing-agent-facing-docs`, `honing-human-facing-docs`, `writing-skills`,
+`documentation-writer`, and `writing-clearly-and-concisely`. Each loop must have
+a latest clean cycle before merge-readiness.
+
+- [ ] **Step 9: Commit**
 
 ```bash
 git add tools/validate_forge_seed.py tests/test_validate_forge_seed.py specs/agent-equipment-config/closeout-evidence-plan.md
