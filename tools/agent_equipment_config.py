@@ -298,9 +298,11 @@ def load_plain_handoff_layers(paths: Iterable[Path]) -> tuple[list[Layer], list[
     return layers, summaries
 
 
-def authority_is_usable(layers: list[Layer], authority: str) -> bool:
+def authority_is_usable(layers: list[Layer], authority: str, required_by: PolicyLock) -> bool:
     for layer in layers:
         if not layer.trusted:
+            continue
+        if layer.precedence > required_by.layer.precedence:
             continue
         authority_table = layer.metadata.get("authority", {})
         if isinstance(authority_table, dict) and authority_table.get(authority) == "usable":
@@ -406,8 +408,12 @@ def effective_config(
             path = f"{fragment.namespace}.{field_name}"
             for layer in layers:
                 locks = policy_locks(layer)
-                if (fragment.namespace, field_name) in locks:
-                    active_lock = locks[(fragment.namespace, field_name)]
+                candidate_lock = locks.get((fragment.namespace, field_name))
+                if candidate_lock is not None and (
+                    active_lock is None
+                    or candidate_lock.layer.precedence < active_lock.layer.precedence
+                ):
+                    active_lock = candidate_lock
                 section = layer.data.get(fragment.namespace, {})
                 if field_name not in section:
                     continue
@@ -455,7 +461,7 @@ def effective_config(
                     source_layer = layer
             if active_lock is not None and active_lock.required_for in {requested_behavior, "always"} and active_lock.authority:
                 diagnostics.extend(untrusted_authority_diagnostics(layers, active_lock.authority))
-                if not authority_is_usable(layers, active_lock.authority):
+                if not authority_is_usable(layers, active_lock.authority, active_lock):
                     diagnostics.append(
                         diagnostic(
                             "missing authority",

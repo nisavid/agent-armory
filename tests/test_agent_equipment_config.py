@@ -270,6 +270,51 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(result["diagnostics"][0]["evidence"]["blocked_by"]["layer"], "organization or tracker policy")
         self.assertEqual(result["diagnostics"][0]["evidence"]["blocked_by"]["source"], policy.as_posix())
 
+    def test_later_layer_cannot_shadow_policy_lock_or_mint_authority(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy = self.write_layer(root, "org.toml", """
+                [agent_equipment_config.layer]
+                name = "organization or tracker policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.policy.issue_tracker_ops.mode]
+                non_overridable = true
+                required_for = "mutation"
+                authority = "live_tracker_write"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            session = self.write_layer(root, "session.toml", """
+                [agent_equipment_config.layer]
+                name = "session overrides"
+                category = "session override"
+
+                [agent_equipment_config.policy.issue_tracker_ops.mode]
+                required_for = "mutation"
+                authority = "session_write"
+
+                [agent_equipment_config.authority]
+                session_write = "usable"
+
+                [issue_tracker_ops]
+                mode = "execute"
+            """)
+
+            result = agent_equipment_config.effective_config([policy, session], [self.issue_ops_fragment()], requested_behavior="mutation")
+
+        self.assertEqual(result["effective"]["issue_tracker_ops"]["mode"]["value"], "dry-run")
+        self.assertEqual(result["effective"]["issue_tracker_ops"]["mode"]["source"], policy.as_posix())
+        self.assertEqual(result["safety_status"], "conflicted")
+        self.assertIn("blocked override", [item["kind"] for item in result["diagnostics"]])
+        self.assertIn("missing authority", [item["kind"] for item in result["diagnostics"]])
+        self.assertEqual(
+            [item["evidence"].get("authority") for item in result["diagnostics"] if item["kind"] == "missing authority"],
+            ["live_tracker_write"],
+        )
+
     def test_same_precedence_collision_reports_conflict_without_silent_winner(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

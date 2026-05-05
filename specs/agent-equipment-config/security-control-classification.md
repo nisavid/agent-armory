@@ -64,6 +64,8 @@ control, or secret provider.
 - Read-time migrations do not mutate source config.
 - Config mutations produce decision/mutation audit records.
 - Untrusted config cannot authorize mutation-capable behavior.
+- Later or lower-authority layers cannot mint authority for an earlier Policy
+  Authority gate.
 - Harness projections must state whether controls are blocking or advisory.
 
 ## Conflict diagnostics

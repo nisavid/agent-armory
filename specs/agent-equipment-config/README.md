@@ -94,6 +94,8 @@ The canonical layer order is:
 Later layers normally win by Layer Precedence, but Policy Authority can block a
 later value from overriding a non-overridable or mutation-gated setting. Blocked
 values remain visible in diagnostics instead of silently disappearing.
+Later or lower-authority layers cannot mint authority for an earlier Policy
+Authority gate.
 
 ## Source categories
 
