@@ -69,7 +69,7 @@ Issue Ops is accepted shorthand for Issue Tracker Ops.
 - Scripts: bootstrap GitHub Issues adapter and deterministic validation.
 - Config: Agent Equipment Config for durable layered policy, plus an Issue
   Ops-specific plain config shape for session-scoped operation, handoff, and
-  later ingestion when shared config equipment is unavailable.
+  later ingestion when Agent Equipment Config is unavailable.
 - Docs: this Forge Entry Bundle, user guidance, adapter boundaries, security
   rules, and validation evidence.
 
@@ -85,7 +85,7 @@ Issue Ops is accepted shorthand for Issue Tracker Ops.
 - Issue Ops must remain usable in session scope when Agent Equipment Config is
   unavailable.
 - Issue Ops must know enough of its own config shape to serialize, hand off, and
-  ingest plain Issue Ops config without shared config equipment.
+  ingest plain Issue Ops config without Agent Equipment Config.
 - Configured tracker priority and selection policy governs issue pick order;
   dependency relations determine feasibility unless the configured policy says
   they also change priority.
