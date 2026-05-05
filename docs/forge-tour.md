@@ -14,9 +14,9 @@ check, and care for equipment so the result is predictable, evidence-aware, and
 reviewable before anyone relies on it.
 
 The [Armory Vision](vision.md) describes the intended experience behind that
-construction system: Agents should be able to outfit themselves with the right
-equipment, use deterministic support where it belongs, and improve the equipment
-ecosystem when a task reveals a gap.
+construction system: Agents should be able to clarify underspecified intent,
+outfit themselves with the right equipment, use deterministic support where it
+belongs, and improve the equipment ecosystem when a task reveals a gap.
 
 The current Forge gives agents the shared vocabulary, templates, examples,
 planned blueprints, harness facts, checks, and safeguards they need to start
@@ -31,9 +31,9 @@ The Forge names agent roles directly:
 - **Smiths** create agent equipment with the Forge.
 - **Forgewrights** create and refine the Forge.
 
-Humans decide what should happen and when work should begin. Once a direction
-is set, agents carry out the assigned work until they need a human decision or
-access they do not have.
+Operators decide what should happen and when work should begin. Once a
+direction is set, agents carry out the assigned work until they need an
+operator decision or access they do not have.
 
 ## How equipment is made
 
