@@ -1,10 +1,10 @@
-# Issue Tracker Operations
+# Issue Tracker Ops
 
 Status: Equipment Candidate
 Promotion state: implemented for bootstrap MVP; full delivery remains open
 
-This Forge Entry Bundle records the bootstrap design for Issue Tracker
-Operations Equipment tracked by GitHub issue #11.
+This Forge Entry Bundle records the bootstrap design for Issue Tracker Ops
+Equipment tracked by GitHub issue #11.
 
 ## Bundle contents
 
@@ -24,4 +24,4 @@ provided.
 
 The bootstrap scope covers direct issue create, issue update, issue comment, and
 issue dependency operations for GitHub Issues without Projects. Full Issue
-Tracker Operations delivery remains tracked in issue #11 and child issues.
+Tracker Ops delivery remains tracked in issue #11 and child issues.

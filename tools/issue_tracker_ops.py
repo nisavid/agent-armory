@@ -378,7 +378,7 @@ def add_body_flags(parser: argparse.ArgumentParser, *, required: bool = False) -
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="issue_tracker_ops",
-        description="GitHub Issues adapter MVP for Issue Tracker Operations Equipment.",
+        description="GitHub Issues adapter MVP for Issue Tracker Ops Equipment.",
     )
     subparsers = parser.add_subparsers(dest="operation", required=True)
 

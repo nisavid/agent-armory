@@ -1,4 +1,4 @@
-# Validation Plan: Issue Tracker Operations
+# Validation Plan: Issue Tracker Ops
 
 Status: Equipment Candidate
 Promotion state: implemented for bootstrap MVP; full delivery remains open
@@ -52,6 +52,6 @@ paths.
 ## Full-delivery validation
 
 Full closure of issue #11 needs additional validation for onboarding,
-configuration layering, policy conflicts, issue repair, fallback reconciliation,
-permission failure, rate limiting, duplicate detection, subtask handling, and
-cross-issue orchestration.
+configuration layering, policy conflicts, issue selection, issue repair,
+fallback reconciliation, permission failure, rate limiting, duplicate detection,
+subtask handling, and cross-issue orchestration.

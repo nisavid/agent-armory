@@ -1,4 +1,4 @@
-# Pressure Scenarios: Issue Tracker Operations
+# Pressure Scenarios: Issue Tracker Ops
 
 Status: Equipment Candidate
 Promotion state: implemented for bootstrap MVP; full delivery remains open
@@ -59,5 +59,8 @@ Expected evidence:
   disposition.
 - Fallback state records owner, retry condition, intended tracker target, and
   reconciliation requirements when direct tracker recording is blocked.
+- Issue selection distinguishes backlog placement, selected-for-development or
+  to-do status, explicit priority, readiness labels, dependencies, and
+  stakeholder overrides before recommending the next card.
 - Cross-issue orchestration manages priority, readiness, delegation, subtasks,
   dependencies, and parent relationships under configured policy.

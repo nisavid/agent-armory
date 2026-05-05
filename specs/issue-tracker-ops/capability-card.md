@@ -1,11 +1,11 @@
-# Capability Card: Issue Tracker Operations
+# Capability Card: Issue Tracker Ops
 
 Status: Equipment Candidate
 Promotion state: implemented for bootstrap MVP; full delivery remains open
 
 ## Purpose
 
-Record, review, repair, enrich, organize, assign, work, and orchestrate
+Record, review, repair, enrich, organize, assign, select, work, and orchestrate
 issue-tracked follow-ups directly in an issue tracker without requiring
 intermediate in-tree tracking state.
 
@@ -58,14 +58,15 @@ intermediate in-tree tracking state.
 
 ## Needed Harness Components
 
-- Skills: issue review, repair, enrichment, orchestration, and session pickup
-  judgment.
+- Skills: issue review, repair, enrichment, issue selection, orchestration, and
+  session pickup judgment.
 - MCP/tools: tracker-neutral operations plus GitHub Issues adapter.
 - Hooks: future mutation gates for policy enforcement and audit capture.
 - Agent Profiles: future bounded issue reviewer or orchestrator profiles.
-- Plugins: future portable Issue Tracker Operations bundle.
+- Plugins: future portable Issue Tracker Ops bundle.
 - Scripts: bootstrap GitHub Issues adapter and deterministic validation.
-- Config: layered policy, taxonomy, authority, onboarding, safety, and adapter
+- Config: layered policy, taxonomy, priority scale, workflow status or board
+  column model, readiness signals, authority, onboarding, safety, and adapter
   capability configuration.
 - Docs: this Forge Entry Bundle, user guidance, adapter boundaries, security
   rules, and validation evidence.
@@ -79,6 +80,9 @@ intermediate in-tree tracking state.
 - Mutation-capable modes default to dry-run or advisory behavior until policy and
   invocation explicitly allow writes.
 - Hidden agent preferences must not become issue policy.
+- Configured tracker priority and selection policy governs issue pick order;
+  dependency relations determine feasibility unless the configured policy says
+  they also change priority.
 - Adapter capabilities must declare native, emulated, unsupported, or fallback
   behavior.
 - Issue mutations must have an audit surface that names operation, target,

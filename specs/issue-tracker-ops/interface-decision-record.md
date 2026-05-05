@@ -1,13 +1,13 @@
-# Interface Decision Record: Issue Tracker Operations
+# Interface Decision Record: Issue Tracker Ops
 
 Status: Equipment Candidate
 Promotion state: implemented for bootstrap MVP; full delivery remains open
 
 ## Requirement
 
-Issue Tracker Operations needs procedural judgment, typed external tracker
-operations, layered policy, dry-run safety, audit output, and future portability
-across issue trackers and agent harnesses.
+Issue Tracker Ops needs procedural judgment, typed external tracker
+operations, layered priority and selection policy, dry-run safety, audit output,
+and future portability across issue trackers and agent harnesses.
 
 ## Decision
 
@@ -26,8 +26,9 @@ tracker-neutral contract once the MVP proves the operation shape.
 - Agent Profile: deferred issue reviewer or orchestrator profile.
 - Plugin: deferred portable bundle.
 - Script: `tools/issue_tracker_ops.py` for the GitHub Issues-only bootstrap MVP.
-- Config: deferred layered policy; bootstrap uses provisional CLI policy with
-  dry-run default and `--execute` for mutation.
+- Config: deferred layered policy for taxonomy, priority, workflow status,
+  board-column semantics, readiness, and authority; bootstrap uses provisional
+  CLI policy with dry-run default and `--execute` for mutation.
 - Local docs: this Forge Entry Bundle records current design, security,
   validation, and closeout expectations.
 
@@ -80,12 +81,12 @@ and outputs without relying on CLI command composition.
 - `gh` authentication and permissions are external to the script.
 - GitHub API behavior may change; dependency and sub-issue features should be
   refreshed before promotion beyond the bootstrap MVP.
-- The MVP does not yet implement onboarding, layered policy, duplicate
-  detection, fallback reconciliation, or issue-set orchestration.
+- The MVP does not yet implement onboarding, layered policy, issue selection,
+  duplicate detection, fallback reconciliation, or issue-set orchestration.
 
 ## Maintenance notes
 
 Review this decision when GitHub changes issue dependency or sub-issue APIs,
 when the GitHub MCP connector exposes equivalent dependency operations, when
-Issue Tracker Operations gains a schema-backed config model, or when repeated
+Issue Tracker Ops gains a schema-backed config model, or when repeated
 use shows the CLI contract is too narrow for real tracker orchestration.

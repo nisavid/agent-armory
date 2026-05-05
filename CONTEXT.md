@@ -120,7 +120,7 @@ _Avoid_: letting it drift from the Repo Draft PRD without an explicit projection
 The post-review step that creates or updates a Published PRD Issue from a stable Repo Draft PRD.
 _Avoid_: issue churn during draft review, untracked divergence
 
-**Issue Tracker Operations**:
+**Issue Tracker Ops**:
 Agent Equipment for recording, reviewing, repairing, enriching, organizing,
 assigning, working, and orchestrating issue-tracked follow-ups directly in an
 issue tracker.
