@@ -137,9 +137,9 @@ induced candidate for future work.
 - Reflection Findings are source material for future Cognition Enhancement
   Equipment and may also induce Tooling Requests, Equipment Candidates, or
   issue-tracked work in narrower equipment stories.
-- Head Gear is generic Cognition Enhancement Equipment; it prepares the Agent to
-  clarify, equip, execute, and reflect before domain-specific equipment takes
-  over.
+- Head Gear is the planned generic Cognition Enhancement Equipment line; it is
+  intended to prepare the Agent to clarify, equip, execute, and reflect before
+  domain-specific equipment takes over.
 - A Tooling Request moves a Tooling Gap into Tooling Work for a Forgewright.
 - The Source Disposition Ledger replaces raw source-handoff preservation after source retirement.
 

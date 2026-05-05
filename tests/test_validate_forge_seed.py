@@ -285,6 +285,11 @@ class ValidatorPrimitiveTests(unittest.TestCase):
                 f"Scratch notes mentioned {drifted_reference}.\n",
                 encoding="utf-8",
             )
+            (root / "node_modules/demo").mkdir(parents=True)
+            (root / "node_modules/demo/runtime.txt").write_text(
+                f"Dependency notes mentioned {drifted_reference}.\n",
+                encoding="utf-8",
+            )
 
             results = validate_python_runtime_declaration(root)
 
