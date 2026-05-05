@@ -276,13 +276,23 @@ def sensitive_key(key: str) -> bool:
     return any(keyword in normalized for keyword in SENSITIVE_KEYWORDS)
 
 
+def sensitive_path(path: Any) -> bool:
+    if not isinstance(path, str):
+        return False
+    parts = path.replace("[", ".").replace("]", "").split(".")
+    return any(sensitive_key(part) for part in parts)
+
+
 def redact_for_cli(value: Any, path: tuple[str, ...] = ()) -> Any:
     if isinstance(value, dict):
         redacted: dict[str, Any] = {}
+        diff_path_sensitive = sensitive_path(value.get("path"))
         for key, item in value.items():
             key_text = str(key)
             child_path = (*path, key_text)
             if key_text == "name" and path and path[-1] == "secret_reference":
+                redacted[key] = REDACTED
+            elif key_text in {"before", "after"} and diff_path_sensitive and not isinstance(item, (dict, list)):
                 redacted[key] = REDACTED
             elif key_text == "value" and any(sensitive_key(part) for part in path):
                 redacted[key] = REDACTED

@@ -967,6 +967,32 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertNotIn("OLD_GITHUB_TOKEN", stdout)
         self.assertNotIn("NEW_GITHUB_TOKEN", stdout)
 
+    def test_cli_config_diff_redacts_scalar_secret_values_by_diff_path(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            before = root / "before.json"
+            after = root / "after.json"
+            before.write_text(
+                json.dumps({"effective": {"issue_tracker_ops": {"api_key": {"value": "old-secret"}}}}),
+                encoding="utf-8",
+            )
+            after.write_text(
+                json.dumps({"effective": {"issue_tracker_ops": {"api_key": {"value": "new-secret"}}}}),
+                encoding="utf-8",
+            )
+
+            stdout = agent_equipment_config.run(
+                ["config-diff", "--before", str(before), "--after", str(after)],
+                stdout_text=True,
+            )
+
+        payload = json.loads(stdout)
+        self.assertEqual(payload["changes"][0]["path"], "issue_tracker_ops.api_key")
+        self.assertEqual(payload["changes"][0]["before"], agent_equipment_config.REDACTED)
+        self.assertEqual(payload["changes"][0]["after"], agent_equipment_config.REDACTED)
+        self.assertNotIn("old-secret", stdout)
+        self.assertNotIn("new-secret", stdout)
+
     def test_plain_issue_tracker_ops_handoff_promotes_without_shared_config_layer(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
