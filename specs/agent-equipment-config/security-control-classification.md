@@ -3,13 +3,19 @@
 Status: Equipment Blueprint
 Promotion state: planned
 
-This Forge Entry Bundle describes desired behavior only. It does not implement Agent Equipment, publish assets, or provide a runtime config engine.
+This Forge Entry Bundle describes desired behavior and includes the first
+standard-library runtime engine slice for effective-config, config-diff,
+diagnostics, plain handoff promotion, authority checks, and projection
+classification. It does not implement Agent Equipment beyond this runtime
+slice, publish assets, resolve secrets, mutate source config, mutate external
+systems, or implement harness controls.
 
 ## Scope
 
-This classification covers the v0 contract and bundle source shape. It does not
-certify a future effective-config engine, config mutation command, hook,
-permission gate, sandbox, approval integration, plugin, or secret provider.
+This classification covers the v0 contract, bundle source shape, and first
+portable parser and merge engine slice. It does not certify a config mutation
+command, hook, permission gate, sandbox, approval integration, plugin, harness
+control, or secret provider.
 
 ## Assets
 
@@ -88,15 +94,18 @@ to the v0 contract itself.
 
 ## Known gaps
 
-- No parser or merge engine exists yet.
+- The parser and merge behavior are limited to the tested portable CLI slice.
 - No hook or approval gate consumes these diagnostics yet.
 - No provider-specific secret resolver exists yet.
+- No config mutation command exists yet.
 - No onboarding flow produces partial valid config yet.
 - No harness projection has been verified against current harness versions for
   this equipment.
 
 ## Security decision
 
-The contract-first bundle is acceptable as planning and validation source. Later
-implementation slices that add executable config parsing, migration, mutation,
-secret resolution, or enforcement must receive their own security review.
+The current runtime slice is acceptable as a deterministic local parser, merge,
+diff, migration-preview, plain-handoff, authority, projection-classification,
+and secret-reference reporting surface. Later implementation slices that add
+source mutation, provider-specific secret resolution, external mutation, or
+harness controls must receive their own security review.

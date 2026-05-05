@@ -3,7 +3,12 @@
 Status: Equipment Blueprint
 Promotion state: planned
 
-This Forge Entry Bundle describes desired behavior only. It does not implement Agent Equipment, publish assets, or provide a runtime config engine.
+This Forge Entry Bundle describes desired behavior and includes the first
+standard-library runtime engine slice for effective-config, config-diff,
+diagnostics, plain handoff promotion, authority checks, and projection
+classification. It does not implement Agent Equipment beyond this runtime
+slice, publish assets, resolve secrets, mutate source config, mutate external
+systems, or implement harness controls.
 
 ## Purpose
 
@@ -52,8 +57,8 @@ policy model without making Config depend on Issue Tracker Ops.
 - Docs: this Forge Entry Bundle and future usage docs.
 - Config: TOML authored layers and plain equipment-specific config handoff
   records.
-- Scripts/tools: future deterministic effective-config, config-diff, validation,
-  and migration commands.
+- Scripts/tools: the first portable effective-config and config-diff CLI slice,
+  plus future validation and migration commands.
 - Hooks, permissions, approvals, sandboxes, or tool gates: future enforcement
   projections for mutation-capable behavior.
 - Skills: future Smith and Wielder judgment around design, onboarding, and
@@ -116,7 +121,6 @@ Future deterministic surfaces should emit JSON-compatible objects for:
 
 ## Open questions
 
-- Which implementation slice owns the first effective-config command?
 - Which harness projection should gain blocking enforcement before advisory
   fallback documentation?
 - Which child issue owns the first onboarding and re-onboarding flow?

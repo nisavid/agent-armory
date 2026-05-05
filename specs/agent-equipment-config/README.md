@@ -3,7 +3,12 @@
 Status: Equipment Blueprint
 Promotion state: planned
 
-This Forge Entry Bundle describes desired behavior only. It does not implement Agent Equipment, publish assets, or provide a runtime config engine.
+This Forge Entry Bundle describes desired behavior and includes the first
+standard-library runtime engine slice for effective-config, config-diff,
+diagnostics, plain handoff promotion, authority checks, and projection
+classification. It does not implement Agent Equipment beyond this runtime
+slice, publish assets, resolve secrets, mutate source config, mutate external
+systems, or implement harness controls.
 
 Issue: [#23](https://github.com/nisavid/agent-armory/issues/23)
 
@@ -49,6 +54,29 @@ The v0 contract centers on explainable effective-config behavior:
   values in config.
 - Migrations may run at read time for preview and diagnostics; source rewrites
   require an explicit audited config mutation.
+
+## Runtime slice
+
+The first runtime slice provides a standard-library Python effective-config
+engine for deterministic validation and pressure coverage. It previews source
+migrations and classifies enforcement projections, but does not rewrite source
+config, resolve secrets, or implement harness controls.
+
+### Runtime-slice harness projections
+
+The runtime slice exposes one portable CLI. Each harness projection invokes the
+CLI with the layer paths it can discover, receives effective-config or
+config-diff JSON, and treats `blocking` classifications as decision evidence
+until a later harness adapter implements blocking controls.
+
+| Harness | Discovery and exposure for this slice | Blocking and advisory boundary |
+| --- | --- | --- |
+| Codex | A Codex agent, hook, automation, or external `codex exec` wrapper supplies repository-committed TOML, local-only TOML, checkout-local state, generated state, `--plain-handoff` session TOML, and schema fragments through the Python module. Effective-config and config-diff JSON are printed to stdout or captured by the invoking agent surface. Secret references stay unresolved metadata. | The engine classifies mutation-unsafe output as `blocking`, but Codex enforcement remains advisory unless a future hook, permission profile, or automation wrapper consumes the JSON and blocks the action. |
+| OpenClaw | An OpenClaw command, hook, cron job, heartbeat turn, or plugin background service supplies the same layer categories and schema fragments to the portable CLI. Effective-config and config-diff JSON are exposed through the invoking command or plugin surface. Secret references stay unresolved metadata. | The engine classifies blocking conditions deterministically; actual OpenClaw hook, webhook, cron, or plugin blocking remains a future adapter concern. |
+| Hermes Agent | A Hermes Agent gateway hook, plugin hook, cron job, curator job, terminal process, or profile-driven command invokes the CLI with committed, local-only, checkout-local, generated, session, and secret-reference inputs. Effective-config and config-diff JSON are returned to the invoking agent surface. | Blocking classifications are decision evidence only until a Hermes-specific gateway, plugin, toolset, or profile adapter enforces them. |
+| Claude Code | A Claude Code hook, Routine, scheduled task, or command invokes the CLI with the available layer paths and schema fragments. Effective-config and config-diff JSON are visible in the command output or captured task context. Secret references remain typed pointers. | Blocking classifications guide the agent or hook consumer; no Claude Code hook or settings enforcement is implemented in this slice. |
+| Cursor | Cursor rules, hooks, Cloud Agent Automations, SDK agents, or CLI configuration can invoke the CLI with the discovered layer paths and schema fragments. Effective-config and config-diff JSON are exposed through the caller. Secret references remain unresolved metadata. | Blocking classifications are advisory until a Cursor hook, automation, SDK agent, or policy surface consumes the JSON and prevents the action. |
+| OpenCode | An OpenCode command template, plugin hook, GitHub Action, external scheduler, or `opencode run` wrapper invokes the CLI with committed, local-only, checkout-local, generated, session, and secret-reference inputs. Effective-config and config-diff JSON are returned to the invoking surface. | Blocking classifications are not enforced by OpenCode in this slice; a future plugin hook, permission, or wrapper may turn them into blocking controls. |
 
 ## Layer Precedence
 

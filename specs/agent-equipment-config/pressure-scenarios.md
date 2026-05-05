@@ -3,7 +3,12 @@
 Status: Equipment Blueprint
 Promotion state: planned
 
-This Forge Entry Bundle describes desired behavior only. It does not implement Agent Equipment, publish assets, or provide a runtime config engine.
+This Forge Entry Bundle describes desired behavior and includes the first
+standard-library runtime engine slice for effective-config, config-diff,
+diagnostics, plain handoff promotion, authority checks, and projection
+classification. It does not implement Agent Equipment beyond this runtime
+slice, publish assets, resolve secrets, mutate source config, mutate external
+systems, or implement harness controls.
 
 ## Primary scenario: Issue Tracker Ops
 
@@ -31,6 +36,11 @@ Expected Config behavior:
 - The secret reference status is reported without exposing the token value.
 - Issue Tracker Ops remains able to serialize a plain equipment-specific config
   handoff if shared Config is absent.
+
+Runtime coverage: `tests.test_agent_equipment_config` covers the blocked
+session override path and missing-authority path for Issue Tracker Ops
+mutation. The broader pressure scenario still needs harness-specific
+enforcement implementation before promotion beyond `planned`.
 
 ## Partial onboarding
 

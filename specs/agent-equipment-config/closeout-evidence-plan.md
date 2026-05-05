@@ -3,12 +3,18 @@
 Status: Equipment Blueprint
 Promotion state: planned
 
-This Forge Entry Bundle describes desired behavior only. It does not implement Agent Equipment, publish assets, or provide a runtime config engine.
+This Forge Entry Bundle describes desired behavior and includes the first
+standard-library runtime engine slice for effective-config, config-diff,
+diagnostics, plain handoff promotion, authority checks, and projection
+classification. It does not implement Agent Equipment beyond this runtime
+slice, publish assets, resolve secrets, mutate source config, mutate external
+systems, or implement harness controls.
 
 ## Closeout scope
 
-The first #23 change set closes only the contract-first bundle and validator
-gate. It does not close the full Agent Equipment Config story.
+The first #23 change set closes the contract bundle, validator gate, and first
+portable runtime engine slice. It does not close the full Agent Equipment Config
+story.
 
 ## Required evidence
 
@@ -18,16 +24,32 @@ Record:
 - source-shape migration from `specs/agent-equipment-config.md` to
   `specs/agent-equipment-config/`;
 - validator and test changes;
+- deterministic effective-config engine evidence through
+  `python3.14 -m unittest tests.test_agent_equipment_config`;
 - validation commands and results;
 - security review scope, artifact disposition, and findings disposition;
 - documentation closeout scope and unchanged rationale where applicable;
 - child issue projection for follow-on implementation slices.
+- focused security review conclusion for executable parsing, merge, diff,
+  migration preview, plain handoff, authority, projection-classification, and
+  secret-reference behavior.
+- Change Set Security Closeout for the runtime slice, including scope, action
+  performed, artifact durability classification, finding disposition, fixes,
+  suppressions, deferments, or explicit non-applicability notes.
+- Change Set Documentation Closeout for affected agent-facing and human-facing
+  docs, including updated surfaces or a no-change rationale for each plausible
+  affected surface.
+- Full `docs/story-closeout.md` gate order before merge-readiness, including
+  Intent Model Refresh, scope/validation coherence, security closeout,
+  documentation closeout, projection draft or pending-projection rationale,
+  Reflection Finding disclosure/routing, latest clean Cross-Boundary Coherence
+  and Story Quality Ralph Review cycles, final validation, and publication
+  readiness checks.
 
 ## Child issue projection
 
 After the bundle lands, #23 should gain child issues for:
 
-- deterministic effective-config engine;
 - Issue Tracker Ops plain config and consumer integration;
 - onboarding, re-onboarding, resume, and handoff flows;
 - harness projection docs and enforcement support;
@@ -39,11 +61,11 @@ surface, security review trigger, and validation evidence needed for promotion.
 
 ## Security closeout
 
-For this change set, security scope covers documentation and validator logic.
-The closeout should state whether the action was a Codex Security diff scan or a
-documented narrower security review. Raw local scan artifacts are instance
-scoped unless a later decision promotes a specific report to a durable neutral
-project path.
+For this change set, security scope covers documentation, validator logic, and
+the portable runtime parser and merge engine slice. The closeout should state
+whether the action was a Codex Security diff scan or a documented narrower
+security review. Raw local scan artifacts are instance scoped unless a later
+decision promotes a specific report to a durable neutral project path.
 
 ## Documentation closeout
 

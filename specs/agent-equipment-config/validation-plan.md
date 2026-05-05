@@ -3,17 +3,23 @@
 Status: Equipment Blueprint
 Promotion state: planned
 
-This Forge Entry Bundle describes desired behavior only. It does not implement Agent Equipment, publish assets, or provide a runtime config engine.
+This Forge Entry Bundle describes desired behavior and includes the first
+standard-library runtime engine slice for effective-config, config-diff,
+diagnostics, plain handoff promotion, authority checks, and projection
+classification. It does not implement Agent Equipment beyond this runtime
+slice, publish assets, resolve secrets, mutate source config, mutate external
+systems, or implement harness controls.
 
 ## Scope
 
-This validation plan covers the v0 contract and future implementation slices.
-The current bundle change validates repository shape and contract coverage. Later
-child issues add deterministic runtime validation as code exists.
+This validation plan covers the v0 contract and current portable runtime slice.
+The current bundle change validates repository shape, contract coverage, and the
+standard-library engine behaviors covered by `tests.test_agent_equipment_config`.
 
 ## Current deterministic checks
 
 - `python3.14 -m unittest tests.test_validate_forge_seed.SpecValidationTests`
+- `python3.14 -m unittest tests.test_agent_equipment_config`
 - `python3.14 -m unittest tests.test_validate_forge_seed`
 - `python3.14 -m unittest`
 - `python3.14 tools/validate_forge_seed.py`
@@ -38,7 +44,7 @@ conflict diagnostics, migrations, secret references, session-scoped behavior,
 plain equipment-specific config handoff, Issue Tracker Ops, policy, Codex,
 OpenClaw, Hermes Agent, Claude Code, Cursor, and OpenCode.
 
-## Future runtime cases
+## Runtime cases
 
 The first effective-config engine should validate:
 
@@ -59,6 +65,19 @@ The first effective-config engine should validate:
 - enforcement projection classification as blocking or advisory;
 - Issue Tracker Ops plain handoff ingestion and promotion.
 
+Implemented by the v0 engine slice:
+
+- TOML layer loading;
+- schema fragment validation;
+- effective-config output;
+- config-diff output for values, secret-reference identity, status changes, and diagnostic changes;
+- Config Safety Status classification;
+- deprecation diagnostics and migration-preview output with audit-preview shape;
+- plain Issue Tracker Ops handoff fallback and promotion;
+- missing-authority diagnostics for mutation-gated settings;
+- enforcement projection classification as `blocking` or `advisory`;
+- Issue Tracker Ops pressure scenario for blocked live mutation.
+
 ## Pressure validation
 
 Before promotion beyond `planned`, test the Issue Tracker Ops pressure scenarios
@@ -76,6 +95,7 @@ security action.
 
 ## Residual risk
 
-The current bundle validates source shape and policy clarity. It does not prove
-that a future engine computes merges correctly, enforces policy, resolves
-secret references, or projects controls in any harness.
+The runtime slice proves only the deterministic CLI behaviors covered by
+`tests.test_agent_equipment_config`. It does not prove external enforcement,
+provider secret resolution, source mutation, or harness-specific control
+projection.

@@ -788,3 +788,41 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertIn("untrusted source", [item["kind"] for item in result["diagnostics"]])
         self.assertIn("missing authority", [item["kind"] for item in result["diagnostics"]])
         self.assertEqual(result["enforcement_projection"]["classification"], "blocking")
+
+    def test_issue_tracker_ops_pressure_scenario_blocks_execute_without_authority(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            org = self.write_layer(root, "org.toml", """
+                [agent_equipment_config.layer]
+                name = "organization or tracker policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.policy.issue_tracker_ops.mode]
+                non_overridable = true
+                required_for = "mutation"
+                authority = "live_tracker_write"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            session = self.write_layer(root, "session.toml", """
+                [agent_equipment_config.layer]
+                name = "session overrides"
+                category = "session override"
+
+                [issue_tracker_ops]
+                mode = "execute"
+            """)
+
+            result = agent_equipment_config.effective_config([org, session], [agent_equipment_config.issue_tracker_ops_fragment()], requested_behavior="mutation")
+
+        self.assertEqual(result["effective"]["issue_tracker_ops"]["mode"]["value"], "dry-run")
+        self.assertEqual(result["safety_status"], "conflicted")
+        self.assertEqual(result["diagnostics"][0]["kind"], "blocked override")
+        self.assertEqual(result["diagnostics"][0]["evidence"]["blocked_value"], "execute")
+        self.assertEqual(result["diagnostics"][0]["evidence"]["blocked_by"]["layer"], "organization or tracker policy")
+        self.assertEqual(result["diagnostics"][0]["evidence"]["blocked_by"]["source"], org.as_posix())
+        self.assertIn("missing authority", [item["kind"] for item in result["diagnostics"]])
+        self.assertEqual(result["enforcement_projection"]["classification"], "blocking")
+        self.assertFalse(result["enforcement_projection"]["enforced_by_harness"])
