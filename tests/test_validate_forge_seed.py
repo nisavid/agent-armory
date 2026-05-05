@@ -27,6 +27,7 @@ from tools.validate_forge_seed import (
     validate_harness_catalog,
     validate_markdown_links,
     validate_projection_drafts,
+    validate_python_runtime_declaration,
     validate_specs,
     validate_source_disposition,
     validate_source_retired_tree,
@@ -99,6 +100,67 @@ class ValidatorPrimitiveTests(unittest.TestCase):
                 "docs/single.md",
                 "docs/paren.md",
                 "docs/angled.md",
+            ],
+        )
+
+    def test_validate_python_runtime_declaration_accepts_matching_references(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / ".python-version").write_text("3.14\n", encoding="utf-8")
+            (root / "tools").mkdir()
+            (root / "tools/validate.py").write_text("#!/usr/bin/env python3.14\n", encoding="utf-8")
+            (root / "docs").mkdir()
+            (root / "docs/runtime.md").write_text("Use Python 3.14.\n", encoding="utf-8")
+
+            results = validate_python_runtime_declaration(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="python_runtime:.python-version",
+                    ok=True,
+                    detail="declares Python 3.14",
+                    path=".python-version",
+                )
+            ],
+        )
+
+    def test_validate_python_runtime_declaration_rejects_drifted_reference(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / ".python-version").write_text("3.15\n", encoding="utf-8")
+            (root / "tools").mkdir()
+            (root / "tools/validate.py").write_text("#!/usr/bin/env python3.14\n", encoding="utf-8")
+
+            results = validate_python_runtime_declaration(root)
+
+        self.assertIn(
+            CheckResult(
+                name="python_runtime:reference:tools/validate.py:3.14",
+                ok=False,
+                detail="Python runtime reference 3.14 does not match .python-version 3.15",
+                path="tools/validate.py",
+            ),
+            results,
+        )
+
+    def test_validate_python_runtime_declaration_rejects_invalid_version_shape(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / ".python-version").write_text("python3.14\n", encoding="utf-8")
+
+            results = validate_python_runtime_declaration(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="python_runtime:.python-version",
+                    ok=False,
+                    detail="must contain MAJOR.MINOR",
+                    path=".python-version",
+                )
             ],
         )
 
@@ -1928,6 +1990,7 @@ class CanonicalDocTests(unittest.TestCase):
             "Before committing or externally projecting closeout evidence, classify evidence artifacts by durability.",
             "Durable project evidence and portable review summaries may be committed or projected.",
             "Instance-scoped scratch artifacts, including raw tool reports, local scan bundles, copied diffs, host-local paths, screenshots, or work directories, should be summarized by scope, disposition, and durable conclusions instead of treated as project truth.",
+            "Classify privacy and disclosure limits for actionable Reflection Findings",
             "Run Cross-Boundary Coherence before Story Quality because quality review depends on coherent process evidence.",
             "Intent Model Refresh is the first closeout gate.",
             "Update the agent's model of Underlying Intent by reviewing recent operator input, accepted ADR/PRD/spec/plan changes, review dispositions, handoff notes, and observed corrections relevant to the story before running downstream closeout gates.",
@@ -1940,6 +2003,7 @@ class CanonicalDocTests(unittest.TestCase):
             "When the model remains uncertain, the case depends on internal-state inference, or the evidence otherwise creates a non-dismissible likelihood of misalignment without certainty, raise a concise question to the operator, using an interactive question tool when available.",
             "If a revision changes security, documentation, validation, PRD/spec/plan scope, or issue/PR projection, rerun the affected upstream gate before the next closeout review.",
             "Evidence-artifact durability changes rerun the closeout gate that owns the artifact and any projection surface that carries its claims.",
+            "after privacy and disclosure limits are classified",
             "Recording the latest clean review result is bookkeeping and does not reopen the full review loop unless it changes substantive claims.",
             "Published issue, PR, release, or handoff corrections rerun a projection consistency check and a narrow Cross-Boundary Coherence review for the corrected surface.",
             "closeout evidence artifacts are classified by durability",
@@ -1964,7 +2028,7 @@ class CanonicalDocTests(unittest.TestCase):
                 3. Complete Change Set Security Closeout for the current change set.
                 4. Complete Change Set Documentation Closeout for affected human-facing and agent-facing docs.
                 5. Prepare projection drafts for issues, PR bodies, handoff notes, and release summaries from the current story evidence.
-                6. Route actionable Reflection Findings discovered during the story into the issue tracker, Tooling Request, or the relevant Equipment Candidate, or record why the insight is not durable.
+                6. Classify privacy and disclosure limits for actionable Reflection Findings discovered during the story, then route publishable findings into the issue tracker, Tooling Request, or the relevant Equipment Candidate, or record why the insight is not durable or not projectable.
                 7. Run Cross-Boundary Coherence before Story Quality because quality review depends on coherent process evidence.
                 8. Run Story Quality Ralph Review after coherence findings are fixed or soundly rejected.
                 9. Run final validation and publication-readiness checks required by the active plan or repository policy.
@@ -2066,7 +2130,7 @@ class CanonicalDocTests(unittest.TestCase):
             self.write_all_canonical_docs(root)
             story_path = root / "docs/story-closeout.md"
             story_text = story_path.read_text(encoding="utf-8").replace(
-                "6. Route actionable Reflection Findings discovered during the story into the issue tracker, Tooling Request, or the relevant Equipment Candidate, or record why the insight is not durable.",
+                "6. Classify privacy and disclosure limits for actionable Reflection Findings discovered during the story, then route publishable findings into the issue tracker, Tooling Request, or the relevant Equipment Candidate, or record why the insight is not durable or not projectable.",
                 "6. Record workflow observations before review.",
             )
             story_path.write_text(story_text, encoding="utf-8")

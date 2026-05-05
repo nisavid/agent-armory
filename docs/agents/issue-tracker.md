@@ -29,10 +29,15 @@ A Reflection Finding is durable output from manual or ad hoc reflection that
 may inform future equipment, Forge policy, validation, config, workflow, or
 documentation.
 
-Create or update a GitHub issue when a reflection produces an actionable
-candidate. Route the finding to the narrowest owner issue when one is clear.
-When the finding informs generic Reflection or cognition equipment, link it to
-[#25](https://github.com/nisavid/agent-armory/issues/25).
+Before external projection, classify privacy and disclosure limits for the
+reflected content. Redact session context, speculative priorities, or
+operator-sensitive material that should not become durable issue-tracker
+content.
+
+Create or update a GitHub issue when a reflection produces an actionable,
+publishable candidate. Route the finding to the narrowest owner issue when one
+is clear. When the finding informs generic Reflection or cognition equipment,
+link it to [#25](https://github.com/nisavid/agent-armory/issues/25).
 
 Capture:
 

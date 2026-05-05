@@ -17,9 +17,10 @@ Run closeout gates in this order:
 3. Complete Change Set Security Closeout for the current change set.
 4. Complete Change Set Documentation Closeout for affected human-facing and agent-facing docs.
 5. Prepare projection drafts for issues, PR bodies, handoff notes, and release summaries from the current story evidence, or record the explicit pending-projection rationale.
-6. Route actionable Reflection Findings discovered during the story into the
-   issue tracker, Tooling Request, or the relevant Equipment Candidate, or
-   record why the insight is not durable.
+6. Classify privacy and disclosure limits for actionable Reflection Findings
+   discovered during the story, then route publishable findings into the issue
+   tracker, Tooling Request, or the relevant Equipment Candidate, or record why
+   the insight is not durable or not projectable.
 7. Run Cross-Boundary Coherence before Story Quality because quality review depends on coherent process evidence.
 8. Run Story Quality Ralph Review after coherence findings are fixed or soundly rejected.
 9. Run final validation and publication-readiness checks required by the active plan or repository policy. For the Forge Seed, `.python-version` declares the Python 3.14 runtime and `python3.14 tools/validate_forge_seed.py --final-closeout` is the branch-push and external-projection readiness check.
@@ -45,7 +46,7 @@ Rerun the gate that owns any surface changed by a review fix.
 - New operator input, accepted decision changes, review dispositions, handoff updates, or observed corrections that may change Underlying Intent rerun Intent Model Refresh before the next closeout gate.
 - Reflection Findings that add equipment scope, policy, validation, security,
   documentation, or issue-projection claims rerun the owning closeout gate before
-  projection.
+  projection, after privacy and disclosure limits are classified.
 - Evidence-artifact durability changes rerun the closeout gate that owns the artifact and any projection surface that carries its claims.
 
 If a revision changes security, documentation, validation, PRD/spec/plan scope, or issue/PR projection, rerun the affected upstream gate before the next closeout review.
@@ -82,9 +83,10 @@ A story is ready to close when:
   the story affects ideation, architecture, design, strategy, validation,
   maintenance, or the intended agent and operator experience;
 - issue, PR, release, and handoff drafts or published surfaces are projected from the same current repo facts;
-- actionable Reflection Findings are routed to the issue tracker, Tooling
-  Request, or the relevant Equipment Candidate, or are explicitly classified as
-  non-durable session insight;
+- actionable Reflection Findings have privacy and disclosure limits classified,
+  then are routed to the issue tracker, Tooling Request, or the relevant
+  Equipment Candidate, or are explicitly classified as non-durable or
+  non-projectable session insight;
 - closeout evidence artifacts are classified by durability, and instance-scoped scratch artifacts are summarized rather than committed or externally projected as project truth;
 - deferred risks, unavailable controls, or stakeholder decisions have tracking and owner-visible rationale;
 - final publication actions respect repository policy and the operator's stated pause points.
