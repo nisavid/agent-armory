@@ -304,6 +304,8 @@ def authority_is_usable(layers: list[Layer], authority: str, required_by: Policy
             continue
         if layer.precedence > required_by.layer.precedence:
             continue
+        if layer.precedence == required_by.layer.precedence and layer.source_order > required_by.layer.source_order:
+            continue
         authority_table = layer.metadata.get("authority", {})
         if isinstance(authority_table, dict) and authority_table.get(authority) == "usable":
             return True

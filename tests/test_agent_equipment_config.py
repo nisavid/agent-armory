@@ -315,6 +315,38 @@ class AgentEquipmentConfigTests(unittest.TestCase):
             ["live_tracker_write"],
         )
 
+    def test_later_same_precedence_layer_cannot_mint_policy_authority(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy = self.write_layer(root, "org-a.toml", """
+                [agent_equipment_config.layer]
+                name = "organization or tracker policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.policy.issue_tracker_ops.mode]
+                required_for = "mutation"
+                authority = "live_tracker_write"
+
+                [issue_tracker_ops]
+                mode = "execute"
+                external_disclosure = "allowed"
+            """)
+            later_policy = self.write_layer(root, "org-b.toml", """
+                [agent_equipment_config.layer]
+                name = "organization or tracker policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.authority]
+                live_tracker_write = "usable"
+            """)
+
+            result = agent_equipment_config.effective_config([policy, later_policy], [self.issue_ops_fragment()], requested_behavior="mutation")
+
+        self.assertEqual(result["safety_status"], "unsafe")
+        self.assertEqual(result["diagnostics"][0]["kind"], "missing authority")
+        self.assertEqual(result["diagnostics"][0]["evidence"]["authority"], "live_tracker_write")
+        self.assertEqual(result["enforcement_projection"]["classification"], "blocking")
+
     def test_same_precedence_collision_reports_conflict_without_silent_winner(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
