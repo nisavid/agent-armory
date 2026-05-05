@@ -35,17 +35,18 @@ behavior automatically inside its harness. The operator should not need a
 special incantation for the agent to ask better questions, respect policy, find
 durable knowledge, run deterministic checks, or prepare for the next stage.
 
-The Armory and the Forge add self-outfitting and self-onboarding to that model.
-An agent should be able to clarify underspecified intent, choose or assemble the
-right loadout, route companion agents when needed, and use the Forge to create
-missing equipment before the missing capability becomes a quality failure.
+The Armory and the Forge should add self-outfitting and self-onboarding to that
+model. An agent should be able to clarify underspecified intent, choose or
+assemble the right loadout, route companion agents when needed, and use the
+Forge to create missing equipment before the missing capability becomes a
+quality failure.
 
-The first major equipment lines make that possible: Agent Equipment Config for
-layered and enforceable policy, Issue Ops for durable issue-tracked operations,
-Agent Ops for repository work, and supporting operational equipment for
-schedules and harness facts. The longer arc culminates in Head Gear: generic
-cognition equipment meant to turn vibes into bounded, evidence-backed outcomes
-instead of slop.
+The first major equipment lines are meant to make that possible: Agent
+Equipment Config for layered and enforceable policy, Issue Ops for durable
+issue-tracked operations, Agent Ops for repository work, and supporting
+operational equipment for schedules and harness facts. The longer arc
+culminates in Head Gear: generic cognition equipment meant to turn vibes into
+bounded, evidence-backed outcomes instead of slop.
 
 Read the full [Armory Vision](docs/vision.md) for the user experience and
 engineering north star behind the Armory, the Forge, and Agent Equipment.
