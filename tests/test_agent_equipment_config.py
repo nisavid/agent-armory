@@ -137,6 +137,30 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(result["safety_status"], "conflicted")
         self.assertEqual([item["detail"] for item in result["diagnostics"]], ["expected integer", "expected number"])
 
+    def test_unknown_schema_field_type_fails_cleanly(self):
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=1,
+            fields={"mode": agent_equipment_config.FieldSpec(type="mystery")},
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(
+                root,
+                "repo.toml",
+                """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                """,
+            )
+
+            with self.assertRaisesRegex(agent_equipment_config.ConfigError, "unsupported field type 'mystery'"):
+                agent_equipment_config.effective_config([layer], [fragment], requested_behavior="advisory")
+
     def test_deprecated_field_reports_diagnostic_without_blocking_config(self):
         fragment = agent_equipment_config.SchemaFragment(
             namespace="issue_tracker_ops",
@@ -197,6 +221,25 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(result["effective"]["issue_tracker_ops"]["mode"]["value"], "dry-run")
         self.assertEqual(result["effective"]["docs_research"]["citation_policy"]["value"], "source-backed")
         self.assertEqual(result["safety_status"], "usable")
+
+    def test_namespace_section_must_be_table(self):
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=1,
+            fields={"mode": agent_equipment_config.FieldSpec(type="string", required=True)},
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                issue_tracker_ops = "oops"
+
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+            """)
+
+            with self.assertRaisesRegex(agent_equipment_config.ConfigError, "issue_tracker_ops must be a table"):
+                agent_equipment_config.effective_config([layer], [fragment], requested_behavior="advisory")
 
     def issue_ops_fragment(self):
         return agent_equipment_config.SchemaFragment(
@@ -457,6 +500,69 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertIn("blocked override", [item["kind"] for item in result["diagnostics"]])
         self.assertIn("same-precedence collision", [item["kind"] for item in result["diagnostics"]])
 
+    def test_non_overridable_lock_blocks_later_same_precedence_file(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            repo_a = self.write_layer(root, "repo-a.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.policy.issue_tracker_ops.mode]
+                non_overridable = true
+                required_for = "mutation"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            repo_b = self.write_layer(root, "repo-b.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "execute"
+            """)
+
+            result = agent_equipment_config.effective_config([repo_a, repo_b], [self.issue_ops_fragment()], requested_behavior="mutation")
+
+        self.assertEqual(result["effective"]["issue_tracker_ops"]["mode"]["value"], "dry-run")
+        self.assertEqual(result["effective"]["issue_tracker_ops"]["mode"]["source"], repo_a.as_posix())
+        self.assertIn("blocked override", [item["kind"] for item in result["diagnostics"]])
+
+    def test_policy_authority_lock_blocks_later_override_for_mutation(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            org = self.write_layer(root, "org.toml", """
+                [agent_equipment_config.layer]
+                name = "organization or tracker policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.policy.issue_tracker_ops.mode]
+                required_for = "mutation"
+                authority = "live_tracker_write"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            session = self.write_layer(root, "session.toml", """
+                [agent_equipment_config.layer]
+                name = "session overrides"
+                category = "session override"
+
+                [issue_tracker_ops]
+                mode = "execute"
+            """)
+
+            result = agent_equipment_config.effective_config([org, session], [self.issue_ops_fragment()], requested_behavior="mutation")
+
+        self.assertEqual(result["effective"]["issue_tracker_ops"]["mode"]["value"], "dry-run")
+        self.assertEqual(result["effective"]["issue_tracker_ops"]["mode"]["source"], org.as_posix())
+        self.assertIn("blocked override", [item["kind"] for item in result["diagnostics"]])
+        self.assertIn("missing authority", [item["kind"] for item in result["diagnostics"]])
+
     def test_untrusted_layer_sets_untrusted_for_mutation(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -521,6 +627,53 @@ class AgentEquipmentConfigTests(unittest.TestCase):
                     """)
 
                     with self.assertRaisesRegex(agent_equipment_config.ConfigError, f"policy.issue_tracker_ops.mode.{key} {message}"):
+                        agent_equipment_config.effective_config([layer], [fragment], requested_behavior="mutation")
+
+    def test_policy_metadata_tables_must_be_well_formed(self):
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=1,
+            fields={"mode": agent_equipment_config.FieldSpec(type="string", required=True, enum=["dry-run", "execute"])},
+        )
+        cases = (
+            (
+                """
+                policy = "oops"
+                """,
+                "agent_equipment_config.policy must be a table",
+            ),
+            (
+                """
+                [agent_equipment_config.policy]
+                issue_tracker_ops = "oops"
+                """,
+                "agent_equipment_config.policy.issue_tracker_ops must be a table",
+            ),
+            (
+                """
+                [agent_equipment_config.policy.issue_tracker_ops]
+                mode = "oops"
+                """,
+                "agent_equipment_config.policy.issue_tracker_ops.mode must be a table",
+            ),
+        )
+        for policy_metadata, message in cases:
+            with self.subTest(message=message):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    root = Path(tmpdir)
+                    layer = self.write_layer(root, "repo.toml", f"""
+                        [agent_equipment_config.layer]
+                        name = "repository policy"
+                        category = "committed durable config"
+
+                        [agent_equipment_config]
+                        {policy_metadata}
+
+                        [issue_tracker_ops]
+                        mode = "dry-run"
+                    """)
+
+                    with self.assertRaisesRegex(agent_equipment_config.ConfigError, message):
                         agent_equipment_config.effective_config([layer], [fragment], requested_behavior="mutation")
 
     def test_stale_fragment_version_reports_stale_without_rewriting_source(self):
@@ -820,6 +973,28 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual([item["kind"] for item in diff["diagnostic_changes"]["after"]], ["blocked override", "same-precedence collision"])
         self.assertEqual(diff["diagnostic_changes"]["after"][0]["evidence"]["blocked_value"], "execute")
 
+    def test_config_diff_distinguishes_absent_field_from_explicit_null(self):
+        before = {"effective": {"issue_tracker_ops": {}}}
+        after = {"effective": {"issue_tracker_ops": {"mode": {"value": None}}}}
+
+        diff = agent_equipment_config.config_diff(before, after)
+
+        self.assertEqual(diff["changes"][0]["path"], "issue_tracker_ops.mode")
+        self.assertEqual(diff["changes"][0]["before"], agent_equipment_config.ABSENT)
+        self.assertIsNone(diff["changes"][0]["after"])
+
+    def test_config_diff_rejects_wrong_shaped_inputs(self):
+        cases = (
+            ([], {}, "before: config-diff input must be a JSON object"),
+            ({"effective": []}, {}, "before: effective must be a JSON object"),
+            ({"effective": {"issue_tracker_ops": []}}, {}, "before: effective.issue_tracker_ops must be a JSON object"),
+            ({"effective": {"issue_tracker_ops": {"mode": "dry-run"}}}, {}, "before: effective.issue_tracker_ops.mode must be a JSON object"),
+        )
+        for before, after, message in cases:
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(agent_equipment_config.ConfigError, message):
+                    agent_equipment_config.config_diff(before, after)
+
     def test_cli_effective_config_outputs_json(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -893,25 +1068,28 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(payload["changes"][0]["after"], "execute")
 
     def test_cli_config_diff_reports_input_errors_without_traceback(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            root = Path(tmpdir)
-            before = root / "before.json"
-            after = root / "after.json"
-            before.write_text("{", encoding="utf-8")
-            after.write_text("{}", encoding="utf-8")
-            stdout = io.StringIO()
-            stderr = io.StringIO()
+        cases = ("{", "[]", '{"effective": []}')
+        for before_text in cases:
+            with self.subTest(before_text=before_text):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    root = Path(tmpdir)
+                    before = root / "before.json"
+                    after = root / "after.json"
+                    before.write_text(before_text, encoding="utf-8")
+                    after.write_text("{}", encoding="utf-8")
+                    stdout = io.StringIO()
+                    stderr = io.StringIO()
 
-            exit_code = agent_equipment_config.run(
-                ["config-diff", "--before", str(before), "--after", str(after)],
-                stdout=stdout,
-                stderr=stderr,
-            )
+                    exit_code = agent_equipment_config.run(
+                        ["config-diff", "--before", str(before), "--after", str(after)],
+                        stdout=stdout,
+                        stderr=stderr,
+                    )
 
-        self.assertEqual(exit_code, 2)
-        self.assertEqual(stdout.getvalue(), "")
-        self.assertIn("error:", stderr.getvalue())
-        self.assertNotIn("Traceback", stderr.getvalue())
+                self.assertEqual(exit_code, 2)
+                self.assertEqual(stdout.getvalue(), "")
+                self.assertIn("error:", stderr.getvalue())
+                self.assertNotIn("Traceback", stderr.getvalue())
 
     def test_cli_config_diff_redacts_secret_reference_names(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -992,6 +1170,45 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(payload["changes"][0]["after"], agent_equipment_config.REDACTED)
         self.assertNotIn("old-secret", stdout)
         self.assertNotIn("new-secret", stdout)
+
+    def test_cli_redacts_sensitive_diagnostic_and_migration_values(self):
+        payload = {
+            "diagnostics": [
+                {
+                    "kind": "blocked override",
+                    "path": "issue_tracker_ops.api_key",
+                    "evidence": {"blocked_value": "raw-api-key"},
+                }
+            ],
+            "migration_previews": [
+                {
+                    "changes": [
+                        {
+                            "from": "issue_tracker_ops.api_key",
+                            "to": "issue_tracker_ops.api_key",
+                            "value": "migrated-api-key",
+                        }
+                    ]
+                }
+            ],
+            "effective": {
+                "issue_tracker_ops": {
+                    "api_keys": {
+                        "value": ["list-api-key"],
+                    }
+                }
+            },
+        }
+
+        redacted = agent_equipment_config.redact_for_cli(payload)
+        rendered = json.dumps(redacted)
+
+        self.assertEqual(redacted["diagnostics"][0]["evidence"]["blocked_value"], agent_equipment_config.REDACTED)
+        self.assertEqual(redacted["migration_previews"][0]["changes"][0]["value"], agent_equipment_config.REDACTED)
+        self.assertEqual(redacted["effective"]["issue_tracker_ops"]["api_keys"]["value"][0], agent_equipment_config.REDACTED)
+        self.assertNotIn("raw-api-key", rendered)
+        self.assertNotIn("migrated-api-key", rendered)
+        self.assertNotIn("list-api-key", rendered)
 
     def test_plain_issue_tracker_ops_handoff_promotes_without_shared_config_layer(self):
         with tempfile.TemporaryDirectory() as tmpdir:

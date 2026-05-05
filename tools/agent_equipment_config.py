@@ -37,6 +37,8 @@ SECRET_REFERENCE_KINDS = {"env", "keychain", "vault", "harness-secret", "externa
 SENSITIVE_KEYWORDS = ("secret", "token", "credential", "password", "api_key", "private_key")
 REDACTED = "<redacted>"
 REQUIRED_FOR_VALUES = {"advisory", "mutation", "always"}
+ABSENT = {"presence": "absent"}
+MISSING = object()
 
 
 class ConfigError(Exception):
@@ -127,6 +129,8 @@ def type_matches(value: JSONValue, field_type: str) -> bool:
         return isinstance(value, int) and not isinstance(value, bool)
     if field_type == "number":
         return isinstance(value, (int, float)) and not isinstance(value, bool)
+    if field_type not in TYPE_CHECKS:
+        raise ConfigError(f"unsupported field type {field_type!r}")
     return isinstance(value, TYPE_CHECKS[field_type])
 
 
@@ -144,13 +148,15 @@ def validate_field(value: JSONValue, field: FieldSpec, path: str, layer: Layer |
 
 def policy_locks(layer: Layer) -> dict[tuple[str, str], PolicyLock]:
     policy = layer.metadata.get("policy", {})
+    if not isinstance(policy, dict):
+        raise ConfigError(f"{layer.path}: agent_equipment_config.policy must be a table")
     locks: dict[tuple[str, str], PolicyLock] = {}
     for namespace, fields in policy.items():
         if not isinstance(fields, dict):
-            continue
+            raise ConfigError(f"{layer.path}: agent_equipment_config.policy.{namespace} must be a table")
         for field_name, rule in fields.items():
             if not isinstance(rule, dict):
-                continue
+                raise ConfigError(f"{layer.path}: agent_equipment_config.policy.{namespace}.{field_name} must be a table")
             non_overridable = rule.get("non_overridable", False)
             if not isinstance(non_overridable, bool):
                 raise ConfigError(
@@ -201,7 +207,7 @@ def migration_previews_for_layer(layer: Layer, fragment: SchemaFragment) -> list
     source_version = fragment_versions(layer).get(fragment.namespace)
     if source_version is None or source_version >= fragment.version:
         return []
-    section = layer.data.get(fragment.namespace, {})
+    section = namespace_section(layer, fragment.namespace)
     previews: list[dict[str, Any]] = []
     for migration in fragment.migrations:
         if migration.from_version != source_version:
@@ -283,52 +289,97 @@ def sensitive_path(path: Any) -> bool:
     return any(sensitive_key(part) for part in parts)
 
 
-def redact_for_cli(value: Any, path: tuple[str, ...] = ()) -> Any:
+def redact_for_cli(value: Any, path: tuple[str, ...] = (), *, sensitive_context: bool = False) -> Any:
     if isinstance(value, dict):
         redacted: dict[str, Any] = {}
-        diff_path_sensitive = sensitive_path(value.get("path"))
+        entry_path_sensitive = any(sensitive_path(value.get(key)) for key in ("path", "from", "to"))
+        child_sensitive_context = sensitive_context or entry_path_sensitive
         for key, item in value.items():
             key_text = str(key)
             child_path = (*path, key_text)
             if key_text == "name" and path and path[-1] == "secret_reference":
                 redacted[key] = REDACTED
-            elif key_text in {"before", "after"} and diff_path_sensitive and not isinstance(item, (dict, list)):
+            elif key_text in {"before", "after", "value", "blocked_value"} and child_sensitive_context and not isinstance(item, (dict, list)):
                 redacted[key] = REDACTED
-            elif key_text == "value" and any(sensitive_key(part) for part in path):
+            elif key_text == "value" and any(sensitive_key(part) for part in path) and not isinstance(item, (dict, list)):
                 redacted[key] = REDACTED
             elif sensitive_key(key_text) and not isinstance(item, (dict, list)):
                 redacted[key] = REDACTED
             else:
-                redacted[key] = redact_for_cli(item, child_path)
+                redacted[key] = redact_for_cli(item, child_path, sensitive_context=child_sensitive_context)
         return redacted
     if isinstance(value, list):
-        return [redact_for_cli(item, (*path, "[]")) for item in value]
+        list_sensitive = sensitive_context or any(sensitive_key(part) for part in path)
+        return [
+            REDACTED if list_sensitive and not isinstance(item, (dict, list)) else redact_for_cli(item, (*path, "[]"), sensitive_context=list_sensitive)
+            for item in value
+        ]
     return value
 
 
-def diffable_wrapped_value(wrapped: dict[str, Any]) -> JSONValue | dict[str, Any]:
+def diffable_wrapped_value(wrapped: dict[str, Any]) -> JSONValue | dict[str, Any] | object:
     if "secret_reference" in wrapped:
         return {"secret_reference": wrapped["secret_reference"]}
     return wrapped.get("value")
 
 
-def effective_section(payload: dict[str, Any]) -> dict[str, Any]:
-    return payload.get("effective", payload)
+def effective_section(payload: Any, label: str) -> dict[str, Any]:
+    if not isinstance(payload, dict):
+        raise ConfigError(f"{label}: config-diff input must be a JSON object")
+    section = payload.get("effective", payload)
+    if not isinstance(section, dict):
+        raise ConfigError(f"{label}: effective must be a JSON object")
+    return section
+
+
+def namespace_section(layer: Layer, namespace: str) -> dict[str, Any]:
+    section = layer.data.get(namespace, {})
+    if not isinstance(section, dict):
+        raise ConfigError(f"{layer.path}: {namespace} must be a table")
+    return section
+
+
+def diff_namespace_fields(effective: dict[str, Any], namespace: str, label: str) -> dict[str, Any]:
+    fields = effective.get(namespace, {})
+    if not isinstance(fields, dict):
+        raise ConfigError(f"{label}: effective.{namespace} must be a JSON object")
+    return fields
+
+
+def diff_field_value(fields: dict[str, Any], field_name: str, label: str, namespace: str) -> JSONValue | dict[str, Any] | object:
+    if field_name not in fields:
+        return MISSING
+    wrapped = fields[field_name]
+    if not isinstance(wrapped, dict):
+        raise ConfigError(f"{label}: effective.{namespace}.{field_name} must be a JSON object")
+    return diffable_wrapped_value(wrapped)
+
+
+def public_diff_value(value: JSONValue | dict[str, Any] | object) -> JSONValue | dict[str, Any]:
+    if value is MISSING:
+        return dict(ABSENT)
+    return value
 
 
 def config_diff(before: dict[str, Any], after: dict[str, Any]) -> dict[str, Any]:
     changes: list[dict[str, Any]] = []
-    before_effective = effective_section(before)
-    after_effective = effective_section(after)
+    before_effective = effective_section(before, "before")
+    after_effective = effective_section(after, "after")
     namespaces = sorted(set(before_effective) | set(after_effective))
     for namespace in namespaces:
-        before_fields = before_effective.get(namespace, {})
-        after_fields = after_effective.get(namespace, {})
+        before_fields = diff_namespace_fields(before_effective, namespace, "before")
+        after_fields = diff_namespace_fields(after_effective, namespace, "after")
         for field_name in sorted(set(before_fields) | set(after_fields)):
-            before_value = diffable_wrapped_value(before_fields.get(field_name, {}))
-            after_value = diffable_wrapped_value(after_fields.get(field_name, {}))
+            before_value = diff_field_value(before_fields, field_name, "before", namespace)
+            after_value = diff_field_value(after_fields, field_name, "after", namespace)
             if before_value != after_value:
-                changes.append({"path": f"{namespace}.{field_name}", "before": before_value, "after": after_value})
+                changes.append(
+                    {
+                        "path": f"{namespace}.{field_name}",
+                        "before": public_diff_value(before_value),
+                        "after": public_diff_value(after_value),
+                    }
+                )
     diff: dict[str, Any] = {"changes": changes}
     if before.get("safety_status") != after.get("safety_status"):
         diff["status_change"] = {"before": before.get("safety_status"), "after": after.get("safety_status")}
@@ -355,6 +406,38 @@ def load_plain_handoff_layers(paths: Iterable[Path]) -> tuple[list[Layer], list[
         layers.append(layer)
         summaries.append({"source": path.as_posix(), "promoted_to": "session overrides", "category": "session override"})
     return layers, summaries
+
+
+def lock_precedes_layer(lock: PolicyLock, layer: Layer) -> bool:
+    return (
+        layer.precedence > lock.layer.precedence
+        or (layer.precedence == lock.layer.precedence and layer.source_order > lock.layer.source_order)
+    )
+
+
+def lock_blocks_layer(lock: PolicyLock, layer: Layer, requested_behavior: str) -> bool:
+    return (
+        lock.required_for in {requested_behavior, "always"}
+        and (lock.non_overridable or lock.authority is not None)
+        and lock_precedes_layer(lock, layer)
+    )
+
+
+def blocked_override_diagnostic(path: str, layer: Layer, lock: PolicyLock, candidate: JSONValue) -> Diagnostic:
+    lock_reason = "non-overridable" if lock.non_overridable else f"authority-gated {lock.authority!r}"
+    return diagnostic(
+        "blocked override",
+        path,
+        f"{layer.name} cannot override {lock_reason} value from {lock.layer.name}",
+        layer,
+        evidence={
+            "blocked_value": candidate,
+            "blocked_by": {
+                "layer": lock.layer.name,
+                "source": lock.layer.path,
+            },
+        },
+    )
 
 
 def authority_is_usable(layers: list[Layer], authority: str, required_by: PolicyLock) -> bool:
@@ -477,12 +560,13 @@ def effective_config(
                     or candidate_lock.layer.precedence < active_lock.layer.precedence
                 ):
                     active_lock = candidate_lock
-                section = layer.data.get(fragment.namespace, {})
+                section = namespace_section(layer, fragment.namespace)
                 if field_name not in section:
                     continue
                 candidate = section[field_name]
                 prior_value = values_by_precedence.get(layer.precedence)
                 if prior_value is not None and prior_value[0] != candidate:
+                    lock_blocks_candidate = active_lock is not None and lock_blocks_layer(active_lock, layer, requested_behavior)
                     diagnostics.append(
                         diagnostic(
                             "same-precedence collision",
@@ -491,7 +575,9 @@ def effective_config(
                             layer,
                         )
                     )
-                    if not (
+                    if lock_blocks_candidate:
+                        diagnostics.append(blocked_override_diagnostic(path, layer, active_lock, candidate))
+                    elif not (
                         active_lock is not None
                         and active_lock.required_for in {requested_behavior, "always"}
                         and active_lock.layer.precedence < layer.precedence
@@ -503,23 +589,8 @@ def effective_config(
                 values_by_precedence[layer.precedence] = (candidate, layer)
                 if layer.precedence in conflicted_precedences:
                     continue
-                lock_applies = active_lock is not None and active_lock.required_for in {requested_behavior, "always"}
-                if lock_applies and active_lock.non_overridable and layer.precedence > active_lock.layer.precedence:
-                    diagnostics.append(
-                        diagnostic(
-                            "blocked override",
-                            path,
-                            f"{layer.name} cannot override non-overridable value from {active_lock.layer.name}",
-                            layer,
-                            evidence={
-                                "blocked_value": candidate,
-                                "blocked_by": {
-                                    "layer": active_lock.layer.name,
-                                    "source": active_lock.layer.path,
-                                },
-                            },
-                        )
-                    )
+                if active_lock is not None and lock_blocks_layer(active_lock, layer, requested_behavior):
+                    diagnostics.append(blocked_override_diagnostic(path, layer, active_lock, candidate))
                     continue
                 value = candidate
                 source_layer = layer
