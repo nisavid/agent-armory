@@ -527,13 +527,19 @@ def partial_config_from_effective(effective: dict[str, Any], fragments: list[Sch
     ]
     for fragment in fragments:
         effective_section = effective.get(fragment.namespace, {})
+        def is_missing_required(wrapped: Any, field_spec: FieldSpec) -> bool:
+            return (
+                field_spec.required
+                and (
+                    not isinstance(wrapped, dict)
+                    or (wrapped.get("value") is None and "secret_reference" not in wrapped)
+                )
+            )
+
         missing_required = sorted(
             field_name
             for field_name, field_spec in fragment.fields.items()
-            if field_spec.required
-            and isinstance(effective_section.get(field_name), dict)
-            and effective_section[field_name].get("value") is None
-            and "secret_reference" not in effective_section[field_name]
+            if is_missing_required(effective_section.get(field_name), field_spec)
         )
         fields: dict[str, Any] = {}
         for field_name, field_spec in fragment.fields.items():
@@ -594,6 +600,7 @@ def discovery_proposals(layers: list[Layer]) -> list[dict[str, Any]]:
         "local-only operator config",
         "checkout-local state",
         "generated cache or state",
+        "secret reference source",
         "session override",
     ]
     found_by_category: dict[str, list[Layer]] = {category: [] for category in categories}

@@ -96,8 +96,8 @@ instead of hidden preference. The command reports:
   unsafe write modes blocked while policy is incomplete;
 - `handoff_behavior` for plain session handoffs and mutation-capable behavior;
 - `discovery_proposals` for committed durable config, local-only operator
-  config, checkout-local state, generated cache or state, and session override
-  categories supplied by the caller;
+  config, checkout-local state, generated cache or state, secret reference
+  source, and session override categories supplied by the caller;
 - `revision_plan` for re-onboarding selected sections while preserving
   unrelated policy.
 

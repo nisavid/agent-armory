@@ -84,6 +84,7 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(result["handoff_behavior"]["plain_handoff"], "required")
         self.assertEqual(result["handoff_behavior"]["mutation_capable_behavior"], "blocked")
         self.assertTrue(result["partial_config"]["schema_valid"])
+        self.assertIn("secret reference source", [item["source_category"] for item in result["discovery_proposals"]])
 
     def test_onboarding_reports_missing_config_data_as_partial_output(self):
         result = agent_equipment_config.config_onboarding_plan(
@@ -243,6 +244,18 @@ class AgentEquipmentConfigTests(unittest.TestCase):
     def test_onboarding_status_rejects_unknown_safety_status(self):
         with self.assertRaisesRegex(agent_equipment_config.ConfigError, "unknown Config Safety Status"):
             agent_equipment_config.onboarding_status(True, "first-run", "new-status")
+
+    def test_partial_config_treats_omitted_required_fields_as_missing(self):
+        result = agent_equipment_config.partial_config_from_effective(
+            {},
+            [self.issue_ops_fragment()],
+            [],
+        )
+
+        section = result["sections"]["issue_tracker_ops"]
+        self.assertEqual(section["status"], "partial")
+        self.assertIn("mode", section["missing_required"])
+        self.assertEqual(section["fields"]["mode"]["presence"], "missing")
 
     def test_onboarding_plan_reuses_loaded_layers(self):
         with tempfile.TemporaryDirectory() as tmpdir:
