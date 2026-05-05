@@ -8,7 +8,6 @@ from pathlib import Path
 from tools.validate_forge_seed import (
     ACCEPTED_SOURCE_REQUIREMENTS,
     CheckResult,
-    FINAL_STAMP_CANONICAL_TREE_DIGEST_PLACEHOLDER,
     REQUIRED_HARNESSES,
     SOURCE_DISPOSITION_ITEM_FIELDS,
     SOURCE_DISPOSITION_MANIFEST_FIELDS,
@@ -1135,11 +1134,9 @@ class SourceDispositionTests(unittest.TestCase):
         root: Path,
         *,
         synthetic_payload: str = "accepted requirement constants H001 H002",
-        digest: str | None = None,
     ) -> None:
         path = root / SOURCE_DISPOSITION_PATH
         path.parent.mkdir(parents=True, exist_ok=True)
-        digest_value = digest or FINAL_STAMP_CANONICAL_TREE_DIGEST_PLACEHOLDER
         manifest_rows = [
             {
                 "source_id": "SYN001",
@@ -1215,10 +1212,7 @@ class SourceDispositionTests(unittest.TestCase):
 
                 ## Final Source-Retired Stamp
 
-                stamp_target: placeholder-normalized canonical tree
-                canonical_tree_digest: {digest_value}
                 source_retired: true
-                timestamp: 2026-05-04T00:00:00Z
                 """
             ).strip()
             + "\n",
@@ -1498,44 +1492,56 @@ class SourceDispositionTests(unittest.TestCase):
             results,
         )
 
-    def test_validate_final_source_retired_stamp_accepts_placeholder_normalized_digest(self):
+    def test_validate_final_source_retired_stamp_accepts_stable_retired_marker(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             self.write_source_disposition(root)
-            actual_digest = validate_final_source_retired_stamp(root, pre_stamp=True)[0].detail
-            self.write_source_disposition(root, digest=actual_digest)
 
             results = validate_final_source_retired_stamp(root)
 
         self.assertTrue(all(result.ok for result in results), results)
 
-    def test_source_retired_stamp_digest_ignores_untracked_scratch_files(self):
+    def test_validate_final_source_retired_stamp_rejects_volatile_digest_fields(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             self.write_source_disposition(root)
-            subprocess.run(["git", "-C", str(root), "init"], check=True, stdout=subprocess.DEVNULL)
-            subprocess.run(["git", "-C", str(root), "add", "docs"], check=True, stdout=subprocess.DEVNULL)
-            before = validate_final_source_retired_stamp(root, pre_stamp=True)[0].detail
+            path = root / SOURCE_DISPOSITION_PATH
+            markdown = path.read_text(encoding="utf-8")
+            path.write_text(
+                markdown.replace(
+                    "source_retired: true",
+                    "\n".join(
+                        [
+                            "stamp_target: placeholder-normalized canonical tree",
+                            "canonical_tree_digest: abc123",
+                            "source_retired: true",
+                            "timestamp: 2026-05-04T00:00:00Z",
+                        ]
+                    ),
+                ),
+                encoding="utf-8",
+            )
 
-            (root / "codex-security-scans").mkdir()
-            (root / "codex-security-scans/report.md").write_text("# Scratch\n", encoding="utf-8")
-            after = validate_final_source_retired_stamp(root, pre_stamp=True)[0].detail
+            results = validate_final_source_retired_stamp(root)
 
-        self.assertEqual(before, after)
-
-    def test_source_retired_stamp_digest_includes_tracked_symlinks(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            root = Path(tmpdir)
-            self.write_source_disposition(root)
-            subprocess.run(["git", "-C", str(root), "init"], check=True, stdout=subprocess.DEVNULL)
-            subprocess.run(["git", "-C", str(root), "add", "docs"], check=True, stdout=subprocess.DEVNULL)
-            before = validate_final_source_retired_stamp(root, pre_stamp=True)[0].detail
-
-            (root / "docs/link").symlink_to("missing")
-            subprocess.run(["git", "-C", str(root), "add", "docs/link"], check=True, stdout=subprocess.DEVNULL)
-            after = validate_final_source_retired_stamp(root, pre_stamp=True)[0].detail
-
-        self.assertNotEqual(before, after)
+        self.assertIn(
+            CheckResult(
+                "source_retired_stamp:canonical_tree_digest",
+                False,
+                "canonical_tree_digest is volatile and must be removed",
+                SOURCE_DISPOSITION_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                "source_retired_stamp:timestamp",
+                False,
+                "timestamp is volatile and must be removed",
+                SOURCE_DISPOSITION_PATH,
+            ),
+            results,
+        )
 
     def test_run_source_bearing_requires_raw_source_inputs(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -1554,7 +1560,7 @@ class SourceDispositionTests(unittest.TestCase):
         )
         self.assertTrue(any(result.name.startswith("source_handoff:") for result in results), results)
 
-    def test_run_source_retired_pre_stamp_skips_raw_source_inputs(self):
+    def test_run_source_retired_final_skips_raw_source_inputs(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             (root / "docs").mkdir()
@@ -1565,9 +1571,8 @@ class SourceDispositionTests(unittest.TestCase):
                 encoding="utf-8",
             )
             self.write_source_disposition(root)
-            expected_digest = validate_final_source_retired_stamp(root, pre_stamp=True)[0].detail
 
-            results = run(root, source_mode="source-retired-pre-stamp")
+            results = run(root, source_mode="source-retired-final")
 
         self.assertNotIn(
             CheckResult(
@@ -1580,9 +1585,9 @@ class SourceDispositionTests(unittest.TestCase):
         )
         self.assertIn(
             CheckResult(
-                "source_retired_stamp:canonical_tree_digest",
+                "source_retired_stamp:source_retired",
                 True,
-                expected_digest,
+                "true",
                 SOURCE_DISPOSITION_PATH,
             ),
             results,
