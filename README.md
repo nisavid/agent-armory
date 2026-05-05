@@ -99,28 +99,6 @@ capability belongs in a skill, script, tool, or config is written down.
 Equipment is not treated as ready just because it looks plausible. Safeguards,
 checks, and review are part of the build process.
 
-## For Agents and Operators
-
-The Agent Armory is meant for operators[^operator] who need agents to wield,
-outfit, evaluate, procure, commission, or keep agent equipment current.
-Operators choose directions and initiate or route work; agents carry out the
-assigned work until they need an operator decision or access they do not have.
-
-[^operator]: An operator may be a human or an orchestrator-agent in a
-    multi-agent system.
-
-The vocabulary for the Forge names the agent roles directly:
-
-- **Wielders:** Use equipped loadouts inside a harness.
-- **Outfitters:** Assemble loadouts from equipment in the Armory.
-- **Smiths:** Make equipment with the Forge.
-- **Forgewrights:** Improve the Forge itself.
-
-Wielding and outfitting are future-facing in the current repository state. The
-Forge is being set up so that, once equipment is published, an outfitter can
-assemble a loadout from validated items and a wielder can use that loadout with
-clear expectations.
-
 ## First routes
 
 If you are just curious, read the [Forge Tour](docs/forge-tour.md). It explains
