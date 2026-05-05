@@ -145,7 +145,6 @@ Published PR body:
 
 - `python3.14 -m unittest tests/test_validate_forge_seed.py`
 - `python3.14 tools/validate_forge_seed.py`
-- `python3.14 tools/validate_forge_seed.py --source-retired-pre-stamp`
 - `python3.14 tools/validate_forge_seed.py --final-closeout`
 - `git diff --check`
 
