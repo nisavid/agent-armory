@@ -3,6 +3,7 @@ import subprocess
 import tempfile
 import textwrap
 import unittest
+from unittest import mock
 from pathlib import Path
 
 from tools.validate_forge_seed import (
@@ -219,6 +220,52 @@ class ValidatorPrimitiveTests(unittest.TestCase):
                 path="docs/closeout/summary.md",
             ),
             results,
+        )
+
+    def test_validate_python_runtime_declaration_ignores_symlinked_files(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            workspace = Path(tmpdir)
+            root = workspace / "repo"
+            root.mkdir()
+            drifted_reference = "Python " + "3.13"
+            (root / ".python-version").write_text("3.14\n", encoding="utf-8")
+            external_note = workspace / "external-runtime.md"
+            external_note.write_text(f"External note mentioned {drifted_reference}.\n", encoding="utf-8")
+            (root / "docs").mkdir()
+            (root / "docs/runtime.md").symlink_to(external_note)
+
+            results = validate_python_runtime_declaration(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="python_runtime:.python-version",
+                    ok=True,
+                    detail="declares Python 3.14",
+                    path=".python-version",
+                )
+            ],
+        )
+
+    def test_validate_python_runtime_declaration_ignores_directory_iteration_errors(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / ".python-version").write_text("3.14\n", encoding="utf-8")
+
+            with mock.patch.object(Path, "iterdir", side_effect=OSError("unreadable")):
+                results = validate_python_runtime_declaration(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="python_runtime:.python-version",
+                    ok=True,
+                    detail="declares Python 3.14",
+                    path=".python-version",
+                )
+            ],
         )
 
     def test_validate_python_runtime_declaration_ignores_local_work_directories(self):

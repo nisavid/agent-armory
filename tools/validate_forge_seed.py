@@ -1634,19 +1634,24 @@ def python_runtime_text_files(root: Path) -> list[Path]:
     directories = [root]
     while directories:
         directory = directories.pop()
-        for path in sorted(directory.iterdir()):
+        try:
+            entries = sorted(directory.iterdir())
+        except OSError:
+            continue
+        for path in entries:
             relative = path.relative_to(root)
             if python_runtime_reference_path_excluded(relative):
                 continue
-            if path.is_dir():
-                if not path.is_symlink():
-                    directories.append(path)
-                continue
-            if not path.is_file():
-                continue
             try:
+                if path.is_symlink():
+                    continue
+                if path.is_dir():
+                    directories.append(path)
+                    continue
+                if not path.is_file():
+                    continue
                 path.read_text(encoding="utf-8")
-            except UnicodeDecodeError:
+            except (OSError, UnicodeDecodeError):
                 continue
             files.append(path)
     return sorted(files)
