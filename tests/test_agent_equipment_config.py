@@ -228,8 +228,21 @@ class AgentEquipmentConfigTests(unittest.TestCase):
             )
 
         self.assertEqual(result["effective_config"]["safety_status"], "unsafe")
+        self.assertEqual(result["onboarding_status"], "blocked_config")
         self.assertTrue(result["partial_config"]["schema_valid"])
         self.assertEqual(result["partial_config"]["unsafe_write_modes"], "blocked")
+
+    def test_onboarding_status_maps_non_usable_first_run_safety_statuses(self):
+        for safety_status in ["conflicted", "untrusted", "stale", "unsafe"]:
+            with self.subTest(safety_status=safety_status):
+                self.assertEqual(
+                    agent_equipment_config.onboarding_status(True, "first-run", safety_status),
+                    "blocked_config",
+                )
+
+    def test_onboarding_status_rejects_unknown_safety_status(self):
+        with self.assertRaisesRegex(agent_equipment_config.ConfigError, "unknown Config Safety Status"):
+            agent_equipment_config.onboarding_status(True, "first-run", "new-status")
 
     def test_onboarding_plan_reuses_loaded_layers(self):
         with tempfile.TemporaryDirectory() as tmpdir:

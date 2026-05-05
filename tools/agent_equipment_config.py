@@ -38,6 +38,14 @@ SENSITIVE_KEYWORDS = ("secret", "token", "credential", "password", "api_key", "p
 REDACTED = "<redacted>"
 REQUIRED_FOR_VALUES = {"advisory", "mutation", "always"}
 ONBOARDING_STATES = {"first-run", "interrupted", "resume", "restart"}
+FIRST_RUN_ONBOARDING_STATUSES = {
+    "usable": "complete",
+    "incomplete": "missing_config_data",
+    "conflicted": "blocked_config",
+    "untrusted": "blocked_config",
+    "stale": "blocked_config",
+    "unsafe": "blocked_config",
+}
 ABSENT = {"presence": "absent"}
 MISSING = object()
 
@@ -497,6 +505,8 @@ def enforcement_projection(safety_status: str, requested_behavior: str) -> dict[
 
 
 def onboarding_status(shared_config_present: bool, onboarding_state: str, safety_status: str) -> str:
+    if safety_status not in FIRST_RUN_ONBOARDING_STATUSES:
+        raise ConfigError(f"unknown Config Safety Status {safety_status!r}")
     if not shared_config_present:
         return "missing_shared_config"
     if onboarding_state == "restart":
@@ -505,9 +515,7 @@ def onboarding_status(shared_config_present: bool, onboarding_state: str, safety
         return "interrupted_partial" if safety_status != "usable" else "interrupted_complete"
     if onboarding_state == "resume":
         return "resumed_complete" if safety_status == "usable" else "resume_needs_input"
-    if safety_status == "incomplete":
-        return "missing_config_data"
-    return "complete" if safety_status == "usable" else safety_status
+    return FIRST_RUN_ONBOARDING_STATUSES[safety_status]
 
 
 def partial_config_from_effective(effective: dict[str, Any], fragments: list[SchemaFragment], diagnostics: list[dict[str, Any]]) -> dict[str, Any]:

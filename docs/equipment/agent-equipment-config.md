@@ -90,8 +90,8 @@ Use `onboarding-plan` when a Smith or Wielder needs machine-visible next steps
 instead of hidden preference. The command reports:
 
 - `onboarding_status` for missing shared Config, missing config data,
-  interrupted partial output, resumed completion, restarted authoring, or
-  complete config;
+  interrupted partial output, resumed completion, restarted authoring,
+  blocked config, or complete config;
 - `partial_config` with schema-valid sections, missing required fields, and
   unsafe write modes blocked while policy is incomplete;
 - `handoff_behavior` for plain session handoffs and mutation-capable behavior;
