@@ -75,7 +75,7 @@ class AgentEquipmentConfigTests(unittest.TestCase):
     def test_onboarding_reports_missing_shared_config_handoff_behavior(self):
         result = agent_equipment_config.config_onboarding_plan(
             [],
-            [self.issue_ops_fragment()],
+            [agent_equipment_config.issue_tracker_ops_fragment()],
             requested_behavior="mutation",
             shared_config_present=False,
         )
@@ -186,6 +186,86 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertTrue(result["revision_plan"]["preserve_unselected_sections"])
         self.assertEqual(result["revision_plan"]["selected_sections"], ["issue_tracker_ops"])
         self.assertEqual(result["revision_plan"]["unselected_sections"], ["docs_research"])
+        self.assertEqual(result["revision_plan"]["unknown_sections"], [])
+
+    def test_restarted_onboarding_reports_unknown_revision_sections(self):
+        result = agent_equipment_config.config_onboarding_plan(
+            [],
+            [self.issue_ops_fragment()],
+            requested_behavior="advisory",
+            onboarding_state="restart",
+            revise_sections=["missing_equipment"],
+        )
+
+        self.assertEqual(result["revision_plan"]["selected_sections"], [])
+        self.assertEqual(result["revision_plan"]["unknown_sections"], ["missing_equipment"])
+
+    def test_onboarding_missing_shared_config_labels_defaults_as_schema_defaults(self):
+        result = agent_equipment_config.config_onboarding_plan(
+            [],
+            [agent_equipment_config.issue_tracker_ops_fragment()],
+            requested_behavior="mutation",
+            shared_config_present=False,
+        )
+
+        token_field = result["partial_config"]["sections"]["issue_tracker_ops"]["fields"]["github_token"]
+        self.assertEqual(token_field["layer"], "schema default")
+
+    def test_onboarding_schema_valid_ignores_semantic_conflict(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "session.toml", """
+                [agent_equipment_config.layer]
+                name = "session overrides"
+                category = "session override"
+
+                [issue_tracker_ops]
+                mode = "execute"
+                external_disclosure = "blocked"
+            """)
+
+            result = agent_equipment_config.config_onboarding_plan(
+                [layer],
+                [agent_equipment_config.issue_tracker_ops_fragment()],
+                requested_behavior="mutation",
+            )
+
+        self.assertEqual(result["effective_config"]["safety_status"], "unsafe")
+        self.assertTrue(result["partial_config"]["schema_valid"])
+        self.assertEqual(result["partial_config"]["unsafe_write_modes"], "blocked")
+
+    def test_onboarding_plan_reuses_loaded_layers(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+
+            calls = []
+            original_load_toml = agent_equipment_config.load_toml
+
+            def counting_load_toml(path):
+                calls.append(path)
+                return original_load_toml(path)
+
+            try:
+                agent_equipment_config.load_toml = counting_load_toml
+                result = agent_equipment_config.config_onboarding_plan(
+                    [layer],
+                    [self.issue_ops_fragment()],
+                    requested_behavior="mutation",
+                )
+            finally:
+                agent_equipment_config.load_toml = original_load_toml
+
+        self.assertEqual(result["effective_config"]["safety_status"], "usable")
+        self.assertEqual(calls.count(layer), 1)
 
     def test_onboarding_partial_config_treats_required_secret_reference_as_present(self):
         fragment = agent_equipment_config.SchemaFragment(

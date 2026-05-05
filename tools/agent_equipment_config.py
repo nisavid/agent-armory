@@ -566,7 +566,7 @@ def empty_partial_config(fragments: list[SchemaFragment]) -> dict[str, Any]:
                 field_name: {
                     "presence": "missing" if field_spec.required else "present",
                     "value": field_spec.default,
-                    "layer": "plain handoff",
+                    "layer": "schema default",
                 }
                 for field_name, field_spec in fragment.fields.items()
             },
@@ -610,140 +610,26 @@ def discovery_proposals(layers: list[Layer]) -> list[dict[str, Any]]:
 
 
 def revision_plan(fragments: list[SchemaFragment], revise_sections: list[str] | None) -> dict[str, Any]:
-    selected = sorted(set(revise_sections or []))
+    requested = sorted(set(revise_sections or []))
     namespaces = sorted(fragment.namespace for fragment in fragments)
+    selected = [namespace for namespace in requested if namespace in namespaces]
     return {
         "selected_sections": selected,
         "unselected_sections": [namespace for namespace in namespaces if namespace not in selected],
-        "preserve_unselected_sections": bool(selected),
+        "unknown_sections": [namespace for namespace in requested if namespace not in namespaces],
+        "preserve_unselected_sections": bool(requested),
     }
 
 
-def config_onboarding_plan(
-    layer_paths: list[Path],
+def effective_config_from_layers(
+    layers: list[Layer],
     fragments: list[SchemaFragment],
     *,
     requested_behavior: str,
-    plain_handoff_paths: list[Path] | None = None,
-    shared_config_present: bool = True,
-    onboarding_state: str = "first-run",
-    revise_sections: list[str] | None = None,
+    plain_handoffs: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    if onboarding_state not in ONBOARDING_STATES:
-        raise ConfigError(f"unknown onboarding state {onboarding_state!r}")
-    if not shared_config_present:
-        return {
-            "onboarding_status": "missing_shared_config",
-            "effective_config": None,
-            "partial_config": empty_partial_config(fragments),
-            "handoff_behavior": {
-                "plain_handoff": "required",
-                "mutation_capable_behavior": "blocked",
-                "reason": "shared Config equipment is absent",
-            },
-            "discovery_proposals": discovery_proposals([]),
-            "revision_plan": revision_plan(fragments, revise_sections),
-            "authoring_roles": authoring_roles(),
-        }
-    layers = load_layers(layer_paths)
-    handoff_layers, _ = load_plain_handoff_layers(plain_handoff_paths or [])
-    effective = effective_config(
-        layer_paths,
-        fragments,
-        requested_behavior=requested_behavior,
-        plain_handoff_paths=plain_handoff_paths,
-    )
-    partial = partial_config_from_effective(effective["effective"], fragments, effective["diagnostics"])
-    mutation_allowed = effective["safety_status"] == "usable"
-    return {
-        "onboarding_status": onboarding_status(shared_config_present, onboarding_state, effective["safety_status"]),
-        "effective_config": effective,
-        "partial_config": {
-            **partial,
-            "unsafe_write_modes": "available" if mutation_allowed else "blocked",
-        },
-        "handoff_behavior": {
-            "plain_handoff": "optional" if mutation_allowed else "available",
-            "mutation_capable_behavior": "allowed" if mutation_allowed else "blocked",
-            "reason": "effective Config Safety Status is usable" if mutation_allowed else "effective Config Safety Status is not usable",
-        },
-        "discovery_proposals": discovery_proposals(sorted([*layers, *handoff_layers], key=lambda layer: (layer.precedence, layer.source_order))),
-        "revision_plan": revision_plan(fragments, revise_sections),
-        "authoring_roles": authoring_roles(),
-    }
-
-
-def authoring_roles() -> list[dict[str, str]]:
-    return [
-        {
-            "role": "Smith",
-            "responsibility": "define schema fragments, defaults, semantic validators, and policy gates for the equipment namespace",
-        },
-        {
-            "role": "Wielder",
-            "responsibility": "supply local, checkout, or session values without weakening committed policy authority",
-        },
-    ]
-
-
-def load_toml(path: Path) -> dict[str, Any]:
-    try:
-        return tomllib.loads(path.read_text(encoding="utf-8"))
-    except OSError as exc:
-        raise ConfigError(f"could not read {path}: {exc.strerror or exc}") from exc
-    except tomllib.TOMLDecodeError as exc:
-        raise ConfigError(f"could not parse {path}: {exc}") from exc
-
-
-def load_layers(paths: Iterable[Path]) -> list[Layer]:
-    ordered_paths = list(paths)
-    layers: list[Layer] = []
-    for index, path in enumerate(ordered_paths):
-        document = load_toml(path)
-        root_metadata = document.get("agent_equipment_config", {})
-        if not isinstance(root_metadata, dict):
-            raise ConfigError(f"{path}: agent_equipment_config must be a table")
-        layer_metadata = root_metadata.get("layer", {})
-        if not isinstance(layer_metadata, dict):
-            raise ConfigError(f"{path}: agent_equipment_config.layer must be a table")
-        name = layer_metadata.get("name")
-        category = layer_metadata.get("category")
-        if name not in LAYER_PRECEDENCE:
-            raise ConfigError(f"{path}: unknown layer name {name!r}")
-        if category not in SOURCE_CATEGORIES:
-            raise ConfigError(f"{path}: unknown source category {category!r}")
-        trusted = layer_metadata.get("trusted", True)
-        if not isinstance(trusted, bool):
-            raise ConfigError(f"{path}: agent_equipment_config.layer.trusted must be a boolean")
-        data = {
-            key: value
-            for key, value in document.items()
-            if key != "agent_equipment_config"
-        }
-        layers.append(
-            Layer(
-                name=name,
-                category=category,
-                path=path.as_posix(),
-                precedence=LAYER_PRECEDENCE.index(name),
-                source_order=index,
-                data=data,
-                metadata=root_metadata,
-                trusted=trusted,
-            )
-        )
-    return sorted(layers, key=lambda layer: (layer.precedence, layer.source_order))
-
-
-def effective_config(
-    layer_paths: list[Path],
-    fragments: list[SchemaFragment],
-    *,
-    requested_behavior: str,
-    plain_handoff_paths: list[Path] | None = None,
-) -> dict[str, Any]:
-    handoff_layers, plain_handoffs = load_plain_handoff_layers(plain_handoff_paths or [])
-    layers = sorted([*load_layers(layer_paths), *handoff_layers], key=lambda layer: (layer.precedence, layer.source_order))
+    layers = sorted(layers, key=lambda layer: (layer.precedence, layer.source_order))
+    plain_handoffs = plain_handoffs or []
     locks_by_layer = [policy_locks(layer) for layer in layers]
     effective: dict[str, dict[str, Any]] = {}
     diagnostics: list[Diagnostic] = []
@@ -846,6 +732,140 @@ def effective_config(
         "plain_handoffs": plain_handoffs,
         "enforcement_projection": enforcement_projection(safety_status, requested_behavior),
     }
+
+
+def config_onboarding_plan(
+    layer_paths: list[Path],
+    fragments: list[SchemaFragment],
+    *,
+    requested_behavior: str,
+    plain_handoff_paths: list[Path] | None = None,
+    shared_config_present: bool = True,
+    onboarding_state: str = "first-run",
+    revise_sections: list[str] | None = None,
+) -> dict[str, Any]:
+    if onboarding_state not in ONBOARDING_STATES:
+        raise ConfigError(f"unknown onboarding state {onboarding_state!r}")
+    if not shared_config_present:
+        return {
+            "onboarding_status": "missing_shared_config",
+            "effective_config": None,
+            "partial_config": empty_partial_config(fragments),
+            "handoff_behavior": {
+                "plain_handoff": "required",
+                "mutation_capable_behavior": "blocked",
+                "reason": "shared Config equipment is absent",
+            },
+            "discovery_proposals": discovery_proposals([]),
+            "revision_plan": revision_plan(fragments, revise_sections),
+            "authoring_roles": authoring_roles(),
+        }
+    layers = load_layers(layer_paths)
+    handoff_layers, plain_handoffs = load_plain_handoff_layers(plain_handoff_paths or [])
+    all_layers = sorted([*layers, *handoff_layers], key=lambda layer: (layer.precedence, layer.source_order))
+    effective = effective_config_from_layers(
+        all_layers,
+        fragments,
+        requested_behavior=requested_behavior,
+        plain_handoffs=plain_handoffs,
+    )
+    partial = partial_config_from_effective(effective["effective"], fragments, effective["diagnostics"])
+    mutation_allowed = effective["safety_status"] == "usable"
+    return {
+        "onboarding_status": onboarding_status(shared_config_present, onboarding_state, effective["safety_status"]),
+        "effective_config": effective,
+        "partial_config": {
+            **partial,
+            "unsafe_write_modes": "available" if mutation_allowed else "blocked",
+        },
+        "handoff_behavior": {
+            "plain_handoff": "optional" if mutation_allowed else "available",
+            "mutation_capable_behavior": "allowed" if mutation_allowed else "blocked",
+            "reason": "effective Config Safety Status is usable" if mutation_allowed else "effective Config Safety Status is not usable",
+        },
+        "discovery_proposals": discovery_proposals(all_layers),
+        "revision_plan": revision_plan(fragments, revise_sections),
+        "authoring_roles": authoring_roles(),
+    }
+
+
+def authoring_roles() -> list[dict[str, str]]:
+    return [
+        {
+            "role": "Smith",
+            "responsibility": "define schema fragments, defaults, semantic validators, and policy gates for the equipment namespace",
+        },
+        {
+            "role": "Wielder",
+            "responsibility": "supply local, checkout, or session values without weakening committed policy authority",
+        },
+    ]
+
+
+def load_toml(path: Path) -> dict[str, Any]:
+    try:
+        return tomllib.loads(path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        raise ConfigError(f"could not read {path}: {exc.strerror or exc}") from exc
+    except tomllib.TOMLDecodeError as exc:
+        raise ConfigError(f"could not parse {path}: {exc}") from exc
+
+
+def load_layers(paths: Iterable[Path]) -> list[Layer]:
+    ordered_paths = list(paths)
+    layers: list[Layer] = []
+    for index, path in enumerate(ordered_paths):
+        document = load_toml(path)
+        root_metadata = document.get("agent_equipment_config", {})
+        if not isinstance(root_metadata, dict):
+            raise ConfigError(f"{path}: agent_equipment_config must be a table")
+        layer_metadata = root_metadata.get("layer", {})
+        if not isinstance(layer_metadata, dict):
+            raise ConfigError(f"{path}: agent_equipment_config.layer must be a table")
+        name = layer_metadata.get("name")
+        category = layer_metadata.get("category")
+        if name not in LAYER_PRECEDENCE:
+            raise ConfigError(f"{path}: unknown layer name {name!r}")
+        if category not in SOURCE_CATEGORIES:
+            raise ConfigError(f"{path}: unknown source category {category!r}")
+        trusted = layer_metadata.get("trusted", True)
+        if not isinstance(trusted, bool):
+            raise ConfigError(f"{path}: agent_equipment_config.layer.trusted must be a boolean")
+        data = {
+            key: value
+            for key, value in document.items()
+            if key != "agent_equipment_config"
+        }
+        layers.append(
+            Layer(
+                name=name,
+                category=category,
+                path=path.as_posix(),
+                precedence=LAYER_PRECEDENCE.index(name),
+                source_order=index,
+                data=data,
+                metadata=root_metadata,
+                trusted=trusted,
+            )
+        )
+    return sorted(layers, key=lambda layer: (layer.precedence, layer.source_order))
+
+
+def effective_config(
+    layer_paths: list[Path],
+    fragments: list[SchemaFragment],
+    *,
+    requested_behavior: str,
+    plain_handoff_paths: list[Path] | None = None,
+) -> dict[str, Any]:
+    handoff_layers, plain_handoffs = load_plain_handoff_layers(plain_handoff_paths or [])
+    layers = [*load_layers(layer_paths), *handoff_layers]
+    return effective_config_from_layers(
+        layers,
+        fragments,
+        requested_behavior=requested_behavior,
+        plain_handoffs=plain_handoffs,
+    )
 
 
 def safety_status_from_diagnostics(diagnostics: list[Diagnostic], *, requested_behavior: str) -> str:
