@@ -146,10 +146,10 @@ The apply boundary writes only eligible source categories:
 - `local-only operator config`, recorded as instance-scoped local evidence and
   not project truth.
 
-Generated state, checkout-local state, session overrides, secret reference
-sources, and untrusted layers are read-only for migration apply. A real write
-requires `--apply` plus explicit operator authority or a trusted configured
-`config_migration_apply` authority marker.
+`generated cache or state`, `checkout-local state`, `session override`,
+`secret reference source`, and untrusted layers are read-only for migration
+apply. A real write requires `--apply` plus explicit operator authority or a
+trusted configured `config_migration_apply` authority marker.
 
 Example dry run:
 

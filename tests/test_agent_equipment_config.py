@@ -1432,6 +1432,80 @@ class AgentEquipmentConfigTests(unittest.TestCase):
                 self.assertFalse(result["applied"])
                 self.assertEqual(result["refusals"][0]["reason"], reason)
 
+    def test_migration_apply_projection_uses_only_realizable_migrations(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            repo = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.fragment_versions]
+                issue_tracker_ops = 1
+
+                [issue_tracker_ops]
+                operation_mode = "dry-run"
+            """)
+            generated = self.write_layer(root, "generated.toml", """
+                [agent_equipment_config.layer]
+                name = "checkout-local state"
+                category = "generated cache or state"
+
+                [agent_equipment_config.fragment_versions]
+                issue_tracker_ops = 1
+
+                [issue_tracker_ops]
+                operation_mode = "execute"
+            """)
+
+            result = agent_equipment_config.migration_apply(
+                [repo, generated],
+                [self.renamed_mode_fragment()],
+                apply=False,
+            )
+
+        self.assertEqual(result["projected_effective_config"]["effective"]["issue_tracker_ops"]["mode"]["value"], "dry-run")
+        self.assertEqual(result["refusals"][0]["source_category"], "generated cache or state")
+
+    def test_migration_apply_fails_if_source_changes_before_write(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.fragment_versions]
+                issue_tracker_ops = 1
+
+                [issue_tracker_ops]
+                operation_mode = "dry-run"
+            """)
+            original_render = agent_equipment_config.render_migration_source_from_text
+
+            def render_after_concurrent_change(text, layer_record, fragment, migration):
+                rendered = original_render(text, layer_record, fragment, migration)
+                Path(layer_record.path).write_text(f"{text}\n# concurrent edit\n", encoding="utf-8")
+                return rendered
+
+            agent_equipment_config.render_migration_source_from_text = render_after_concurrent_change
+            try:
+                result = agent_equipment_config.migration_apply(
+                    [layer],
+                    [self.renamed_mode_fragment()],
+                    apply=True,
+                    apply_authority="operator",
+                )
+            finally:
+                agent_equipment_config.render_migration_source_from_text = original_render
+
+            rewritten_text = layer.read_text(encoding="utf-8")
+
+        self.assertFalse(result["applied"])
+        self.assertEqual(result["write_failures"][0]["reason"], "source changed since migration planning")
+        self.assertIn("# concurrent edit", rewritten_text)
+        self.assertIn("operation_mode", rewritten_text)
+
     def test_migration_apply_refuses_stale_schema_without_registered_migration(self):
         fragment = agent_equipment_config.SchemaFragment(
             namespace="issue_tracker_ops",

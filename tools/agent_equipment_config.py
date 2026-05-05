@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import stat
 import sys
 import tempfile
 import tomllib
@@ -307,11 +308,6 @@ def migration_apply_authority(layers: list[Layer], apply_authority: str | None, 
     return False, "not supplied"
 
 
-def migration_apply_authorized(layers: list[Layer], apply_authority: str | None, target_layer: Layer) -> bool:
-    authorized, _authority = migration_apply_authority(layers, apply_authority, target_layer)
-    return authorized
-
-
 def migration_apply_audit_record(
     layer: Layer,
     fragment: SchemaFragment,
@@ -396,11 +392,47 @@ def projected_migrated_layer(layer: Layer, fragment: SchemaFragment, migration: 
     )
 
 
-def projected_migration_layers(layers: list[Layer], fragments: list[SchemaFragment]) -> list[Layer]:
+def migration_apply_candidate_keys(
+    layers: list[Layer],
+    fragments: list[SchemaFragment],
+    *,
+    apply: bool,
+    apply_authority: str | None,
+) -> set[tuple[int, str]]:
+    candidates: set[tuple[int, str]] = set()
+    for layer_index, layer in enumerate(layers):
+        authorized, _authority = migration_apply_authority(layers, apply_authority, layer)
+        versions = fragment_versions(layer)
+        for fragment in fragments:
+            source_version = versions.get(fragment.namespace)
+            if source_version is None or source_version >= fragment.version:
+                continue
+            migration = migration_for_version(fragment, source_version)
+            if (
+                not layer.trusted
+                or layer.category not in MIGRATION_APPLY_SOURCE_CATEGORIES
+                or migration is None
+                or (apply and not authorized)
+            ):
+                continue
+            _changes, reason = migration_change_set(layer, fragment, migration, source_version)
+            if reason is None:
+                candidates.add((layer_index, fragment.namespace))
+    return candidates
+
+
+def projected_migration_layers(
+    layers: list[Layer],
+    fragments: list[SchemaFragment],
+    *,
+    accepted_migrations: set[tuple[int, str]] | None = None,
+) -> list[Layer]:
     projected: list[Layer] = []
-    for layer in layers:
+    for layer_index, layer in enumerate(layers):
         next_layer = layer
         for fragment in fragments:
+            if accepted_migrations is not None and (layer_index, fragment.namespace) not in accepted_migrations:
+                continue
             versions = fragment_versions(next_layer)
             source_version = versions.get(fragment.namespace)
             if source_version is None or source_version >= fragment.version:
@@ -478,7 +510,7 @@ def render_migration_source_from_text(text: str, layer: Layer, fragment: SchemaF
 
 
 def atomic_write_text(path: Path, text: str) -> None:
-    original_mode = path.stat().st_mode
+    original_mode = stat.S_IMODE(path.stat().st_mode)
     temporary_path: str | None = None
     try:
         with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, delete=False) as temporary:
@@ -540,9 +572,20 @@ def migration_apply(
     apply: bool = False,
     apply_authority: str | None = None,
 ) -> dict[str, Any]:
-    layers = load_layers(layer_paths)
+    source_snapshots: dict[Path, str] = {}
+    layers = load_layers(layer_paths, source_snapshots=source_snapshots)
     effective = effective_config_from_layers(layers, fragments, requested_behavior="mutation")
-    projected_effective = effective_config_from_layers(projected_migration_layers(layers, fragments), fragments, requested_behavior="mutation")
+    accepted_migrations = migration_apply_candidate_keys(
+        layers,
+        fragments,
+        apply=apply,
+        apply_authority=apply_authority,
+    )
+    projected_effective = effective_config_from_layers(
+        projected_migration_layers(layers, fragments, accepted_migrations=accepted_migrations),
+        fragments,
+        requested_behavior="mutation",
+    )
     applications: list[dict[str, Any]] = []
     refusals: list[dict[str, Any]] = []
     audit_records: list[dict[str, Any]] = []
@@ -605,10 +648,12 @@ def migration_apply(
             if apply:
                 path = Path(layer.path)
                 staged = pending_writes.get(path)
-                base_text = staged["text"] if staged is not None else path.read_text(encoding="utf-8")
+                snapshot_key = path.resolve()
+                original_text = source_snapshots[snapshot_key]
+                base_text = staged["text"] if staged is not None else original_text
                 next_text = render_migration_source_from_text(base_text, layer, fragment, migration)
                 if staged is None:
-                    staged = {"text": next_text, "items": []}
+                    staged = {"text": next_text, "original_text": original_text, "items": []}
                     pending_writes[path] = staged
                 else:
                     staged["text"] = next_text
@@ -628,12 +673,14 @@ def migration_apply(
     elif apply:
         for path, staged in pending_writes.items():
             try:
+                if path.read_text(encoding="utf-8") != staged["original_text"]:
+                    raise ConfigError("source changed since migration planning")
                 atomic_write_text(path, staged["text"])
-            except OSError as exc:
+            except (ConfigError, OSError) as exc:
                 partial_application = any(item["write_performed"] for item in applications)
                 failure = {
                     "source": path.as_posix(),
-                    "reason": exc.strerror or str(exc),
+                    "reason": exc.strerror if isinstance(exc, OSError) and exc.strerror else str(exc),
                 }
                 write_failures.append(failure)
                 for application, _layer, _fragment, _source_version, _authority in staged["items"]:
@@ -1228,20 +1275,34 @@ def authoring_roles() -> list[dict[str, str]]:
     ]
 
 
-def load_toml(path: Path) -> dict[str, Any]:
+def read_config_text(path: Path) -> str:
     try:
-        return tomllib.loads(path.read_text(encoding="utf-8"))
+        return path.read_text(encoding="utf-8")
     except OSError as exc:
         raise ConfigError(f"could not read {path}: {exc.strerror or exc}") from exc
+
+
+def parse_toml_text(path: Path, text: str) -> dict[str, Any]:
+    try:
+        return tomllib.loads(text)
     except tomllib.TOMLDecodeError as exc:
         raise ConfigError(f"could not parse {path}: {exc}") from exc
 
 
-def load_layers(paths: Iterable[Path]) -> list[Layer]:
+def load_toml(path: Path) -> dict[str, Any]:
+    return parse_toml_text(path, read_config_text(path))
+
+
+def load_layers(paths: Iterable[Path], *, source_snapshots: dict[Path, str] | None = None) -> list[Layer]:
     ordered_paths = list(paths)
     layers: list[Layer] = []
     for index, path in enumerate(ordered_paths):
-        document = load_toml(path)
+        if source_snapshots is None:
+            document = load_toml(path)
+        else:
+            text = read_config_text(path)
+            source_snapshots[path.resolve()] = text
+            document = parse_toml_text(path, text)
         root_metadata = document.get("agent_equipment_config", {})
         if not isinstance(root_metadata, dict):
             raise ConfigError(f"{path}: agent_equipment_config must be a table")
