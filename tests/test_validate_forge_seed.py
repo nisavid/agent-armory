@@ -2052,10 +2052,10 @@ class CanonicalDocTests(unittest.TestCase):
 
         self.assertIn(
             CheckResult(
-                "canonical_doc:story_closeout_gate_order:docs/story-closeout.md",
-                False,
-                "gate order must include required items in order",
-                "docs/story-closeout.md",
+                name="canonical_doc:story_closeout_gate_order:docs/story-closeout.md",
+                ok=False,
+                detail="gate order must include required items in order",
+                path="docs/story-closeout.md",
             ),
             results,
         )
@@ -2075,10 +2075,10 @@ class CanonicalDocTests(unittest.TestCase):
 
         self.assertIn(
             CheckResult(
-                "canonical_doc:story_closeout_gate_order:docs/story-closeout.md",
-                False,
-                "gate order must include required items in order",
-                "docs/story-closeout.md",
+                name="canonical_doc:story_closeout_gate_order:docs/story-closeout.md",
+                ok=False,
+                detail="gate order must include required items in order",
+                path="docs/story-closeout.md",
             ),
             results,
         )
@@ -2098,10 +2098,10 @@ class CanonicalDocTests(unittest.TestCase):
 
         self.assertIn(
             CheckResult(
-                "canonical_doc:story_closeout_gate_order:docs/story-closeout.md",
-                False,
-                "gate order must include required items in order",
-                "docs/story-closeout.md",
+                name="canonical_doc:story_closeout_gate_order:docs/story-closeout.md",
+                ok=False,
+                detail="gate order must include required items in order",
+                path="docs/story-closeout.md",
             ),
             results,
         )
@@ -8484,10 +8484,10 @@ class ExampleValidationTests(unittest.TestCase):
 
         self.assertIn(
             CheckResult(
-                "example:section:examples/pr-review/capability-card.md:Vision alignment",
-                False,
-                "missing section: Vision alignment",
-                "examples/pr-review/capability-card.md",
+                name="example:section:examples/pr-review/capability-card.md:Vision alignment",
+                ok=False,
+                detail="missing section: Vision alignment",
+                path="examples/pr-review/capability-card.md",
             ),
             results,
         )
@@ -8516,10 +8516,10 @@ class ExampleValidationTests(unittest.TestCase):
 
         self.assertIn(
             CheckResult(
-                "example:section:examples/docs-research/interface-decision-record.md:Vision alignment",
-                False,
-                "missing section: Vision alignment",
-                "examples/docs-research/interface-decision-record.md",
+                name="example:section:examples/docs-research/interface-decision-record.md:Vision alignment",
+                ok=False,
+                detail="missing section: Vision alignment",
+                path="examples/docs-research/interface-decision-record.md",
             ),
             results,
         )
