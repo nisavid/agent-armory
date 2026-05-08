@@ -2768,6 +2768,7 @@ def string_list(value: object) -> bool:
 
 
 def validate_harness_catalog(root: Path) -> list[CheckResult]:
+    profile_dir = harness_capability_profiles.VANILLA_PROFILE_DIR.as_posix()
     try:
         manager_results = harness_capability_profiles.validate(root)
     except Exception as error:
@@ -2776,7 +2777,7 @@ def validate_harness_catalog(root: Path) -> list[CheckResult]:
                 "harness_catalog:manager_core:exception",
                 False,
                 f"manager core validation crashed: {error.__class__.__name__}: {error}",
-                "docs/harness-capabilities/vanilla",
+                profile_dir,
             )
         ]
     failures = [result for result in manager_results if not result.ok]
@@ -2786,7 +2787,7 @@ def validate_harness_catalog(root: Path) -> list[CheckResult]:
                 "harness_catalog:manager_core",
                 True,
                 f"{harness_capability_profiles.VALIDATION_NAME} passed",
-                "docs/harness-capabilities/vanilla",
+                profile_dir,
             )
         ]
     return [

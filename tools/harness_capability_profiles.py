@@ -522,7 +522,7 @@ def validate_profile_data(profile: dict[str, Any], harness_id: str, relative_pat
                 results.append(CheckResult(f"profile:{harness_id}:claim:{index}:family", False, "invalid family", relative_path.as_posix()))
             else:
                 families.add(family)
-                if claim_id_value != claim_id(harness_id, family):
+                if non_empty_string(claim_id_value) and claim_id_value != claim_id(harness_id, family):
                     results.append(CheckResult(f"profile:{harness_id}:claim:{family}:id", False, "unstable claim id", relative_path.as_posix()))
             status = claim.get("status")
             if status not in CLAIM_STATUSES:
