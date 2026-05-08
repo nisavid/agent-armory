@@ -57,7 +57,7 @@ operator-directed decision and durable follow-up target.
 | H009 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | docs/harness-capabilities.md | Refresh and publish the canonical harness capability catalog. |
 | H010 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | templates/ | Ship seed templates and annotated Forge Examples. |
 | H011 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | specs/agent-ops.md | Create downstream specs for the initial Smith tasks. |
-| H012 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | tools/validate_forge_seed.py | Validate source disposition, seed surfaces, examples, Blueprints, and issue projection. |
+| H012 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | tools/validate_armory_integrity.py | Validate source disposition, live Forge surfaces, examples, Blueprints, and issue projection. |
 | H052 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | docs/prd/forge-seed.md | Preserve standard-library validation and non-production seed boundaries. |
 | H053 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | docs/closeout/forge-seed-documentation.md | Record final implementation, validation, issue projection, and closeout summaries. |
 | H013 | SRC003 | adequately_captured | unchallenged | false | false | kept_current |  | docs/agent-equipment-forge.md | Explain why the Agent Armory needs a Forge instead of ad hoc equipment. |
@@ -114,7 +114,7 @@ No unresolved challenge enters source retirement. Rows marked `resolved` carry o
 source_bearing_snapshot_tree_id: 589bf626ffc5e9cdfffc7ee5983022adc1f7a1e2
 source_bearing_stamp_id: source-bearing-2026-05-04
 source_manifest_digest: 7ebb526ad69baa2254052deccf3ad9f236b3c785124842329d6d4e2a000cfbb5
-source_disposition_digest: 5ac8403d95d2bc971bbbd899a94296cd6286e427e728b09e34cd765df5e2e200
+source_disposition_digest: f2ac6c8258f76df5d54fc2f2022a626cee5e9dcfe4c82d4ebb8436523fc5ee7d
 source_bearing_result: passed
 
 ## Final Source-Retired Stamp

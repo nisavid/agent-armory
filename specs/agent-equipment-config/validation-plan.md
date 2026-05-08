@@ -19,17 +19,17 @@ standard-library engine behaviors covered by `tests.test_agent_equipment_config`
 
 ## Current deterministic checks
 
-- `python3.14 -m unittest tests.test_validate_forge_seed.SpecValidationTests`
+- `python3.14 -m unittest tests.test_validate_armory_integrity.SpecValidationTests`
 - `python3.14 -m unittest tests.test_agent_equipment_config`
-- `python3.14 -m unittest tests.test_validate_forge_seed`
+- `python3.14 -m unittest tests.test_validate_armory_integrity`
 - `python3.14 -m unittest`
-- `python3.14 tools/validate_forge_seed.py`
-- `python3.14 tools/validate_forge_seed.py --final-closeout`
+- `python3.14 tools/validate_armory_integrity.py`
+- `python3.14 tools/validate_armory_integrity.py --final-closeout`
 - `git diff --check`
 
 ## Bundle validation
 
-The Forge Seed validator must require:
+Armory Integrity Validation must require:
 
 - `specs/agent-equipment-config/README.md`
 - `specs/agent-equipment-config/capability-card.md`

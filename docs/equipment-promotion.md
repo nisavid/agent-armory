@@ -1,6 +1,6 @@
 # Equipment Promotion
 
-Status: Forge Seed
+Status: Forge Canon
 
 The Equipment Promotion Path prevents examples, specs, plans, implementations, validations, and published equipment from being treated as the same thing.
 

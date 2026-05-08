@@ -9,7 +9,7 @@ Run deterministic checks:
 
 ```sh
 python3.14 -m unittest tests.test_issue_tracker_ops
-python3.14 tools/validate_forge_seed.py
+python3.14 tools/validate_armory_integrity.py
 ```
 
 Run dry-run adapter smokes:

@@ -22,6 +22,99 @@ class CheckResult:
     path: str
 
 
+VALIDATION_SCHEMA = "armory_integrity.validation_result.v1"
+VALIDATION_NAME = "Armory Integrity Validation"
+FORGE_VALIDATION_NAME = "Forge Integrity Validation"
+
+
+VALIDATION_INVENTORY = [
+    {
+        "check": "required_paths",
+        "boundary": "armory_integrity",
+        "relationship": "Top-level repository integrity preflight for required live and durable evidence surfaces.",
+    },
+    {
+        "check": "python_runtime",
+        "boundary": "armory_integrity",
+        "relationship": "Top-level repository integrity check for the declared deterministic runtime and live references.",
+    },
+    {
+        "check": "forge_routes",
+        "boundary": "forge_integrity",
+        "relationship": "Forge-scoped live integrity check for Smith and reader routing.",
+    },
+    {
+        "check": "canonical_docs",
+        "boundary": "forge_integrity",
+        "relationship": "Forge-scoped live integrity check for Forge Canon and Forge Core documentation shape.",
+    },
+    {
+        "check": "threat_model",
+        "boundary": "armory_integrity",
+        "relationship": "Top-level repository integrity check for durable security-model presence and routing.",
+    },
+    {
+        "check": "documentation_closeout",
+        "boundary": "armory_integrity",
+        "relationship": "Top-level repository integrity check for durable documentation closeout evidence.",
+    },
+    {
+        "check": "security_closeout",
+        "boundary": "armory_integrity",
+        "relationship": "Top-level repository integrity check for durable security closeout evidence.",
+    },
+    {
+        "check": "projection_drafts",
+        "boundary": "armory_integrity",
+        "relationship": "Top-level repository integrity check for issue, PR, release, and handoff projection evidence.",
+    },
+    {
+        "check": "harness_catalog",
+        "boundary": "forge_integrity",
+        "relationship": "Forge-scoped live integrity; detailed Vanilla Harness Capability Profile behavior belongs to the Manager Core validator.",
+    },
+    {
+        "check": "templates",
+        "boundary": "equipment_candidate_shape",
+        "relationship": "Equipment-candidate shape validation for Forge templates, not equipment-specific behavior validation.",
+    },
+    {
+        "check": "examples",
+        "boundary": "equipment_candidate_shape",
+        "relationship": "Equipment-candidate shape validation for Forge examples, not equipment-specific behavior validation.",
+    },
+    {
+        "check": "specs",
+        "boundary": "equipment_candidate_shape",
+        "relationship": "Equipment-candidate shape validation for Equipment Blueprints and bundles, not equipment-specific behavior validation.",
+    },
+    {
+        "check": "markdown_links",
+        "boundary": "armory_integrity",
+        "relationship": "Top-level repository integrity check for internal documentation link targets.",
+    },
+    {
+        "check": "source_disposition",
+        "boundary": "armory_integrity",
+        "relationship": "Top-level repository integrity check for the durable source-disposition ledger retained after source retirement.",
+    },
+    {
+        "check": "source_retired_tree",
+        "boundary": "historical_seed_migration",
+        "relationship": "Historical Seed migration guard that prevents retired raw source trees from returning to the live repository.",
+    },
+    {
+        "check": "final_source_retired_stamp",
+        "boundary": "historical_seed_migration",
+        "relationship": "Historical Seed migration guard for the durable final source-retirement stamp.",
+    },
+]
+
+
+def validation_inventory() -> list[dict[str, str]]:
+    return [dict(item) for item in VALIDATION_INVENTORY]
+
+
 FENCE_START_RE = re.compile(r"(`{3,}|~{3,})")
 HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 BACKTICK_PATH_RE = re.compile(r"`([^`]+)`")
@@ -625,8 +718,8 @@ SECURITY_CLOSEOUT_REQUIRED_EVIDENCE = [
     "Durable security evidence is this closeout summary",
     "The raw report is not committed and should not be cited as reusable project doctrine.",
     "Codex Security phase sequence",
-    "python3.14 -m unittest tests/test_validate_forge_seed.py",
-    "python3.14 tools/validate_forge_seed.py",
+    "python3.14 -m unittest tests.test_validate_armory_integrity",
+    "python3.14 tools/validate_armory_integrity.py",
     "No reportable findings",
     "Suppressed findings",
     "Re-validation passed",
@@ -1424,7 +1517,7 @@ def validate_source_disposition(root: Path, *, required_item_ids: set[str] | Non
     return results
 
 
-def validate_source_retired_tree(root: Path) -> list[CheckResult]:
+def validate_source_retired_tree(root: Path, *, include_disposition: bool = True) -> list[CheckResult]:
     results: list[CheckResult] = []
     raw_source_path = root / "docs/metasmith"
     if raw_source_path.exists() or raw_source_path.is_symlink():
@@ -1436,7 +1529,8 @@ def validate_source_retired_tree(root: Path) -> list[CheckResult]:
                 "docs/metasmith",
             )
         )
-    results.extend(validate_source_disposition(root, required_item_ids=SOURCE_DISPOSITION_FINAL_REQUIRED_ITEM_IDS))
+    if include_disposition:
+        results.extend(validate_source_disposition(root, required_item_ids=SOURCE_DISPOSITION_FINAL_REQUIRED_ITEM_IDS))
     if not any(not result.ok for result in results):
         results.append(CheckResult("source_retired:tree", True, "raw sources removed", "docs"))
     return results
@@ -1596,10 +1690,26 @@ def story_closeout_gate_order_valid(markdown: str) -> bool:
     return False
 
 
-def has_framework_seed_status(markdown: str) -> bool:
+CANONICAL_DOC_STATUSES = {
+    "docs/vision.md": "Armory Canon",
+    "docs/ubiquitous-language.md": "Forge Canon",
+    "docs/agent-equipment-forge.md": "Forge Canon",
+    "docs/smith-runbook.md": "Forge Core",
+    "docs/forgewright-runbook.md": "Forge Core",
+    "docs/interface-decision-guide.md": "Forge Canon",
+    "docs/harness-components.md": "Forge Canon",
+    "docs/harness-capabilities.md": "Forge Canon",
+    "docs/evidence-taxonomy.md": "Forge Canon",
+    "docs/security-and-control.md": "Forge Canon",
+    "docs/equipment-promotion.md": "Forge Canon",
+    "docs/story-closeout.md": "Forge Core",
+}
+
+
+def has_live_canonical_status(markdown: str, required_status: str) -> bool:
     visible_markdown = markdown_visible_text(markdown)
     nonblank_lines = [line.strip() for line in visible_markdown.splitlines() if line.strip()]
-    return "Status: Forge Seed" in nonblank_lines[:8]
+    return f"Status: {required_status}" in nonblank_lines[:8]
 
 
 def has_template_status(markdown: str) -> bool:
@@ -2189,12 +2299,23 @@ def validate_canonical_docs(root: Path) -> list[CheckResult]:
             results.append(CheckResult(f"canonical_doc:{relative_path}", False, detail, relative_path))
             continue
         markdown = path.read_text(encoding="utf-8")
-        if not has_framework_seed_status(markdown):
+        if relative_path not in CANONICAL_DOC_STATUSES:
+            results.append(
+                CheckResult(
+                    f"canonical_doc:status_mapping:{relative_path}",
+                    False,
+                    "missing canonical status mapping",
+                    relative_path,
+                )
+            )
+            continue
+        required_status = CANONICAL_DOC_STATUSES[relative_path]
+        if not has_live_canonical_status(markdown, required_status):
             results.append(
                 CheckResult(
                     f"canonical_doc:status:{relative_path}",
                     False,
-                    "missing Status: Forge Seed",
+                    f"missing Status: {required_status}",
                     relative_path,
                 )
             )
@@ -2534,7 +2655,7 @@ def validate_projection_drafts(root: Path) -> list[CheckResult]:
             )
     if (
         PROJECTION_DRAFTS_PENDING_STORY_REVIEW_PLACEHOLDER.casefold() in raw_folded
-        and "tools/validate_forge_seed.py --final-closeout`: passed" in raw_folded
+        and "tools/validate_armory_integrity.py --final-closeout`: passed" in raw_folded
     ):
         results.append(
             CheckResult(
@@ -4803,21 +4924,16 @@ def render_human(results: list[CheckResult]) -> str:
 
 
 def render_json(results: list[CheckResult]) -> str:
-    return json.dumps([asdict(result) for result in results], indent=2, sort_keys=True)
+    payload = {
+        "schema": VALIDATION_SCHEMA,
+        "validation": VALIDATION_NAME,
+        "forge_suite": FORGE_VALIDATION_NAME,
+        "results": [asdict(result) for result in results],
+    }
+    return json.dumps(payload, indent=2, sort_keys=True)
 
 
-def resolve_source_mode(root: Path, source_mode: str, final_closeout: bool) -> str:
-    if final_closeout:
-        return "source-retired-final"
-    if source_mode == "auto":
-        return "source-bearing" if (root / "docs/metasmith").exists() else "source-retired-final"
-    if source_mode in {"source-bearing", "source-retired-final"}:
-        return source_mode
-    raise ValueError(f"unknown source mode: {source_mode}")
-
-
-def run(root: Path, *, final_closeout: bool = False, source_mode: str = "auto") -> list[CheckResult]:
-    resolved_source_mode = resolve_source_mode(root, source_mode, final_closeout)
+def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
     required_paths = [
         "README.md",
         PYTHON_VERSION_DECLARATION_PATH,
@@ -4837,8 +4953,6 @@ def run(root: Path, *, final_closeout: bool = False, source_mode: str = "auto") 
         *CONFIG_BUNDLE_REQUIRED_PATHS,
         *SPEC_REQUIRED_PATHS,
     ]
-    if resolved_source_mode == "source-bearing":
-        required_paths.append("docs/metasmith/source-projection.md")
     results = [
         *validate_required_paths(root, required_paths),
         *validate_python_runtime_declaration(root),
@@ -4854,27 +4968,21 @@ def run(root: Path, *, final_closeout: bool = False, source_mode: str = "auto") 
         *validate_specs(root),
         *validate_markdown_links(root),
     ]
-    if resolved_source_mode == "source-bearing":
-        results.extend(validate_source_handoff_provenance(root))
-        results.extend(validate_source_projection(root))
-        results.extend(validate_source_disposition(root))
-    else:
-        results.extend(validate_source_retired_tree(root))
-        results.extend(validate_final_source_retired_stamp(root))
+    results.extend(validate_source_disposition(root))
+    results.extend(validate_source_retired_tree(root, include_disposition=False))
+    results.extend(validate_final_source_retired_stamp(root))
     if final_closeout:
         results.extend(validate_final_closeout(root))
     return results
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Validate the Agent Armory Forge Seed.")
+    parser = argparse.ArgumentParser(
+        description="Validate Agent Armory Integrity.",
+        epilog="Armory Integrity Validation includes the Forge Integrity Validation suite and equipment-candidate shape checks. Equipment-specific behavior validation belongs to the named equipment validator.",
+    )
     parser.add_argument("--root", default=".", help="Repository root to validate.")
     parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON.")
-    parser.add_argument(
-        "--source-bearing",
-        action="store_true",
-        help="Require raw source handoff/projection inputs and the source disposition ledger.",
-    )
     parser.add_argument(
         "--final-closeout",
         action="store_true",
@@ -4882,12 +4990,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    if args.source_bearing:
-        source_mode = "source-bearing"
-    else:
-        source_mode = "auto"
-
-    results = run(Path(args.root).resolve(), final_closeout=args.final_closeout, source_mode=source_mode)
+    results = run(Path(args.root).resolve(), final_closeout=args.final_closeout)
     output = render_json(results) if args.json else render_human(results)
     print(output)
     return 0 if all(result.ok for result in results) else 1

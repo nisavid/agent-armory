@@ -361,8 +361,8 @@ seed role.
 _Avoid_: placeholder directories without seed responsibilities
 
 **Seed Validation Tool**:
-A transitional standard-library Python script that currently runs seed-era live
-checks and reports results for humans or agents.
+A historical standard-library Python script shape for completed Forge Seed
+checks. Current live checks run through Armory Integrity Validation tooling.
 _Avoid_: package-manager-dependent validator, harness-specific validator
 
 **Harness Evidence Source Policy**:
@@ -534,8 +534,8 @@ _Avoid_: chat-only conclusion, undocumented resume instruction
   before domain-specific equipment takes over.
 - A **Forgewright Runbook** guides Forge maintenance without replacing ADRs, PRDs, implementation plans, or Smith runbooks.
 - A **Target Structure** can guide a PRD, but the **Forge Seed** creates only **Seed Surfaces**.
-- A **Seed Validation Tool** implements historical **Seed Validation** without
-  adding runtime dependencies. Live validation tooling belongs under **Armory
+- Historical **Seed Validation** used a standard-library tool without
+  runtime dependencies. Current live validation tooling belongs under **Armory
   Integrity Validation** and its scoped validation suites.
 - A **Harness Fact Refresh** follows the **Harness Evidence Source Policy**
   before updating Vanilla Harness Capability Profile claims.
@@ -587,8 +587,8 @@ _Avoid_: chat-only conclusion, undocumented resume instruction
 - "Validation tooling" can mean live integrity checks, historical seed checks,
   or harness behavior tests. Resolution: use live **Armory Integrity
   Validation** and **Forge Integrity Validation** tooling for current integrity
-  checks, preserve **Seed Validation Tool** for historical seed scope while it
-  remains relevant, and leave harness behavior tests to downstream equipment.
+  checks, reserve **Seed Validation** for historical seed scope, and leave
+  harness behavior tests to downstream equipment.
 - "Harness evidence" can mean docs, release notes, source, third-party package metadata, or local CLI output. Resolution: follow the **Harness Evidence Source Policy** and label each evidence category.
 - "Equipment status" can mean a teaching example, an accepted spec, a plan, implementation, validation result, or published equipment. Resolution: use the **Equipment Promotion Path** states.
 - "Skill surface" can mean a template for Smiths or a real equipped skill. Resolution: use **Skill Template** for seed guidance and create repo-local skills only after **Pressure Scenario Validation**.

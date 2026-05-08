@@ -3,7 +3,7 @@
 Status: Repository Threat Model
 
 This threat model covers the Agent Armory repository, not one task or one diff.
-It is the durable baseline for Forge Seed security closeout and future
+It is the durable baseline for change-set security closeout and future
 change-set scans.
 
 ## Overview
@@ -54,7 +54,7 @@ equipment is promoted.
 - Documentation to executable equipment: specs, templates, and examples may
   influence future code, hooks, MCPs, scripts, or plugins, but are not
   themselves installable equipment.
-- Local validation tooling to filesystem: `tools/validate_forge_seed.py`
+- Local validation tooling to filesystem: `tools/validate_armory_integrity.py`
   reads repo files and reports validation status for the operator or agent.
 - Repo content to external control surfaces: issue projection, PR bodies, and
   review comments can publish project status and security claims outside the
@@ -65,10 +65,10 @@ equipment is promoted.
 
 ### Assumptions
 
-- The current Forge Seed has no network service, authentication boundary,
+- The current repository has no network service, authentication boundary,
   tenant boundary, or remote request path.
-- The Seed Validation Tool is a local standard-library Python tool that reads
-  repository files and writes only process output.
+- The Armory Integrity Validation tool is a local standard-library Python tool
+  that reads repository files and writes only process output.
 - Agents and humans run validation from a trusted checkout, while still
   reviewing branch content as potentially adversarial.
 - Transient Codex Security scan bundles may live outside the repository, but
@@ -102,11 +102,11 @@ equipment is promoted.
 
 ### Attacker-controlled inputs
 
-Current Forge Seed inputs are primarily repository files in the checked-out
-worktree. A malicious branch, compromised dependency source, or misleading
-handoff note can attempt to alter:
+Current repository validation inputs are primarily repository files in the
+checked-out worktree. A malicious branch, compromised dependency source, or
+misleading handoff note can attempt to alter:
 
-- Markdown and TOML files parsed by the Seed Validation Tool.
+- Markdown and TOML files parsed by the Armory Integrity Validation tool.
 - Source projection rows, plan status, PRD criteria, ADRs, specs, templates,
   and examples.
 - Links and path strings that future agents may follow.
@@ -126,7 +126,7 @@ actions.
 - `docs/closeout/forge-seed-source-disposition.md` maps accepted Source
   Handoff requirements to live target paths, operator dispositions, checkpoint
   evidence, and source-retirement status.
-- `tools/validate_forge_seed.py` checks required paths, source disposition,
+- `tools/validate_armory_integrity.py` checks required paths, source disposition,
   source retirement, markdown links, promotion-state boundaries, harness
   catalog fields, and closeout surfaces.
 - The validator rejects symlinked required paths and repository-root escapes for

@@ -38,10 +38,10 @@ current for the refreshed public docs path.
 
 ## Commands
 
-- `python3.14 -m unittest tests.test_validate_forge_seed.SecurityCloseoutValidationTests`
-- `python3.14 -m unittest tests/test_validate_forge_seed.py`
-- `python3.14 tools/validate_forge_seed.py`
-- `python3.14 tools/validate_forge_seed.py --json`
+- `python3.14 -m unittest tests.test_validate_armory_integrity.SecurityCloseoutValidationTests`
+- `python3.14 -m unittest tests.test_validate_armory_integrity`
+- `python3.14 tools/validate_armory_integrity.py`
+- `python3.14 tools/validate_armory_integrity.py --json`
 - `git diff --check`
 - Targeted Codex Security discovery searches for dangerous sinks, secret-like
   terms, promotion-state claims, installability claims, and external path or
@@ -113,9 +113,9 @@ Preventive hardening added during the Forge Seed closeout includes:
 
 Re-validation passed after this closeout file was populated.
 
-- `python3.14 -m unittest tests/test_validate_forge_seed.py`: passed.
-- `python3.14 tools/validate_forge_seed.py`: passed.
-- `python3.14 tools/validate_forge_seed.py --json`: passed.
+- `python3.14 -m unittest tests.test_validate_armory_integrity`: passed.
+- `python3.14 tools/validate_armory_integrity.py`: passed.
+- `python3.14 tools/validate_armory_integrity.py --json`: passed.
 - `git diff --check`: passed.
 
 ## Deferred-risk tracking

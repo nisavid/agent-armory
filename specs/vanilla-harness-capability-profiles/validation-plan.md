@@ -130,7 +130,7 @@ commands include:
 ```sh
 python3.14 -m unittest
 python3.14 tools/harness_capability_profiles.py validate --json
-python3.14 <live-repository-validation-command>
+python3.14 tools/validate_armory_integrity.py
 git diff --check
 ```
 

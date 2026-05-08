@@ -1,10 +1,10 @@
 # Security and Control
 
-Status: Forge Seed
+Status: Forge Canon
 
 Security and control decisions belong in the equipment design, not only in final review. Smiths classify authority, side effects, and gates before implementation.
 
-The persistent [Repository Threat Model](security/threat-model.md) is the baseline for Forge Seed security closeout and future security scans.
+The persistent [Repository Threat Model](security/threat-model.md) is the baseline for change-set security closeout and future security scans.
 
 ## least privilege
 

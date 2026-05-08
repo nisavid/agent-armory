@@ -1,6 +1,6 @@
 # Forgewright Runbook
 
-Status: Forge Seed
+Status: Forge Core
 
 This runbook is the canonical workflow for Agents that maintain the Agent Equipment Forge. Keep project-specific task checklists in PRDs, plans, ADRs, issues, and closeout records.
 
@@ -66,7 +66,7 @@ After a Repo Draft PRD stabilizes and review is clean, create or update the corr
 
 ## Equipment Blueprints
 
-Equipment Blueprints describe future Agent Equipment without implementing it in the Forge Seed.
+Equipment Blueprints describe future Agent Equipment without implementing it in the current Forge.
 
 Each Blueprint names its promotion state, target harness assumptions, required Forge inputs, expected surfaces, validation needs, security boundaries, and open questions. When Forgewright decisions change the Forge, inspect Equipment Blueprints for drift and update or explicitly leave them unchanged with rationale.
 

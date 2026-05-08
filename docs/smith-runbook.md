@@ -1,8 +1,8 @@
 # Smith Runbook
 
-Status: Forge Seed
+Status: Forge Core
 
-This runbook is the canonical workflow for Smiths creating Agent Equipment with the Forge Seed.
+This runbook is the canonical workflow for Smiths creating Agent Equipment with the Forge.
 
 Before shaping a capability, read `docs/vision.md`. Use it to frame the
 intended agent and human experience, the Loadout or Assembly the capability
