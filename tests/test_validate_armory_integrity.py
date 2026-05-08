@@ -130,12 +130,18 @@ class ValidationBoundaryTests(unittest.TestCase):
             "specs/vanilla-harness-capability-profiles/validation-plan.md",
             "specs/vanilla-harness-capability-profiles/closeout-evidence-plan.md",
         ]
+        operational_surfaces = [relative_path for relative_path in live_surfaces if relative_path != "CONTEXT.md"]
 
         offenders = [
             relative_path
             for relative_path in live_surfaces
             if "validate_forge_seed" in (root / relative_path).read_text(encoding="utf-8")
         ]
+        offenders.extend(
+            relative_path
+            for relative_path in operational_surfaces
+            if "Seed Validation" in (root / relative_path).read_text(encoding="utf-8")
+        )
 
         self.assertEqual(offenders, [])
 
@@ -2414,6 +2420,7 @@ class CanonicalDocTests(unittest.TestCase):
         )
 
     def test_validate_canonical_docs_requires_live_canonical_status(self):
+        expected_status = CANONICAL_DOC_STATUSES["docs/agent-equipment-forge.md"]
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             self.write_all_canonical_docs(root)
@@ -2428,7 +2435,7 @@ class CanonicalDocTests(unittest.TestCase):
             CheckResult(
                 "canonical_doc:status:docs/agent-equipment-forge.md",
                 False,
-                "missing Status: Forge Canon",
+                f"missing Status: {expected_status}",
                 "docs/agent-equipment-forge.md",
             ),
             results,
@@ -2452,12 +2459,13 @@ class CanonicalDocTests(unittest.TestCase):
         )
 
     def test_validate_canonical_docs_ignores_status_in_fenced_code(self):
+        expected_status = CANONICAL_DOC_STATUSES["docs/agent-equipment-forge.md"]
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             self.write_all_canonical_docs(root)
             fence = "`" * 3
             (root / "docs/agent-equipment-forge.md").write_text(
-                f"# Equipment Framework\n\n{fence}\nStatus: Forge Canon\n{fence}\n\n## Purpose\n\nContent.\n",
+                f"# Equipment Framework\n\n{fence}\nStatus: {expected_status}\n{fence}\n\n## Purpose\n\nContent.\n",
                 encoding="utf-8",
             )
 
@@ -2467,7 +2475,7 @@ class CanonicalDocTests(unittest.TestCase):
             CheckResult(
                 "canonical_doc:status:docs/agent-equipment-forge.md",
                 False,
-                "missing Status: Forge Canon",
+                f"missing Status: {expected_status}",
                 "docs/agent-equipment-forge.md",
             ),
             results,
@@ -2492,15 +2500,16 @@ class CanonicalDocTests(unittest.TestCase):
         )
 
     def test_validate_canonical_docs_ignores_sections_in_indented_code(self):
+        expected_status = CANONICAL_DOC_STATUSES["docs/agent-equipment-forge.md"]
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             self.write_all_canonical_docs(root)
             (root / "docs/agent-equipment-forge.md").write_text(
                 textwrap.dedent(
-                    """
+                    f"""
                     # Equipment Framework
 
-                    Status: Forge Canon
+                    Status: {expected_status}
 
                     ## Purpose
 
@@ -2603,6 +2612,7 @@ class CanonicalDocTests(unittest.TestCase):
             )
 
     def test_run_reports_canonical_doc_status_and_section_failures(self):
+        expected_status = CANONICAL_DOC_STATUSES["docs/agent-equipment-forge.md"]
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             self.write_all_canonical_docs(root)
@@ -2617,7 +2627,7 @@ class CanonicalDocTests(unittest.TestCase):
             CheckResult(
                 "canonical_doc:status:docs/agent-equipment-forge.md",
                 False,
-                "missing Status: Forge Canon",
+                f"missing Status: {expected_status}",
                 "docs/agent-equipment-forge.md",
             ),
             results,
