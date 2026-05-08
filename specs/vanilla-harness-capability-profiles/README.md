@@ -267,7 +267,7 @@ and validation before research enrichment:
 - remove `docs/harness-capabilities.toml` as authored truth once migration and
   validation pass.
 
-## Research notes and schema pressure story
+## Issue #44 research outputs
 
 Issue #44 records one durable research note per supported harness and one
 schema pressure report. These artifacts describe current research evidence and

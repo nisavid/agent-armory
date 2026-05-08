@@ -726,7 +726,8 @@ def validate_schema_pressure_report(root: Path) -> list[CheckResult]:
         row_id = row.get("ID") or f"row_{index + 1}"
         for column in SCHEMA_PRESSURE_COLUMNS:
             if not row.get(column, "").strip():
-                results.append(CheckResult(f"schema_pressure:row:{row_id}:{slug(column)}", False, f"missing {column}", relative_path.as_posix()))
+                result_field = slug(column).replace("-", "_")
+                results.append(CheckResult(f"schema_pressure:row:{row_id}:{result_field}", False, f"missing {column}", relative_path.as_posix()))
         disposition = row.get("Disposition", "").casefold()
         if disposition and disposition not in SCHEMA_PRESSURE_DISPOSITIONS:
             results.append(CheckResult(f"schema_pressure:row:{row_id}:disposition", False, "invalid disposition", relative_path.as_posix()))
