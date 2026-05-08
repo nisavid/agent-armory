@@ -1,6 +1,7 @@
 # Validation Plan: Vanilla Harness Capability Profiles
 
-Status: specified
+Status: Equipment Blueprint
+Promotion state: specified
 
 ## Prerequisite implementation slice
 

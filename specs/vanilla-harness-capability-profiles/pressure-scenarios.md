@@ -1,6 +1,7 @@
 # Pressure Scenarios: Vanilla Harness Capability Profiles
 
-Status: specified
+Status: Equipment Blueprint
+Promotion state: specified
 
 ## Aggregate migration without split truth
 

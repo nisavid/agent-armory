@@ -5,10 +5,11 @@ Promotion state: implemented for bootstrap MVP; full delivery remains open
 
 ## Scope
 
-This classification covers the bootstrap GitHub Issues adapter and the Forge
-Equipment Design Bundle for issue #11. It does not certify the future tracker-neutral core,
-onboarding flow, Issue Ops config profile, Agent Equipment Config integration,
-hooks, skills, Agent Profiles, plugins, or GitHub Projects extension.
+This classification covers the bootstrap GitHub Issues adapter and the Issue
+Tracker Ops Equipment Design Bundle for issue #11. It does not certify the
+future tracker-neutral core, onboarding flow, Issue Ops config profile, Agent
+Equipment Config integration, hooks, skills, Agent Profiles, plugins, or GitHub
+Projects extension.
 
 ## Operation classes
 

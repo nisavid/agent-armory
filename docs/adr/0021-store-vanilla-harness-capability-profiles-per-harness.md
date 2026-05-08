@@ -1,5 +1,7 @@
 # Store Vanilla Harness Capability Profiles Per Harness
 
+Status: Accepted
+
 Vanilla Harness Capability Profiles live as one structured file per supported
 Agent Harness, with the Harness Capability Catalog as the catalog front door
 and summary surface. Per-harness files keep refresh diffs reviewable, allow

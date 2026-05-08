@@ -3,6 +3,12 @@
 Status: Equipment Blueprint
 Promotion state: specified
 
+This spec is retained as the deferred recurring-refresh blueprint. The active
+pre-Config work is the
+[Vanilla Harness Capability Profiles](vanilla-harness-capability-profiles/)
+Equipment Design Bundle; recurring refresh integration remains deferred until
+Agent Equipment Config and Periodic Actions exist.
+
 This spec describes desired behavior for future Agent Equipment. It does not implement Agent Equipment, create a live scheduler, or assert that current harness facts are already refreshed.
 
 ## Purpose

@@ -1,6 +1,7 @@
 # Closeout Evidence Plan: Vanilla Harness Capability Profiles
 
-Status: specified
+Status: Equipment Blueprint
+Promotion state: specified
 
 ## Durable evidence
 

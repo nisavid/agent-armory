@@ -1,6 +1,7 @@
 # Security and Control Classification: Vanilla Harness Capability Profiles
 
-Status: specified
+Status: Equipment Blueprint
+Promotion state: specified
 
 ## Scope
 
@@ -18,7 +19,8 @@ output.
 - Risk: malformed migration, profile overwrite, stale authored truth, or
   inconsistent summary generation.
 - Controls: tests first, dry-run output, explicit apply for mutations, stable
-  JSON output, `git diff --check`, and seed-validator integration.
+  JSON output, `git diff --check`, and integration with the active repository
+  integrity validation command.
 
 ### Network scouting
 
@@ -47,7 +49,7 @@ output.
   links, or generated-summary drift.
 - Controls: staged `scout`, `analyze`, `plan`, `apply`, and `audit`; no
   mutation during scout or analyze; explicit apply; audit summary; tests and
-  seed validation.
+  active repository integrity validation.
 
 ### Live-study effects
 
