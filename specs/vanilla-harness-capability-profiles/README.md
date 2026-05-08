@@ -35,8 +35,9 @@ The projected issues are native sub-issues of #4 in story order. Tracker
 dependencies make #43 blocked by #42, #44 blocked by #43, #45 blocked by #43
 and #44, #46 blocked by #42, #48 blocked by #45 and #46, and #49 blocked by the
 completed implementation stories. #23 and #36 are blocked by #4 for the
-pre-Config manual profile surface. Periodic refresh remains deferred until #23
-and #3.
+pre-Config manual profile surface. Periodic refresh remains deferred until
+[#23 Agent Equipment Config](https://github.com/nisavid/agent-armory/issues/23)
+and [#3 Periodic Actions](https://github.com/nisavid/agent-armory/issues/3).
 
 ## Purpose
 
