@@ -120,6 +120,7 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            timeout=30,
         )
 
     def test_migrate_dry_run_reports_six_profile_writes_without_mutating_files(self):
@@ -176,6 +177,23 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             payload = json.loads(completed.stdout)
             self.assertEqual(payload["result"], "failed")
             self.assertIn("aggregate catalog missing checked_at", payload["error"])
+            self.assertFalse((root / "docs/harness-capabilities/vanilla").exists())
+
+    def test_migrate_json_validates_generated_profiles_before_writing(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_migration_root(root)
+            aggregate = root / "docs/harness-capabilities.toml"
+            aggregate.write_text(aggregate.read_text(encoding="utf-8").replace('checked_version = "0.128.0 stable"\n', "", 1), encoding="utf-8")
+
+            completed = self.run_manager(root, "migrate", "--apply", "--json")
+
+            self.assertNotEqual(completed.returncode, 0)
+            self.assertEqual(completed.stderr, "")
+            payload = json.loads(completed.stdout)
+            self.assertEqual(payload["result"], "failed")
+            self.assertIn("generated profile invalid for codex", payload["error"])
+            self.assertIn("profile:codex:checked_version", payload["error"])
             self.assertFalse((root / "docs/harness-capabilities/vanilla").exists())
 
     def test_migrate_apply_writes_stable_profiles_and_retires_aggregate_catalog(self):
@@ -272,6 +290,7 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             text = text.replace('applicability_scope = "vanilla harness after default installation and onboarding"\n', "", 1)
             text = text.replace('capability_origin = "migrated aggregate harness catalog"\n', "", 1)
             text = text.replace('migration_status = "migrated_from_aggregate"\n', "", 1)
+            text = text.replace('evidence_basis = "aggregate_catalog_migration"\n', "", 1)
             text = text.replace('family = "lifecycle_reload_update"', 'family = "invalid_family"', 1)
             codex_profile.write_text(text, encoding="utf-8")
 
@@ -292,6 +311,7 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             self.assertIn("profile:codex:claim:0:applicability_scope", failures)
             self.assertIn("profile:codex:claim:0:capability_origin", failures)
             self.assertIn("profile:codex:claim:0:migration_status", failures)
+            self.assertIn("profile:codex:claim:0:evidence_basis", failures)
             self.assertIn("profile:codex:claim:14:family", failures)
             self.assertIn("profile:codex:surface_family_coverage", failures)
 

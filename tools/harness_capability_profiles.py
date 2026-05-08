@@ -18,6 +18,12 @@ HARNESS_CAPABILITIES_SUMMARY_PATH = Path("docs/harness-capabilities.md")
 VANILLA_PROFILE_DIR = Path("docs/harness-capabilities/vanilla")
 PROFILE_SCHEMA_VERSION = "vanilla-harness-capability-profile.v1alpha1"
 PROFILE_KIND = "vanilla_harness_capability_profile"
+PROFILE_SCOPE_SURFACE = "vanilla_harness_capability_surface"
+PROFILE_SCOPE_APPLICABILITY = "Default settings and default equipment immediately after installation and onboarding."
+CLAIM_APPLICABILITY_SCOPE = "vanilla harness after default installation and onboarding"
+CLAIM_CAPABILITY_ORIGIN = "migrated aggregate harness catalog"
+CLAIM_MIGRATION_STATUS = "migrated_from_aggregate"
+CLAIM_EVIDENCE_BASIS = "aggregate_catalog_migration"
 
 REQUIRED_HARNESSES = [
     "codex",
@@ -242,10 +248,10 @@ def profile_from_aggregate(harness_id: str, checked_at: str, entry: dict[str, An
                 "status": status,
                 "statement": statement,
                 "evidence_ids": matched_evidence,
-                "applicability_scope": "vanilla harness after default installation and onboarding",
-                "capability_origin": "migrated aggregate harness catalog",
-                "migration_status": "migrated_from_aggregate",
-                "evidence_basis": "aggregate_catalog_migration",
+                "applicability_scope": CLAIM_APPLICABILITY_SCOPE,
+                "capability_origin": CLAIM_CAPABILITY_ORIGIN,
+                "migration_status": CLAIM_MIGRATION_STATUS,
+                "evidence_basis": CLAIM_EVIDENCE_BASIS,
                 "limitations": limitations if status == "supported" else "No migrated aggregate row proves this surface family.",
                 "uncertainty": uncertainty,
             }
@@ -267,8 +273,8 @@ def profile_from_aggregate(harness_id: str, checked_at: str, entry: dict[str, An
         "components": components,
         "local_observations": list(entry.get("local_observations", [])),
         "scope": {
-            "surface": "vanilla_harness_capability_surface",
-            "applicability": "Default settings and default equipment immediately after installation and onboarding.",
+            "surface": PROFILE_SCOPE_SURFACE,
+            "applicability": PROFILE_SCOPE_APPLICABILITY,
         },
         "evidence": evidence_records,
         "claim": claims,
@@ -365,6 +371,10 @@ def migration_writes(root: Path) -> list[dict[str, str]]:
             raise ManagerError(f"aggregate catalog missing required harness: {harness_id}")
         profile = profile_from_aggregate(harness_id, checked_at, entry)
         path = VANILLA_PROFILE_DIR / f"{harness_id}.toml"
+        failures = [result for result in validate_profile_data(profile, harness_id, path) if not result.ok]
+        if failures:
+            failure = failures[0]
+            raise ManagerError(f"generated profile invalid for {harness_id}: {failure.name}: {failure.detail}")
         writes.append({"path": path.as_posix(), "content": render_profile(profile)})
     return writes
 
@@ -408,16 +418,8 @@ def string_list(value: Any) -> bool:
     return isinstance(value, list) and all(isinstance(item, str) for item in value)
 
 
-def validate_profile(root: Path, harness_id: str) -> list[CheckResult]:
-    relative_path = profile_path(harness_id)
+def validate_profile_data(profile: dict[str, Any], harness_id: str, relative_path: Path) -> list[CheckResult]:
     results: list[CheckResult] = []
-    ok, detail, path = path_status(root, relative_path, expected_kind="file")
-    if not ok:
-        return [CheckResult(f"profile:{harness_id}:path", False, detail if detail != "not a file" else "missing profile", relative_path.as_posix())]
-    try:
-        profile = load_toml(path)
-    except tomllib.TOMLDecodeError as error:
-        return [CheckResult(f"profile:{harness_id}:toml", False, f"TOML invalid: {error.msg}", relative_path.as_posix())]
 
     required_scalars = {
         "schema_version": PROFILE_SCHEMA_VERSION,
@@ -452,10 +454,10 @@ def validate_profile(root: Path, harness_id: str) -> list[CheckResult]:
         )
 
     scope = profile.get("scope")
-    if not isinstance(scope, dict) or scope.get("surface") != "vanilla_harness_capability_surface":
+    if not isinstance(scope, dict) or scope.get("surface") != PROFILE_SCOPE_SURFACE:
         results.append(CheckResult(f"profile:{harness_id}:scope", False, "scope must describe vanilla harness surface", relative_path.as_posix()))
-    elif not non_empty_string(scope.get("applicability")):
-        results.append(CheckResult(f"profile:{harness_id}:scope:applicability", False, "missing scope applicability", relative_path.as_posix()))
+    elif scope.get("applicability") != PROFILE_SCOPE_APPLICABILITY:
+        results.append(CheckResult(f"profile:{harness_id}:scope:applicability", False, "scope applicability must match vanilla profile default", relative_path.as_posix()))
 
     evidence = profile.get("evidence")
     evidence_ids: set[str] = set()
@@ -538,9 +540,15 @@ def validate_profile(root: Path, harness_id: str) -> list[CheckResult]:
                 )
             if status == "supported" and not refs:
                 results.append(CheckResult(f"profile:{harness_id}:claim:{index}:evidence_refs", False, "supported claim needs evidence", relative_path.as_posix()))
-            for field in ["applicability_scope", "capability_origin", "migration_status", "evidence_basis"]:
-                if not non_empty_string(claim.get(field)):
-                    results.append(CheckResult(f"profile:{harness_id}:claim:{index}:{field}", False, f"missing {field}", relative_path.as_posix()))
+            expected_claim_values = {
+                "applicability_scope": CLAIM_APPLICABILITY_SCOPE,
+                "capability_origin": CLAIM_CAPABILITY_ORIGIN,
+                "migration_status": CLAIM_MIGRATION_STATUS,
+                "evidence_basis": CLAIM_EVIDENCE_BASIS,
+            }
+            for field, expected in expected_claim_values.items():
+                if claim.get(field) != expected:
+                    results.append(CheckResult(f"profile:{harness_id}:claim:{index}:{field}", False, f"must be {expected}", relative_path.as_posix()))
             if not non_empty_string(claim.get("limitations")) and not non_empty_string(claim.get("uncertainty")):
                 results.append(
                     CheckResult(
@@ -558,6 +566,18 @@ def validate_profile(root: Path, harness_id: str) -> list[CheckResult]:
     if not any(not result.ok for result in results):
         results.append(CheckResult(f"profile:{harness_id}", True, "valid", relative_path.as_posix()))
     return results
+
+
+def validate_profile(root: Path, harness_id: str) -> list[CheckResult]:
+    relative_path = profile_path(harness_id)
+    ok, detail, path = path_status(root, relative_path, expected_kind="file")
+    if not ok:
+        return [CheckResult(f"profile:{harness_id}:path", False, detail if detail != "not a file" else "missing profile", relative_path.as_posix())]
+    try:
+        profile = load_toml(path)
+    except tomllib.TOMLDecodeError as error:
+        return [CheckResult(f"profile:{harness_id}:toml", False, f"TOML invalid: {error.msg}", relative_path.as_posix())]
+    return validate_profile_data(profile, harness_id, relative_path)
 
 
 def markdown_table_rows(markdown: str, heading: str) -> list[dict[str, str]]:
