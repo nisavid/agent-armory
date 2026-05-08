@@ -804,7 +804,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "migrate":
         try:
             payload = migrate(root, apply=args.apply)
-        except ManagerError as error:
+        except Exception as error:
             payload = {"schema": MIGRATION_RESULT_SCHEMA, "result": "failed", "dry_run": not args.apply, "error": str(error)}
             if args.json:
                 print(json.dumps(payload, indent=2, sort_keys=True))
@@ -819,7 +819,17 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"{action} {write['path']}")
         return 0
     if args.command == "validate":
-        results = validate(root)
+        try:
+            results = validate(root)
+        except Exception as error:
+            results = [
+                CheckResult(
+                    "validate:exception",
+                    False,
+                    f"validation crashed: {error.__class__.__name__}: {error}",
+                    ".",
+                )
+            ]
         payload = validation_payload(results)
         if args.json:
             print(json.dumps(payload, indent=2, sort_keys=True))
@@ -834,7 +844,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "summarize":
         try:
             payload = summarize(root, write=args.write)
-        except ManagerError as error:
+        except Exception as error:
             payload = {"schema": SUMMARY_RESULT_SCHEMA, "result": "failed", "dry_run": not args.write, "error": str(error)}
             if args.json:
                 print(json.dumps(payload, indent=2, sort_keys=True))

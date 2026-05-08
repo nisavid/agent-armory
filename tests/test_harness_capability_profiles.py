@@ -295,6 +295,38 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             self.assertIn("aggregate_catalog:retired", failures)
             self.assertIn("summary:codex:checked_version", failures)
 
+    def test_validate_json_reports_unexpected_read_errors_without_traceback(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_migration_root(root)
+            self.migrate_and_summarize(root)
+            (root / "docs/harness-capabilities.md").write_bytes(b"\xff")
+
+            completed = self.run_manager(root, "validate", "--json")
+
+            self.assertNotEqual(completed.returncode, 0)
+            self.assertEqual(completed.stderr, "")
+            payload = json.loads(completed.stdout)
+            self.assertEqual(payload["result"], "failed")
+            failures = {result["name"]: result for result in payload["results"] if not result["ok"]}
+            self.assertIn("validate:exception", failures)
+            self.assertIn("UnicodeDecodeError", failures["validate:exception"]["detail"])
+
+    def test_summarize_json_reports_invalid_profile_toml_without_traceback(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_migration_root(root)
+            self.migrate_and_summarize(root)
+            (root / "docs/harness-capabilities/vanilla/codex.toml").write_text("not toml =", encoding="utf-8")
+
+            completed = self.run_manager(root, "summarize", "--json")
+
+            self.assertNotEqual(completed.returncode, 0)
+            self.assertEqual(completed.stderr, "")
+            payload = json.loads(completed.stdout)
+            self.assertEqual(payload["result"], "failed")
+            self.assertIn("Expected", payload["error"])
+
     def test_migrate_apply_rejects_symlinked_profile_directory(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
