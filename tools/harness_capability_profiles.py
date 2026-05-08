@@ -74,6 +74,7 @@ MIGRATION_RESULT_SCHEMA = "harness_capability_profiles.migrate_result.v1"
 SUMMARY_RESULT_SCHEMA = "harness_capability_profiles.summary_result.v1"
 VALIDATION_RESULT_SCHEMA = "harness_capability_profiles.validation_result.v1"
 VALIDATION_NAME = "Vanilla Harness Capability Profile Manager Core"
+SUMMARY_SOURCE_LIMIT = 6
 CLAIM_STATUSES = {"supported", "unsupported", "unknown", "not-applicable"}
 SOURCE_KINDS = {"first_party", "third_party_fallback"}
 EVIDENCE_CATEGORIES = {
@@ -210,7 +211,7 @@ def family_evidence_ids(
     return []
 
 
-def family_status(family: str, matched_evidence_ids: list[str]) -> str:
+def family_status(matched_evidence_ids: list[str]) -> str:
     if matched_evidence_ids:
         return "supported"
     return "unknown"
@@ -236,7 +237,7 @@ def profile_from_aggregate(harness_id: str, checked_at: str, entry: dict[str, An
     claims: list[dict[str, Any]] = []
     for family in SURFACE_FAMILIES:
         matched_evidence = family_evidence_ids(family, sources, source_ids)
-        status = family_status(family, matched_evidence)
+        status = family_status(matched_evidence)
         if status == "supported":
             statement = f"Source-backed evidence records {family.replace('_', ' ')} support."
         else:
@@ -685,9 +686,10 @@ def validation_payload(results: list[CheckResult]) -> dict[str, Any]:
     }
 
 
-def source_lines(profile: dict[str, Any]) -> list[str]:
+def source_lines(profile: dict[str, Any], max_sources: int = SUMMARY_SOURCE_LIMIT) -> list[str]:
     lines = []
-    for evidence in profile.get("evidence", [])[:6]:
+    # Keep the human catalog concise while leaving full evidence in the TOML profiles.
+    for evidence in profile.get("evidence", [])[:max_sources]:
         scope = evidence.get("claim_scope", "source")
         url = evidence.get("url", "")
         lines.append(f"- [{scope}]({url})")
@@ -750,7 +752,7 @@ def render_summary(profiles: list[dict[str, Any]]) -> str:
                 "",
                 "Key sources:",
                 "",
-                *source_lines(profile),
+                *source_lines(profile, max_sources=SUMMARY_SOURCE_LIMIT),
                 "",
             ]
         )
