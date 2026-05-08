@@ -108,7 +108,7 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
 
     def write_research_outputs(self, root: Path) -> None:
         research_dir = root / "specs/vanilla-harness-capability-profiles/research-notes"
-        research_dir.mkdir(parents=True)
+        research_dir.mkdir(parents=True, exist_ok=True)
         surface_lines = "\n".join(
             f"- `{family}`: source-backed fact, local observation, implementation inference, hypothesis, unsupported claim, unknown, or not-applicable."
             for family in [

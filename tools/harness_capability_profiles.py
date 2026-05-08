@@ -658,7 +658,7 @@ def validate_required_markdown_sections(markdown: str, required_sections: list[s
     results: list[CheckResult] = []
     for section in required_sections:
         if section not in markdown:
-            results.append(CheckResult(f"{prefix}:section:{section.removeprefix('## ').casefold().replace(' ', '_')}", False, "missing section", path.as_posix()))
+            results.append(CheckResult(f"{prefix}:section:{section.removeprefix('## ').casefold().replace(' ', '_')}", False, f"missing section: {section}", path.as_posix()))
     return results
 
 
@@ -666,7 +666,8 @@ def validate_research_note(root: Path, harness_id: str) -> list[CheckResult]:
     relative_path = RESEARCH_NOTE_DIR / f"{harness_id}.md"
     ok, detail, path = path_status(root, relative_path, expected_kind="file")
     if not ok:
-        return [CheckResult(f"research_note:{harness_id}:path", False, detail if detail != "not a file" else "missing research note", relative_path.as_posix())]
+        missing_detail = "missing research note" if detail in {"missing", "not a file"} else detail
+        return [CheckResult(f"research_note:{harness_id}:path", False, missing_detail, relative_path.as_posix())]
     markdown = path.read_text(encoding="utf-8")
     results = validate_required_markdown_sections(markdown, RESEARCH_NOTE_SECTIONS, f"research_note:{harness_id}", relative_path)
     if "Checked at:" not in markdown:
@@ -714,7 +715,8 @@ def validate_schema_pressure_report(root: Path) -> list[CheckResult]:
     relative_path = SCHEMA_PRESSURE_REPORT_PATH
     ok, detail, path = path_status(root, relative_path, expected_kind="file")
     if not ok:
-        return [CheckResult("schema_pressure:path", False, detail if detail != "not a file" else "missing schema pressure report", relative_path.as_posix())]
+        missing_detail = "missing schema pressure report" if detail in {"missing", "not a file"} else detail
+        return [CheckResult("schema_pressure:path", False, missing_detail, relative_path.as_posix())]
     markdown = path.read_text(encoding="utf-8")
     results = validate_required_markdown_sections(markdown, SCHEMA_PRESSURE_SECTIONS, "schema_pressure", relative_path)
     rows = markdown_table_rows(markdown, "## Schema Pressure Findings")
