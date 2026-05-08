@@ -70,6 +70,20 @@ Use source-backed research and review before enriching profile claims.
 The deterministic checks validate structure and required evidence references;
 they do not certify the correctness of inference-heavy conclusions.
 
+The implemented Manager Core validation now requires:
+
+- `specs/vanilla-harness-capability-profiles/research-notes/<harness-id>.md`
+  for every supported harness;
+- `specs/vanilla-harness-capability-profiles/schema-pressure-report.md`;
+- checked-at, version-basis, source set, surface findings, evidence
+  classification, compatibility, memory-like, schema-pressure, analysis-angle,
+  local-observation, uncertainty, and scratch-disposition sections in every
+  research note;
+- every standard surface family to appear explicitly in every research note;
+- schema-pressure finding rows with affected harnesses, motivating evidence,
+  example claim shape, proposed validation rule, migration impact, and one of
+  `accepted`, `deferred`, `rejected`, or `needs more evidence`.
+
 ## Profile enrichment and six-profile refresh slice
 
 Use accepted schema pressure findings and current evidence to refresh

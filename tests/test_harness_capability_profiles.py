@@ -106,11 +106,137 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
         (docs / "harness-capabilities.toml").write_text(AGGREGATE_FIXTURE.strip() + "\n", encoding="utf-8")
         shutil.copyfile(REPO_ROOT / "docs/harness-capabilities.md", docs / "harness-capabilities.md")
 
+    def write_research_outputs(self, root: Path) -> None:
+        research_dir = root / "specs/vanilla-harness-capability-profiles/research-notes"
+        research_dir.mkdir(parents=True)
+        surface_lines = "\n".join(
+            f"- `{family}`: source-backed fact, local observation, implementation inference, hypothesis, unsupported claim, unknown, or not-applicable."
+            for family in [
+                "instructions_context",
+                "skills",
+                "mcp_tools",
+                "hooks_events",
+                "plugins_bundles",
+                "agent_profiles_subagents",
+                "memory_context_retrieval",
+                "config_settings",
+                "permissions_approvals_sandboxing",
+                "scheduling_automation",
+                "commands_shortcuts",
+                "providers_connectors",
+                "runtime_modes",
+                "cross_harness_import_compatibility",
+                "lifecycle_reload_update",
+            ]
+        )
+        for harness_id in ["claude_code", "codex", "cursor", "hermes_agent", "openclaw", "opencode"]:
+            (research_dir / f"{harness_id}.md").write_text(
+                f"""# Research Note: {harness_id}
+
+Status: draft
+
+## Version Basis
+
+Checked at: 2026-05-08T12:00:00-04:00.
+Version basis: fixture.
+
+## Source Set
+
+- [Fixture source](https://example.com/{harness_id})
+
+## Surface Findings
+
+{surface_lines}
+
+## Evidence Classification
+
+This note distinguishes source-backed facts, local observations, implementation inferences, hypotheses, unsupported claims, unknowns, and not-applicable surfaces.
+
+## Cross-Harness Import And Compatibility
+
+Compatibility is reviewed separately from native support.
+
+## Memory-Like Surfaces
+
+Memory-like behavior is reviewed without assuming a stable shared memory API.
+
+## Schema Pressure
+
+Fixture schema pressure.
+
+## Analysis Angle Notes
+
+Capability Analysis Angles and Capability State Graph alternatives were considered.
+
+## Local Observations
+
+No local observation.
+
+## Major Uncertainty
+
+Fixture uncertainty.
+
+## Scratch Artifact Disposition
+
+Scratch artifacts are summarized, not committed as raw project truth.
+""",
+                encoding="utf-8",
+            )
+        (root / "specs/vanilla-harness-capability-profiles/schema-pressure-report.md").write_text(
+            """# Schema Pressure Report: Harness Surfaces
+
+Status: draft
+
+## Research Scope
+
+Fixture scope.
+
+## Current Schema Comparison
+
+Fixture comparison.
+
+## Schema Pressure Findings
+
+| ID | Disposition | Affected harnesses | Motivating evidence | Example claim shape | Proposed validation rule | Migration impact |
+| --- | --- | --- | --- | --- | --- | --- |
+| SP-001 | accepted | codex | [Fixture source](https://example.com/codex) | field = value | Require fixture field. | Migration must preserve fixture. |
+| SP-002 | deferred | claude_code | [Fixture source](https://example.com/claude_code) | extension = value | Defer until profile enrichment. | No current migration. |
+| SP-003 | rejected | cursor | [Fixture source](https://example.com/cursor) | consumer_logic = value | Reject downstream consumer logic. | No schema migration. |
+| SP-004 | needs more evidence | opencode | [Fixture source](https://example.com/opencode) | unknown = value | Keep unknown explicit. | No current migration. |
+
+## Cross-Harness Import And Compatibility
+
+Fixture cross-harness review.
+
+## Memory-Like Surfaces
+
+Fixture memory-like review.
+
+## Analysis Angles And State Graphs
+
+Fixture analysis angle review.
+
+## Migration Implications
+
+Fixture migration implications.
+
+## Ralph Review Disposition
+
+Latest cycle: clean.
+
+## Scratch Artifact Disposition
+
+Scratch artifacts are summarized, not committed as raw project truth.
+""",
+            encoding="utf-8",
+        )
+
     def migrate_and_summarize(self, root: Path) -> None:
         migrate = self.run_manager(root, "migrate", "--apply", "--json")
         self.assertEqual(migrate.returncode, 0, migrate.stderr)
         summarize = self.run_manager(root, "summarize", "--write", "--json")
         self.assertEqual(summarize.returncode, 0, summarize.stderr)
+        self.write_research_outputs(root)
 
     def run_manager(self, root: Path, *args: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
@@ -283,6 +409,41 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             self.assertEqual(payload["validation"], "Vanilla Harness Capability Profile Manager Core")
             self.assertEqual(payload["result"], "passed")
             self.assertTrue(all(result["ok"] for result in payload["results"]))
+
+    def test_validate_json_requires_research_notes_and_schema_pressure_report(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_migration_root(root)
+            migrate = self.run_manager(root, "migrate", "--apply", "--json")
+            self.assertEqual(migrate.returncode, 0, migrate.stderr)
+            summarize = self.run_manager(root, "summarize", "--write", "--json")
+            self.assertEqual(summarize.returncode, 0, summarize.stderr)
+
+            completed = self.run_manager(root, "validate", "--json")
+
+            self.assertNotEqual(completed.returncode, 0)
+            payload = json.loads(completed.stdout)
+            failures = {result["name"]: result for result in payload["results"] if not result["ok"]}
+            self.assertIn("research_note:codex:path", failures)
+            self.assertIn("schema_pressure:path", failures)
+
+    def test_validate_json_rejects_incomplete_research_and_schema_pressure_rows(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_migration_root(root)
+            self.migrate_and_summarize(root)
+            codex_note = root / "specs/vanilla-harness-capability-profiles/research-notes/codex.md"
+            codex_note.write_text(codex_note.read_text(encoding="utf-8").replace("`skills`", "skills", 1), encoding="utf-8")
+            report = root / "specs/vanilla-harness-capability-profiles/schema-pressure-report.md"
+            report.write_text(report.read_text(encoding="utf-8").replace("accepted", "maybe", 1), encoding="utf-8")
+
+            completed = self.run_manager(root, "validate", "--json")
+
+            self.assertNotEqual(completed.returncode, 0)
+            payload = json.loads(completed.stdout)
+            failures = {result["name"]: result for result in payload["results"] if not result["ok"]}
+            self.assertIn("research_note:codex:surface_family_coverage", failures)
+            self.assertIn("schema_pressure:row:SP-001:disposition", failures)
 
     def test_summarize_write_updates_human_catalog_to_per_harness_profiles(self):
         with tempfile.TemporaryDirectory() as tmpdir:

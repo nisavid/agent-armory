@@ -69,3 +69,17 @@ Every profile covers the standard surface-family rubric:
 Migrated claims use `migration_status = "migrated_from_aggregate"` and
 `evidence_basis = "aggregate_catalog_migration"` so later research and schema
 pressure work can triage them without changing stable claim IDs.
+
+## Research outputs
+
+Issue #44 adds adjacent research artifacts under
+`specs/vanilla-harness-capability-profiles/`:
+
+- one research note per supported harness under `research-notes/`;
+- `schema-pressure-report.md`.
+
+These artifacts are validated by the Manager Core for structure, source
+traceability, required surface-family coverage, and schema-pressure finding
+shape. They are not canonical profile facts and do not extend this v1alpha1
+profile schema until a later profile enrichment story accepts and migrates
+specific fields.
