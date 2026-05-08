@@ -30,10 +30,11 @@ If the capability was induced by a Reflection Finding, cite the issue,
 comment, or capture that contains the finding and preserve the routing rationale
 as source material, not as unquestioned design.
 
-## Forge entry bundle
+## Equipment Design Bundle
 
-When one real Equipment Candidate requires committed Forge entry artifacts, keep
-those records together in a Forge Entry Bundle under a neutral project path.
+When one real Equipment Candidate requires committed design and
+validation-planning artifacts, keep those records together in an Equipment
+Design Bundle under a neutral project path.
 Use `specs/<equipment-slug>/` for bundles that include the capability card,
 interface decision, security/control classification, pressure scenarios,
 validation plan, closeout evidence plan, and related design records.

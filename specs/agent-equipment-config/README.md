@@ -3,7 +3,7 @@
 Status: Equipment Blueprint
 Promotion state: planned
 
-This Forge Entry Bundle describes desired behavior and includes the first
+This Equipment Design Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for effective-config, config-diff,
 diagnostics, plain handoff promotion, authority checks, projection
 classification, onboarding-plan output, explicit migration apply, and the
@@ -19,8 +19,8 @@ Agent Equipment Config is the shared configuration primitive for Agent
 Equipment. It lets equipment declare typed schemas and namespaced schema
 fragments, compose layered config, explain effective-config results, produce
 config-diff output, and project enforceable policy without making Agent Ops,
-Issue Tracker Ops, Periodic Actions, Harness Capability Refresh, or future
-equipment own the generic config system.
+Issue Tracker Ops, Periodic Actions, Harness Capability Profiles, recurring
+Harness Capability Refresh, or future equipment own the generic config system.
 
 Agent Equipment Config is progressive enhancement. Equipment that accepts
 configuration must still support session-scoped behavior and a plain

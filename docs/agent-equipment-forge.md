@@ -13,9 +13,11 @@ The Forge answers four questions for each equipment idea:
 - What evidence supports the harness and security claims?
 - What validation is required before the equipment can be promoted?
 
-The Forge Seed supplies the first canonical docs, templates, examples, specs,
+The Forge Seed supplied the first canonical docs, templates, examples, specs,
 and validation checks. It does not implement downstream equipment such as Agent
-Equipment Config, Agent Ops, Periodic Actions, or Harness Capability Refresh.
+Equipment Config, Agent Ops, Periodic Actions, or recurring Harness Capability
+Refresh. Current Harness Capability Profile work is tracked as its own
+Equipment Design Bundle.
 
 ## Vision alignment
 
@@ -43,7 +45,7 @@ Use lower-overhead, more reliable surfaces for everything else:
 
 ## Component model
 
-A complete equipment design starts with a capability card, then projects requirements into one or more Harness Components and supporting artifacts. When a real Equipment Candidate requires committed entry artifacts before implementation, keep those records in one Forge Entry Bundle under a neutral project path.
+A complete equipment design starts with a capability card, then projects requirements into one or more Harness Components and supporting artifacts. When a real Equipment Candidate requires committed design artifacts before implementation, keep those records in one Equipment Design Bundle under a neutral project path.
 
 Primary component types:
 

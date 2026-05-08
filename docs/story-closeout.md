@@ -38,7 +38,9 @@ Rerun the gate that owns any surface changed by a review fix.
 
 - Security changes rerun or update Change Set Security Closeout when the change touches trust boundaries, executable code, hooks, MCP/tool definitions, permissions, secrets handling, network/file/process side effects, package metadata, or security policy.
 - Documentation changes rerun or update Change Set Documentation Closeout when they change agent-facing policy, human-facing orientation, Forge Canon, examples, templates, specs, closeout claims, or issue/PR projection text that is derived from repo docs.
-- Validation changes rerun deterministic tests and Seed Validation. Treat validator logic as security-relevant when it gates merge-readiness evidence or suppresses risks.
+- Validation changes rerun deterministic tests and the active repository
+  integrity validation for the affected scope. Treat validator logic as
+  security-relevant when it gates merge-readiness evidence or suppresses risks.
 - PRD, Blueprint, or plan changes rerun source-disposition/provenance checks, acceptance-criteria checks, and Cross-Boundary Coherence review for the affected scope.
 - Issue or PR projection draft changes rerun the checks that prove the draft matches the current repo source of truth before external publication.
 - Final validation or publication-readiness changes rerun projection for any issue, PR, release, or handoff surface that carries the changed evidence.

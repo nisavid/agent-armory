@@ -19,7 +19,7 @@ layered config keep tracker mutations out of vague model preference.
 
 ## Decision
 
-Use a thin bootstrap script for GitHub Issues operations, a Forge Entry Bundle
+Use a thin bootstrap script for GitHub Issues operations, an Equipment Design Bundle
 for design and validation planning, Agent Equipment Config for durable layered
 policy, future skills for review and orchestration judgment, and future
 MCP/tools for the tracker-neutral contract once the MVP proves the operation
@@ -39,7 +39,7 @@ shape.
   layered policy; Issue Ops owns a plain Issue Ops config shape for
   session-scoped operation, handoff, and later ingestion; bootstrap uses
   provisional CLI policy with dry-run default and `--execute` for mutation.
-- Local docs: this Forge Entry Bundle records current design, security,
+- Local docs: this Equipment Design Bundle records current design, security,
   validation, and closeout expectations.
 
 ## Rationale

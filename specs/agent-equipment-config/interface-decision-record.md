@@ -3,7 +3,7 @@
 Status: Equipment Blueprint
 Promotion state: planned
 
-This Forge Entry Bundle describes desired behavior and includes the first
+This Equipment Design Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for effective-config, config-diff,
 diagnostics, plain handoff promotion, authority checks, and projection
 classification, plus onboarding-plan and migration-apply output. It does not implement Agent Equipment beyond this runtime slice, publish assets, resolve
@@ -25,7 +25,7 @@ agent preference.
 
 ## Decision
 
-Use a Forge Entry Bundle, validator gate, and portable standard-library Python
+Use an Equipment Design Bundle, validator gate, and portable standard-library Python
 runtime slice for v0.
 
 The v0 contract defines typed schemas, namespaced schema fragments, Layer
@@ -44,7 +44,7 @@ output.
 
 ## Chosen surface
 
-- Local docs: this Forge Entry Bundle owns the current v0 behavior and runtime
+- Local docs: this Equipment Design Bundle owns the current v0 behavior and runtime
   slice boundary.
 - Validator: `tools/validate_forge_seed.py` recognizes the bundle and required
   v0 terms.
@@ -76,7 +76,7 @@ gate aligned with the current source and runtime shape.
   once: rejected because those surfaces have different security and validation
   boundaries.
 - Leave the flat spec as canonical: rejected because the Smith Runbook now uses
-  Forge Entry Bundles for real Equipment Candidates that need capability,
+  Equipment Design Bundles for real Equipment Candidates that need capability,
   interface, security, pressure, validation, and closeout artifacts.
 - Use a generic toy example as the main scenario: rejected because Issue Tracker
   Ops already provides realistic policy pressure without owning Config.
@@ -100,8 +100,8 @@ from advisory fallback.
 - Output examples could look like a final runtime schema. This bundle names the
   implemented portable slice and keeps consumer and harness-specific output
   commitments separate.
-- Harness enforcement claims can drift. Harness projection slices must use the
-  Harness Capability Catalog and current source-backed refresh evidence.
+- Harness enforcement claims can drift. Harness projection slices must use
+  Vanilla Harness Capability Profiles and current source-backed evidence.
 
 ## Maintenance notes
 
