@@ -1,4 +1,5 @@
 import json
+import importlib
 import subprocess
 import tempfile
 import textwrap
@@ -6,9 +7,10 @@ import unittest
 from unittest import mock
 from pathlib import Path
 
-from tools.validate_forge_seed import (
+from tools.validate_armory_integrity import (
     ACCEPTED_SOURCE_REQUIREMENTS,
     CheckResult,
+    CANONICAL_DOC_STATUSES,
     REQUIRED_HARNESSES,
     SOURCE_DISPOSITION_ITEM_FIELDS,
     SOURCE_DISPOSITION_MANIFEST_FIELDS,
@@ -40,6 +42,98 @@ from tools.validate_forge_seed import (
     validate_templates,
     validate_threat_model,
 )
+
+
+class ValidationBoundaryTests(unittest.TestCase):
+    def load_live_validator(self):
+        return importlib.import_module("tools.validate_armory_integrity")
+
+    def test_live_validator_exposes_boundary_inventory(self):
+        validator = self.load_live_validator()
+
+        inventory = {item["check"]: item for item in validator.validation_inventory()}
+
+        self.assertEqual(inventory["required_paths"]["boundary"], "armory_integrity")
+        self.assertEqual(inventory["python_runtime"]["boundary"], "armory_integrity")
+        self.assertEqual(inventory["forge_routes"]["boundary"], "forge_integrity")
+        self.assertEqual(inventory["canonical_docs"]["boundary"], "forge_integrity")
+        self.assertEqual(inventory["threat_model"]["boundary"], "armory_integrity")
+        self.assertEqual(inventory["documentation_closeout"]["boundary"], "armory_integrity")
+        self.assertEqual(inventory["security_closeout"]["boundary"], "armory_integrity")
+        self.assertEqual(inventory["projection_drafts"]["boundary"], "armory_integrity")
+        self.assertEqual(inventory["harness_catalog"]["boundary"], "forge_integrity")
+        self.assertEqual(inventory["templates"]["boundary"], "equipment_candidate_shape")
+        self.assertEqual(inventory["examples"]["boundary"], "equipment_candidate_shape")
+        self.assertEqual(inventory["specs"]["boundary"], "equipment_candidate_shape")
+        self.assertEqual(inventory["markdown_links"]["boundary"], "armory_integrity")
+        self.assertEqual(inventory["source_disposition"]["boundary"], "armory_integrity")
+        self.assertEqual(inventory["source_retired_tree"]["boundary"], "historical_seed_migration")
+        self.assertEqual(inventory["final_source_retired_stamp"]["boundary"], "historical_seed_migration")
+        self.assertEqual(
+            inventory["harness_catalog"]["relationship"],
+            "Forge-scoped live integrity; detailed Vanilla Harness Capability Profile behavior belongs to the Manager Core validator.",
+        )
+
+    def test_live_validator_json_uses_armory_integrity_envelope(self):
+        validator = self.load_live_validator()
+
+        output = json.loads(validator.render_json([CheckResult("demo", True, "ok", "README.md")]))
+
+        self.assertEqual(output["schema"], "armory_integrity.validation_result.v1")
+        self.assertEqual(output["validation"], "Armory Integrity Validation")
+        self.assertEqual(output["results"][0]["name"], "demo")
+
+    def test_live_validator_help_names_integrity_boundaries(self):
+        completed = subprocess.run(
+            ["python3.14", "tools/validate_armory_integrity.py", "--help"],
+            cwd=Path(__file__).resolve().parents[1],
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertIn("Validate Agent Armory Integrity.", completed.stdout)
+        self.assertIn("Forge Integrity Validation", completed.stdout)
+        self.assertNotIn("Forge Seed", completed.stdout)
+
+    def test_live_validator_rejects_seed_compatibility_flags(self):
+        completed = subprocess.run(
+            ["python3.14", "tools/validate_armory_integrity.py", "--source-bearing"],
+            cwd=Path(__file__).resolve().parents[1],
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("unrecognized arguments: --source-bearing", completed.stderr)
+
+    def test_live_surfaces_do_not_reference_retired_validator_command(self):
+        root = Path(__file__).resolve().parents[1]
+        live_surfaces = [
+            "CONTEXT.md",
+            "docs/story-closeout.md",
+            "docs/security/threat-model.md",
+            "specs/agent-equipment-config/interface-decision-record.md",
+            "specs/agent-equipment-config/validation-plan.md",
+            "specs/issue-tracker-ops/capability-card.md",
+            "specs/issue-tracker-ops/validation-plan.md",
+            "specs/vanilla-harness-capability-profiles/README.md",
+            "specs/vanilla-harness-capability-profiles/validation-plan.md",
+            "specs/vanilla-harness-capability-profiles/closeout-evidence-plan.md",
+        ]
+
+        offenders = [
+            relative_path
+            for relative_path in live_surfaces
+            if "validate_forge_seed" in (root / relative_path).read_text(encoding="utf-8")
+            or "test_validate_forge_seed" in (root / relative_path).read_text(encoding="utf-8")
+        ]
+
+        self.assertEqual(offenders, [])
 
 
 class ValidatorPrimitiveTests(unittest.TestCase):
@@ -1344,7 +1438,7 @@ class SourceDispositionTests(unittest.TestCase):
             {
                 "source_id": "SYN001",
                 "source_kind": "synthetic",
-                "original_path": "tools/validate_forge_seed.py",
+                "original_path": "tools/validate_armory_integrity.py",
                 "git_blob_id": "abc123",
                 "sha256": "def456",
                 "normalized_payload_digest": "789abc",
@@ -1396,7 +1490,7 @@ class SourceDispositionTests(unittest.TestCase):
 
                 | source_id | source_kind | original_path | git_blob_id | sha256 | normalized_payload_digest | durable_payload |
                 | --- | --- | --- | --- | --- | --- | --- |
-                | SYN001 | synthetic | tools/validate_forge_seed.py | abc123 | def456 | 789abc | {synthetic_payload} |
+                | SYN001 | synthetic | tools/validate_armory_integrity.py | abc123 | def456 | 789abc | {synthetic_payload} |
 
                 ## Disposition Items
 
@@ -1462,7 +1556,7 @@ class SourceDispositionTests(unittest.TestCase):
             path = root / SOURCE_DISPOSITION_PATH
             path.write_text(
                 path.read_text(encoding="utf-8").replace(
-                    "| SYN001 | synthetic | tools/validate_forge_seed.py | abc123 | def456 | 789abc | accepted requirement constants H001 H002 |",
+                    "| SYN001 | synthetic | tools/validate_armory_integrity.py | abc123 | def456 | 789abc | accepted requirement constants H001 H002 |",
                     "| SYN001 | file | docs/metasmith/source-projection.md |  | def456 | 789abc | retired source file |",
                 ),
                 encoding="utf-8",
@@ -1799,24 +1893,7 @@ class SourceDispositionTests(unittest.TestCase):
             results,
         )
 
-    def test_run_source_bearing_requires_raw_source_inputs(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            root = Path(tmpdir)
-
-            results = run(root, source_mode="source-bearing")
-
-        self.assertIn(
-            CheckResult(
-                "required_path:docs/metasmith/source-projection.md",
-                False,
-                "missing",
-                "docs/metasmith/source-projection.md",
-            ),
-            results,
-        )
-        self.assertTrue(any(result.name.startswith("source_handoff:") for result in results), results)
-
-    def test_run_source_retired_final_skips_raw_source_inputs(self):
+    def test_run_validates_live_source_disposition_without_raw_source_inputs(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             (root / "docs").mkdir()
@@ -1828,7 +1905,7 @@ class SourceDispositionTests(unittest.TestCase):
             )
             self.write_source_disposition(root)
 
-            results = run(root, source_mode="source-retired-final")
+            results = run(root)
 
         self.assertNotIn(
             CheckResult(
@@ -1845,14 +1922,13 @@ class SourceDispositionTests(unittest.TestCase):
         )
         self.assertIn(
             CheckResult(
-                "source_retired_stamp:source_retired",
+                "source_disposition:ledger",
                 True,
-                "true",
+                "present",
                 SOURCE_DISPOSITION_PATH,
             ),
             results,
         )
-
 
 class ForgeRouteTests(unittest.TestCase):
     def test_validate_forge_routes_requires_agent_and_human_paths(self):
@@ -2197,7 +2273,8 @@ class CanonicalDocTests(unittest.TestCase):
         else:
             section_markdown = "\n".join(f"## {section}\n\nContent.\n" for section in (sections or self.canonical_docs[relative_path]))
         required_text = "\n".join(self.canonical_doc_required_text.get(relative_path, []))
-        path.write_text(f"# {path.stem}\n\nStatus: Forge Seed\n\n{section_markdown}\n{required_text}\n", encoding="utf-8")
+        status = CANONICAL_DOC_STATUSES[relative_path]
+        path.write_text(f"# {path.stem}\n\nStatus: {status}\n\n{section_markdown}\n{required_text}\n", encoding="utf-8")
 
     def write_all_canonical_docs(self, root: Path) -> None:
         for relative_path in self.canonical_docs:
@@ -2331,7 +2408,7 @@ class CanonicalDocTests(unittest.TestCase):
             results,
         )
 
-    def test_validate_canonical_docs_requires_framework_seed_status(self):
+    def test_validate_canonical_docs_requires_live_canonical_status(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             self.write_all_canonical_docs(root)
@@ -2346,7 +2423,7 @@ class CanonicalDocTests(unittest.TestCase):
             CheckResult(
                 "canonical_doc:status:docs/agent-equipment-forge.md",
                 False,
-                "missing Status: Forge Seed",
+                "missing Status: Forge Canon",
                 "docs/agent-equipment-forge.md",
             ),
             results,
@@ -2358,7 +2435,7 @@ class CanonicalDocTests(unittest.TestCase):
             self.write_all_canonical_docs(root)
             fence = "`" * 3
             (root / "docs/agent-equipment-forge.md").write_text(
-                f"# Equipment Framework\n\n{fence}\nStatus: Forge Seed\n{fence}\n\n## Purpose\n\nContent.\n",
+                f"# Equipment Framework\n\n{fence}\nStatus: Forge Canon\n{fence}\n\n## Purpose\n\nContent.\n",
                 encoding="utf-8",
             )
 
@@ -2368,7 +2445,7 @@ class CanonicalDocTests(unittest.TestCase):
             CheckResult(
                 "canonical_doc:status:docs/agent-equipment-forge.md",
                 False,
-                "missing Status: Forge Seed",
+                "missing Status: Forge Canon",
                 "docs/agent-equipment-forge.md",
             ),
             results,
@@ -2401,7 +2478,7 @@ class CanonicalDocTests(unittest.TestCase):
                     """
                     # Equipment Framework
 
-                    Status: Forge Seed
+                    Status: Forge Canon
 
                     ## Purpose
 
@@ -2518,7 +2595,7 @@ class CanonicalDocTests(unittest.TestCase):
             CheckResult(
                 "canonical_doc:status:docs/agent-equipment-forge.md",
                 False,
-                "missing Status: Forge Seed",
+                "missing Status: Forge Canon",
                 "docs/agent-equipment-forge.md",
             ),
             results,
@@ -2908,7 +2985,7 @@ class SecurityCloseoutValidationTests(unittest.TestCase):
         sections = "\n\n".join(
             [
                 "## Scan scope\n\nMerge-base-to-working-tree Forge Seed diff, including committed, staged, unstaged, and untracked intended files.",
-                "## Commands\n\n- `python3.14 -m unittest tests/test_validate_forge_seed.py`\n- `python3.14 tools/validate_forge_seed.py`\n- Codex Security phase sequence: threat modeling, finding discovery, validation, attack-path analysis, final report.\n\nValidation and attack-path analysis were not separately run because finding discovery produced no technically plausible candidates.",
+                "## Commands\n\n- `python3.14 -m unittest tests/test_validate_armory_integrity.py`\n- `python3.14 tools/validate_armory_integrity.py`\n- Codex Security phase sequence: threat modeling, finding discovery, validation, attack-path analysis, final report.\n\nValidation and attack-path analysis were not separately run because finding discovery produced no technically plausible candidates.",
                 "## Scan artifact disposition\n\nThe raw bundle is ephemeral scratch evidence, not a tracked project artifact, not portable review evidence, and not a standing source of project truth.\n\nArtifact durability classification: instance-scoped scratch evidence. Durable security evidence is this closeout summary.",
                 "## Report disposition\n\nThe raw report is not committed and should not be cited as reusable project doctrine.",
                 "## Findings disposition\n\nNo reportable findings. Suppressed findings: none.",
@@ -3244,7 +3321,7 @@ class ProjectionDraftValidationTests(unittest.TestCase):
             self.write_projection_drafts(
                 root,
                 self.valid_projection_drafts()
-                + "\n\n- `python3.14 tools/validate_forge_seed.py --final-closeout`: passed.\n",
+                + "\n\n- `python3.14 tools/validate_armory_integrity.py --final-closeout`: passed.\n",
             )
 
             results = validate_projection_drafts(root)
@@ -3386,7 +3463,7 @@ class ProjectionDraftValidationTests(unittest.TestCase):
                 self.valid_projection_drafts()
                 .replace("Cross-Boundary Coherence review: `TO_FILL_AFTER_CLEAN_REVIEW`", "Cross-Boundary Coherence review: Ralph Review Cycle 53.")
                 .replace("Story Quality review: `TO_FILL_AFTER_CLEAN_REVIEW`", "Story Quality review: Ralph Review Cycle 54.")
-                + "\n\n- `python3.14 -m unittest tests/test_validate_forge_seed.py`: 264 tests passed.\n",
+                + "\n\n- `python3.14 -m unittest tests/test_validate_armory_integrity.py`: 264 tests passed.\n",
             )
 
             results = validate_final_closeout(root)

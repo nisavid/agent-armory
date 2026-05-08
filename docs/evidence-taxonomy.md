@@ -1,6 +1,6 @@
 # Evidence Taxonomy
 
-Status: Forge Seed
+Status: Forge Canon
 
 Smiths and Forgewrights label evidence so plausible guidance does not become an unlabeled fact. Use the strongest available category and record uncertainty when evidence is incomplete, inconsistent, or volatile.
 

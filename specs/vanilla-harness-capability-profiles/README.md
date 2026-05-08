@@ -196,7 +196,7 @@ It is TDD-scoped around classifying and renaming the validation surface:
   Integrity Validation;
 - define the relationship between those validation scopes and
   equipment-specific behavioral validation;
-- inventory every current `tools/validate_forge_seed.py` check and supporting
+- inventory every current `tools/validate_armory_integrity.py` check and supporting
   test;
 - classify each check as Armory Integrity, Forge Integrity,
   equipment-candidate shape validation, equipment-specific behavioral

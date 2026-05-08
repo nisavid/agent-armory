@@ -1,6 +1,6 @@
 # Ubiquitous Language
 
-Status: Forge Seed
+Status: Forge Canon
 
 This document is the canonical vocabulary surface for Smiths and Forgewrights. Use `CONTEXT.md` as the project-wide vocabulary register; use this document when applying that language inside the Agent Equipment Forge.
 

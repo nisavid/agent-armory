@@ -4,9 +4,9 @@ Status: completed for issue projection
 
 ## Scope
 
-This review covers the domain boundaries that affect the Vanilla Harness
-Capability Profiles Epic before child issue projection. It checks current
-terminology, live validation boundaries, Seed-era names that still carry live
+This review covers the domain boundaries that affected the Vanilla Harness
+Capability Profiles Epic before child issue projection. It checked
+terminology, live validation boundaries, Seed-era names that still carried live
 responsibilities, and the split between Forge Canon, Forge Core, Forge
 Equipment Core, and Armory Equipment Core.
 
@@ -26,8 +26,8 @@ decisions and blockers that the prerequisite implementation story must apply.
 - `README.md`
 - `AGENTS.md`
 - `specs/vanilla-harness-capability-profiles/`
-- `tools/validate_forge_seed.py`
-- `tests/test_validate_forge_seed.py`
+- At review time: `tools/validate_forge_seed.py`
+- At review time: `tests/test_validate_forge_seed.py`
 
 ## Boundary Decisions
 
@@ -101,10 +101,10 @@ Equipment behavior should use equipment-specific validation.
 
 ### Seed Validation Tool
 
-`tools/validate_forge_seed.py` is the current seed-era implementation of live
-repository checks. The prerequisite validation boundary story must split or
-rename this surface into live validation tooling, classify each check, and
-remove transient compatibility paths by story closeout.
+At review time, `tools/validate_forge_seed.py` was the seed-era implementation
+of live repository checks. The validation boundary story renames this surface
+into live validation tooling, classifies each check, and removes transient
+compatibility paths by story closeout.
 
 ### Seed Surface
 
@@ -132,43 +132,52 @@ surface.
 | `specs/<equipment>/` | Equipment Design Bundles or Equipment Blueprints | Candidate-specific design and validation-planning records. |
 | `docs/harness-capabilities.md` | Forge Canon catalog front door | Human-facing summary of structured Vanilla Harness Capability Profiles. |
 | `docs/harness-capabilities/vanilla/` | Forge Canon structured profile surface | Target location for per-harness Vanilla Harness Capability Profiles. |
-| `tools/validate_forge_seed.py` | Transitional live validation implementation | Must be split or renamed under Armory/Forge Integrity Validation. |
-| `tests/test_validate_forge_seed.py` | Transitional validation test suite | Must follow the validation boundary split. |
+| At review time: `tools/validate_forge_seed.py` | Transitional live validation implementation | Split or rename under Armory/Forge Integrity Validation. |
+| At review time: `tests/test_validate_forge_seed.py` | Transitional validation test suite | Follow the validation boundary split. |
 | `AGENTS.md` | Agent-facing operating and routing policy | Includes Forge Conveyor behavior; relevant to Forge Equipment Core and broader Armory operation. |
 
 ## Findings
 
 ### F1: Validator Status Lock
 
-The current validator requires `Status: Forge Seed` on canonical docs. That
-status label now conflates historical seed origin with live Canon and Core
+At review time, the validator required `Status: Forge Seed` on canonical docs.
+That status label conflated historical seed origin with live Canon and Core
 responsibility.
 
 Disposition: accepted. The validation boundary refactor must replace the
 status lock with live classification or a status scheme that does not force
 current docs to look like historical seed artifacts.
 
+Implementation disposition: active canonical docs use live Armory Canon, Forge
+Canon, and Forge Core status labels under Armory Integrity Validation.
+
 ### F2: Live Closeout Mentions Seed Validation
 
-`docs/story-closeout.md` still names Seed Validation as the rerun target for
-validation changes. Current vocabulary says live repository checks belong to
-Armory Integrity Validation and Forge-scoped checks belong to Forge Integrity
-Validation.
+At review time, `docs/story-closeout.md` named Seed Validation as the rerun
+target for validation changes. Current vocabulary says live repository checks
+belong to Armory Integrity Validation and Forge-scoped checks belong to Forge
+Integrity Validation.
 
 Disposition: accepted. This review updates the live closeout wording where it
 can do so without executing the validation refactor. The implementation story
 still owns command and test renames.
 
+Implementation disposition: live closeout now names
+`tools/validate_armory_integrity.py --final-closeout`.
+
 ### F3: Threat Model Names Seed Validation Tool As Current Boundary
 
-`docs/security/threat-model.md` describes `tools/validate_forge_seed.py` as the
-local validation boundary. That is factually true for the current checkout but
-should become Armory Integrity Validation tooling after the validation boundary
-refactor.
+At review time, `docs/security/threat-model.md` described
+`tools/validate_forge_seed.py` as the local validation boundary. The live
+threat model should name Armory Integrity Validation tooling after the
+validation boundary refactor.
 
 Disposition: accepted as a prerequisite-story update. Keep the current threat
 model accurate until the tool is renamed or split; then update the trust
 boundary and attacker-controlled-input sections.
+
+Implementation disposition: the live threat model names
+`tools/validate_armory_integrity.py` and Armory Integrity Validation.
 
 ### F4: Historical Plans Preserve Old Names
 
@@ -189,7 +198,7 @@ considered feature-complete.
 
 ## Required Follow-Up Work
 
-The validation boundary refactor story must:
+The validation boundary refactor story owns this implementation shape:
 
 - define the live Armory Integrity Validation command and Forge Integrity
   Validation suite;

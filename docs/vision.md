@@ -1,6 +1,6 @@
 # Armory Vision
 
-Status: Forge Seed
+Status: Armory Canon
 
 ## Experience
 

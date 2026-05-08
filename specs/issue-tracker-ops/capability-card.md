@@ -110,8 +110,8 @@ keep tracker mutations explicit and governable.
 
 - `python3.14 -m unittest tests.test_issue_tracker_ops`
 - `python3.14 tools/issue_tracker_ops.py <command> ...` dry-run smoke checks.
-- `python3.14 tools/validate_forge_seed.py`
-- `python3.14 tools/validate_forge_seed.py --final-closeout` before external
+- `python3.14 tools/validate_armory_integrity.py`
+- `python3.14 tools/validate_armory_integrity.py --final-closeout` before external
   projection or branch push.
 - Codex Security diff scan or recorded narrower security action for executable
   code and tracker mutation behavior.

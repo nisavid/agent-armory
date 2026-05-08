@@ -1,6 +1,6 @@
 # Agent Equipment Forge
 
-Status: Forge Seed
+Status: Forge Canon
 
 The Agent Equipment Forge helps Smiths design reusable Agent Equipment without overloading model context, hiding hard policy in prose, or treating harness-specific guesses as facts.
 

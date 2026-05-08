@@ -45,7 +45,7 @@ Repo draft: `docs/prd/forge-seed.md`
   Story Closeout.
 - Templates, examples, and Equipment Blueprints exist without implying
   installability, publication, or production readiness.
-- Seed Validation and tests check required files, source disposition and
+- Armory Integrity Validation and tests check required files, source disposition and
   retirement status, markdown links, templates, examples, specs, Story
   Closeout, security closeout, and documentation closeout.
 
@@ -66,14 +66,14 @@ The Forge Seed adds:
 - Tooling Request from Smith to Forgewright;
 - Story Closeout, security closeout, documentation closeout, and projection
   draft surfaces;
-- `tools/validate_forge_seed.py` and its test suite.
+- `tools/validate_armory_integrity.py` and its test suite.
 
 ## Validation
 
-- `python3.14 -m unittest tests/test_validate_forge_seed.py`: passed.
-- `python3.14 tools/validate_forge_seed.py`: passed.
-- `python3.14 tools/validate_forge_seed.py --json`: passed.
-- `python3.14 tools/validate_forge_seed.py --final-closeout`: passed.
+- `python3.14 -m unittest tests/test_validate_armory_integrity.py`: passed.
+- `python3.14 tools/validate_armory_integrity.py`: passed.
+- `python3.14 tools/validate_armory_integrity.py --json`: passed.
+- `python3.14 tools/validate_armory_integrity.py --final-closeout`: passed.
 - `git diff --check`: passed.
 
 ## Security Closeout
@@ -138,14 +138,14 @@ Published PR body:
 - Add Tooling Request, Story Closeout, security closeout,
   documentation closeout, workflow reflection capture, and projection draft
   surfaces.
-- Add deterministic Seed Validation coverage and TDD tests for the seeded
+- Add deterministic Armory Integrity Validation coverage and TDD tests for the seeded
   Forge shape.
 
 ## Validation
 
-- `python3.14 -m unittest tests/test_validate_forge_seed.py`
-- `python3.14 tools/validate_forge_seed.py`
-- `python3.14 tools/validate_forge_seed.py --final-closeout`
+- `python3.14 -m unittest tests/test_validate_armory_integrity.py`
+- `python3.14 tools/validate_armory_integrity.py`
+- `python3.14 tools/validate_armory_integrity.py --final-closeout`
 - `git diff --check`
 
 ## Security

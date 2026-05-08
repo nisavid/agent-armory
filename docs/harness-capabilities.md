@@ -1,6 +1,6 @@
 # Harness Capability Catalog
 
-Status: Forge Seed
+Status: Forge Canon
 
 This catalog records source-backed harness facts that Smiths may use when designing Agent Equipment. Harness capabilities move quickly, so the catalog states when each fact was checked, what source supports it, and what remains uncertain.
 

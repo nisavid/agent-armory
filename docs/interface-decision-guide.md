@@ -1,6 +1,6 @@
 # Interface Decision Guide
 
-Status: Forge Seed
+Status: Forge Canon
 
 Use this guide after the capability card identifies what the equipment must do. The goal is to put each requirement in the lowest reliable surface.
 
