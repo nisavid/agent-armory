@@ -112,14 +112,14 @@ claim_scope = "hook and webhook support"
 [[claim]]
 id = "claim-openclaw-instructions_context"
 family = "instructions_context"
-status = "supported"
-statement = "Source-backed evidence records instructions context support."
-evidence_ids = ["ev-openclaw-03-adjacent-prerelease-context-b407097be9"]
+status = "unknown"
+statement = "Source-backed evidence does not prove instructions context support."
+evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
 evidence_basis = "aggregate_catalog_migration"
-limitations = "Compatible Codex, Claude, and Cursor bundles are partial bridges, not full harness equivalence. MCP bridge behavior has limits around route metadata, live event queues, push/edit/react support, and approval visibility. Multi-agent workspaces are not hard OS sandboxes unless sandboxing is configured. Some plugin changes require Gateway restart."
+limitations = "No migrated aggregate row proves this surface family."
 uncertainty = "The stable release is v2026.5.2. The nearby beta is context only and should not be treated as current stable behavior unless prerelease tracking is intentional."
 
 [[claim]]
@@ -203,14 +203,14 @@ uncertainty = "The stable release is v2026.5.2. The nearby beta is context only 
 [[claim]]
 id = "claim-openclaw-config_settings"
 family = "config_settings"
-status = "supported"
-statement = "Source-backed evidence records config settings support."
-evidence_ids = ["ev-openclaw-01-release-version-date-and-rel-7fe6f650de"]
+status = "unknown"
+statement = "Source-backed evidence does not prove config settings support."
+evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
 evidence_basis = "aggregate_catalog_migration"
-limitations = "Compatible Codex, Claude, and Cursor bundles are partial bridges, not full harness equivalence. MCP bridge behavior has limits around route metadata, live event queues, push/edit/react support, and approval visibility. Multi-agent workspaces are not hard OS sandboxes unless sandboxing is configured. Some plugin changes require Gateway restart."
+limitations = "No migrated aggregate row proves this surface family."
 uncertainty = "The stable release is v2026.5.2. The nearby beta is context only and should not be treated as current stable behavior unless prerelease tracking is intentional."
 
 [[claim]]
@@ -242,27 +242,27 @@ uncertainty = "The stable release is v2026.5.2. The nearby beta is context only 
 [[claim]]
 id = "claim-openclaw-commands_shortcuts"
 family = "commands_shortcuts"
-status = "supported"
-statement = "Source-backed evidence records commands shortcuts support."
-evidence_ids = ["ev-openclaw-01-release-version-date-and-rel-7fe6f650de"]
+status = "unknown"
+statement = "Source-backed evidence does not prove commands shortcuts support."
+evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
 evidence_basis = "aggregate_catalog_migration"
-limitations = "Compatible Codex, Claude, and Cursor bundles are partial bridges, not full harness equivalence. MCP bridge behavior has limits around route metadata, live event queues, push/edit/react support, and approval visibility. Multi-agent workspaces are not hard OS sandboxes unless sandboxing is configured. Some plugin changes require Gateway restart."
+limitations = "No migrated aggregate row proves this surface family."
 uncertainty = "The stable release is v2026.5.2. The nearby beta is context only and should not be treated as current stable behavior unless prerelease tracking is intentional."
 
 [[claim]]
 id = "claim-openclaw-providers_connectors"
 family = "providers_connectors"
-status = "supported"
-statement = "Source-backed evidence records providers connectors support."
-evidence_ids = ["ev-openclaw-01-release-version-date-and-rel-7fe6f650de"]
+status = "unknown"
+statement = "Source-backed evidence does not prove providers connectors support."
+evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
 evidence_basis = "aggregate_catalog_migration"
-limitations = "Compatible Codex, Claude, and Cursor bundles are partial bridges, not full harness equivalence. MCP bridge behavior has limits around route metadata, live event queues, push/edit/react support, and approval visibility. Multi-agent workspaces are not hard OS sandboxes unless sandboxing is configured. Some plugin changes require Gateway restart."
+limitations = "No migrated aggregate row proves this surface family."
 uncertainty = "The stable release is v2026.5.2. The nearby beta is context only and should not be treated as current stable behavior unless prerelease tracking is intentional."
 
 [[claim]]

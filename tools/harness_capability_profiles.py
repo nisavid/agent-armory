@@ -47,7 +47,7 @@ SURFACE_FAMILIES = [
 ]
 
 FAMILY_KEYWORDS = {
-    "instructions_context": ["instruction", "rules", "agents.md", "context"],
+    "instructions_context": ["instruction", "rules", "agents.md"],
     "skills": ["skill"],
     "mcp_tools": ["mcp", "tool"],
     "hooks_events": ["hook", "webhook", "trigger", "event"],
@@ -190,14 +190,10 @@ def claim_id(harness_id: str, family: str) -> str:
 
 def family_evidence_ids(
     family: str,
-    components: list[str],
-    scheduling: str,
     sources: list[dict[str, Any]],
     evidence_ids: list[str],
 ) -> list[str]:
     keywords = FAMILY_KEYWORDS[family]
-    texts = [*components, scheduling]
-    matched = any(any(keyword in text.casefold() for keyword in keywords) for text in texts)
     matched_indexes = [
         index
         for index, source in enumerate(sources)
@@ -205,16 +201,12 @@ def family_evidence_ids(
     ]
     if matched_indexes:
         return [evidence_ids[index] for index in matched_indexes]
-    if matched and evidence_ids:
-        return [evidence_ids[0]]
     return []
 
 
 def family_status(family: str, matched_evidence_ids: list[str]) -> str:
     if matched_evidence_ids:
         return "supported"
-    if family == "cross_harness_import_compatibility":
-        return "unknown"
     return "unknown"
 
 
@@ -237,7 +229,7 @@ def profile_from_aggregate(harness_id: str, checked_at: str, entry: dict[str, An
     ]
     claims: list[dict[str, Any]] = []
     for family in SURFACE_FAMILIES:
-        matched_evidence = family_evidence_ids(family, components, scheduling, sources, source_ids)
+        matched_evidence = family_evidence_ids(family, sources, source_ids)
         status = family_status(family, matched_evidence)
         if status == "supported":
             statement = f"Source-backed evidence records {family.replace('_', ' ')} support."
@@ -356,12 +348,20 @@ def render_profile(profile: dict[str, Any]) -> str:
 
 
 def migration_writes(root: Path) -> list[dict[str, str]]:
-    catalog = load_toml(checked_read_file(root, AGGREGATE_CATALOG_PATH))
+    try:
+        catalog = load_toml(checked_read_file(root, AGGREGATE_CATALOG_PATH))
+    except tomllib.TOMLDecodeError as error:
+        raise ManagerError(f"{AGGREGATE_CATALOG_PATH.as_posix()}: TOML invalid: {error.msg}") from error
     checked_at = str(catalog.get("checked_at", ""))
     harnesses = catalog.get("harness", {})
+    if not isinstance(harnesses, dict):
+        raise ManagerError("aggregate catalog missing harness table")
     writes = []
     for harness_id in sorted(REQUIRED_HARNESSES):
-        profile = profile_from_aggregate(harness_id, checked_at, harnesses[harness_id])
+        entry = harnesses.get(harness_id)
+        if not isinstance(entry, dict):
+            raise ManagerError(f"aggregate catalog missing required harness: {harness_id}")
+        profile = profile_from_aggregate(harness_id, checked_at, entry)
         path = VANILLA_PROFILE_DIR / f"{harness_id}.toml"
         writes.append({"path": path.as_posix(), "content": render_profile(profile)})
     return writes
@@ -429,6 +429,7 @@ def validate_profile(root: Path, harness_id: str) -> list[CheckResult]:
     for field in [
         "display_name",
         "checked_at",
+        "checked_version",
         "version_basis",
         "evidence_category",
         "summary_scheduling",
@@ -595,6 +596,19 @@ def validate_summary(root: Path) -> list[CheckResult]:
         ]
     markdown = path.read_text(encoding="utf-8")
     results: list[CheckResult] = []
+    try:
+        rendered_summary = render_summary(load_profiles(root))
+    except (ManagerError, tomllib.TOMLDecodeError, KeyError, TypeError) as error:
+        return [
+            CheckResult(
+                "summary:profiles",
+                False,
+                f"cannot render summary from profiles: {error.__class__.__name__}: {error}",
+                relative_path.as_posix(),
+            )
+        ]
+    if markdown != rendered_summary:
+        results.append(CheckResult("summary:rendered", False, "summary differs from manager-rendered output", relative_path.as_posix()))
     rows = {row.get("Harness", ""): row for row in markdown_table_rows(markdown, "## Harness matrix")}
     for harness_id in REQUIRED_HARNESSES:
         profile_ok, _, _ = path_status(root, profile_path(harness_id), expected_kind="file")
@@ -659,6 +673,8 @@ def source_lines(profile: dict[str, Any]) -> list[str]:
 def render_summary(profiles: list[dict[str, Any]]) -> str:
     by_id = {profile["harness_id"]: profile for profile in profiles}
     ordered_profiles = [by_id[harness_id] for harness_id in REQUIRED_HARNESSES]
+    checked_at_values = sorted({profile["checked_at"] for profile in ordered_profiles})
+    checked_at_summary = checked_at_values[0] if len(checked_at_values) == 1 else f"{checked_at_values[0]} to {checked_at_values[-1]}"
     lines = [
         "# Harness Capability Catalog",
         "",
@@ -680,7 +696,7 @@ def render_summary(profiles: list[dict[str, Any]]) -> str:
         "",
         "## Refresh summary",
         "",
-        f"Checked at: {ordered_profiles[0]['checked_at']}.",
+        f"Checked at: {checked_at_summary}.",
         "",
         "The profiles preserve source-backed version, component, scheduling, limitation, uncertainty, refresh-note, and local-observation fields. No local harness binaries, workspace configs, gateways, plugin installs, cloud agents, or automation state were inspected during the migrated seed refresh.",
         "",

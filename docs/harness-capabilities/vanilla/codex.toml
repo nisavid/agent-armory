@@ -145,14 +145,14 @@ uncertainty = "Stable version is anchored to GitHub releases. Prerelease feature
 [[claim]]
 id = "claim-codex-mcp_tools"
 family = "mcp_tools"
-status = "supported"
-statement = "Source-backed evidence records mcp tools support."
-evidence_ids = ["ev-codex-01-stable-release-version-relea-0e9f0761e2"]
+status = "unknown"
+statement = "Source-backed evidence does not prove mcp tools support."
+evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
 evidence_basis = "aggregate_catalog_migration"
-limitations = "Hooks require the relevant hook feature support and should not be treated as a complete enforcement boundary without verification. Some app-server and plugin APIs remain experimental, and unattended automations still run under sandbox and approval constraints."
+limitations = "No migrated aggregate row proves this surface family."
 uncertainty = "Stable version is anchored to GitHub releases. Prerelease features may be ahead of stable, and app-server and hook details can remain experimental or feature-gated."
 
 [[claim]]
@@ -197,14 +197,14 @@ uncertainty = "Stable version is anchored to GitHub releases. Prerelease feature
 [[claim]]
 id = "claim-codex-memory_context_retrieval"
 family = "memory_context_retrieval"
-status = "supported"
-statement = "Source-backed evidence records memory context retrieval support."
-evidence_ids = ["ev-codex-01-stable-release-version-relea-0e9f0761e2"]
+status = "unknown"
+statement = "Source-backed evidence does not prove memory context retrieval support."
+evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
 evidence_basis = "aggregate_catalog_migration"
-limitations = "Hooks require the relevant hook feature support and should not be treated as a complete enforcement boundary without verification. Some app-server and plugin APIs remain experimental, and unattended automations still run under sandbox and approval constraints."
+limitations = "No migrated aggregate row proves this surface family."
 uncertainty = "Stable version is anchored to GitHub releases. Prerelease features may be ahead of stable, and app-server and hook details can remain experimental or feature-gated."
 
 [[claim]]
@@ -249,27 +249,27 @@ uncertainty = "Stable version is anchored to GitHub releases. Prerelease feature
 [[claim]]
 id = "claim-codex-commands_shortcuts"
 family = "commands_shortcuts"
-status = "supported"
-statement = "Source-backed evidence records commands shortcuts support."
-evidence_ids = ["ev-codex-01-stable-release-version-relea-0e9f0761e2"]
+status = "unknown"
+statement = "Source-backed evidence does not prove commands shortcuts support."
+evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
 evidence_basis = "aggregate_catalog_migration"
-limitations = "Hooks require the relevant hook feature support and should not be treated as a complete enforcement boundary without verification. Some app-server and plugin APIs remain experimental, and unattended automations still run under sandbox and approval constraints."
+limitations = "No migrated aggregate row proves this surface family."
 uncertainty = "Stable version is anchored to GitHub releases. Prerelease features may be ahead of stable, and app-server and hook details can remain experimental or feature-gated."
 
 [[claim]]
 id = "claim-codex-providers_connectors"
 family = "providers_connectors"
-status = "supported"
-statement = "Source-backed evidence records providers connectors support."
-evidence_ids = ["ev-codex-01-stable-release-version-relea-0e9f0761e2"]
+status = "unknown"
+statement = "Source-backed evidence does not prove providers connectors support."
+evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
 evidence_basis = "aggregate_catalog_migration"
-limitations = "Hooks require the relevant hook feature support and should not be treated as a complete enforcement boundary without verification. Some app-server and plugin APIs remain experimental, and unattended automations still run under sandbox and approval constraints."
+limitations = "No migrated aggregate row proves this surface family."
 uncertainty = "Stable version is anchored to GitHub releases. Prerelease features may be ahead of stable, and app-server and hook details can remain experimental or feature-gated."
 
 [[claim]]

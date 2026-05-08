@@ -235,14 +235,14 @@ uncertainty = "Official docs are primary. Local installed binary behavior and pl
 [[claim]]
 id = "claim-claude_code-commands_shortcuts"
 family = "commands_shortcuts"
-status = "supported"
-statement = "Source-backed evidence records commands shortcuts support."
-evidence_ids = ["ev-claude_code-01-latest-claude-code-version-a-63163f5f90"]
+status = "unknown"
+statement = "Source-backed evidence does not prove commands shortcuts support."
+evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
 evidence_basis = "aggregate_catalog_migration"
-limitations = "Session-scoped scheduled tasks require a supporting Claude Code version and expire after a bounded period. Routines are preview-like cloud infrastructure. Desktop scheduled tasks require the Desktop app and an awake machine. Plugin-loaded agents can have restrictions on hooks, MCP servers, and permission modes."
+limitations = "No migrated aggregate row proves this surface family."
 uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
 
 [[claim]]

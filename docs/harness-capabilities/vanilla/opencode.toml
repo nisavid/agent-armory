@@ -112,14 +112,14 @@ claim_scope = "ecosystem and third-party integrations index"
 [[claim]]
 id = "claim-opencode-instructions_context"
 family = "instructions_context"
-status = "supported"
-statement = "Source-backed evidence records instructions context support."
-evidence_ids = ["ev-opencode-01-release-version-date-and-rel-bb8762dcd6"]
+status = "unknown"
+statement = "Source-backed evidence does not prove instructions context support."
+evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
 evidence_basis = "aggregate_catalog_migration"
-limitations = "Default permission posture can be broad unless configured. Legacy tools permission is deprecated in favor of permission. MCP servers can create context pressure. npm plugins auto-install with Bun and can define tools and hooks; review plugins as executable third-party code."
+limitations = "No migrated aggregate row proves this surface family."
 uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
 
 [[claim]]
@@ -229,14 +229,14 @@ uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai re
 [[claim]]
 id = "claim-opencode-scheduling_automation"
 family = "scheduling_automation"
-status = "supported"
-statement = "Source-backed evidence records scheduling automation support."
-evidence_ids = ["ev-opencode-01-release-version-date-and-rel-bb8762dcd6"]
+status = "unknown"
+statement = "Source-backed evidence does not prove scheduling automation support."
+evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
 evidence_basis = "aggregate_catalog_migration"
-limitations = "Default permission posture can be broad unless configured. Legacy tools permission is deprecated in favor of permission. MCP servers can create context pressure. npm plugins auto-install with Bun and can define tools and hooks; review plugins as executable third-party code."
+limitations = "No migrated aggregate row proves this surface family."
 uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
 
 [[claim]]

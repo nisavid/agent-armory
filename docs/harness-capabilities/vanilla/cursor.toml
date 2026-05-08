@@ -203,14 +203,14 @@ uncertainty = "The latest numbered release and the latest changelog entry are di
 [[claim]]
 id = "claim-cursor-config_settings"
 family = "config_settings"
-status = "supported"
-statement = "Source-backed evidence records config settings support."
-evidence_ids = ["ev-cursor-01-latest-official-changelog-st-d401c4da40"]
+status = "unknown"
+statement = "Source-backed evidence does not prove config settings support."
+evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
 evidence_basis = "aggregate_catalog_migration"
-limitations = "Cloud Agent execution and some hooks are plan- or environment-dependent. Slack triggers can be limited by channel type. Parallel subagents increase token and cost pressure. Marketplace plugins should be reviewed as third-party code before trusted use."
+limitations = "No migrated aggregate row proves this surface family."
 uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
 
 [[claim]]
@@ -268,14 +268,14 @@ uncertainty = "The latest numbered release and the latest changelog entry are di
 [[claim]]
 id = "claim-cursor-runtime_modes"
 family = "runtime_modes"
-status = "supported"
-statement = "Source-backed evidence records runtime modes support."
-evidence_ids = ["ev-cursor-01-latest-official-changelog-st-d401c4da40"]
+status = "unknown"
+statement = "Source-backed evidence does not prove runtime modes support."
+evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
 evidence_basis = "aggregate_catalog_migration"
-limitations = "Cloud Agent execution and some hooks are plan- or environment-dependent. Slack triggers can be limited by channel type. Parallel subagents increase token and cost pressure. Marketplace plugins should be reviewed as third-party code before trusted use."
+limitations = "No migrated aggregate row proves this surface family."
 uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
 
 [[claim]]

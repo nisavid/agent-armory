@@ -147,6 +147,21 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             )
             self.assertFalse((root / "docs/harness-capabilities/vanilla").exists())
 
+    def test_migrate_json_reports_missing_required_harness_without_traceback(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_migration_root(root)
+            fixture_without_openclaw = AGGREGATE_FIXTURE.split("\n[harness.openclaw]\n", 1)[0]
+            (root / "docs/harness-capabilities.toml").write_text(fixture_without_openclaw.strip() + "\n", encoding="utf-8")
+
+            completed = self.run_manager(root, "migrate", "--json")
+
+            self.assertNotEqual(completed.returncode, 0)
+            self.assertEqual(completed.stderr, "")
+            payload = json.loads(completed.stdout)
+            self.assertEqual(payload["result"], "failed")
+            self.assertIn("aggregate catalog missing required harness: openclaw", payload["error"])
+
     def test_migrate_apply_writes_stable_profiles_and_retires_aggregate_catalog(self):
         with tempfile.TemporaryDirectory() as first_tmpdir, tempfile.TemporaryDirectory() as second_tmpdir:
             first_root = Path(first_tmpdir)
@@ -229,6 +244,7 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             codex_profile = root / "docs/harness-capabilities/vanilla/codex.toml"
             text = codex_profile.read_text(encoding="utf-8")
             text = text.replace('schema_version = "vanilla-harness-capability-profile.v1alpha1"\n', "", 1)
+            text = text.replace('checked_version = "0.128.0 stable"\n', "", 1)
             text = text.replace('evidence_category = "source-supported"', 'evidence_category = "rumor"', 1)
             text = text.replace('id = "claim-codex-mcp_tools"', 'id = "claim-codex-skills"', 1)
             text = text.replace('status = "supported"', 'status = "maybe"', 1)
@@ -250,6 +266,7 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             failures = {result["name"]: result for result in payload["results"] if not result["ok"]}
             self.assertEqual(payload["result"], "failed")
             self.assertIn("profile:codex:schema_version", failures)
+            self.assertIn("profile:codex:checked_version", failures)
             self.assertIn("profile:codex:evidence_category", failures)
             self.assertIn("profile:codex:evidence:0:source_kind", failures)
             self.assertIn("profile:codex:evidence:0:url", failures)

@@ -112,14 +112,14 @@ claim_scope = "curator background agent support"
 [[claim]]
 id = "claim-hermes_agent-instructions_context"
 family = "instructions_context"
-status = "supported"
-statement = "Source-backed evidence records instructions context support."
-evidence_ids = ["ev-hermes_agent-01-release-version-date-and-rel-eb71619a5f"]
+status = "unknown"
+statement = "Source-backed evidence does not prove instructions context support."
+evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
 evidence_basis = "aggregate_catalog_migration"
-limitations = "Profiles are separate state directories, not hard isolation boundaries. Cron jobs cannot recursively create cron jobs. Some workdir jobs are sequential because process cwd is global. Delegated subagents are synchronous and not durable if the parent is interrupted. Project plugins require explicit enablement."
+limitations = "No migrated aggregate row proves this surface family."
 uncertainty = "The GitHub release name and pyproject version are the version anchors. The repository package.json is not a public package version source for this catalog."
 
 [[claim]]
@@ -190,14 +190,14 @@ uncertainty = "The GitHub release name and pyproject version are the version anc
 [[claim]]
 id = "claim-hermes_agent-memory_context_retrieval"
 family = "memory_context_retrieval"
-status = "supported"
-statement = "Source-backed evidence records memory context retrieval support."
-evidence_ids = ["ev-hermes_agent-01-release-version-date-and-rel-eb71619a5f"]
+status = "unknown"
+statement = "Source-backed evidence does not prove memory context retrieval support."
+evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
 evidence_basis = "aggregate_catalog_migration"
-limitations = "Profiles are separate state directories, not hard isolation boundaries. Cron jobs cannot recursively create cron jobs. Some workdir jobs are sequential because process cwd is global. Delegated subagents are synchronous and not durable if the parent is interrupted. Project plugins require explicit enablement."
+limitations = "No migrated aggregate row proves this surface family."
 uncertainty = "The GitHub release name and pyproject version are the version anchors. The repository package.json is not a public package version source for this catalog."
 
 [[claim]]
@@ -255,51 +255,51 @@ uncertainty = "The GitHub release name and pyproject version are the version anc
 [[claim]]
 id = "claim-hermes_agent-providers_connectors"
 family = "providers_connectors"
-status = "supported"
-statement = "Source-backed evidence records providers connectors support."
-evidence_ids = ["ev-hermes_agent-01-release-version-date-and-rel-eb71619a5f"]
+status = "unknown"
+statement = "Source-backed evidence does not prove providers connectors support."
+evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
 evidence_basis = "aggregate_catalog_migration"
-limitations = "Profiles are separate state directories, not hard isolation boundaries. Cron jobs cannot recursively create cron jobs. Some workdir jobs are sequential because process cwd is global. Delegated subagents are synchronous and not durable if the parent is interrupted. Project plugins require explicit enablement."
+limitations = "No migrated aggregate row proves this surface family."
 uncertainty = "The GitHub release name and pyproject version are the version anchors. The repository package.json is not a public package version source for this catalog."
 
 [[claim]]
 id = "claim-hermes_agent-runtime_modes"
 family = "runtime_modes"
-status = "supported"
-statement = "Source-backed evidence records runtime modes support."
-evidence_ids = ["ev-hermes_agent-01-release-version-date-and-rel-eb71619a5f"]
+status = "unknown"
+statement = "Source-backed evidence does not prove runtime modes support."
+evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
 evidence_basis = "aggregate_catalog_migration"
-limitations = "Profiles are separate state directories, not hard isolation boundaries. Cron jobs cannot recursively create cron jobs. Some workdir jobs are sequential because process cwd is global. Delegated subagents are synchronous and not durable if the parent is interrupted. Project plugins require explicit enablement."
+limitations = "No migrated aggregate row proves this surface family."
 uncertainty = "The GitHub release name and pyproject version are the version anchors. The repository package.json is not a public package version source for this catalog."
 
 [[claim]]
 id = "claim-hermes_agent-cross_harness_import_compatibility"
 family = "cross_harness_import_compatibility"
-status = "supported"
-statement = "Source-backed evidence records cross harness import compatibility support."
-evidence_ids = ["ev-hermes_agent-01-release-version-date-and-rel-eb71619a5f"]
+status = "unknown"
+statement = "Source-backed evidence does not prove cross harness import compatibility support."
+evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
 evidence_basis = "aggregate_catalog_migration"
-limitations = "Profiles are separate state directories, not hard isolation boundaries. Cron jobs cannot recursively create cron jobs. Some workdir jobs are sequential because process cwd is global. Delegated subagents are synchronous and not durable if the parent is interrupted. Project plugins require explicit enablement."
+limitations = "No migrated aggregate row proves this surface family."
 uncertainty = "The GitHub release name and pyproject version are the version anchors. The repository package.json is not a public package version source for this catalog."
 
 [[claim]]
 id = "claim-hermes_agent-lifecycle_reload_update"
 family = "lifecycle_reload_update"
-status = "supported"
-statement = "Source-backed evidence records lifecycle reload update support."
-evidence_ids = ["ev-hermes_agent-01-release-version-date-and-rel-eb71619a5f"]
+status = "unknown"
+statement = "Source-backed evidence does not prove lifecycle reload update support."
+evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
 evidence_basis = "aggregate_catalog_migration"
-limitations = "Profiles are separate state directories, not hard isolation boundaries. Cron jobs cannot recursively create cron jobs. Some workdir jobs are sequential because process cwd is global. Delegated subagents are synchronous and not durable if the parent is interrupted. Project plugins require explicit enablement."
+limitations = "No migrated aggregate row proves this surface family."
 uncertainty = "The GitHub release name and pyproject version are the version anchors. The repository package.json is not a public package version source for this catalog."

@@ -2769,7 +2769,17 @@ def string_list(value: object) -> bool:
 
 
 def validate_harness_catalog(root: Path) -> list[CheckResult]:
-    manager_results = harness_capability_profiles.validate(root)
+    try:
+        manager_results = harness_capability_profiles.validate(root)
+    except Exception as error:
+        return [
+            CheckResult(
+                "harness_catalog:manager_core:exception",
+                False,
+                f"manager core validation crashed: {error.__class__.__name__}: {error}",
+                "docs/harness-capabilities/vanilla",
+            )
+        ]
     failures = [result for result in manager_results if not result.ok]
     if not failures:
         return [
