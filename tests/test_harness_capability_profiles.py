@@ -433,7 +433,10 @@ Scratch artifacts are summarized, not committed as raw project truth.
             self.write_migration_root(root)
             self.migrate_and_summarize(root)
             codex_note = root / "specs/vanilla-harness-capability-profiles/research-notes/codex.md"
-            codex_note.write_text(codex_note.read_text(encoding="utf-8").replace("`skills`", "skills", 1), encoding="utf-8")
+            codex_note.write_text(
+                codex_note.read_text(encoding="utf-8").replace("## Source Set", "Source Set", 1).replace("`skills`", "skills", 1),
+                encoding="utf-8",
+            )
             report = root / "specs/vanilla-harness-capability-profiles/schema-pressure-report.md"
             report.write_text(report.read_text(encoding="utf-8").replace("accepted", "maybe", 1), encoding="utf-8")
 
@@ -442,8 +445,38 @@ Scratch artifacts are summarized, not committed as raw project truth.
             self.assertNotEqual(completed.returncode, 0)
             payload = json.loads(completed.stdout)
             failures = {result["name"]: result for result in payload["results"] if not result["ok"]}
+            self.assertIn("research_note:codex:section:source_set", failures)
             self.assertIn("research_note:codex:surface_family_coverage", failures)
             self.assertIn("schema_pressure:row:SP-001:disposition", failures)
+
+    def test_validate_json_accepts_hyphenated_needs_more_evidence_disposition(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_migration_root(root)
+            self.migrate_and_summarize(root)
+            report = root / "specs/vanilla-harness-capability-profiles/schema-pressure-report.md"
+            report.write_text(report.read_text(encoding="utf-8").replace("needs more evidence", "needs-more-evidence", 1), encoding="utf-8")
+
+            completed = self.run_manager(root, "validate", "--json")
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            payload = json.loads(completed.stdout)
+            self.assertEqual(payload["result"], "passed")
+
+    def test_validate_json_rejects_malformed_schema_pressure_table_rows(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_migration_root(root)
+            self.migrate_and_summarize(root)
+            report = root / "specs/vanilla-harness-capability-profiles/schema-pressure-report.md"
+            report.write_text(report.read_text(encoding="utf-8").replace("field = value", 'field = "left|right"', 1), encoding="utf-8")
+
+            completed = self.run_manager(root, "validate", "--json")
+
+            self.assertNotEqual(completed.returncode, 0)
+            payload = json.loads(completed.stdout)
+            failures = {result["name"]: result for result in payload["results"] if not result["ok"]}
+            self.assertIn("schema_pressure:row:SP-001:table_shape", failures)
 
     def test_summarize_write_updates_human_catalog_to_per_harness_profiles(self):
         with tempfile.TemporaryDirectory() as tmpdir:

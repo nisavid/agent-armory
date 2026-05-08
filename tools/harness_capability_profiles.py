@@ -128,7 +128,9 @@ SCHEMA_PRESSURE_COLUMNS = [
     "Proposed validation rule",
     "Migration impact",
 ]
-SCHEMA_PRESSURE_DISPOSITIONS = {"accepted", "deferred", "rejected", "needs more evidence"}
+SCHEMA_PRESSURE_DISPOSITIONS = {"accepted", "deferred", "rejected", "needs more evidence", "needs-more-evidence"}
+TABLE_PARSE_ERROR = "__parse_error__"
+TABLE_PARSE_ERROR_DETAIL = "__parse_error_detail__"
 
 
 class ManagerError(Exception):
@@ -651,13 +653,23 @@ def markdown_table_rows(markdown: str, heading: str) -> list[dict[str, str]]:
         cells = [cell.strip() for cell in line.strip("|").split("|")]
         if len(cells) == len(headers):
             rows.append(dict(zip(headers, cells, strict=True)))
+            continue
+        row_id = cells[0] if cells and cells[0] else f"row_{len(rows) + 1}"
+        rows.append(
+            {
+                "ID": row_id,
+                TABLE_PARSE_ERROR: "invalid column count",
+                TABLE_PARSE_ERROR_DETAIL: f"expected {len(headers)} cells, got {len(cells)}",
+            }
+        )
     return rows
 
 
 def validate_required_markdown_sections(markdown: str, required_sections: list[str], prefix: str, path: Path) -> list[CheckResult]:
     results: list[CheckResult] = []
+    headings = {line.strip().casefold() for line in markdown.splitlines()}
     for section in required_sections:
-        if section not in markdown:
+        if section.casefold() not in headings:
             results.append(CheckResult(f"{prefix}:section:{section.removeprefix('## ').casefold().replace(' ', '_')}", False, f"missing section: {section}", path.as_posix()))
     return results
 
@@ -724,6 +736,10 @@ def validate_schema_pressure_report(root: Path) -> list[CheckResult]:
         results.append(CheckResult("schema_pressure:findings_table", False, "missing schema pressure findings rows", relative_path.as_posix()))
     for index, row in enumerate(rows):
         row_id = row.get("ID") or f"row_{index + 1}"
+        if row.get(TABLE_PARSE_ERROR):
+            detail = row.get(TABLE_PARSE_ERROR_DETAIL, "invalid table row column count")
+            results.append(CheckResult(f"schema_pressure:row:{row_id}:table_shape", False, detail, relative_path.as_posix()))
+            continue
         for column in SCHEMA_PRESSURE_COLUMNS:
             if not row.get(column, "").strip():
                 result_field = slug(column).replace("-", "_")
