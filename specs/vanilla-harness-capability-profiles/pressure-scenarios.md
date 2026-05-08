@@ -5,15 +5,14 @@ Promotion state: specified
 
 ## Aggregate migration without split truth
 
-A future agent runs the first implementation story while
-`docs/harness-capabilities.toml` is still the authored structured catalog. The
-agent must write failing migration and validation tests, split the aggregate
-facts into six per-harness vanilla profiles, mark migrated claims for schema
-pressure, update the human-facing summary path, and remove the aggregate TOML
-as authored truth once validation passes.
+The repository stores authored structured harness facts as six per-harness
+Vanilla Harness Capability Profiles. The manager must preserve aggregate-
+imported facts inside stable per-harness profile claims, mark migrated claims
+for schema pressure, keep the human-facing summary aligned with validated
+profiles, and reject any retained aggregate catalog as split authored truth.
 
 Expected behavior: the repository has one authored structured profile source,
-not both the aggregate TOML and per-harness vanilla profiles.
+the per-harness vanilla profiles.
 
 ## New harness version with selective re-analysis
 

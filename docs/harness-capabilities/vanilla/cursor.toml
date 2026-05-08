@@ -1,0 +1,305 @@
+schema_version = "vanilla-harness-capability-profile.v1alpha1"
+profile_kind = "vanilla_harness_capability_profile"
+harness_id = "cursor"
+display_name = "Cursor"
+checked_at = "2026-05-03T09:25:05-04:00"
+checked_version = "3.2 numbered release; changelog state checked through 2026-05-01"
+version_basis = "Official Cursor changelog and first-party docs."
+evidence_category = "documentation-supported"
+summary_scheduling = "Cloud Agent Automations with schedule and event triggers."
+scheduling = "Cursor Automations run Cloud Agents from schedule and event triggers, including cron-style schedules, GitHub, Slack, Sentry, and webhooks."
+limitations = "Cloud Agent execution and some hooks are plan- or environment-dependent. Slack triggers can be limited by channel type. Parallel subagents increase token and cost pressure. Marketplace plugins should be reviewed as third-party code before trusted use."
+uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+refresh_notes = "Refresh from Cursor changelog and docs before relying on version-sensitive behavior. Record local binary version separately when local behavior matters."
+components = ["rules", "AGENTS.md", "Agent Skills", "MCP servers and tools", "hooks", "subagents", "plugins", "CLI configuration", "Cloud Agents", "Automations", "SDK agents"]
+local_observations = ["No local Cursor desktop, CLI, Cloud Agent, or workspace configuration was inspected for this seed refresh."]
+
+[scope]
+surface = "vanilla_harness_capability_surface"
+applicability = "Default settings and default equipment immediately after installation and onboarding."
+
+[[evidence]]
+id = "ev-cursor-01-latest-official-changelog-st-d401c4da40"
+category = "documentation-supported"
+source_kind = "first_party"
+url = "https://cursor.com/changelog"
+claim_scope = "latest official changelog state"
+
+[[evidence]]
+id = "ev-cursor-02-cursor-3-2-numbered-release-5e96715e4f"
+category = "documentation-supported"
+source_kind = "first_party"
+url = "https://cursor.com/changelog/04-24-26"
+claim_scope = "Cursor 3.2 numbered release"
+
+[[evidence]]
+id = "ev-cursor-03-latest-observed-unnumbered-c-54d6ff05a4"
+category = "documentation-supported"
+source_kind = "first_party"
+url = "https://cursor.com/changelog/05-01-26"
+claim_scope = "latest observed unnumbered changelog entry"
+
+[[evidence]]
+id = "ev-cursor-04-rules-and-agents-md-support-7246f7302d"
+category = "documentation-supported"
+source_kind = "first_party"
+url = "https://cursor.com/docs/rules"
+claim_scope = "rules and AGENTS.md support"
+
+[[evidence]]
+id = "ev-cursor-05-agent-skills-support-daa3804e4b"
+category = "documentation-supported"
+source_kind = "first_party"
+url = "https://cursor.com/docs/skills"
+claim_scope = "Agent Skills support"
+
+[[evidence]]
+id = "ev-cursor-06-mcp-support-58ed04e700"
+category = "documentation-supported"
+source_kind = "first_party"
+url = "https://cursor.com/docs/mcp"
+claim_scope = "MCP support"
+
+[[evidence]]
+id = "ev-cursor-07-hook-support-6ea3ffebaf"
+category = "documentation-supported"
+source_kind = "first_party"
+url = "https://cursor.com/docs/hooks"
+claim_scope = "hook support"
+
+[[evidence]]
+id = "ev-cursor-08-subagent-support-4f10afb95e"
+category = "documentation-supported"
+source_kind = "first_party"
+url = "https://cursor.com/docs/subagents"
+claim_scope = "subagent support"
+
+[[evidence]]
+id = "ev-cursor-09-plugin-support-efeb52665c"
+category = "documentation-supported"
+source_kind = "first_party"
+url = "https://cursor.com/docs/plugins"
+claim_scope = "plugin support"
+
+[[evidence]]
+id = "ev-cursor-10-cli-agent-support-4223f48fd5"
+category = "documentation-supported"
+source_kind = "first_party"
+url = "https://cursor.com/docs/cli/using"
+claim_scope = "CLI agent support"
+
+[[evidence]]
+id = "ev-cursor-11-cloud-agent-support-2231f7722d"
+category = "documentation-supported"
+source_kind = "first_party"
+url = "https://cursor.com/docs/cloud-agent"
+claim_scope = "Cloud Agent support"
+
+[[evidence]]
+id = "ev-cursor-12-sdk-agent-support-ea84a35dfa"
+category = "documentation-supported"
+source_kind = "first_party"
+url = "https://cursor.com/changelog/sdk-release"
+claim_scope = "SDK agent support"
+
+[[evidence]]
+id = "ev-cursor-13-cloud-agent-automation-suppo-6088527c59"
+category = "documentation-supported"
+source_kind = "first_party"
+url = "https://cursor.com/docs/cloud-agent/automations"
+claim_scope = "Cloud Agent automation support"
+
+[[claim]]
+id = "claim-cursor-instructions_context"
+family = "instructions_context"
+status = "supported"
+statement = "Source-backed evidence records instructions context support."
+evidence_ids = ["ev-cursor-04-rules-and-agents-md-support-7246f7302d"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Cloud Agent execution and some hooks are plan- or environment-dependent. Slack triggers can be limited by channel type. Parallel subagents increase token and cost pressure. Marketplace plugins should be reviewed as third-party code before trusted use."
+uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+
+[[claim]]
+id = "claim-cursor-skills"
+family = "skills"
+status = "supported"
+statement = "Source-backed evidence records skills support."
+evidence_ids = ["ev-cursor-05-agent-skills-support-daa3804e4b"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Cloud Agent execution and some hooks are plan- or environment-dependent. Slack triggers can be limited by channel type. Parallel subagents increase token and cost pressure. Marketplace plugins should be reviewed as third-party code before trusted use."
+uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+
+[[claim]]
+id = "claim-cursor-mcp_tools"
+family = "mcp_tools"
+status = "supported"
+statement = "Source-backed evidence records mcp tools support."
+evidence_ids = ["ev-cursor-06-mcp-support-58ed04e700"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Cloud Agent execution and some hooks are plan- or environment-dependent. Slack triggers can be limited by channel type. Parallel subagents increase token and cost pressure. Marketplace plugins should be reviewed as third-party code before trusted use."
+uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+
+[[claim]]
+id = "claim-cursor-hooks_events"
+family = "hooks_events"
+status = "supported"
+statement = "Source-backed evidence records hooks events support."
+evidence_ids = ["ev-cursor-07-hook-support-6ea3ffebaf"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Cloud Agent execution and some hooks are plan- or environment-dependent. Slack triggers can be limited by channel type. Parallel subagents increase token and cost pressure. Marketplace plugins should be reviewed as third-party code before trusted use."
+uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+
+[[claim]]
+id = "claim-cursor-plugins_bundles"
+family = "plugins_bundles"
+status = "supported"
+statement = "Source-backed evidence records plugins bundles support."
+evidence_ids = ["ev-cursor-09-plugin-support-efeb52665c"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Cloud Agent execution and some hooks are plan- or environment-dependent. Slack triggers can be limited by channel type. Parallel subagents increase token and cost pressure. Marketplace plugins should be reviewed as third-party code before trusted use."
+uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+
+[[claim]]
+id = "claim-cursor-agent_profiles_subagents"
+family = "agent_profiles_subagents"
+status = "supported"
+statement = "Source-backed evidence records agent profiles subagents support."
+evidence_ids = ["ev-cursor-04-rules-and-agents-md-support-7246f7302d", "ev-cursor-05-agent-skills-support-daa3804e4b", "ev-cursor-08-subagent-support-4f10afb95e", "ev-cursor-10-cli-agent-support-4223f48fd5", "ev-cursor-11-cloud-agent-support-2231f7722d", "ev-cursor-12-sdk-agent-support-ea84a35dfa", "ev-cursor-13-cloud-agent-automation-suppo-6088527c59"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Cloud Agent execution and some hooks are plan- or environment-dependent. Slack triggers can be limited by channel type. Parallel subagents increase token and cost pressure. Marketplace plugins should be reviewed as third-party code before trusted use."
+uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+
+[[claim]]
+id = "claim-cursor-memory_context_retrieval"
+family = "memory_context_retrieval"
+status = "unknown"
+statement = "Source-backed evidence does not prove memory context retrieval support."
+evidence_ids = []
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "No migrated aggregate row proves this surface family."
+uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+
+[[claim]]
+id = "claim-cursor-config_settings"
+family = "config_settings"
+status = "supported"
+statement = "Source-backed evidence records config settings support."
+evidence_ids = ["ev-cursor-01-latest-official-changelog-st-d401c4da40"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Cloud Agent execution and some hooks are plan- or environment-dependent. Slack triggers can be limited by channel type. Parallel subagents increase token and cost pressure. Marketplace plugins should be reviewed as third-party code before trusted use."
+uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+
+[[claim]]
+id = "claim-cursor-permissions_approvals_sandboxing"
+family = "permissions_approvals_sandboxing"
+status = "unknown"
+statement = "Source-backed evidence does not prove permissions approvals sandboxing support."
+evidence_ids = []
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "No migrated aggregate row proves this surface family."
+uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+
+[[claim]]
+id = "claim-cursor-scheduling_automation"
+family = "scheduling_automation"
+status = "supported"
+statement = "Source-backed evidence records scheduling automation support."
+evidence_ids = ["ev-cursor-13-cloud-agent-automation-suppo-6088527c59"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Cloud Agent execution and some hooks are plan- or environment-dependent. Slack triggers can be limited by channel type. Parallel subagents increase token and cost pressure. Marketplace plugins should be reviewed as third-party code before trusted use."
+uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+
+[[claim]]
+id = "claim-cursor-commands_shortcuts"
+family = "commands_shortcuts"
+status = "unknown"
+statement = "Source-backed evidence does not prove commands shortcuts support."
+evidence_ids = []
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "No migrated aggregate row proves this surface family."
+uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+
+[[claim]]
+id = "claim-cursor-providers_connectors"
+family = "providers_connectors"
+status = "unknown"
+statement = "Source-backed evidence does not prove providers connectors support."
+evidence_ids = []
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "No migrated aggregate row proves this surface family."
+uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+
+[[claim]]
+id = "claim-cursor-runtime_modes"
+family = "runtime_modes"
+status = "supported"
+statement = "Source-backed evidence records runtime modes support."
+evidence_ids = ["ev-cursor-01-latest-official-changelog-st-d401c4da40"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Cloud Agent execution and some hooks are plan- or environment-dependent. Slack triggers can be limited by channel type. Parallel subagents increase token and cost pressure. Marketplace plugins should be reviewed as third-party code before trusted use."
+uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+
+[[claim]]
+id = "claim-cursor-cross_harness_import_compatibility"
+family = "cross_harness_import_compatibility"
+status = "supported"
+statement = "Source-backed evidence records cross harness import compatibility support."
+evidence_ids = ["ev-cursor-02-cursor-3-2-numbered-release-5e96715e4f"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Cloud Agent execution and some hooks are plan- or environment-dependent. Slack triggers can be limited by channel type. Parallel subagents increase token and cost pressure. Marketplace plugins should be reviewed as third-party code before trusted use."
+uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+
+[[claim]]
+id = "claim-cursor-lifecycle_reload_update"
+family = "lifecycle_reload_update"
+status = "unknown"
+statement = "Source-backed evidence does not prove lifecycle reload update support."
+evidence_ids = []
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "No migrated aggregate row proves this surface family."
+uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."

@@ -1,0 +1,298 @@
+schema_version = "vanilla-harness-capability-profile.v1alpha1"
+profile_kind = "vanilla_harness_capability_profile"
+harness_id = "claude_code"
+display_name = "Claude Code"
+checked_at = "2026-05-03T09:25:05-04:00"
+checked_version = "2.1.126"
+version_basis = "Official Claude Code changelog entry dated 2026-05-01, with first-party documentation for capabilities."
+evidence_category = "documentation-supported"
+summary_scheduling = "Routines, Desktop scheduled tasks, and session-scoped scheduled tasks."
+scheduling = "Claude Code supports cloud Routines with scheduled, API, and GitHub triggers; Desktop scheduled tasks; and session-scoped scheduled tasks including loop-style execution."
+limitations = "Session-scoped scheduled tasks require a supporting Claude Code version and expire after a bounded period. Routines are preview-like cloud infrastructure. Desktop scheduled tasks require the Desktop app and an awake machine. Plugin-loaded agents can have restrictions on hooks, MCP servers, and permission modes."
+uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+refresh_notes = "Refresh from the official Claude Code changelog and docs. Treat third-party package metadata as fallback only if official version evidence is unavailable."
+components = ["skills", "custom commands", "MCP servers and tools", "hooks", "subagents", "plugins", "settings", "slash commands", "LSP servers", "plugin monitors", "output styles", "themes"]
+local_observations = ["No local Claude Code binary, Desktop app state, or plugin install was inspected for this seed refresh."]
+
+[scope]
+surface = "vanilla_harness_capability_surface"
+applicability = "Default settings and default equipment immediately after installation and onboarding."
+
+[[evidence]]
+id = "ev-claude_code-01-latest-claude-code-version-a-63163f5f90"
+category = "documentation-supported"
+source_kind = "first_party"
+url = "https://code.claude.com/docs/en/changelog"
+claim_scope = "latest Claude Code version and release date"
+
+[[evidence]]
+id = "ev-claude_code-02-first-party-changelog-mirror-55aa23da24"
+category = "documentation-supported"
+source_kind = "first_party"
+url = "https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md"
+claim_scope = "first-party changelog mirror"
+
+[[evidence]]
+id = "ev-claude_code-03-skill-support-09108d5779"
+category = "documentation-supported"
+source_kind = "first_party"
+url = "https://code.claude.com/docs/en/skills"
+claim_scope = "skill support"
+
+[[evidence]]
+id = "ev-claude_code-04-mcp-support-528ca09f3f"
+category = "documentation-supported"
+source_kind = "first_party"
+url = "https://code.claude.com/docs/en/mcp"
+claim_scope = "MCP support"
+
+[[evidence]]
+id = "ev-claude_code-05-hook-support-003598c023"
+category = "documentation-supported"
+source_kind = "first_party"
+url = "https://code.claude.com/docs/en/hooks"
+claim_scope = "hook support"
+
+[[evidence]]
+id = "ev-claude_code-06-subagent-support-f4514ded0d"
+category = "documentation-supported"
+source_kind = "first_party"
+url = "https://code.claude.com/docs/en/sub-agents"
+claim_scope = "subagent support"
+
+[[evidence]]
+id = "ev-claude_code-07-plugin-support-and-limits-a8ac63cee1"
+category = "documentation-supported"
+source_kind = "first_party"
+url = "https://code.claude.com/docs/en/plugins-reference"
+claim_scope = "plugin support and limits"
+
+[[evidence]]
+id = "ev-claude_code-08-settings-and-permissions-7776274324"
+category = "documentation-supported"
+source_kind = "first_party"
+url = "https://code.claude.com/docs/en/settings"
+claim_scope = "settings and permissions"
+
+[[evidence]]
+id = "ev-claude_code-09-harness-overview-64da5f1b3a"
+category = "documentation-supported"
+source_kind = "first_party"
+url = "https://code.claude.com/docs/en/overview"
+claim_scope = "harness overview"
+
+[[evidence]]
+id = "ev-claude_code-10-cloud-routine-support-e1ecd195c7"
+category = "documentation-supported"
+source_kind = "first_party"
+url = "https://code.claude.com/docs/en/routines"
+claim_scope = "cloud routine support"
+
+[[evidence]]
+id = "ev-claude_code-11-desktop-scheduled-task-suppo-cdb4a71f50"
+category = "documentation-supported"
+source_kind = "first_party"
+url = "https://code.claude.com/docs/en/desktop-scheduled-tasks"
+claim_scope = "desktop scheduled task support"
+
+[[evidence]]
+id = "ev-claude_code-12-session-scheduled-task-suppo-64a936afca"
+category = "documentation-supported"
+source_kind = "first_party"
+url = "https://code.claude.com/docs/en/scheduled-tasks"
+claim_scope = "session scheduled task support"
+
+[[claim]]
+id = "claim-claude_code-instructions_context"
+family = "instructions_context"
+status = "unknown"
+statement = "Source-backed evidence does not prove instructions context support."
+evidence_ids = []
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "No migrated aggregate row proves this surface family."
+uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+
+[[claim]]
+id = "claim-claude_code-skills"
+family = "skills"
+status = "supported"
+statement = "Source-backed evidence records skills support."
+evidence_ids = ["ev-claude_code-03-skill-support-09108d5779"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Session-scoped scheduled tasks require a supporting Claude Code version and expire after a bounded period. Routines are preview-like cloud infrastructure. Desktop scheduled tasks require the Desktop app and an awake machine. Plugin-loaded agents can have restrictions on hooks, MCP servers, and permission modes."
+uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+
+[[claim]]
+id = "claim-claude_code-mcp_tools"
+family = "mcp_tools"
+status = "supported"
+statement = "Source-backed evidence records mcp tools support."
+evidence_ids = ["ev-claude_code-04-mcp-support-528ca09f3f"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Session-scoped scheduled tasks require a supporting Claude Code version and expire after a bounded period. Routines are preview-like cloud infrastructure. Desktop scheduled tasks require the Desktop app and an awake machine. Plugin-loaded agents can have restrictions on hooks, MCP servers, and permission modes."
+uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+
+[[claim]]
+id = "claim-claude_code-hooks_events"
+family = "hooks_events"
+status = "supported"
+statement = "Source-backed evidence records hooks events support."
+evidence_ids = ["ev-claude_code-05-hook-support-003598c023"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Session-scoped scheduled tasks require a supporting Claude Code version and expire after a bounded period. Routines are preview-like cloud infrastructure. Desktop scheduled tasks require the Desktop app and an awake machine. Plugin-loaded agents can have restrictions on hooks, MCP servers, and permission modes."
+uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+
+[[claim]]
+id = "claim-claude_code-plugins_bundles"
+family = "plugins_bundles"
+status = "supported"
+statement = "Source-backed evidence records plugins bundles support."
+evidence_ids = ["ev-claude_code-07-plugin-support-and-limits-a8ac63cee1"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Session-scoped scheduled tasks require a supporting Claude Code version and expire after a bounded period. Routines are preview-like cloud infrastructure. Desktop scheduled tasks require the Desktop app and an awake machine. Plugin-loaded agents can have restrictions on hooks, MCP servers, and permission modes."
+uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+
+[[claim]]
+id = "claim-claude_code-agent_profiles_subagents"
+family = "agent_profiles_subagents"
+status = "supported"
+statement = "Source-backed evidence records agent profiles subagents support."
+evidence_ids = ["ev-claude_code-06-subagent-support-f4514ded0d"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Session-scoped scheduled tasks require a supporting Claude Code version and expire after a bounded period. Routines are preview-like cloud infrastructure. Desktop scheduled tasks require the Desktop app and an awake machine. Plugin-loaded agents can have restrictions on hooks, MCP servers, and permission modes."
+uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+
+[[claim]]
+id = "claim-claude_code-memory_context_retrieval"
+family = "memory_context_retrieval"
+status = "unknown"
+statement = "Source-backed evidence does not prove memory context retrieval support."
+evidence_ids = []
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "No migrated aggregate row proves this surface family."
+uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+
+[[claim]]
+id = "claim-claude_code-config_settings"
+family = "config_settings"
+status = "supported"
+statement = "Source-backed evidence records config settings support."
+evidence_ids = ["ev-claude_code-08-settings-and-permissions-7776274324"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Session-scoped scheduled tasks require a supporting Claude Code version and expire after a bounded period. Routines are preview-like cloud infrastructure. Desktop scheduled tasks require the Desktop app and an awake machine. Plugin-loaded agents can have restrictions on hooks, MCP servers, and permission modes."
+uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+
+[[claim]]
+id = "claim-claude_code-permissions_approvals_sandboxing"
+family = "permissions_approvals_sandboxing"
+status = "supported"
+statement = "Source-backed evidence records permissions approvals sandboxing support."
+evidence_ids = ["ev-claude_code-08-settings-and-permissions-7776274324"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Session-scoped scheduled tasks require a supporting Claude Code version and expire after a bounded period. Routines are preview-like cloud infrastructure. Desktop scheduled tasks require the Desktop app and an awake machine. Plugin-loaded agents can have restrictions on hooks, MCP servers, and permission modes."
+uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+
+[[claim]]
+id = "claim-claude_code-scheduling_automation"
+family = "scheduling_automation"
+status = "supported"
+statement = "Source-backed evidence records scheduling automation support."
+evidence_ids = ["ev-claude_code-10-cloud-routine-support-e1ecd195c7", "ev-claude_code-11-desktop-scheduled-task-suppo-cdb4a71f50", "ev-claude_code-12-session-scheduled-task-suppo-64a936afca"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Session-scoped scheduled tasks require a supporting Claude Code version and expire after a bounded period. Routines are preview-like cloud infrastructure. Desktop scheduled tasks require the Desktop app and an awake machine. Plugin-loaded agents can have restrictions on hooks, MCP servers, and permission modes."
+uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+
+[[claim]]
+id = "claim-claude_code-commands_shortcuts"
+family = "commands_shortcuts"
+status = "supported"
+statement = "Source-backed evidence records commands shortcuts support."
+evidence_ids = ["ev-claude_code-01-latest-claude-code-version-a-63163f5f90"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Session-scoped scheduled tasks require a supporting Claude Code version and expire after a bounded period. Routines are preview-like cloud infrastructure. Desktop scheduled tasks require the Desktop app and an awake machine. Plugin-loaded agents can have restrictions on hooks, MCP servers, and permission modes."
+uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+
+[[claim]]
+id = "claim-claude_code-providers_connectors"
+family = "providers_connectors"
+status = "unknown"
+statement = "Source-backed evidence does not prove providers connectors support."
+evidence_ids = []
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "No migrated aggregate row proves this surface family."
+uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+
+[[claim]]
+id = "claim-claude_code-runtime_modes"
+family = "runtime_modes"
+status = "supported"
+statement = "Source-backed evidence records runtime modes support."
+evidence_ids = ["ev-claude_code-11-desktop-scheduled-task-suppo-cdb4a71f50"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Session-scoped scheduled tasks require a supporting Claude Code version and expire after a bounded period. Routines are preview-like cloud infrastructure. Desktop scheduled tasks require the Desktop app and an awake machine. Plugin-loaded agents can have restrictions on hooks, MCP servers, and permission modes."
+uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+
+[[claim]]
+id = "claim-claude_code-cross_harness_import_compatibility"
+family = "cross_harness_import_compatibility"
+status = "supported"
+statement = "Source-backed evidence records cross harness import compatibility support."
+evidence_ids = ["ev-claude_code-01-latest-claude-code-version-a-63163f5f90"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Session-scoped scheduled tasks require a supporting Claude Code version and expire after a bounded period. Routines are preview-like cloud infrastructure. Desktop scheduled tasks require the Desktop app and an awake machine. Plugin-loaded agents can have restrictions on hooks, MCP servers, and permission modes."
+uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+
+[[claim]]
+id = "claim-claude_code-lifecycle_reload_update"
+family = "lifecycle_reload_update"
+status = "unknown"
+statement = "Source-backed evidence does not prove lifecycle reload update support."
+evidence_ids = []
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "No migrated aggregate row proves this surface family."
+uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."

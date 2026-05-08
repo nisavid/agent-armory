@@ -88,8 +88,8 @@ and operator approval.
 
 - Vanilla Harness Capability Profiles describe harness capability surfaces; they
   do not prescribe how Smiths should use those surfaces.
-- The current aggregate TOML is migrated completely into per-harness profiles
-  and removed as authored truth once validation passes.
+- Per-harness Vanilla Harness Capability Profiles are the authored structured
+  truth; retained aggregate catalog files are rejected as split truth.
 - Material profile claims carry stable per-profile claim IDs and traceable
   evidence references.
 - Profiles cover the standard surface-family rubric with supported,
