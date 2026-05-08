@@ -1,5 +1,6 @@
 import json
 import importlib
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -3749,455 +3750,77 @@ class MarkdownLinkTests(unittest.TestCase):
 
 
 class HarnessCatalogTests(unittest.TestCase):
-    def catalog_entry(self, harness_id: str, overrides: dict[str, object] | None = None) -> dict[str, object]:
-        entry: dict[str, object] = {
-            "display_name": harness_id,
-            "sources": [
-                {"url": f"https://example.com/{harness_id}", "kind": "first_party", "claim_scope": "docs"},
-            ],
-            "evidence": "documentation-supported",
-            "checked_version": "source-documented",
-            "version_basis": "official release or docs page",
-            "uncertainty": "Fixture uncertainty.",
-            "components": ["skills"],
-            "summary_scheduling": "Fixture scheduling summary.",
-            "scheduling": "manual",
-            "limitations": "Fixture limitation.",
-            "refresh_notes": "Fixture refresh note.",
-            "local_observations": [],
-        }
-        if overrides:
-            entry.update(overrides)
-        return entry
+    def write_migrated_profiles(self, root: Path) -> None:
+        from tests.test_harness_capability_profiles import AGGREGATE_FIXTURE
 
-    def toml_value(self, value: object, indent: str = "") -> str:
-        if isinstance(value, str):
-            return json.dumps(value)
-        if isinstance(value, list):
-            if not value:
-                return "[]"
-            if all(isinstance(item, str) for item in value):
-                return "[" + ", ".join(json.dumps(item) for item in value) + "]"
-            items = []
-            for item in value:
-                if isinstance(item, dict):
-                    fields = ", ".join(f"{key} = {self.toml_value(field)}" for key, field in item.items())
-                    items.append(f"{indent}  {{ {fields} }}")
-            return "[\n" + ",\n".join(items) + f"\n{indent}]"
-        raise TypeError(f"unsupported TOML fixture value: {value!r}")
-
-    def write_catalog(
-        self,
-        root: Path,
-        entries: dict[str, dict[str, object]] | None = None,
-        *,
-        include_checked_at: bool = True,
-    ) -> None:
-        catalog = root / "docs/harness-capabilities.toml"
-        catalog.parent.mkdir(parents=True, exist_ok=True)
-        lines: list[str] = []
-        if include_checked_at:
-            lines.append('checked_at = "2026-05-03T00:00:00-04:00"')
-            lines.append("")
-        for harness_id, entry in (entries or {harness_id: self.catalog_entry(harness_id) for harness_id in REQUIRED_HARNESSES}).items():
-            lines.append(f"[harness.{harness_id}]")
-            for key, value in entry.items():
-                lines.append(f"{key} = {self.toml_value(value)}")
-            lines.append("")
-        catalog.write_text("\n".join(lines), encoding="utf-8")
-        self.write_catalog_markdown(root, entries)
-
-    def write_catalog_markdown(self, root: Path, entries: dict[str, dict[str, object]] | None = None) -> None:
-        markdown = root / "docs/harness-capabilities.md"
-        markdown.parent.mkdir(parents=True, exist_ok=True)
-        current_entries = entries or {harness_id: self.catalog_entry(harness_id) for harness_id in REQUIRED_HARNESSES}
-        rows: list[str] = [
-            "# Harness Capability Catalog",
-            "",
-            "## Harness matrix",
-            "",
-            "| Harness | Version basis | Checked version | Evidence | Scheduling posture |",
-            "| --- | --- | --- | --- | --- |",
-        ]
-        for harness_id in REQUIRED_HARNESSES:
-            entry = current_entries.get(harness_id, {})
-            rows.append(
-                " | ".join(
-                    [
-                        f"| {entry.get('display_name', '')}",
-                        str(entry.get("version_basis", "")),
-                        str(entry.get("checked_version", "")),
-                        str(entry.get("evidence", "")),
-                        f"{entry.get('summary_scheduling', '')} |",
-                    ]
-                )
+        docs = root / "docs"
+        docs.mkdir(parents=True, exist_ok=True)
+        (docs / "harness-capabilities.toml").write_text(AGGREGATE_FIXTURE.strip() + "\n", encoding="utf-8")
+        shutil.copyfile(Path(__file__).resolve().parents[1] / "docs/harness-capabilities.md", docs / "harness-capabilities.md")
+        manager = Path(__file__).resolve().parents[1] / "tools/harness_capability_profiles.py"
+        for args in (["migrate", "--apply"], ["summarize", "--write"]):
+            completed = subprocess.run(
+                [sys.executable, str(manager), "--root", str(root), *args],
+                cwd=Path(__file__).resolve().parents[1],
+                check=False,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
             )
-        markdown.write_text("\n".join(rows), encoding="utf-8")
+            self.assertEqual(completed.returncode, 0, completed.stderr)
 
-    def test_harness_matrix_rows_extracts_rows_by_harness_name(self):
-        markdown = textwrap.dedent(
-            """
-            # Harness Capability Catalog
-
-            ## Harness matrix
-
-            | Harness | Version basis | Checked version | Evidence | Scheduling posture |
-            | --- | --- | --- | --- | --- |
-            | Codex | GitHub releases | 0.128.0 | source-supported | App automations. |
-            """
-        )
-
-        self.assertEqual(
-            harness_matrix_rows(markdown)["Codex"],
-            {
-                "Harness": "Codex",
-                "Version basis": "GitHub releases",
-                "Checked version": "0.128.0",
-                "Evidence": "source-supported",
-                "Scheduling posture": "App automations.",
-            },
-        )
-
-    def test_validate_harness_catalog_requires_evidence_metadata(self):
+    def test_validate_harness_catalog_delegates_to_manager_core_profiles(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
-            self.write_catalog(root)
-
-            results = validate_harness_catalog(root)
-
-        self.assertTrue(all(result.ok for result in results), results)
-
-    def test_validate_harness_catalog_rejects_missing_required_harness(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            root = Path(tmpdir)
-            self.write_catalog(root, {"codex": self.catalog_entry("codex")})
+            self.write_migrated_profiles(root)
 
             results = validate_harness_catalog(root)
 
         self.assertIn(
             CheckResult(
-                name="harness_catalog:coverage",
-                ok=False,
-                detail="missing required harnesses: claude_code, cursor, hermes_agent, opencode, openclaw",
-                path="docs/harness-capabilities.toml",
+                "harness_catalog:manager_core",
+                True,
+                "Vanilla Harness Capability Profile Manager Core passed",
+                "docs/harness-capabilities/vanilla",
             ),
             results,
         )
 
-    def test_validate_harness_catalog_rejects_missing_checked_at(self):
+    def test_validate_harness_catalog_rejects_retained_aggregate_catalog(self):
+        from tests.test_harness_capability_profiles import AGGREGATE_FIXTURE
+
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
-            self.write_catalog(root, include_checked_at=False)
-
-            results = validate_harness_catalog(root)
-
-        self.assertIn(
-            CheckResult("harness_catalog:checked_at", False, "missing checked_at", "docs/harness-capabilities.toml"),
-            results,
-        )
-
-    def test_validate_harness_catalog_rejects_unknown_harness_ids(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            root = Path(tmpdir)
-            entries = {harness_id: self.catalog_entry(harness_id) for harness_id in REQUIRED_HARNESSES}
-            entries["unknown"] = self.catalog_entry("unknown")
-            self.write_catalog(root, entries)
-
-            results = validate_harness_catalog(root)
-
-        self.assertIn(
-            CheckResult("harness_catalog:coverage", False, "unknown harness ids: unknown", "docs/harness-capabilities.toml"),
-            results,
-        )
-
-    def test_validate_harness_catalog_rejects_missing_scalar_fields(self):
-        for field in [
-            "display_name",
-            "evidence",
-            "uncertainty",
-            "summary_scheduling",
-            "scheduling",
-            "limitations",
-            "refresh_notes",
-            "local_observations",
-        ]:
-            with self.subTest(field=field), tempfile.TemporaryDirectory() as tmpdir:
-                root = Path(tmpdir)
-                entries = {harness_id: self.catalog_entry(harness_id) for harness_id in REQUIRED_HARNESSES}
-                entries["codex"].pop(field)
-                self.write_catalog(root, entries)
-
-                results = validate_harness_catalog(root)
-
-            self.assertIn(
-                CheckResult(f"harness_catalog:codex:{field}", False, f"missing {field}", "docs/harness-capabilities.toml"),
-                results,
-            )
-
-    def test_validate_harness_catalog_rejects_empty_sources(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            root = Path(tmpdir)
-            entries = {harness_id: self.catalog_entry(harness_id) for harness_id in REQUIRED_HARNESSES}
-            entries["codex"]["sources"] = []
-            self.write_catalog(root, entries)
-
-            results = validate_harness_catalog(root)
-
-        self.assertIn(
-            CheckResult("harness_catalog:codex:sources", False, "sources must be non-empty", "docs/harness-capabilities.toml"),
-            results,
-        )
-
-    def test_validate_harness_catalog_rejects_missing_source_fields(self):
-        for field in ["url", "kind", "claim_scope"]:
-            with self.subTest(field=field), tempfile.TemporaryDirectory() as tmpdir:
-                root = Path(tmpdir)
-                entries = {harness_id: self.catalog_entry(harness_id) for harness_id in REQUIRED_HARNESSES}
-                source = dict(entries["codex"]["sources"][0])
-                source.pop(field)
-                entries["codex"]["sources"] = [source]
-                self.write_catalog(root, entries)
-
-                results = validate_harness_catalog(root)
-
-            self.assertIn(
-                CheckResult(
-                    f"harness_catalog:codex:sources:0:{field}",
-                    False,
-                    f"missing source {field}",
-                    "docs/harness-capabilities.toml",
-                ),
-                results,
-            )
-
-    def test_validate_harness_catalog_rejects_invalid_source_url_scheme(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            root = Path(tmpdir)
-            entries = {harness_id: self.catalog_entry(harness_id) for harness_id in REQUIRED_HARNESSES}
-            entries["codex"]["sources"] = [{"url": "file:///tmp/source", "kind": "first_party", "claim_scope": "docs"}]
-            self.write_catalog(root, entries)
+            self.write_migrated_profiles(root)
+            (root / "docs/harness-capabilities.toml").write_text(AGGREGATE_FIXTURE.strip() + "\n", encoding="utf-8")
 
             results = validate_harness_catalog(root)
 
         self.assertIn(
             CheckResult(
-                "harness_catalog:codex:sources:0:url",
+                "harness_catalog:manager_core:aggregate_catalog:retired",
                 False,
-                "source url must be http or https with a host",
+                "aggregate catalog must not remain authored truth",
                 "docs/harness-capabilities.toml",
             ),
             results,
         )
 
-    def test_validate_harness_catalog_rejects_source_url_without_host(self):
+    def test_validate_harness_catalog_preserves_manager_core_failure_names(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
-            entries = {harness_id: self.catalog_entry(harness_id) for harness_id in REQUIRED_HARNESSES}
-            entries["codex"]["sources"] = [{"url": "https:///docs", "kind": "first_party", "claim_scope": "docs"}]
-            self.write_catalog(root, entries)
+            self.write_migrated_profiles(root)
+            profile = root / "docs/harness-capabilities/vanilla/codex.toml"
+            profile.write_text(profile.read_text(encoding="utf-8").replace('schema_version = "vanilla-harness-capability-profile.v1alpha1"\n', "", 1), encoding="utf-8")
 
             results = validate_harness_catalog(root)
 
         self.assertIn(
             CheckResult(
-                "harness_catalog:codex:sources:0:url",
+                "harness_catalog:manager_core:profile:codex:schema_version",
                 False,
-                "source url must be http or https with a host",
-                "docs/harness-capabilities.toml",
-            ),
-            results,
-        )
-
-    def test_validate_harness_catalog_rejects_invalid_source_kind(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            root = Path(tmpdir)
-            entries = {harness_id: self.catalog_entry(harness_id) for harness_id in REQUIRED_HARNESSES}
-            entries["codex"]["sources"] = [{"url": "https://example.com", "kind": "local_observation", "claim_scope": "docs"}]
-            self.write_catalog(root, entries)
-
-            results = validate_harness_catalog(root)
-
-        self.assertIn(
-            CheckResult(
-                "harness_catalog:codex:sources:0:kind",
-                False,
-                "source kind must be first_party or third_party_fallback",
-                "docs/harness-capabilities.toml",
-            ),
-            results,
-        )
-
-    def test_validate_harness_catalog_rejects_invalid_evidence_category(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            root = Path(tmpdir)
-            entries = {harness_id: self.catalog_entry(harness_id) for harness_id in REQUIRED_HARNESSES}
-            entries["codex"]["evidence"] = "rumor"
-            self.write_catalog(root, entries)
-
-            results = validate_harness_catalog(root)
-
-        self.assertIn(
-            CheckResult("harness_catalog:codex:evidence", False, "invalid evidence category", "docs/harness-capabilities.toml"),
-            results,
-        )
-
-    def test_validate_harness_catalog_requires_version_or_basis(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            root = Path(tmpdir)
-            entries = {harness_id: self.catalog_entry(harness_id) for harness_id in REQUIRED_HARNESSES}
-            entries["codex"].pop("checked_version")
-            entries["codex"].pop("version_basis")
-            self.write_catalog(root, entries)
-
-            results = validate_harness_catalog(root)
-
-        self.assertIn(
-            CheckResult(
-                "harness_catalog:codex:version",
-                False,
-                "missing checked_version or version_basis",
-                "docs/harness-capabilities.toml",
-            ),
-            results,
-        )
-
-    def test_validate_harness_catalog_rejects_empty_components(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            root = Path(tmpdir)
-            entries = {harness_id: self.catalog_entry(harness_id) for harness_id in REQUIRED_HARNESSES}
-            entries["codex"]["components"] = []
-            self.write_catalog(root, entries)
-
-            results = validate_harness_catalog(root)
-
-        self.assertIn(
-            CheckResult("harness_catalog:codex:components", False, "components must be non-empty", "docs/harness-capabilities.toml"),
-            results,
-        )
-
-    def test_validate_harness_catalog_accepts_fallback_source_kind_as_labeling(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            root = Path(tmpdir)
-            entries = {harness_id: self.catalog_entry(harness_id) for harness_id in REQUIRED_HARNESSES}
-            entries["codex"]["sources"] = [{"url": "https://example.com", "kind": "third_party_fallback", "claim_scope": "metadata"}]
-            entries["codex"]["uncertainty"] = "Fixture uncertainty."
-            entries["codex"]["refresh_notes"] = "Fixture refresh note."
-            self.write_catalog(root, entries)
-
-            results = validate_harness_catalog(root)
-
-        self.assertNotIn("harness_catalog:codex:fallback", {result.name for result in results})
-
-    def test_validate_harness_catalog_requires_local_observations_as_separate_list(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            root = Path(tmpdir)
-            entries = {harness_id: self.catalog_entry(harness_id) for harness_id in REQUIRED_HARNESSES}
-            entries["codex"]["sources"] = [{"url": "https://example.com", "kind": "local_observation", "claim_scope": "cli"}]
-            self.write_catalog(root, entries)
-
-            results = validate_harness_catalog(root)
-
-        self.assertIn(
-            CheckResult(
-                "harness_catalog:codex:sources:0:kind",
-                False,
-                "source kind must be first_party or third_party_fallback",
-                "docs/harness-capabilities.toml",
-            ),
-            results,
-        )
-
-    def test_validate_harness_catalog_rejects_non_string_local_observations(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            root = Path(tmpdir)
-            entries = {harness_id: self.catalog_entry(harness_id) for harness_id in REQUIRED_HARNESSES}
-            entries["codex"]["local_observations"] = [{"command": "codex --version"}]
-            self.write_catalog(root, entries)
-
-            results = validate_harness_catalog(root)
-
-        self.assertIn(
-            CheckResult(
-                "harness_catalog:codex:local_observations",
-                False,
-                "local_observations must be a list of strings",
-                "docs/harness-capabilities.toml",
-            ),
-            results,
-        )
-
-    def test_validate_harness_catalog_checks_markdown_summary_sync(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            root = Path(tmpdir)
-            self.write_catalog(root)
-            markdown = root / "docs/harness-capabilities.md"
-            self.write_catalog_markdown(root)
-
-            results = validate_harness_catalog(root)
-
-        self.assertNotIn("harness_catalog_markdown:codex:checked_version", {result.name for result in results})
-
-    def test_validate_harness_catalog_rejects_stale_markdown_summary(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            root = Path(tmpdir)
-            self.write_catalog(root)
-            markdown = root / "docs/harness-capabilities.md"
-            markdown.write_text(
-                textwrap.dedent(
-                    """
-                    # Harness Capability Catalog
-
-                    ## Harness matrix
-
-                    | Harness | Version basis | Checked version | Evidence | Scheduling posture |
-                    | --- | --- | --- | --- | --- |
-                    | codex | official release or docs page | stale-version | documentation-supported | Fixture scheduling summary. |
-                    """
-                ),
-                encoding="utf-8",
-            )
-
-            results = validate_harness_catalog(root)
-
-        self.assertIn(
-            CheckResult(
-                "harness_catalog_markdown:codex:checked_version",
-                False,
-                "markdown matrix Checked version mismatch: expected source-documented",
-                "docs/harness-capabilities.md",
-            ),
-            results,
-        )
-
-    def test_validate_harness_catalog_rejects_wrong_row_even_when_value_appears_elsewhere(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            root = Path(tmpdir)
-            self.write_catalog(root)
-            markdown = root / "docs/harness-capabilities.md"
-            markdown.write_text(
-                textwrap.dedent(
-                    """
-                    # Harness Capability Catalog
-
-                    ## Harness matrix
-
-                    | Harness | Version basis | Checked version | Evidence | Scheduling posture |
-                    | --- | --- | --- | --- | --- |
-                    | codex | official release or docs page | stale-version | documentation-supported | Fixture scheduling summary. |
-                    | claude_code | official release or docs page | source-documented | documentation-supported | Fixture scheduling summary. |
-                    """
-                ),
-                encoding="utf-8",
-            )
-
-            results = validate_harness_catalog(root)
-
-        self.assertIn(
-            CheckResult(
-                "harness_catalog_markdown:codex:checked_version",
-                False,
-                "markdown matrix Checked version mismatch: expected source-documented",
-                "docs/harness-capabilities.md",
+                "must be vanilla-harness-capability-profile.v1alpha1",
+                "docs/harness-capabilities/vanilla/codex.toml",
             ),
             results,
         )

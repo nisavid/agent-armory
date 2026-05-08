@@ -1,0 +1,305 @@
+schema_version = "vanilla-harness-capability-profile.v1alpha1"
+profile_kind = "vanilla_harness_capability_profile"
+harness_id = "opencode"
+display_name = "OpenCode"
+checked_at = "2026-05-03T09:25:05-04:00"
+checked_version = "1.14.33"
+version_basis = "GitHub latest release for anomalyco/opencode and first-party OpenCode docs."
+evidence_category = "source-supported"
+summary_scheduling = "GitHub Actions cron or external schedulers around opencode run; no verified native durable scheduler."
+scheduling = "OpenCode has first-party GitHub Action integration that can be scheduled through GitHub Actions cron. opencode run can be scripted by external schedulers. No first-party native durable scheduler was verified."
+limitations = "Default permission posture can be broad unless configured. Legacy tools permission is deprecated in favor of permission. MCP servers can create context pressure. npm plugins auto-install with Bun and can define tools and hooks; review plugins as executable third-party code."
+uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+refresh_notes = "Refresh from anomalyco/opencode releases and opencode.ai docs. Use ecosystem scheduler entries only as third-party fallback and label them as such."
+components = ["skills", "plugins", "plugin hooks", "custom tools", "MCP servers", "primary agents", "subagents", "command templates", "permissions", "LSP integration", "formatters", "instruction files", "snapshots", "TUI", "desktop mode", "web mode", "server mode", "noninteractive opencode run", "GitHub Action integration", "ACP server"]
+local_observations = ["No local OpenCode binary, opencode.json, plugin directory, or GitHub workflow was inspected for this seed refresh."]
+
+[scope]
+surface = "vanilla_harness_capability_surface"
+applicability = "Default settings and default equipment immediately after installation and onboarding."
+
+[[evidence]]
+id = "ev-opencode-release-version-date-and-release-bb8762dcd6"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://github.com/anomalyco/opencode/releases/tag/v1.14.33"
+claim_scope = "release version, date, and release notes"
+
+[[evidence]]
+id = "ev-opencode-active-repository-identity-4210b1dce8"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://github.com/anomalyco/opencode"
+claim_scope = "active repository identity"
+
+[[evidence]]
+id = "ev-opencode-documentation-index-aeffba9ba3"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://opencode.ai/docs/"
+claim_scope = "documentation index"
+
+[[evidence]]
+id = "ev-opencode-cli-and-run-support-aabaf0f3a7"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://opencode.ai/docs/cli/"
+claim_scope = "CLI and run support"
+
+[[evidence]]
+id = "ev-opencode-skill-support-a300b4a984"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://opencode.ai/docs/skills/"
+claim_scope = "skill support"
+
+[[evidence]]
+id = "ev-opencode-plugin-and-hook-support-373d03f48e"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://opencode.ai/docs/plugins/"
+claim_scope = "plugin and hook support"
+
+[[evidence]]
+id = "ev-opencode-agent-and-subagent-support-efedd2d467"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://opencode.ai/docs/agents/"
+claim_scope = "agent and subagent support"
+
+[[evidence]]
+id = "ev-opencode-configuration-support-228e5b9b41"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://opencode.ai/docs/config/"
+claim_scope = "configuration support"
+
+[[evidence]]
+id = "ev-opencode-mcp-support-7f57fcc8d3"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://opencode.ai/docs/mcp-servers/"
+claim_scope = "MCP support"
+
+[[evidence]]
+id = "ev-opencode-permissions-support-08983d1515"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://opencode.ai/docs/permissions/"
+claim_scope = "permissions support"
+
+[[evidence]]
+id = "ev-opencode-command-template-support-8c25f46c65"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://opencode.ai/docs/commands/"
+claim_scope = "command template support"
+
+[[evidence]]
+id = "ev-opencode-github-action-integration-183856d336"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://opencode.ai/docs/github/"
+claim_scope = "GitHub Action integration"
+
+[[evidence]]
+id = "ev-opencode-ecosystem-and-third-party-integr-e4f52324be"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://opencode.ai/docs/ecosystem/"
+claim_scope = "ecosystem and third-party integrations index"
+
+[[claim]]
+id = "claim-opencode-instructions_context"
+family = "instructions_context"
+status = "unknown"
+statement = "Source-backed evidence does not prove instructions context support."
+evidence_ids = []
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "No migrated aggregate row proves this surface family."
+uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+
+[[claim]]
+id = "claim-opencode-skills"
+family = "skills"
+status = "supported"
+statement = "Source-backed evidence records skills support."
+evidence_ids = ["ev-opencode-skill-support-a300b4a984"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Default permission posture can be broad unless configured. Legacy tools permission is deprecated in favor of permission. MCP servers can create context pressure. npm plugins auto-install with Bun and can define tools and hooks; review plugins as executable third-party code."
+uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+
+[[claim]]
+id = "claim-opencode-mcp_tools"
+family = "mcp_tools"
+status = "supported"
+statement = "Source-backed evidence records mcp tools support."
+evidence_ids = ["ev-opencode-mcp-support-7f57fcc8d3"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Default permission posture can be broad unless configured. Legacy tools permission is deprecated in favor of permission. MCP servers can create context pressure. npm plugins auto-install with Bun and can define tools and hooks; review plugins as executable third-party code."
+uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+
+[[claim]]
+id = "claim-opencode-hooks_events"
+family = "hooks_events"
+status = "supported"
+statement = "Source-backed evidence records hooks events support."
+evidence_ids = ["ev-opencode-plugin-and-hook-support-373d03f48e"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Default permission posture can be broad unless configured. Legacy tools permission is deprecated in favor of permission. MCP servers can create context pressure. npm plugins auto-install with Bun and can define tools and hooks; review plugins as executable third-party code."
+uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+
+[[claim]]
+id = "claim-opencode-plugins_bundles"
+family = "plugins_bundles"
+status = "supported"
+statement = "Source-backed evidence records plugins bundles support."
+evidence_ids = ["ev-opencode-plugin-and-hook-support-373d03f48e"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Default permission posture can be broad unless configured. Legacy tools permission is deprecated in favor of permission. MCP servers can create context pressure. npm plugins auto-install with Bun and can define tools and hooks; review plugins as executable third-party code."
+uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+
+[[claim]]
+id = "claim-opencode-agent_profiles_subagents"
+family = "agent_profiles_subagents"
+status = "supported"
+statement = "Source-backed evidence records agent profiles subagents support."
+evidence_ids = ["ev-opencode-agent-and-subagent-support-efedd2d467"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Default permission posture can be broad unless configured. Legacy tools permission is deprecated in favor of permission. MCP servers can create context pressure. npm plugins auto-install with Bun and can define tools and hooks; review plugins as executable third-party code."
+uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+
+[[claim]]
+id = "claim-opencode-memory_context_retrieval"
+family = "memory_context_retrieval"
+status = "unknown"
+statement = "Source-backed evidence does not prove memory context retrieval support."
+evidence_ids = []
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "No migrated aggregate row proves this surface family."
+uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+
+[[claim]]
+id = "claim-opencode-config_settings"
+family = "config_settings"
+status = "supported"
+statement = "Source-backed evidence records config settings support."
+evidence_ids = ["ev-opencode-configuration-support-228e5b9b41", "ev-opencode-permissions-support-08983d1515"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Default permission posture can be broad unless configured. Legacy tools permission is deprecated in favor of permission. MCP servers can create context pressure. npm plugins auto-install with Bun and can define tools and hooks; review plugins as executable third-party code."
+uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+
+[[claim]]
+id = "claim-opencode-permissions_approvals_sandboxing"
+family = "permissions_approvals_sandboxing"
+status = "supported"
+statement = "Source-backed evidence records permissions approvals sandboxing support."
+evidence_ids = ["ev-opencode-permissions-support-08983d1515"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Default permission posture can be broad unless configured. Legacy tools permission is deprecated in favor of permission. MCP servers can create context pressure. npm plugins auto-install with Bun and can define tools and hooks; review plugins as executable third-party code."
+uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+
+[[claim]]
+id = "claim-opencode-scheduling_automation"
+family = "scheduling_automation"
+status = "unknown"
+statement = "Source-backed evidence does not prove scheduling automation support."
+evidence_ids = []
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "No migrated aggregate row proves this surface family."
+uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+
+[[claim]]
+id = "claim-opencode-commands_shortcuts"
+family = "commands_shortcuts"
+status = "supported"
+statement = "Source-backed evidence records commands shortcuts support."
+evidence_ids = ["ev-opencode-command-template-support-8c25f46c65"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Default permission posture can be broad unless configured. Legacy tools permission is deprecated in favor of permission. MCP servers can create context pressure. npm plugins auto-install with Bun and can define tools and hooks; review plugins as executable third-party code."
+uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+
+[[claim]]
+id = "claim-opencode-providers_connectors"
+family = "providers_connectors"
+status = "unknown"
+statement = "Source-backed evidence does not prove providers connectors support."
+evidence_ids = []
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "No migrated aggregate row proves this surface family."
+uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+
+[[claim]]
+id = "claim-opencode-runtime_modes"
+family = "runtime_modes"
+status = "supported"
+statement = "Source-backed evidence records runtime modes support."
+evidence_ids = ["ev-opencode-cli-and-run-support-aabaf0f3a7"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Default permission posture can be broad unless configured. Legacy tools permission is deprecated in favor of permission. MCP servers can create context pressure. npm plugins auto-install with Bun and can define tools and hooks; review plugins as executable third-party code."
+uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+
+[[claim]]
+id = "claim-opencode-cross_harness_import_compatibility"
+family = "cross_harness_import_compatibility"
+status = "supported"
+statement = "Source-backed evidence records cross harness import compatibility support."
+evidence_ids = ["ev-opencode-ecosystem-and-third-party-integr-e4f52324be"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Default permission posture can be broad unless configured. Legacy tools permission is deprecated in favor of permission. MCP servers can create context pressure. npm plugins auto-install with Bun and can define tools and hooks; review plugins as executable third-party code."
+uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+
+[[claim]]
+id = "claim-opencode-lifecycle_reload_update"
+family = "lifecycle_reload_update"
+status = "unknown"
+statement = "Source-backed evidence does not prove lifecycle reload update support."
+evidence_ids = []
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "No migrated aggregate row proves this surface family."
+uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."

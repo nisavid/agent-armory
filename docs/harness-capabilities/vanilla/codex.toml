@@ -1,0 +1,312 @@
+schema_version = "vanilla-harness-capability-profile.v1alpha1"
+profile_kind = "vanilla_harness_capability_profile"
+harness_id = "codex"
+display_name = "Codex"
+checked_at = "2026-05-03T09:25:05-04:00"
+checked_version = "0.128.0 stable; 0.129.0-alpha.2 prerelease observed"
+version_basis = "GitHub releases for openai/codex, plus first-party OpenAI Codex docs."
+evidence_category = "source-supported"
+summary_scheduling = "App automations and external schedulers around codex exec; keep stable and prerelease claims separate."
+scheduling = "Codex app automations support project and standalone recurring schedules, including cron-like syntax. Noninteractive codex exec can also run under external schedulers such as GitHub Actions or cron."
+limitations = "Hooks require the relevant hook feature support and should not be treated as a complete enforcement boundary without verification. Some app-server and plugin APIs remain experimental, and unattended automations still run under sandbox and approval constraints."
+uncertainty = "Stable version is anchored to GitHub releases. Prerelease features may be ahead of stable, and app-server and hook details can remain experimental or feature-gated."
+refresh_notes = "Refresh from GitHub releases first, then first-party OpenAI Codex docs. Keep stable and prerelease claims separate."
+components = ["skills", "plugins", "MCP servers", "hooks", "app and connector surfaces", "subagents", "custom agent profiles", "permission profiles", "app-server APIs", "noninteractive codex exec", "GitHub Action workflows", "automations", "slash commands", "web search", "persisted goals"]
+local_observations = ["No local Codex binary, app profile, or automation configuration was inspected for this seed refresh."]
+
+[scope]
+surface = "vanilla_harness_capability_surface"
+applicability = "Default settings and default equipment immediately after installation and onboarding."
+
+[[evidence]]
+id = "ev-codex-stable-release-version-release-d-0e9f0761e2"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://github.com/openai/codex/releases/tag/rust-v0.128.0"
+claim_scope = "stable release version, release date, and release notes"
+
+[[evidence]]
+id = "ev-codex-latest-observed-prerelease-versi-a1cbdd83e2"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://github.com/openai/codex/releases/tag/rust-v0.129.0-alpha.2"
+claim_scope = "latest observed prerelease version"
+
+[[evidence]]
+id = "ev-codex-codex-change-history-6cf0abda84"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://developers.openai.com/codex/changelog"
+claim_scope = "Codex change history"
+
+[[evidence]]
+id = "ev-codex-skill-support-18bcdf25dd"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://developers.openai.com/codex/skills"
+claim_scope = "skill support"
+
+[[evidence]]
+id = "ev-codex-plugin-support-ebef8b225b"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://developers.openai.com/codex/plugins"
+claim_scope = "plugin support"
+
+[[evidence]]
+id = "ev-codex-plugin-authoring-support-0d95e14458"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://developers.openai.com/codex/plugins/build"
+claim_scope = "plugin authoring support"
+
+[[evidence]]
+id = "ev-codex-hook-support-cb4d0708c5"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://developers.openai.com/codex/hooks"
+claim_scope = "hook support"
+
+[[evidence]]
+id = "ev-codex-subagent-and-profile-like-suppor-188704fd00"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://developers.openai.com/codex/subagents"
+claim_scope = "subagent and profile-like support"
+
+[[evidence]]
+id = "ev-codex-app-automation-scheduling-suppor-4bf7d7a30f"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://developers.openai.com/codex/app/automations"
+claim_scope = "app automation scheduling support"
+
+[[evidence]]
+id = "ev-codex-noninteractive-execution-support-4c7e489f5a"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://developers.openai.com/codex/noninteractive"
+claim_scope = "noninteractive execution support"
+
+[[evidence]]
+id = "ev-codex-github-actions-integration-e85b72f10c"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://developers.openai.com/codex/github-action"
+claim_scope = "GitHub Actions integration"
+
+[[evidence]]
+id = "ev-codex-configuration-and-permission-sur-6902c10f69"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://developers.openai.com/codex/config-reference"
+claim_scope = "configuration and permission surfaces"
+
+[[evidence]]
+id = "ev-codex-app-server-api-surface-258a770667"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://github.com/openai/codex/blob/5512b23c95084c39eb4c6bdbfe2e7e665eaf8231/codex-rs/app-server/README.md"
+claim_scope = "app-server API surface"
+
+[[evidence]]
+id = "ev-codex-cli-configuration-details-4e2edad532"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://github.com/openai/codex/blob/5512b23c95084c39eb4c6bdbfe2e7e665eaf8231/docs/config.md"
+claim_scope = "CLI configuration details"
+
+[[claim]]
+id = "claim-codex-instructions_context"
+family = "instructions_context"
+status = "unknown"
+statement = "Source-backed evidence does not prove instructions context support."
+evidence_ids = []
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "No migrated aggregate row proves this surface family."
+uncertainty = "Stable version is anchored to GitHub releases. Prerelease features may be ahead of stable, and app-server and hook details can remain experimental or feature-gated."
+
+[[claim]]
+id = "claim-codex-skills"
+family = "skills"
+status = "supported"
+statement = "Source-backed evidence records skills support."
+evidence_ids = ["ev-codex-skill-support-18bcdf25dd"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Hooks require the relevant hook feature support and should not be treated as a complete enforcement boundary without verification. Some app-server and plugin APIs remain experimental, and unattended automations still run under sandbox and approval constraints."
+uncertainty = "Stable version is anchored to GitHub releases. Prerelease features may be ahead of stable, and app-server and hook details can remain experimental or feature-gated."
+
+[[claim]]
+id = "claim-codex-mcp_tools"
+family = "mcp_tools"
+status = "unknown"
+statement = "Source-backed evidence does not prove mcp tools support."
+evidence_ids = []
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "No migrated aggregate row proves this surface family."
+uncertainty = "Stable version is anchored to GitHub releases. Prerelease features may be ahead of stable, and app-server and hook details can remain experimental or feature-gated."
+
+[[claim]]
+id = "claim-codex-hooks_events"
+family = "hooks_events"
+status = "supported"
+statement = "Source-backed evidence records hooks events support."
+evidence_ids = ["ev-codex-hook-support-cb4d0708c5"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Hooks require the relevant hook feature support and should not be treated as a complete enforcement boundary without verification. Some app-server and plugin APIs remain experimental, and unattended automations still run under sandbox and approval constraints."
+uncertainty = "Stable version is anchored to GitHub releases. Prerelease features may be ahead of stable, and app-server and hook details can remain experimental or feature-gated."
+
+[[claim]]
+id = "claim-codex-plugins_bundles"
+family = "plugins_bundles"
+status = "supported"
+statement = "Source-backed evidence records plugins bundles support."
+evidence_ids = ["ev-codex-plugin-support-ebef8b225b", "ev-codex-plugin-authoring-support-0d95e14458"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Hooks require the relevant hook feature support and should not be treated as a complete enforcement boundary without verification. Some app-server and plugin APIs remain experimental, and unattended automations still run under sandbox and approval constraints."
+uncertainty = "Stable version is anchored to GitHub releases. Prerelease features may be ahead of stable, and app-server and hook details can remain experimental or feature-gated."
+
+[[claim]]
+id = "claim-codex-agent_profiles_subagents"
+family = "agent_profiles_subagents"
+status = "supported"
+statement = "Source-backed evidence records agent profiles subagents support."
+evidence_ids = ["ev-codex-subagent-and-profile-like-suppor-188704fd00"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Hooks require the relevant hook feature support and should not be treated as a complete enforcement boundary without verification. Some app-server and plugin APIs remain experimental, and unattended automations still run under sandbox and approval constraints."
+uncertainty = "Stable version is anchored to GitHub releases. Prerelease features may be ahead of stable, and app-server and hook details can remain experimental or feature-gated."
+
+[[claim]]
+id = "claim-codex-memory_context_retrieval"
+family = "memory_context_retrieval"
+status = "unknown"
+statement = "Source-backed evidence does not prove memory context retrieval support."
+evidence_ids = []
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "No migrated aggregate row proves this surface family."
+uncertainty = "Stable version is anchored to GitHub releases. Prerelease features may be ahead of stable, and app-server and hook details can remain experimental or feature-gated."
+
+[[claim]]
+id = "claim-codex-config_settings"
+family = "config_settings"
+status = "supported"
+statement = "Source-backed evidence records config settings support."
+evidence_ids = ["ev-codex-configuration-and-permission-sur-6902c10f69", "ev-codex-cli-configuration-details-4e2edad532"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Hooks require the relevant hook feature support and should not be treated as a complete enforcement boundary without verification. Some app-server and plugin APIs remain experimental, and unattended automations still run under sandbox and approval constraints."
+uncertainty = "Stable version is anchored to GitHub releases. Prerelease features may be ahead of stable, and app-server and hook details can remain experimental or feature-gated."
+
+[[claim]]
+id = "claim-codex-permissions_approvals_sandboxing"
+family = "permissions_approvals_sandboxing"
+status = "supported"
+statement = "Source-backed evidence records permissions approvals sandboxing support."
+evidence_ids = ["ev-codex-configuration-and-permission-sur-6902c10f69"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Hooks require the relevant hook feature support and should not be treated as a complete enforcement boundary without verification. Some app-server and plugin APIs remain experimental, and unattended automations still run under sandbox and approval constraints."
+uncertainty = "Stable version is anchored to GitHub releases. Prerelease features may be ahead of stable, and app-server and hook details can remain experimental or feature-gated."
+
+[[claim]]
+id = "claim-codex-scheduling_automation"
+family = "scheduling_automation"
+status = "supported"
+statement = "Source-backed evidence records scheduling automation support."
+evidence_ids = ["ev-codex-app-automation-scheduling-suppor-4bf7d7a30f"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Hooks require the relevant hook feature support and should not be treated as a complete enforcement boundary without verification. Some app-server and plugin APIs remain experimental, and unattended automations still run under sandbox and approval constraints."
+uncertainty = "Stable version is anchored to GitHub releases. Prerelease features may be ahead of stable, and app-server and hook details can remain experimental or feature-gated."
+
+[[claim]]
+id = "claim-codex-commands_shortcuts"
+family = "commands_shortcuts"
+status = "unknown"
+statement = "Source-backed evidence does not prove commands shortcuts support."
+evidence_ids = []
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "No migrated aggregate row proves this surface family."
+uncertainty = "Stable version is anchored to GitHub releases. Prerelease features may be ahead of stable, and app-server and hook details can remain experimental or feature-gated."
+
+[[claim]]
+id = "claim-codex-providers_connectors"
+family = "providers_connectors"
+status = "unknown"
+statement = "Source-backed evidence does not prove providers connectors support."
+evidence_ids = []
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "No migrated aggregate row proves this surface family."
+uncertainty = "Stable version is anchored to GitHub releases. Prerelease features may be ahead of stable, and app-server and hook details can remain experimental or feature-gated."
+
+[[claim]]
+id = "claim-codex-runtime_modes"
+family = "runtime_modes"
+status = "supported"
+statement = "Source-backed evidence records runtime modes support."
+evidence_ids = ["ev-codex-noninteractive-execution-support-4c7e489f5a"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Hooks require the relevant hook feature support and should not be treated as a complete enforcement boundary without verification. Some app-server and plugin APIs remain experimental, and unattended automations still run under sandbox and approval constraints."
+uncertainty = "Stable version is anchored to GitHub releases. Prerelease features may be ahead of stable, and app-server and hook details can remain experimental or feature-gated."
+
+[[claim]]
+id = "claim-codex-cross_harness_import_compatibility"
+family = "cross_harness_import_compatibility"
+status = "supported"
+statement = "Source-backed evidence records cross harness import compatibility support."
+evidence_ids = ["ev-codex-codex-change-history-6cf0abda84"]
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "Hooks require the relevant hook feature support and should not be treated as a complete enforcement boundary without verification. Some app-server and plugin APIs remain experimental, and unattended automations still run under sandbox and approval constraints."
+uncertainty = "Stable version is anchored to GitHub releases. Prerelease features may be ahead of stable, and app-server and hook details can remain experimental or feature-gated."
+
+[[claim]]
+id = "claim-codex-lifecycle_reload_update"
+family = "lifecycle_reload_update"
+status = "unknown"
+statement = "Source-backed evidence does not prove lifecycle reload update support."
+evidence_ids = []
+applicability_scope = "vanilla harness after default installation and onboarding"
+capability_origin = "migrated aggregate harness catalog"
+migration_status = "migrated_from_aggregate"
+evidence_basis = "aggregate_catalog_migration"
+limitations = "No migrated aggregate row proves this surface family."
+uncertainty = "Stable version is anchored to GitHub releases. Prerelease features may be ahead of stable, and app-server and hook details can remain experimental or feature-gated."

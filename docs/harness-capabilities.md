@@ -2,128 +2,142 @@
 
 Status: Forge Canon
 
-This catalog records source-backed harness facts that Smiths may use when designing Agent Equipment. Harness capabilities move quickly, so the catalog states when each fact was checked, what source supports it, and what remains uncertain.
+This catalog is the human-facing front door for source-backed Vanilla Harness Capability Profiles that Smiths may use when designing Agent Equipment. Harness capabilities move quickly, so each profile states when its facts were checked, what source supports them, and what remains uncertain.
 
-The structured source of truth is [docs/harness-capabilities.toml](harness-capabilities.toml). This Markdown document summarizes the same catalog for humans and Agents.
+The structured source of truth is `docs/harness-capabilities/vanilla/`. Each supported harness has one per-harness Vanilla Harness Capability Profile. This Markdown document summarizes the validated profiles for humans and Agents.
+
+The first-slice schema reference is [Vanilla Harness Capability Profile v1alpha1](harness-capabilities/schema/vanilla-profile-v1alpha1.md).
 
 ## Catalog policy
 
 Use this catalog before making harness-specific claims in Forge Canon, Equipment Blueprints, templates, examples, or equipment implementation plans.
 
-Treat every entry as versioned state. A Smith must refresh the relevant harness entry before relying on recently changed scheduling, hook, plugin, MCP, permission, or Agent Profile behavior. Record local CLI observations separately from public source facts.
+Treat every profile as versioned state. A Smith must refresh the relevant harness profile before relying on recently changed scheduling, hook, plugin, MCP, permission, or Agent Profile behavior. Record local CLI observations separately from public source facts.
 
-Use first-party sources where available. Use third-party fallback metadata only when first-party evidence is unavailable or clearly insufficient, and label it as fallback evidence in the TOML entry's source, uncertainty, or refresh notes.
+Use first-party sources where available. Use third-party fallback metadata only when first-party evidence is unavailable or clearly insufficient, and label it as fallback evidence in the profile's source, uncertainty, or refresh notes.
 
 ## Refresh summary
 
 Checked at: 2026-05-03T09:25:05-04:00.
 
-The seed refresh used first-party release pages, first-party documentation, and tag-pinned source where available. No local harness binaries, workspace configs, gateways, plugin installs, cloud agents, or automation state were inspected during this refresh.
+The profiles preserve source-backed version, component, scheduling, limitation, uncertainty, refresh-note, and local-observation fields. No local harness binaries, workspace configs, gateways, plugin installs, cloud agents, or automation state were inspected during the migrated seed refresh.
 
 Documentation indexes can lag behind current release evidence. For version anchors, prefer GitHub releases or official changelogs over generated indexes or secondary metadata.
 
 ## Harness matrix
 
-| Harness | Version basis | Checked version | Evidence | Scheduling posture |
-| --- | --- | --- | --- | --- |
-| Codex | GitHub releases plus first-party OpenAI Codex docs | 0.128.0 stable; 0.129.0-alpha.2 prerelease observed | source-supported | App automations and external schedulers around codex exec; keep stable and prerelease claims separate. |
-| Claude Code | Official Claude Code changelog and docs | 2.1.126 | documentation-supported | Routines, Desktop scheduled tasks, and session-scoped scheduled tasks. |
-| Cursor | Official Cursor changelog and docs | 3.2 numbered release; changelog state checked through 2026-05-01 | documentation-supported | Cloud Agent Automations with schedule and event triggers. |
-| Hermes Agent | GitHub release, pyproject version, and tag-pinned docs | 0.12.0 (v2026.4.30) | source-supported | Cron jobs, gateway cron ticker, curator schedule, hooks, and terminal background processes. |
-| OpenCode | GitHub release for `anomalyco/opencode` and first-party docs | 1.14.33 | source-supported | GitHub Actions cron or external schedulers around opencode run; no verified native durable scheduler. |
-| OpenClaw | GitHub release, package metadata, and tag-pinned docs | 2026.5.2 | source-supported | Cron jobs, heartbeat turns, hooks, webhooks, and plugin background services. |
+| Harness | Profile | Version basis | Checked version | Evidence | Scheduling posture |
+| --- | --- | --- | --- | --- | --- |
+| Codex | [Codex profile](harness-capabilities/vanilla/codex.toml) | GitHub releases for openai/codex, plus first-party OpenAI Codex docs. | 0.128.0 stable; 0.129.0-alpha.2 prerelease observed | source-supported | App automations and external schedulers around codex exec; keep stable and prerelease claims separate. |
+| Claude Code | [Claude Code profile](harness-capabilities/vanilla/claude_code.toml) | Official Claude Code changelog entry dated 2026-05-01, with first-party documentation for capabilities. | 2.1.126 | documentation-supported | Routines, Desktop scheduled tasks, and session-scoped scheduled tasks. |
+| Cursor | [Cursor profile](harness-capabilities/vanilla/cursor.toml) | Official Cursor changelog and first-party docs. | 3.2 numbered release; changelog state checked through 2026-05-01 | documentation-supported | Cloud Agent Automations with schedule and event triggers. |
+| Hermes Agent | [Hermes Agent profile](harness-capabilities/vanilla/hermes_agent.toml) | GitHub latest release v2026.4.30 and tag-pinned first-party docs. | 0.12.0 (v2026.4.30) | source-supported | Cron jobs, gateway cron ticker, curator schedule, hooks, and terminal background processes. |
+| OpenCode | [OpenCode profile](harness-capabilities/vanilla/opencode.toml) | GitHub latest release for anomalyco/opencode and first-party OpenCode docs. | 1.14.33 | source-supported | GitHub Actions cron or external schedulers around opencode run; no verified native durable scheduler. |
+| OpenClaw | [OpenClaw profile](harness-capabilities/vanilla/openclaw.toml) | GitHub latest non-prerelease v2026.5.2 and tag-pinned source/docs. | 2026.5.2 | source-supported | Cron jobs, heartbeat turns, hooks, webhooks, and plugin background services. |
 
 ## Harness notes
 
 ### Codex
 
-Codex supports skills, plugins, MCP servers, hooks, app and connector surfaces, subagents, custom Agent Profiles, permission profiles, app-server APIs, noninteractive `codex exec`, GitHub Action workflows, automations, slash commands, web search, and persisted goals.
+The [Codex profile](harness-capabilities/vanilla/codex.toml) preserves source-backed component, scheduling, limitation, uncertainty, refresh-note, source, and local-observation records.
 
-Scheduling support includes app automations and external schedulers around noninteractive execution. Hooks, app-server APIs, and plugin APIs still need version-specific checks before they carry hard policy or unattended behavior.
+Scheduling support: App automations and external schedulers around codex exec; keep stable and prerelease claims separate.
+
+Limitations: Hooks require the relevant hook feature support and should not be treated as a complete enforcement boundary without verification. Some app-server and plugin APIs remain experimental, and unattended automations still run under sandbox and approval constraints.
 
 Key sources:
 
-- [Codex 0.128.0 release](https://github.com/openai/codex/releases/tag/rust-v0.128.0)
-- [Codex 0.129.0-alpha.2 prerelease](https://github.com/openai/codex/releases/tag/rust-v0.129.0-alpha.2)
-- [Codex automations](https://developers.openai.com/codex/app/automations)
-- [Codex hooks](https://developers.openai.com/codex/hooks)
-- [Codex skills](https://developers.openai.com/codex/skills)
-- [Codex plugins](https://developers.openai.com/codex/plugins)
+- [stable release version, release date, and release notes](https://github.com/openai/codex/releases/tag/rust-v0.128.0)
+- [latest observed prerelease version](https://github.com/openai/codex/releases/tag/rust-v0.129.0-alpha.2)
+- [Codex change history](https://developers.openai.com/codex/changelog)
+- [skill support](https://developers.openai.com/codex/skills)
+- [plugin support](https://developers.openai.com/codex/plugins)
+- [plugin authoring support](https://developers.openai.com/codex/plugins/build)
 
 ### Claude Code
 
-Claude Code supports skills, custom commands, MCP servers and tools, hooks, subagents, plugins, settings, slash commands, LSP servers, plugin monitors, output styles, and themes.
+The [Claude Code profile](harness-capabilities/vanilla/claude_code.toml) preserves source-backed component, scheduling, limitation, uncertainty, refresh-note, source, and local-observation records.
 
-Scheduling support includes cloud Routines, Desktop scheduled tasks, and session-scoped scheduled tasks. Treat cloud Routines as preview-like infrastructure and verify plugin-loaded agent limits before depending on hooks, MCP servers, or permission modes from plugins.
+Scheduling support: Routines, Desktop scheduled tasks, and session-scoped scheduled tasks.
+
+Limitations: Session-scoped scheduled tasks require a supporting Claude Code version and expire after a bounded period. Routines are preview-like cloud infrastructure. Desktop scheduled tasks require the Desktop app and an awake machine. Plugin-loaded agents can have restrictions on hooks, MCP servers, and permission modes.
 
 Key sources:
 
-- [Claude Code changelog](https://code.claude.com/docs/en/changelog)
-- [Claude Code skills](https://code.claude.com/docs/en/skills)
-- [Claude Code hooks](https://code.claude.com/docs/en/hooks)
-- [Claude Code subagents](https://code.claude.com/docs/en/sub-agents)
-- [Claude Code scheduled tasks](https://code.claude.com/docs/en/scheduled-tasks)
-- [Claude Code Routines](https://code.claude.com/docs/en/routines)
+- [latest Claude Code version and release date](https://code.claude.com/docs/en/changelog)
+- [first-party changelog mirror](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)
+- [skill support](https://code.claude.com/docs/en/skills)
+- [MCP support](https://code.claude.com/docs/en/mcp)
+- [hook support](https://code.claude.com/docs/en/hooks)
+- [subagent support](https://code.claude.com/docs/en/sub-agents)
 
 ### Cursor
 
-Cursor supports rules, `AGENTS.md`, Agent Skills, MCP servers and tools, hooks, subagents, plugins, CLI configuration, Cloud Agents, Automations, and SDK agents.
+The [Cursor profile](harness-capabilities/vanilla/cursor.toml) preserves source-backed component, scheduling, limitation, uncertainty, refresh-note, source, and local-observation records.
 
-Scheduling support centers on Cloud Agent Automations with scheduled and event triggers. The latest numbered release and the latest changelog entry can differ, so record both when version-sensitive equipment depends on Cursor behavior. Review marketplace plugins as third-party code before trusting them.
+Scheduling support: Cloud Agent Automations with schedule and event triggers.
+
+Limitations: Cloud Agent execution and some hooks are plan- or environment-dependent. Slack triggers can be limited by channel type. Parallel subagents increase token and cost pressure. Marketplace plugins should be reviewed as third-party code before trusted use.
 
 Key sources:
 
-- [Cursor changelog](https://cursor.com/changelog)
-- [Cursor 3.2 changelog entry](https://cursor.com/changelog/04-24-26)
-- [Cursor rules](https://cursor.com/docs/rules)
-- [Cursor skills](https://cursor.com/docs/skills)
-- [Cursor hooks](https://cursor.com/docs/hooks)
-- [Cursor Automations](https://cursor.com/docs/cloud-agent/automations)
+- [latest official changelog state](https://cursor.com/changelog)
+- [Cursor 3.2 numbered release](https://cursor.com/changelog/04-24-26)
+- [latest observed unnumbered changelog entry](https://cursor.com/changelog/05-01-26)
+- [rules and AGENTS.md support](https://cursor.com/docs/rules)
+- [Agent Skills support](https://cursor.com/docs/skills)
+- [MCP support](https://cursor.com/docs/mcp)
 
 ### Hermes Agent
 
-Hermes Agent supports AgentSkills-compatible skills, agent-managed skills, read-only external skill directories, Skills Hub installs, MCP servers, MCP client toolsets, the Hermes MCP server, gateway hooks, plugin hooks, shell hooks, opt-in plugins, memory and context provider plugins, toolsets, profiles, subagents, delegation, terminal backends, and messaging gateways.
+The [Hermes Agent profile](harness-capabilities/vanilla/hermes_agent.toml) preserves source-backed component, scheduling, limitation, uncertainty, refresh-note, source, and local-observation records.
 
-Scheduling support includes cron jobs, a gateway cron ticker, curator scheduling, hooks, and terminal background processes. Profiles are separate state directories, not hard isolation. Delegation is synchronous and not durable if the parent is interrupted.
+Scheduling support: Cron jobs, gateway cron ticker, curator schedule, hooks, and terminal background processes.
+
+Limitations: Profiles are separate state directories, not hard isolation boundaries. Cron jobs cannot recursively create cron jobs. Some workdir jobs are sequential because process cwd is global. Delegated subagents are synchronous and not durable if the parent is interrupted. Project plugins require explicit enablement.
 
 Key sources:
 
-- [Hermes Agent v2026.4.30 release](https://github.com/NousResearch/hermes-agent/releases/tag/v2026.4.30)
-- [Hermes Agent pyproject.toml at v2026.4.30](https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/pyproject.toml)
-- [Hermes Agent skills docs](https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/website/docs/user-guide/features/skills.md)
-- [Hermes Agent hooks docs](https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/website/docs/user-guide/features/hooks.md)
-- [Hermes Agent cron docs](https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/website/docs/user-guide/features/cron.md)
-- [Hermes Agent curator docs](https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/website/docs/user-guide/features/curator.md)
+- [release version, date, and release notes](https://github.com/NousResearch/hermes-agent/releases/tag/v2026.4.30)
+- [package version](https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/pyproject.toml)
+- [documentation index](https://hermes-agent.nousresearch.com/docs/llms.txt)
+- [skill support](https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/website/docs/user-guide/features/skills.md)
+- [MCP support](https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/website/docs/user-guide/features/mcp.md)
+- [hook support](https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/website/docs/user-guide/features/hooks.md)
 
 ### OpenCode
 
-OpenCode supports skills, plugins, plugin hooks, custom tools, MCP servers, primary agents, subagents, command templates, permissions, LSP integration, formatters, instruction files, snapshots, TUI, desktop mode, web mode, server mode, noninteractive `opencode run`, GitHub Action integration, and an ACP server.
+The [OpenCode profile](harness-capabilities/vanilla/opencode.toml) preserves source-backed component, scheduling, limitation, uncertainty, refresh-note, source, and local-observation records.
 
-Scheduling support comes from GitHub Actions cron or external schedulers around `opencode run`. No first-party native durable scheduler was verified. Keep MCP and plugin surfaces narrow because they can increase context and executable-code risk.
+Scheduling support: GitHub Actions cron or external schedulers around opencode run; no verified native durable scheduler.
+
+Limitations: Default permission posture can be broad unless configured. Legacy tools permission is deprecated in favor of permission. MCP servers can create context pressure. npm plugins auto-install with Bun and can define tools and hooks; review plugins as executable third-party code.
 
 Key sources:
 
-- [OpenCode v1.14.33 release](https://github.com/anomalyco/opencode/releases/tag/v1.14.33)
-- [OpenCode docs](https://opencode.ai/docs/)
-- [OpenCode skills docs](https://opencode.ai/docs/skills/)
-- [OpenCode plugins docs](https://opencode.ai/docs/plugins/)
-- [OpenCode agents docs](https://opencode.ai/docs/agents/)
-- [OpenCode GitHub docs](https://opencode.ai/docs/github/)
+- [release version, date, and release notes](https://github.com/anomalyco/opencode/releases/tag/v1.14.33)
+- [active repository identity](https://github.com/anomalyco/opencode)
+- [documentation index](https://opencode.ai/docs/)
+- [CLI and run support](https://opencode.ai/docs/cli/)
+- [skill support](https://opencode.ai/docs/skills/)
+- [plugin and hook support](https://opencode.ai/docs/plugins/)
 
 ### OpenClaw
 
-OpenClaw supports skills, plugin-shipped skills, native plugins, compatible Codex, Claude, and Cursor bundles, MCP client and server surfaces, tools, hooks, webhooks, channels, model providers, media providers, search providers, multi-agent configs, per-agent skill allowlists, CLI and plugin commands, and configuration.
+The [OpenClaw profile](harness-capabilities/vanilla/openclaw.toml) preserves source-backed component, scheduling, limitation, uncertainty, refresh-note, source, and local-observation records.
 
-Scheduling support includes cron jobs with `at`, `every`, cron expressions, and time zones; heartbeat-driven periodic turns; hooks; webhooks; and plugin background services. Compatible bundles are partial bridges, not full harness equivalence. Some plugin changes require Gateway restart.
+Scheduling support: Cron jobs, heartbeat turns, hooks, webhooks, and plugin background services.
+
+Limitations: Compatible Codex, Claude, and Cursor bundles are partial bridges, not full harness equivalence. MCP bridge behavior has limits around route metadata, live event queues, push/edit/react support, and approval visibility. Multi-agent workspaces are not hard OS sandboxes unless sandboxing is configured. Some plugin changes require Gateway restart.
 
 Key sources:
 
-- [OpenClaw v2026.5.2 release](https://github.com/openclaw/openclaw/releases/tag/v2026.5.2)
-- [OpenClaw package.json at v2026.5.2](https://github.com/openclaw/openclaw/blob/v2026.5.2/package.json)
-- [OpenClaw features docs](https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/concepts/features.md)
-- [OpenClaw skills docs](https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/tools/skills.md)
-- [OpenClaw cron docs](https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/automation/cron-jobs.md)
-- [OpenClaw hooks docs](https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/automation/hooks.md)
+- [release version, date, and release notes](https://github.com/openclaw/openclaw/releases/tag/v2026.5.2)
+- [package version](https://github.com/openclaw/openclaw/blob/v2026.5.2/package.json)
+- [adjacent prerelease context](https://github.com/openclaw/openclaw/releases/tag/v2026.5.2-beta.3)
+- [feature overview](https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/concepts/features.md)
+- [skill support](https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/tools/skills.md)
+- [plugin support](https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/tools/plugin.md)
 
 ## Periodic Actions projection order
 
@@ -148,7 +162,7 @@ Recommended starting choices:
 
 ## Refresh requirement
 
-The catalog is versioned state, not timeless documentation. Refresh the affected harness entry when:
+The catalog is versioned state, not timeless documentation. Refresh the affected harness profile when:
 
 - a Smith spec or implementation depends on a harness capability listed here;
 - the source's release or changelog has moved since the checked-at timestamp;
@@ -156,4 +170,4 @@ The catalog is versioned state, not timeless documentation. Refresh the affected
 - local installation state can materially differ from public documentation;
 - a downstream change needs a hard security, scheduling, hook, MCP, or plugin claim.
 
-At minimum, a refreshed entry records version or version basis, checked-at timestamp, first-party sources, evidence category, component support, scheduling support, limitations, uncertainty, and local observations when local state was inspected.
+At minimum, a refreshed profile records version, version basis, checked-at timestamp, first-party sources, evidence category, component support, scheduling support, limitations, uncertainty, and local observations when local state was inspected.

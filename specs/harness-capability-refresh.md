@@ -118,6 +118,6 @@ Each projection must state:
 
 ## Open questions
 
-- Should refresh output update `docs/harness-capabilities.toml` directly or stage a candidate for review?
+- Should refresh output update per-harness profiles directly after explicit apply, or stage a candidate for review?
 - Which source classes are authoritative for each harness when first-party docs and observed behavior disagree?
 - Should security-relevant changes trigger an additional security scan before issue projection?
