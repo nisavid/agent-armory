@@ -353,6 +353,8 @@ def migration_writes(root: Path) -> list[dict[str, str]]:
     except tomllib.TOMLDecodeError as error:
         raise ManagerError(f"{AGGREGATE_CATALOG_PATH.as_posix()}: TOML invalid: {error.msg}") from error
     checked_at = str(catalog.get("checked_at", ""))
+    if not checked_at:
+        raise ManagerError("aggregate catalog missing checked_at")
     harnesses = catalog.get("harness", {})
     if not isinstance(harnesses, dict):
         raise ManagerError("aggregate catalog missing harness table")
@@ -452,6 +454,8 @@ def validate_profile(root: Path, harness_id: str) -> list[CheckResult]:
     scope = profile.get("scope")
     if not isinstance(scope, dict) or scope.get("surface") != "vanilla_harness_capability_surface":
         results.append(CheckResult(f"profile:{harness_id}:scope", False, "scope must describe vanilla harness surface", relative_path.as_posix()))
+    elif not non_empty_string(scope.get("applicability")):
+        results.append(CheckResult(f"profile:{harness_id}:scope:applicability", False, "missing scope applicability", relative_path.as_posix()))
 
     evidence = profile.get("evidence")
     evidence_ids: set[str] = set()

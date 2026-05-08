@@ -783,7 +783,6 @@ FINAL_CLOSEOUT_EXACT_VALIDATION_COUNT_RE = re.compile(
 STORY_REVIEW_LINE_RE = re.compile(
     r"(?im)^(?:-\s*)?(cross-boundary coherence|story quality)(?: review)?:\s*`?(Ralph Review Cycle \d+)`?\.?\s*$"
 )
-HARNESS_CATALOG_MARKDOWN_PATH = "docs/harness-capabilities.md"
 REQUIRED_HARNESSES = [
     "codex",
     "claude_code",

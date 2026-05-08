@@ -162,6 +162,22 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             self.assertEqual(payload["result"], "failed")
             self.assertIn("aggregate catalog missing required harness: openclaw", payload["error"])
 
+    def test_migrate_json_rejects_missing_checked_at_before_writing_profiles(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_migration_root(root)
+            aggregate = root / "docs/harness-capabilities.toml"
+            aggregate.write_text(aggregate.read_text(encoding="utf-8").replace('checked_at = "2026-05-03T09:25:05-04:00"\n', "", 1), encoding="utf-8")
+
+            completed = self.run_manager(root, "migrate", "--apply", "--json")
+
+            self.assertNotEqual(completed.returncode, 0)
+            self.assertEqual(completed.stderr, "")
+            payload = json.loads(completed.stdout)
+            self.assertEqual(payload["result"], "failed")
+            self.assertIn("aggregate catalog missing checked_at", payload["error"])
+            self.assertFalse((root / "docs/harness-capabilities/vanilla").exists())
+
     def test_migrate_apply_writes_stable_profiles_and_retires_aggregate_catalog(self):
         with tempfile.TemporaryDirectory() as first_tmpdir, tempfile.TemporaryDirectory() as second_tmpdir:
             first_root = Path(first_tmpdir)
@@ -278,6 +294,23 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             self.assertIn("profile:codex:claim:0:migration_status", failures)
             self.assertIn("profile:codex:claim:14:family", failures)
             self.assertIn("profile:codex:surface_family_coverage", failures)
+
+    def test_validate_rejects_missing_scope_applicability(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_migration_root(root)
+            self.migrate_and_summarize(root)
+            codex_profile = root / "docs/harness-capabilities/vanilla/codex.toml"
+            text = codex_profile.read_text(encoding="utf-8")
+            text = text.replace('applicability = "Default settings and default equipment immediately after installation and onboarding."\n', "", 1)
+            codex_profile.write_text(text, encoding="utf-8")
+
+            completed = self.run_manager(root, "validate", "--json")
+
+            self.assertNotEqual(completed.returncode, 0)
+            payload = json.loads(completed.stdout)
+            failures = {result["name"] for result in payload["results"] if not result["ok"]}
+            self.assertIn("profile:codex:scope:applicability", failures)
 
     def test_validate_rejects_summary_drift_and_retained_aggregate_truth(self):
         with tempfile.TemporaryDirectory() as tmpdir:
