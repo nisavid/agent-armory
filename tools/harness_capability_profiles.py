@@ -185,10 +185,10 @@ def stable_suffix(*parts: str) -> str:
     return digest[:10]
 
 
-def evidence_id(harness_id: str, index: int, source: dict[str, Any]) -> str:
+def evidence_id(harness_id: str, source: dict[str, Any]) -> str:
     scope = str(source.get("claim_scope", "source"))
     url = str(source.get("url", ""))
-    return f"ev-{harness_id}-{index + 1:02d}-{slug(scope, limit=28)}-{stable_suffix(url, scope)}"
+    return f"ev-{harness_id}-{slug(scope, limit=32)}-{stable_suffix(url, scope)}"
 
 
 def claim_id(harness_id: str, family: str) -> str:
@@ -219,7 +219,7 @@ def family_status(matched_evidence_ids: list[str]) -> str:
 
 def profile_from_aggregate(harness_id: str, checked_at: str, entry: dict[str, Any]) -> dict[str, Any]:
     sources = entry.get("sources", [])
-    source_ids = [evidence_id(harness_id, index, source) for index, source in enumerate(sources)]
+    source_ids = [evidence_id(harness_id, source) for source in sources]
     components = list(entry.get("components", []))
     scheduling = str(entry.get("scheduling", ""))
     uncertainty = str(entry.get("uncertainty", ""))
@@ -474,6 +474,8 @@ def validate_profile_data(profile: dict[str, Any], harness_id: str, relative_pat
                 results.append(CheckResult(f"profile:{harness_id}:evidence:{index}:id", False, "missing evidence id", relative_path.as_posix()))
             elif evidence_id_value in evidence_ids:
                 results.append(CheckResult(f"profile:{harness_id}:evidence:{evidence_id_value}", False, "duplicate evidence id", relative_path.as_posix()))
+            elif evidence_id_value != evidence_id(harness_id, record):
+                results.append(CheckResult(f"profile:{harness_id}:evidence:{index}:id", False, "unstable evidence id", relative_path.as_posix()))
             else:
                 evidence_ids.add(evidence_id_value)
             for field in ["category", "source_kind", "url", "claim_scope"]:
@@ -789,7 +791,7 @@ def render_summary(profiles: list[dict[str, Any]]) -> str:
             "- local installation state can materially differ from public documentation;",
             "- a downstream change needs a hard security, scheduling, hook, MCP, or plugin claim.",
             "",
-            "At minimum, a refreshed profile records version or version basis, checked-at timestamp, first-party sources, evidence category, component support, scheduling support, limitations, uncertainty, and local observations when local state was inspected.",
+            "At minimum, a refreshed profile records version, version basis, checked-at timestamp, first-party sources, evidence category, component support, scheduling support, limitations, uncertainty, and local observations when local state was inspected.",
             "",
         ]
     )

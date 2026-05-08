@@ -19,91 +19,91 @@ surface = "vanilla_harness_capability_surface"
 applicability = "Default settings and default equipment immediately after installation and onboarding."
 
 [[evidence]]
-id = "ev-cursor-01-latest-official-changelog-st-d401c4da40"
+id = "ev-cursor-latest-official-changelog-state-d401c4da40"
 category = "documentation-supported"
 source_kind = "first_party"
 url = "https://cursor.com/changelog"
 claim_scope = "latest official changelog state"
 
 [[evidence]]
-id = "ev-cursor-02-cursor-3-2-numbered-release-5e96715e4f"
+id = "ev-cursor-cursor-3-2-numbered-release-5e96715e4f"
 category = "documentation-supported"
 source_kind = "first_party"
 url = "https://cursor.com/changelog/04-24-26"
 claim_scope = "Cursor 3.2 numbered release"
 
 [[evidence]]
-id = "ev-cursor-03-latest-observed-unnumbered-c-54d6ff05a4"
+id = "ev-cursor-latest-observed-unnumbered-chang-54d6ff05a4"
 category = "documentation-supported"
 source_kind = "first_party"
 url = "https://cursor.com/changelog/05-01-26"
 claim_scope = "latest observed unnumbered changelog entry"
 
 [[evidence]]
-id = "ev-cursor-04-rules-and-agents-md-support-7246f7302d"
+id = "ev-cursor-rules-and-agents-md-support-7246f7302d"
 category = "documentation-supported"
 source_kind = "first_party"
 url = "https://cursor.com/docs/rules"
 claim_scope = "rules and AGENTS.md support"
 
 [[evidence]]
-id = "ev-cursor-05-agent-skills-support-daa3804e4b"
+id = "ev-cursor-agent-skills-support-daa3804e4b"
 category = "documentation-supported"
 source_kind = "first_party"
 url = "https://cursor.com/docs/skills"
 claim_scope = "Agent Skills support"
 
 [[evidence]]
-id = "ev-cursor-06-mcp-support-58ed04e700"
+id = "ev-cursor-mcp-support-58ed04e700"
 category = "documentation-supported"
 source_kind = "first_party"
 url = "https://cursor.com/docs/mcp"
 claim_scope = "MCP support"
 
 [[evidence]]
-id = "ev-cursor-07-hook-support-6ea3ffebaf"
+id = "ev-cursor-hook-support-6ea3ffebaf"
 category = "documentation-supported"
 source_kind = "first_party"
 url = "https://cursor.com/docs/hooks"
 claim_scope = "hook support"
 
 [[evidence]]
-id = "ev-cursor-08-subagent-support-4f10afb95e"
+id = "ev-cursor-subagent-support-4f10afb95e"
 category = "documentation-supported"
 source_kind = "first_party"
 url = "https://cursor.com/docs/subagents"
 claim_scope = "subagent support"
 
 [[evidence]]
-id = "ev-cursor-09-plugin-support-efeb52665c"
+id = "ev-cursor-plugin-support-efeb52665c"
 category = "documentation-supported"
 source_kind = "first_party"
 url = "https://cursor.com/docs/plugins"
 claim_scope = "plugin support"
 
 [[evidence]]
-id = "ev-cursor-10-cli-agent-support-4223f48fd5"
+id = "ev-cursor-cli-agent-support-4223f48fd5"
 category = "documentation-supported"
 source_kind = "first_party"
 url = "https://cursor.com/docs/cli/using"
 claim_scope = "CLI agent support"
 
 [[evidence]]
-id = "ev-cursor-11-cloud-agent-support-2231f7722d"
+id = "ev-cursor-cloud-agent-support-2231f7722d"
 category = "documentation-supported"
 source_kind = "first_party"
 url = "https://cursor.com/docs/cloud-agent"
 claim_scope = "Cloud Agent support"
 
 [[evidence]]
-id = "ev-cursor-12-sdk-agent-support-ea84a35dfa"
+id = "ev-cursor-sdk-agent-support-ea84a35dfa"
 category = "documentation-supported"
 source_kind = "first_party"
 url = "https://cursor.com/changelog/sdk-release"
 claim_scope = "SDK agent support"
 
 [[evidence]]
-id = "ev-cursor-13-cloud-agent-automation-suppo-6088527c59"
+id = "ev-cursor-cloud-agent-automation-support-6088527c59"
 category = "documentation-supported"
 source_kind = "first_party"
 url = "https://cursor.com/docs/cloud-agent/automations"
@@ -114,7 +114,7 @@ id = "claim-cursor-instructions_context"
 family = "instructions_context"
 status = "supported"
 statement = "Source-backed evidence records instructions context support."
-evidence_ids = ["ev-cursor-04-rules-and-agents-md-support-7246f7302d"]
+evidence_ids = ["ev-cursor-rules-and-agents-md-support-7246f7302d"]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
@@ -127,7 +127,7 @@ id = "claim-cursor-skills"
 family = "skills"
 status = "supported"
 statement = "Source-backed evidence records skills support."
-evidence_ids = ["ev-cursor-05-agent-skills-support-daa3804e4b"]
+evidence_ids = ["ev-cursor-agent-skills-support-daa3804e4b"]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
@@ -140,7 +140,7 @@ id = "claim-cursor-mcp_tools"
 family = "mcp_tools"
 status = "supported"
 statement = "Source-backed evidence records mcp tools support."
-evidence_ids = ["ev-cursor-06-mcp-support-58ed04e700"]
+evidence_ids = ["ev-cursor-mcp-support-58ed04e700"]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
@@ -153,7 +153,7 @@ id = "claim-cursor-hooks_events"
 family = "hooks_events"
 status = "supported"
 statement = "Source-backed evidence records hooks events support."
-evidence_ids = ["ev-cursor-07-hook-support-6ea3ffebaf"]
+evidence_ids = ["ev-cursor-hook-support-6ea3ffebaf"]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
@@ -166,7 +166,7 @@ id = "claim-cursor-plugins_bundles"
 family = "plugins_bundles"
 status = "supported"
 statement = "Source-backed evidence records plugins bundles support."
-evidence_ids = ["ev-cursor-09-plugin-support-efeb52665c"]
+evidence_ids = ["ev-cursor-plugin-support-efeb52665c"]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
@@ -179,7 +179,7 @@ id = "claim-cursor-agent_profiles_subagents"
 family = "agent_profiles_subagents"
 status = "supported"
 statement = "Source-backed evidence records agent profiles subagents support."
-evidence_ids = ["ev-cursor-04-rules-and-agents-md-support-7246f7302d", "ev-cursor-05-agent-skills-support-daa3804e4b", "ev-cursor-08-subagent-support-4f10afb95e", "ev-cursor-10-cli-agent-support-4223f48fd5", "ev-cursor-11-cloud-agent-support-2231f7722d", "ev-cursor-12-sdk-agent-support-ea84a35dfa", "ev-cursor-13-cloud-agent-automation-suppo-6088527c59"]
+evidence_ids = ["ev-cursor-rules-and-agents-md-support-7246f7302d", "ev-cursor-agent-skills-support-daa3804e4b", "ev-cursor-subagent-support-4f10afb95e", "ev-cursor-cli-agent-support-4223f48fd5", "ev-cursor-cloud-agent-support-2231f7722d", "ev-cursor-sdk-agent-support-ea84a35dfa", "ev-cursor-cloud-agent-automation-support-6088527c59"]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
@@ -231,7 +231,7 @@ id = "claim-cursor-scheduling_automation"
 family = "scheduling_automation"
 status = "supported"
 statement = "Source-backed evidence records scheduling automation support."
-evidence_ids = ["ev-cursor-13-cloud-agent-automation-suppo-6088527c59"]
+evidence_ids = ["ev-cursor-cloud-agent-automation-support-6088527c59"]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
@@ -283,7 +283,7 @@ id = "claim-cursor-cross_harness_import_compatibility"
 family = "cross_harness_import_compatibility"
 status = "supported"
 statement = "Source-backed evidence records cross harness import compatibility support."
-evidence_ids = ["ev-cursor-02-cursor-3-2-numbered-release-5e96715e4f"]
+evidence_ids = ["ev-cursor-cursor-3-2-numbered-release-5e96715e4f"]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"

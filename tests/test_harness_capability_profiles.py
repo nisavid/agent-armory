@@ -219,7 +219,7 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             self.assertEqual(profile["checked_at"], "2026-05-03T09:25:05-04:00")
             self.assertEqual(profile["display_name"], "Codex")
             self.assertIn("app-server APIs", profile["components"])
-            self.assertRegex(profile["evidence"][0]["id"], r"^ev-codex-01-skill-support-[0-9a-f]{10}$")
+            self.assertRegex(profile["evidence"][0]["id"], r"^ev-codex-skill-support-[0-9a-f]{10}$")
             self.assertIn(
                 {
                     "id": "claim-codex-skills",
@@ -236,6 +236,38 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
                 },
                 profile["claim"],
             )
+
+    def test_migrate_evidence_ids_do_not_depend_on_source_order(self):
+        with tempfile.TemporaryDirectory() as first_tmpdir, tempfile.TemporaryDirectory() as second_tmpdir:
+            first_root = Path(first_tmpdir)
+            second_root = Path(second_tmpdir)
+            self.write_migration_root(first_root)
+            self.write_migration_root(second_root)
+            original_sources = (
+                'sources = [{ url = "https://developers.openai.com/codex/skills", '
+                'kind = "first_party", claim_scope = "skill support" }]'
+            )
+            skill_source = '{ url = "https://developers.openai.com/codex/skills", kind = "first_party", claim_scope = "skill support" }'
+            plugin_source = '{ url = "https://developers.openai.com/codex/plugins", kind = "first_party", claim_scope = "plugin support" }'
+            first_sources = f"sources = [{skill_source}, {plugin_source}]"
+            second_sources = f"sources = [{plugin_source}, {skill_source}]"
+            for root, replacement in [(first_root, first_sources), (second_root, second_sources)]:
+                aggregate = root / "docs/harness-capabilities.toml"
+                aggregate.write_text(aggregate.read_text(encoding="utf-8").replace(original_sources, replacement, 1), encoding="utf-8")
+
+            first = self.run_manager(first_root, "migrate", "--apply", "--json")
+            second = self.run_manager(second_root, "migrate", "--apply", "--json")
+
+            self.assertEqual(first.returncode, 0, first.stderr)
+            self.assertEqual(second.returncode, 0, second.stderr)
+            with (first_root / "docs/harness-capabilities/vanilla/codex.toml").open("rb") as handle:
+                first_profile = tomllib.load(handle)
+            with (second_root / "docs/harness-capabilities/vanilla/codex.toml").open("rb") as handle:
+                second_profile = tomllib.load(handle)
+            first_ids = {evidence["claim_scope"]: evidence["id"] for evidence in first_profile["evidence"]}
+            second_ids = {evidence["claim_scope"]: evidence["id"] for evidence in second_profile["evidence"]}
+            self.assertEqual(first_ids["skill support"], second_ids["skill support"])
+            self.assertEqual(first_ids["plugin support"], second_ids["plugin support"])
 
     def test_validate_json_accepts_migrated_profiles_after_aggregate_retirement(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -284,6 +316,7 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             text = text.replace('status = "supported"', 'status = "maybe"', 1)
             with codex_profile.open("rb") as handle:
                 evidence_id = tomllib.load(handle)["evidence"][0]["id"]
+            text = text.replace(f'id = "{evidence_id}"', 'id = "ev-codex-unstable"', 1)
             text = text.replace(f'evidence_ids = ["{evidence_id}"]', 'evidence_ids = ["ev-codex-missing"]', 1)
             text = text.replace('source_kind = "first_party"', 'source_kind = "local_observation"', 1)
             text = text.replace('url = "https://developers.openai.com/codex/skills"', 'url = "file:///tmp/source"', 1)
@@ -305,6 +338,7 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             self.assertIn("profile:codex:evidence_category", failures)
             self.assertIn("profile:codex:evidence:0:source_kind", failures)
             self.assertIn("profile:codex:evidence:0:url", failures)
+            self.assertIn("profile:codex:evidence:0:id", failures)
             self.assertIn("profile:codex:claim:claim-codex-skills", failures)
             self.assertIn("profile:codex:claim:1:status", failures)
             self.assertIn("profile:codex:claim:1:evidence_refs", failures)

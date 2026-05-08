@@ -170,4 +170,4 @@ The catalog is versioned state, not timeless documentation. Refresh the affected
 - local installation state can materially differ from public documentation;
 - a downstream change needs a hard security, scheduling, hook, MCP, or plugin claim.
 
-At minimum, a refreshed profile records version or version basis, checked-at timestamp, first-party sources, evidence category, component support, scheduling support, limitations, uncertainty, and local observations when local state was inspected.
+At minimum, a refreshed profile records version, version basis, checked-at timestamp, first-party sources, evidence category, component support, scheduling support, limitations, uncertainty, and local observations when local state was inspected.

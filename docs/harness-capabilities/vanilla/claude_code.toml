@@ -19,84 +19,84 @@ surface = "vanilla_harness_capability_surface"
 applicability = "Default settings and default equipment immediately after installation and onboarding."
 
 [[evidence]]
-id = "ev-claude_code-01-latest-claude-code-version-a-63163f5f90"
+id = "ev-claude_code-latest-claude-code-version-and-r-63163f5f90"
 category = "documentation-supported"
 source_kind = "first_party"
 url = "https://code.claude.com/docs/en/changelog"
 claim_scope = "latest Claude Code version and release date"
 
 [[evidence]]
-id = "ev-claude_code-02-first-party-changelog-mirror-55aa23da24"
+id = "ev-claude_code-first-party-changelog-mirror-55aa23da24"
 category = "documentation-supported"
 source_kind = "first_party"
 url = "https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md"
 claim_scope = "first-party changelog mirror"
 
 [[evidence]]
-id = "ev-claude_code-03-skill-support-09108d5779"
+id = "ev-claude_code-skill-support-09108d5779"
 category = "documentation-supported"
 source_kind = "first_party"
 url = "https://code.claude.com/docs/en/skills"
 claim_scope = "skill support"
 
 [[evidence]]
-id = "ev-claude_code-04-mcp-support-528ca09f3f"
+id = "ev-claude_code-mcp-support-528ca09f3f"
 category = "documentation-supported"
 source_kind = "first_party"
 url = "https://code.claude.com/docs/en/mcp"
 claim_scope = "MCP support"
 
 [[evidence]]
-id = "ev-claude_code-05-hook-support-003598c023"
+id = "ev-claude_code-hook-support-003598c023"
 category = "documentation-supported"
 source_kind = "first_party"
 url = "https://code.claude.com/docs/en/hooks"
 claim_scope = "hook support"
 
 [[evidence]]
-id = "ev-claude_code-06-subagent-support-f4514ded0d"
+id = "ev-claude_code-subagent-support-f4514ded0d"
 category = "documentation-supported"
 source_kind = "first_party"
 url = "https://code.claude.com/docs/en/sub-agents"
 claim_scope = "subagent support"
 
 [[evidence]]
-id = "ev-claude_code-07-plugin-support-and-limits-a8ac63cee1"
+id = "ev-claude_code-plugin-support-and-limits-a8ac63cee1"
 category = "documentation-supported"
 source_kind = "first_party"
 url = "https://code.claude.com/docs/en/plugins-reference"
 claim_scope = "plugin support and limits"
 
 [[evidence]]
-id = "ev-claude_code-08-settings-and-permissions-7776274324"
+id = "ev-claude_code-settings-and-permissions-7776274324"
 category = "documentation-supported"
 source_kind = "first_party"
 url = "https://code.claude.com/docs/en/settings"
 claim_scope = "settings and permissions"
 
 [[evidence]]
-id = "ev-claude_code-09-harness-overview-64da5f1b3a"
+id = "ev-claude_code-harness-overview-64da5f1b3a"
 category = "documentation-supported"
 source_kind = "first_party"
 url = "https://code.claude.com/docs/en/overview"
 claim_scope = "harness overview"
 
 [[evidence]]
-id = "ev-claude_code-10-cloud-routine-support-e1ecd195c7"
+id = "ev-claude_code-cloud-routine-support-e1ecd195c7"
 category = "documentation-supported"
 source_kind = "first_party"
 url = "https://code.claude.com/docs/en/routines"
 claim_scope = "cloud routine support"
 
 [[evidence]]
-id = "ev-claude_code-11-desktop-scheduled-task-suppo-cdb4a71f50"
+id = "ev-claude_code-desktop-scheduled-task-support-cdb4a71f50"
 category = "documentation-supported"
 source_kind = "first_party"
 url = "https://code.claude.com/docs/en/desktop-scheduled-tasks"
 claim_scope = "desktop scheduled task support"
 
 [[evidence]]
-id = "ev-claude_code-12-session-scheduled-task-suppo-64a936afca"
+id = "ev-claude_code-session-scheduled-task-support-64a936afca"
 category = "documentation-supported"
 source_kind = "first_party"
 url = "https://code.claude.com/docs/en/scheduled-tasks"
@@ -120,7 +120,7 @@ id = "claim-claude_code-skills"
 family = "skills"
 status = "supported"
 statement = "Source-backed evidence records skills support."
-evidence_ids = ["ev-claude_code-03-skill-support-09108d5779"]
+evidence_ids = ["ev-claude_code-skill-support-09108d5779"]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
@@ -133,7 +133,7 @@ id = "claim-claude_code-mcp_tools"
 family = "mcp_tools"
 status = "supported"
 statement = "Source-backed evidence records mcp tools support."
-evidence_ids = ["ev-claude_code-04-mcp-support-528ca09f3f"]
+evidence_ids = ["ev-claude_code-mcp-support-528ca09f3f"]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
@@ -146,7 +146,7 @@ id = "claim-claude_code-hooks_events"
 family = "hooks_events"
 status = "supported"
 statement = "Source-backed evidence records hooks events support."
-evidence_ids = ["ev-claude_code-05-hook-support-003598c023"]
+evidence_ids = ["ev-claude_code-hook-support-003598c023"]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
@@ -159,7 +159,7 @@ id = "claim-claude_code-plugins_bundles"
 family = "plugins_bundles"
 status = "supported"
 statement = "Source-backed evidence records plugins bundles support."
-evidence_ids = ["ev-claude_code-07-plugin-support-and-limits-a8ac63cee1"]
+evidence_ids = ["ev-claude_code-plugin-support-and-limits-a8ac63cee1"]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
@@ -172,7 +172,7 @@ id = "claim-claude_code-agent_profiles_subagents"
 family = "agent_profiles_subagents"
 status = "supported"
 statement = "Source-backed evidence records agent profiles subagents support."
-evidence_ids = ["ev-claude_code-06-subagent-support-f4514ded0d"]
+evidence_ids = ["ev-claude_code-subagent-support-f4514ded0d"]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
@@ -198,7 +198,7 @@ id = "claim-claude_code-config_settings"
 family = "config_settings"
 status = "supported"
 statement = "Source-backed evidence records config settings support."
-evidence_ids = ["ev-claude_code-08-settings-and-permissions-7776274324"]
+evidence_ids = ["ev-claude_code-settings-and-permissions-7776274324"]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
@@ -211,7 +211,7 @@ id = "claim-claude_code-permissions_approvals_sandboxing"
 family = "permissions_approvals_sandboxing"
 status = "supported"
 statement = "Source-backed evidence records permissions approvals sandboxing support."
-evidence_ids = ["ev-claude_code-08-settings-and-permissions-7776274324"]
+evidence_ids = ["ev-claude_code-settings-and-permissions-7776274324"]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
@@ -224,7 +224,7 @@ id = "claim-claude_code-scheduling_automation"
 family = "scheduling_automation"
 status = "supported"
 statement = "Source-backed evidence records scheduling automation support."
-evidence_ids = ["ev-claude_code-10-cloud-routine-support-e1ecd195c7", "ev-claude_code-11-desktop-scheduled-task-suppo-cdb4a71f50", "ev-claude_code-12-session-scheduled-task-suppo-64a936afca"]
+evidence_ids = ["ev-claude_code-cloud-routine-support-e1ecd195c7", "ev-claude_code-desktop-scheduled-task-support-cdb4a71f50", "ev-claude_code-session-scheduled-task-support-64a936afca"]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
@@ -263,7 +263,7 @@ id = "claim-claude_code-runtime_modes"
 family = "runtime_modes"
 status = "supported"
 statement = "Source-backed evidence records runtime modes support."
-evidence_ids = ["ev-claude_code-11-desktop-scheduled-task-suppo-cdb4a71f50"]
+evidence_ids = ["ev-claude_code-desktop-scheduled-task-support-cdb4a71f50"]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
@@ -276,7 +276,7 @@ id = "claim-claude_code-cross_harness_import_compatibility"
 family = "cross_harness_import_compatibility"
 status = "supported"
 statement = "Source-backed evidence records cross harness import compatibility support."
-evidence_ids = ["ev-claude_code-01-latest-claude-code-version-a-63163f5f90"]
+evidence_ids = ["ev-claude_code-latest-claude-code-version-and-r-63163f5f90"]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"

@@ -19,91 +19,91 @@ surface = "vanilla_harness_capability_surface"
 applicability = "Default settings and default equipment immediately after installation and onboarding."
 
 [[evidence]]
-id = "ev-openclaw-01-release-version-date-and-rel-7fe6f650de"
+id = "ev-openclaw-release-version-date-and-release-7fe6f650de"
 category = "source-supported"
 source_kind = "first_party"
 url = "https://github.com/openclaw/openclaw/releases/tag/v2026.5.2"
 claim_scope = "release version, date, and release notes"
 
 [[evidence]]
-id = "ev-openclaw-02-package-version-9ed46e443c"
+id = "ev-openclaw-package-version-9ed46e443c"
 category = "source-supported"
 source_kind = "first_party"
 url = "https://github.com/openclaw/openclaw/blob/v2026.5.2/package.json"
 claim_scope = "package version"
 
 [[evidence]]
-id = "ev-openclaw-03-adjacent-prerelease-context-b407097be9"
+id = "ev-openclaw-adjacent-prerelease-context-b407097be9"
 category = "source-supported"
 source_kind = "first_party"
 url = "https://github.com/openclaw/openclaw/releases/tag/v2026.5.2-beta.3"
 claim_scope = "adjacent prerelease context"
 
 [[evidence]]
-id = "ev-openclaw-04-feature-overview-f329c4e4a4"
+id = "ev-openclaw-feature-overview-f329c4e4a4"
 category = "source-supported"
 source_kind = "first_party"
 url = "https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/concepts/features.md"
 claim_scope = "feature overview"
 
 [[evidence]]
-id = "ev-openclaw-05-skill-support-dba9c143e9"
+id = "ev-openclaw-skill-support-dba9c143e9"
 category = "source-supported"
 source_kind = "first_party"
 url = "https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/tools/skills.md"
 claim_scope = "skill support"
 
 [[evidence]]
-id = "ev-openclaw-06-plugin-support-8ec1811234"
+id = "ev-openclaw-plugin-support-8ec1811234"
 category = "source-supported"
 source_kind = "first_party"
 url = "https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/tools/plugin.md"
 claim_scope = "plugin support"
 
 [[evidence]]
-id = "ev-openclaw-07-plugin-manifest-support-207f1f0f67"
+id = "ev-openclaw-plugin-manifest-support-207f1f0f67"
 category = "source-supported"
 source_kind = "first_party"
 url = "https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/plugins/manifest.md"
 claim_scope = "plugin manifest support"
 
 [[evidence]]
-id = "ev-openclaw-08-compatible-bundle-support-1f08a5929d"
+id = "ev-openclaw-compatible-bundle-support-1f08a5929d"
 category = "source-supported"
 source_kind = "first_party"
 url = "https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/plugins/bundles.md"
 claim_scope = "compatible bundle support"
 
 [[evidence]]
-id = "ev-openclaw-09-mcp-support-aa362a288c"
+id = "ev-openclaw-mcp-support-aa362a288c"
 category = "source-supported"
 source_kind = "first_party"
 url = "https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/cli/mcp.md"
 claim_scope = "MCP support"
 
 [[evidence]]
-id = "ev-openclaw-10-multi-agent-and-profile-like-4b1d4ae131"
+id = "ev-openclaw-multi-agent-and-profile-like-sup-4b1d4ae131"
 category = "source-supported"
 source_kind = "first_party"
 url = "https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/concepts/multi-agent.md"
 claim_scope = "multi-agent and profile-like support"
 
 [[evidence]]
-id = "ev-openclaw-11-cron-scheduling-support-afe92e1663"
+id = "ev-openclaw-cron-scheduling-support-afe92e1663"
 category = "source-supported"
 source_kind = "first_party"
 url = "https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/automation/cron-jobs.md"
 claim_scope = "cron scheduling support"
 
 [[evidence]]
-id = "ev-openclaw-12-heartbeat-scheduling-support-06bf078912"
+id = "ev-openclaw-heartbeat-scheduling-support-06bf078912"
 category = "source-supported"
 source_kind = "first_party"
 url = "https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/gateway/heartbeat.md"
 claim_scope = "heartbeat scheduling support"
 
 [[evidence]]
-id = "ev-openclaw-13-hook-and-webhook-support-43dc990b55"
+id = "ev-openclaw-hook-and-webhook-support-43dc990b55"
 category = "source-supported"
 source_kind = "first_party"
 url = "https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/automation/hooks.md"
@@ -127,7 +127,7 @@ id = "claim-openclaw-skills"
 family = "skills"
 status = "supported"
 statement = "Source-backed evidence records skills support."
-evidence_ids = ["ev-openclaw-05-skill-support-dba9c143e9"]
+evidence_ids = ["ev-openclaw-skill-support-dba9c143e9"]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
@@ -140,7 +140,7 @@ id = "claim-openclaw-mcp_tools"
 family = "mcp_tools"
 status = "supported"
 statement = "Source-backed evidence records mcp tools support."
-evidence_ids = ["ev-openclaw-09-mcp-support-aa362a288c"]
+evidence_ids = ["ev-openclaw-mcp-support-aa362a288c"]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
@@ -153,7 +153,7 @@ id = "claim-openclaw-hooks_events"
 family = "hooks_events"
 status = "supported"
 statement = "Source-backed evidence records hooks events support."
-evidence_ids = ["ev-openclaw-13-hook-and-webhook-support-43dc990b55"]
+evidence_ids = ["ev-openclaw-hook-and-webhook-support-43dc990b55"]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
@@ -166,7 +166,7 @@ id = "claim-openclaw-plugins_bundles"
 family = "plugins_bundles"
 status = "supported"
 statement = "Source-backed evidence records plugins bundles support."
-evidence_ids = ["ev-openclaw-06-plugin-support-8ec1811234", "ev-openclaw-07-plugin-manifest-support-207f1f0f67", "ev-openclaw-08-compatible-bundle-support-1f08a5929d"]
+evidence_ids = ["ev-openclaw-plugin-support-8ec1811234", "ev-openclaw-plugin-manifest-support-207f1f0f67", "ev-openclaw-compatible-bundle-support-1f08a5929d"]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
@@ -179,7 +179,7 @@ id = "claim-openclaw-agent_profiles_subagents"
 family = "agent_profiles_subagents"
 status = "supported"
 statement = "Source-backed evidence records agent profiles subagents support."
-evidence_ids = ["ev-openclaw-10-multi-agent-and-profile-like-4b1d4ae131"]
+evidence_ids = ["ev-openclaw-multi-agent-and-profile-like-sup-4b1d4ae131"]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
@@ -231,7 +231,7 @@ id = "claim-openclaw-scheduling_automation"
 family = "scheduling_automation"
 status = "supported"
 statement = "Source-backed evidence records scheduling automation support."
-evidence_ids = ["ev-openclaw-11-cron-scheduling-support-afe92e1663", "ev-openclaw-12-heartbeat-scheduling-support-06bf078912"]
+evidence_ids = ["ev-openclaw-cron-scheduling-support-afe92e1663", "ev-openclaw-heartbeat-scheduling-support-06bf078912"]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
@@ -283,7 +283,7 @@ id = "claim-openclaw-cross_harness_import_compatibility"
 family = "cross_harness_import_compatibility"
 status = "supported"
 statement = "Source-backed evidence records cross harness import compatibility support."
-evidence_ids = ["ev-openclaw-08-compatible-bundle-support-1f08a5929d"]
+evidence_ids = ["ev-openclaw-compatible-bundle-support-1f08a5929d"]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "migrated_from_aggregate"
