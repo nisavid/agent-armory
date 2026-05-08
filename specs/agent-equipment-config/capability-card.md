@@ -3,7 +3,7 @@
 Status: Equipment Blueprint
 Promotion state: planned
 
-This Forge Entry Bundle describes desired behavior and includes the first
+This Equipment Design Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for effective-config, config-diff,
 diagnostics, plain handoff promotion, authority checks, and projection
 classification, plus onboarding-plan output for first-run and re-onboarding
@@ -54,7 +54,7 @@ policy model without making Config depend on Issue Tracker Ops.
 
 ## Needed surfaces
 
-- Docs: this Forge Entry Bundle and future usage docs.
+- Docs: this Equipment Design Bundle and future usage docs.
 - Config: TOML authored layers and plain equipment-specific config handoff
   records.
 - Scripts/tools: the first portable effective-config, config-diff,

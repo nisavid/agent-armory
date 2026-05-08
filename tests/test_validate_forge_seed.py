@@ -8911,7 +8911,7 @@ class SpecValidationTests(unittest.TestCase):
             Status: Equipment Blueprint
             Promotion state: planned
 
-            This Forge Entry Bundle describes desired behavior only. It does not implement Agent Equipment.
+            This Equipment Design Bundle describes desired behavior only. It does not implement Agent Equipment.
             """
         ).strip()
 

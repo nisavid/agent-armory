@@ -65,7 +65,7 @@ keep tracker mutations explicit and governable.
   create/remove operations.
 - External disclosure: issue bodies, comments, labels, links, and evidence sent
   to GitHub.
-- Local write: committed Forge Entry Bundle and adapter implementation.
+- Local write: committed Equipment Design Bundle and adapter implementation.
 
 ## Needed Harness Components
 
@@ -79,7 +79,7 @@ keep tracker mutations explicit and governable.
 - Config: Agent Equipment Config for durable layered policy, plus an Issue
   Ops-specific plain config shape for session-scoped operation, handoff, and
   later ingestion when Agent Equipment Config is unavailable.
-- Docs: this Forge Entry Bundle, user guidance, adapter boundaries, security
+- Docs: this Equipment Design Bundle, user guidance, adapter boundaries, security
   rules, and validation evidence.
 
 ## Hard rules

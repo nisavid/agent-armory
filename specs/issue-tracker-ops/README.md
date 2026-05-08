@@ -3,7 +3,7 @@
 Status: Equipment Candidate
 Promotion state: implemented for bootstrap MVP; full delivery remains open
 
-This Forge Entry Bundle records the bootstrap design for Issue Tracker Ops,
+This Equipment Design Bundle records the bootstrap design for Issue Tracker Ops,
 also called Issue Ops, tracked by GitHub issue #11.
 
 ## Bundle contents

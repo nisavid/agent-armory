@@ -135,8 +135,9 @@ The current roadmap includes these equipment lines:
   agents.
 - [Periodic Actions](specs/periodic-actions.md), for recurring agent work with
   local approval and auditable state.
-- [Harness Capability Refresh](specs/harness-capability-refresh.md), for keeping
-  harness facts current.
+- [Vanilla Harness Capability Profiles](specs/vanilla-harness-capability-profiles/),
+  for source-backed descriptions of supported harness integration surfaces.
+  The recurring refresh path remains future work.
 - [Reflection and cognition equipment](https://github.com/nisavid/agent-armory/issues/25),
   planned as Head Gear, for turning recent agent experience into durable
   insight, routed follow-up, and harness improvements after enough rudimentary

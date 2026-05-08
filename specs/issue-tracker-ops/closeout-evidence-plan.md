@@ -8,7 +8,7 @@ Promotion state: implemented for bootstrap MVP; full delivery remains open
 Commit durable evidence in neutral project paths when it remains accurate beyond
 this review instance:
 
-- Forge Entry Bundle records under `specs/issue-tracker-ops/`.
+- Equipment Design Bundle records under `specs/issue-tracker-ops/`.
 - Adapter source and tests under `tools/` and `tests/`.
 - Updated Forge Canon or vocabulary surfaces.
 - Security and documentation closeout summaries when they describe durable
