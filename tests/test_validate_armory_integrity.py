@@ -1,6 +1,7 @@
 import json
 import importlib
 import subprocess
+import sys
 import tempfile
 import textwrap
 import unittest
@@ -51,7 +52,11 @@ class ValidationBoundaryTests(unittest.TestCase):
     def test_live_validator_exposes_boundary_inventory(self):
         validator = self.load_live_validator()
 
-        inventory = {item["check"]: item for item in validator.validation_inventory()}
+        inventory_items = validator.validation_inventory()
+        inventory_keys = [item["check"] for item in inventory_items]
+        duplicate_keys = sorted({key for key in inventory_keys if inventory_keys.count(key) > 1})
+        self.assertEqual(duplicate_keys, [])
+        inventory = {item["check"]: item for item in inventory_items}
 
         self.assertEqual(inventory["required_paths"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["python_runtime"]["boundary"], "armory_integrity")
@@ -85,7 +90,7 @@ class ValidationBoundaryTests(unittest.TestCase):
 
     def test_live_validator_help_names_integrity_boundaries(self):
         completed = subprocess.run(
-            ["python3.14", "tools/validate_armory_integrity.py", "--help"],
+            [sys.executable, "tools/validate_armory_integrity.py", "--help"],
             cwd=Path(__file__).resolve().parents[1],
             check=False,
             stdout=subprocess.PIPE,
@@ -100,7 +105,7 @@ class ValidationBoundaryTests(unittest.TestCase):
 
     def test_live_validator_rejects_seed_compatibility_flags(self):
         completed = subprocess.run(
-            ["python3.14", "tools/validate_armory_integrity.py", "--source-bearing"],
+            [sys.executable, "tools/validate_armory_integrity.py", "--source-bearing"],
             cwd=Path(__file__).resolve().parents[1],
             check=False,
             stdout=subprocess.PIPE,
@@ -130,7 +135,6 @@ class ValidationBoundaryTests(unittest.TestCase):
             relative_path
             for relative_path in live_surfaces
             if "validate_forge_seed" in (root / relative_path).read_text(encoding="utf-8")
-            or "test_validate_forge_seed" in (root / relative_path).read_text(encoding="utf-8")
         ]
 
         self.assertEqual(offenders, [])
@@ -1929,6 +1933,7 @@ class SourceDispositionTests(unittest.TestCase):
             ),
             results,
         )
+        self.assertEqual(sum(result.name == "source_disposition:ledger" for result in results), 1)
 
 class ForgeRouteTests(unittest.TestCase):
     def test_validate_forge_routes_requires_agent_and_human_paths(self):
@@ -2424,6 +2429,23 @@ class CanonicalDocTests(unittest.TestCase):
                 "canonical_doc:status:docs/agent-equipment-forge.md",
                 False,
                 "missing Status: Forge Canon",
+                "docs/agent-equipment-forge.md",
+            ),
+            results,
+        )
+
+    def test_validate_canonical_docs_reports_missing_status_mapping(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_canonical_docs(root)
+            with mock.patch.dict(CANONICAL_DOC_STATUSES, {}, clear=True):
+                results = validate_canonical_docs(root)
+
+        self.assertIn(
+            CheckResult(
+                "canonical_doc:status_mapping:docs/agent-equipment-forge.md",
+                False,
+                "missing canonical status mapping",
                 "docs/agent-equipment-forge.md",
             ),
             results,
@@ -2985,7 +3007,7 @@ class SecurityCloseoutValidationTests(unittest.TestCase):
         sections = "\n\n".join(
             [
                 "## Scan scope\n\nMerge-base-to-working-tree Forge Seed diff, including committed, staged, unstaged, and untracked intended files.",
-                "## Commands\n\n- `python3.14 -m unittest tests/test_validate_armory_integrity.py`\n- `python3.14 tools/validate_armory_integrity.py`\n- Codex Security phase sequence: threat modeling, finding discovery, validation, attack-path analysis, final report.\n\nValidation and attack-path analysis were not separately run because finding discovery produced no technically plausible candidates.",
+                "## Commands\n\n- `python3.14 -m unittest tests.test_validate_armory_integrity`\n- `python3.14 tools/validate_armory_integrity.py`\n- Codex Security phase sequence: threat modeling, finding discovery, validation, attack-path analysis, final report.\n\nValidation and attack-path analysis were not separately run because finding discovery produced no technically plausible candidates.",
                 "## Scan artifact disposition\n\nThe raw bundle is ephemeral scratch evidence, not a tracked project artifact, not portable review evidence, and not a standing source of project truth.\n\nArtifact durability classification: instance-scoped scratch evidence. Durable security evidence is this closeout summary.",
                 "## Report disposition\n\nThe raw report is not committed and should not be cited as reusable project doctrine.",
                 "## Findings disposition\n\nNo reportable findings. Suppressed findings: none.",
@@ -3463,7 +3485,7 @@ class ProjectionDraftValidationTests(unittest.TestCase):
                 self.valid_projection_drafts()
                 .replace("Cross-Boundary Coherence review: `TO_FILL_AFTER_CLEAN_REVIEW`", "Cross-Boundary Coherence review: Ralph Review Cycle 53.")
                 .replace("Story Quality review: `TO_FILL_AFTER_CLEAN_REVIEW`", "Story Quality review: Ralph Review Cycle 54.")
-                + "\n\n- `python3.14 -m unittest tests/test_validate_armory_integrity.py`: 264 tests passed.\n",
+                + "\n\n- `python3.14 -m unittest tests.test_validate_armory_integrity`: 264 tests passed.\n",
             )
 
             results = validate_final_closeout(root)

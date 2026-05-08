@@ -70,7 +70,7 @@ The Forge Seed adds:
 
 ## Validation
 
-- `python3.14 -m unittest tests/test_validate_armory_integrity.py`: passed.
+- `python3.14 -m unittest tests.test_validate_armory_integrity`: passed.
 - `python3.14 tools/validate_armory_integrity.py`: passed.
 - `python3.14 tools/validate_armory_integrity.py --json`: passed.
 - `python3.14 tools/validate_armory_integrity.py --final-closeout`: passed.
@@ -143,7 +143,7 @@ Published PR body:
 
 ## Validation
 
-- `python3.14 -m unittest tests/test_validate_armory_integrity.py`
+- `python3.14 -m unittest tests.test_validate_armory_integrity`
 - `python3.14 tools/validate_armory_integrity.py`
 - `python3.14 tools/validate_armory_integrity.py --final-closeout`
 - `git diff --check`

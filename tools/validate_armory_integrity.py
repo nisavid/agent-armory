@@ -718,7 +718,7 @@ SECURITY_CLOSEOUT_REQUIRED_EVIDENCE = [
     "Durable security evidence is this closeout summary",
     "The raw report is not committed and should not be cited as reusable project doctrine.",
     "Codex Security phase sequence",
-    "python3.14 -m unittest tests/test_validate_armory_integrity.py",
+    "python3.14 -m unittest tests.test_validate_armory_integrity",
     "python3.14 tools/validate_armory_integrity.py",
     "No reportable findings",
     "Suppressed findings",
@@ -1517,7 +1517,7 @@ def validate_source_disposition(root: Path, *, required_item_ids: set[str] | Non
     return results
 
 
-def validate_source_retired_tree(root: Path) -> list[CheckResult]:
+def validate_source_retired_tree(root: Path, *, include_disposition: bool = True) -> list[CheckResult]:
     results: list[CheckResult] = []
     raw_source_path = root / "docs/metasmith"
     if raw_source_path.exists() or raw_source_path.is_symlink():
@@ -1529,7 +1529,8 @@ def validate_source_retired_tree(root: Path) -> list[CheckResult]:
                 "docs/metasmith",
             )
         )
-    results.extend(validate_source_disposition(root, required_item_ids=SOURCE_DISPOSITION_FINAL_REQUIRED_ITEM_IDS))
+    if include_disposition:
+        results.extend(validate_source_disposition(root, required_item_ids=SOURCE_DISPOSITION_FINAL_REQUIRED_ITEM_IDS))
     if not any(not result.ok for result in results):
         results.append(CheckResult("source_retired:tree", True, "raw sources removed", "docs"))
     return results
@@ -2298,6 +2299,16 @@ def validate_canonical_docs(root: Path) -> list[CheckResult]:
             results.append(CheckResult(f"canonical_doc:{relative_path}", False, detail, relative_path))
             continue
         markdown = path.read_text(encoding="utf-8")
+        if relative_path not in CANONICAL_DOC_STATUSES:
+            results.append(
+                CheckResult(
+                    f"canonical_doc:status_mapping:{relative_path}",
+                    False,
+                    "missing canonical status mapping",
+                    relative_path,
+                )
+            )
+            continue
         required_status = CANONICAL_DOC_STATUSES[relative_path]
         if not has_live_canonical_status(markdown, required_status):
             results.append(
@@ -4958,7 +4969,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
         *validate_markdown_links(root),
     ]
     results.extend(validate_source_disposition(root))
-    results.extend(validate_source_retired_tree(root))
+    results.extend(validate_source_retired_tree(root, include_disposition=False))
     results.extend(validate_final_source_retired_stamp(root))
     if final_closeout:
         results.extend(validate_final_closeout(root))

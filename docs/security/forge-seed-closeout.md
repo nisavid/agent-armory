@@ -39,7 +39,7 @@ current for the refreshed public docs path.
 ## Commands
 
 - `python3.14 -m unittest tests.test_validate_armory_integrity.SecurityCloseoutValidationTests`
-- `python3.14 -m unittest tests/test_validate_armory_integrity.py`
+- `python3.14 -m unittest tests.test_validate_armory_integrity`
 - `python3.14 tools/validate_armory_integrity.py`
 - `python3.14 tools/validate_armory_integrity.py --json`
 - `git diff --check`
@@ -113,7 +113,7 @@ Preventive hardening added during the Forge Seed closeout includes:
 
 Re-validation passed after this closeout file was populated.
 
-- `python3.14 -m unittest tests/test_validate_armory_integrity.py`: passed.
+- `python3.14 -m unittest tests.test_validate_armory_integrity`: passed.
 - `python3.14 tools/validate_armory_integrity.py`: passed.
 - `python3.14 tools/validate_armory_integrity.py --json`: passed.
 - `git diff --check`: passed.
