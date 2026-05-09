@@ -18,6 +18,14 @@ Smiths consume profile facts when crafting Agent Equipment.
 - [Validation plan](validation-plan.md)
 - [Closeout evidence plan](closeout-evidence-plan.md)
 - [Forge Domain Model Review](forge-domain-model-review.md)
+- [Schema pressure report](schema-pressure-report.md)
+- Research notes:
+  - [Codex](research-notes/codex.md)
+  - [Claude Code](research-notes/claude_code.md)
+  - [Cursor](research-notes/cursor.md)
+  - [Hermes Agent](research-notes/hermes_agent.md)
+  - [OpenCode](research-notes/opencode.md)
+  - [OpenClaw](research-notes/openclaw.md)
 
 ## Issue projection
 
@@ -258,6 +266,20 @@ and validation before research enrichment:
   validation surface without duplicating detailed profile rules;
 - remove `docs/harness-capabilities.toml` as authored truth once migration and
   validation pass.
+
+## Issue #44 research outputs
+
+Issue #44 records one durable research note per supported harness and one
+schema pressure report. These artifacts describe current research evidence and
+profile-schema pressure only. They do not mutate canonical profile claims and
+do not encode downstream Forge consumption logic.
+
+The Manager Core validates the research-note/report structure required by the
+story: required sections, checked-at/version-basis/source coverage, standard
+surface-family coverage, evidence-classification language, schema-pressure
+finding rows, allowed finding dispositions, and source references. The
+deterministic checks prove structure and traceability, not the correctness of
+agent-inferred conclusions.
 
 The Manager Core implementation story is accepted when:
 

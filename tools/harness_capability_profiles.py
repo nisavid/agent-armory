@@ -16,6 +16,8 @@ from urllib.parse import urlparse
 AGGREGATE_CATALOG_PATH = Path("docs/harness-capabilities.toml")
 HARNESS_CAPABILITIES_SUMMARY_PATH = Path("docs/harness-capabilities.md")
 VANILLA_PROFILE_DIR = Path("docs/harness-capabilities/vanilla")
+RESEARCH_NOTE_DIR = Path("specs/vanilla-harness-capability-profiles/research-notes")
+SCHEMA_PRESSURE_REPORT_PATH = Path("specs/vanilla-harness-capability-profiles/schema-pressure-report.md")
 PROFILE_SCHEMA_VERSION = "vanilla-harness-capability-profile.v1alpha1"
 PROFILE_KIND = "vanilla_harness_capability_profile"
 PROFILE_SCOPE_SURFACE = "vanilla_harness_capability_surface"
@@ -84,6 +86,51 @@ EVIDENCE_CATEGORIES = {
     "practitioner wisdom",
     "hypothesis",
 }
+RESEARCH_NOTE_SECTIONS = [
+    "## Version Basis",
+    "## Source Set",
+    "## Surface Findings",
+    "## Evidence Classification",
+    "## Cross-Harness Import And Compatibility",
+    "## Memory-Like Surfaces",
+    "## Schema Pressure",
+    "## Analysis Angle Notes",
+    "## Local Observations",
+    "## Major Uncertainty",
+    "## Scratch Artifact Disposition",
+]
+RESEARCH_EVIDENCE_TERMS = [
+    "source-backed facts",
+    "local observations",
+    "implementation inferences",
+    "hypotheses",
+    "unsupported claims",
+    "unknowns",
+    "not-applicable surfaces",
+]
+SCHEMA_PRESSURE_SECTIONS = [
+    "## Research Scope",
+    "## Current Schema Comparison",
+    "## Schema Pressure Findings",
+    "## Cross-Harness Import And Compatibility",
+    "## Memory-Like Surfaces",
+    "## Analysis Angles And State Graphs",
+    "## Migration Implications",
+    "## Ralph Review Disposition",
+    "## Scratch Artifact Disposition",
+]
+SCHEMA_PRESSURE_COLUMNS = [
+    "ID",
+    "Disposition",
+    "Affected harnesses",
+    "Motivating evidence",
+    "Example claim shape",
+    "Proposed validation rule",
+    "Migration impact",
+]
+SCHEMA_PRESSURE_DISPOSITIONS = {"accepted", "deferred", "rejected", "needs more evidence", "needs-more-evidence"}
+TABLE_PARSE_ERROR = "__parse_error__"
+TABLE_PARSE_ERROR_DETAIL = "__parse_error_detail__"
 
 
 class ManagerError(Exception):
@@ -606,7 +653,170 @@ def markdown_table_rows(markdown: str, heading: str) -> list[dict[str, str]]:
         cells = [cell.strip() for cell in line.strip("|").split("|")]
         if len(cells) == len(headers):
             rows.append(dict(zip(headers, cells, strict=True)))
+            continue
+        row_id = cells[0] if cells and cells[0] else f"row_{len(rows) + 1}"
+        rows.append(
+            {
+                "ID": row_id,
+                TABLE_PARSE_ERROR: "invalid column count",
+                TABLE_PARSE_ERROR_DETAIL: f"expected {len(headers)} cells, got {len(cells)}",
+            }
+        )
     return rows
+
+
+def normalized_heading_title(title: str) -> str:
+    return re.sub(r"\s+", " ", title.strip()).casefold()
+
+
+def strip_markdown_code_blocks(markdown: str) -> str:
+    visible_lines: list[str] = []
+    fence_char: str | None = None
+    fence_length = 0
+    for line in markdown.splitlines(keepends=True):
+        stripped = line.lstrip(" ")
+        indent = len(line) - len(stripped)
+        if indent <= 3:
+            if fence_char is not None:
+                closing_fence = re.match(rf"{re.escape(fence_char)}{{{fence_length},}}\s*$", stripped)
+                if closing_fence:
+                    fence_char = None
+                    fence_length = 0
+                continue
+            opening_fence = re.match(r"(`{3,}|~{3,})", stripped)
+            if opening_fence:
+                marker = opening_fence.group(1)
+                fence_char = marker[0]
+                fence_length = len(marker)
+                continue
+        if fence_char is not None:
+            continue
+        if line.startswith(("    ", "\t")):
+            visible_lines.append("\n" if line.endswith("\n") else "")
+            continue
+        visible_lines.append(line)
+    return "".join(visible_lines)
+
+
+def markdown_h2_sections(markdown: str) -> dict[str, str]:
+    sections: dict[str, list[str]] = {}
+    current_section: str | None = None
+    for line in strip_markdown_code_blocks(markdown).splitlines():
+        match = re.match(r"^\s*##\s+(?P<title>.+?)\s*$", line)
+        if match:
+            current_section = normalized_heading_title(match.group("title"))
+            sections[current_section] = []
+            continue
+        if current_section is not None:
+            sections[current_section].append(line)
+    return {title: "\n".join(lines) for title, lines in sections.items()}
+
+
+def validate_required_markdown_sections(markdown: str, required_sections: list[str], prefix: str, path: Path) -> list[CheckResult]:
+    results: list[CheckResult] = []
+    sections = markdown_h2_sections(markdown)
+    for section in required_sections:
+        required_title = normalized_heading_title(section.removeprefix("## "))
+        if required_title not in sections:
+            results.append(CheckResult(f"{prefix}:section:{section.removeprefix('## ').casefold().replace(' ', '_')}", False, f"missing section: {section}", path.as_posix()))
+    return results
+
+
+def validate_research_note(root: Path, harness_id: str) -> list[CheckResult]:
+    relative_path = RESEARCH_NOTE_DIR / f"{harness_id}.md"
+    ok, detail, path = path_status(root, relative_path, expected_kind="file")
+    if not ok:
+        missing_detail = "missing research note" if detail in {"missing", "not a file"} else detail
+        return [CheckResult(f"research_note:{harness_id}:path", False, missing_detail, relative_path.as_posix())]
+    markdown = path.read_text(encoding="utf-8")
+    results = validate_required_markdown_sections(markdown, RESEARCH_NOTE_SECTIONS, f"research_note:{harness_id}", relative_path)
+    sections = markdown_h2_sections(markdown)
+    version_basis = sections.get("version basis", "")
+    source_set = sections.get("source set", "")
+    surface_findings = sections.get("surface findings", "")
+    if "Checked at:" not in version_basis:
+        results.append(CheckResult(f"research_note:{harness_id}:checked_at", False, "missing checked-at timestamp", relative_path.as_posix()))
+    if "Version basis:" not in version_basis:
+        results.append(CheckResult(f"research_note:{harness_id}:version_basis", False, "missing version basis", relative_path.as_posix()))
+    if not re.search(r"https?://", source_set):
+        results.append(CheckResult(f"research_note:{harness_id}:source_set", False, "missing source URL", relative_path.as_posix()))
+    missing_families = [
+        family
+        for family in SURFACE_FAMILIES
+        if not re.search(rf"(?<![A-Za-z0-9_]){re.escape(family)}(?![A-Za-z0-9_])", surface_findings)
+    ]
+    if missing_families:
+        results.append(
+            CheckResult(
+                f"research_note:{harness_id}:surface_family_coverage",
+                False,
+                f"missing families: {', '.join(missing_families)}",
+                relative_path.as_posix(),
+            )
+        )
+    folded = markdown.casefold()
+    missing_terms = [term for term in RESEARCH_EVIDENCE_TERMS if term not in folded]
+    if missing_terms:
+        results.append(
+            CheckResult(
+                f"research_note:{harness_id}:evidence_classification",
+                False,
+                f"missing evidence terms: {', '.join(missing_terms)}",
+                relative_path.as_posix(),
+            )
+        )
+    if "Capability Analysis Angle" not in markdown or "Capability State Graph" not in markdown:
+        results.append(
+            CheckResult(
+                f"research_note:{harness_id}:analysis_angles",
+                False,
+                "must mention Capability Analysis Angles and Capability State Graphs",
+                relative_path.as_posix(),
+            )
+        )
+    if not any(not result.ok for result in results):
+        results.append(CheckResult(f"research_note:{harness_id}", True, "complete", relative_path.as_posix()))
+    return results
+
+
+def validate_schema_pressure_report(root: Path) -> list[CheckResult]:
+    relative_path = SCHEMA_PRESSURE_REPORT_PATH
+    ok, detail, path = path_status(root, relative_path, expected_kind="file")
+    if not ok:
+        missing_detail = "missing schema pressure report" if detail in {"missing", "not a file"} else detail
+        return [CheckResult("schema_pressure:path", False, missing_detail, relative_path.as_posix())]
+    markdown = path.read_text(encoding="utf-8")
+    results = validate_required_markdown_sections(markdown, SCHEMA_PRESSURE_SECTIONS, "schema_pressure", relative_path)
+    rows = markdown_table_rows(markdown, "## Schema Pressure Findings")
+    if not rows:
+        results.append(CheckResult("schema_pressure:findings_table", False, "missing schema pressure findings rows", relative_path.as_posix()))
+    for index, row in enumerate(rows):
+        row_id = row.get("ID") or f"row_{index + 1}"
+        if row.get(TABLE_PARSE_ERROR):
+            detail = row.get(TABLE_PARSE_ERROR_DETAIL, "invalid table row column count")
+            results.append(CheckResult(f"schema_pressure:row:{row_id}:table_shape", False, detail, relative_path.as_posix()))
+            continue
+        for column in SCHEMA_PRESSURE_COLUMNS:
+            if not row.get(column, "").strip():
+                result_field = slug(column).replace("-", "_")
+                results.append(CheckResult(f"schema_pressure:row:{row_id}:{result_field}", False, f"missing {column}", relative_path.as_posix()))
+        disposition = row.get("Disposition", "").casefold()
+        if disposition and disposition not in SCHEMA_PRESSURE_DISPOSITIONS:
+            results.append(CheckResult(f"schema_pressure:row:{row_id}:disposition", False, "invalid disposition", relative_path.as_posix()))
+        evidence = row.get("Motivating evidence", "")
+        if evidence and not re.search(r"https?://|\[[^\]]+\]\([^)]+\)", evidence):
+            results.append(CheckResult(f"schema_pressure:row:{row_id}:motivating_evidence", False, "missing evidence reference", relative_path.as_posix()))
+    if not any(not result.ok for result in results):
+        results.append(CheckResult("schema_pressure:report", True, "complete", relative_path.as_posix()))
+    return results
+
+
+def validate_research_outputs(root: Path) -> list[CheckResult]:
+    results: list[CheckResult] = []
+    for harness_id in sorted(REQUIRED_HARNESSES):
+        results.extend(validate_research_note(root, harness_id))
+    results.extend(validate_schema_pressure_report(root))
+    return results
 
 
 def validate_summary(root: Path) -> list[CheckResult]:
@@ -676,6 +886,7 @@ def validate(root: Path) -> list[CheckResult]:
     for harness_id in sorted(REQUIRED_HARNESSES):
         results.extend(validate_profile(root, harness_id))
     results.extend(validate_summary(root))
+    results.extend(validate_research_outputs(root))
     return results
 
 
