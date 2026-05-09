@@ -519,6 +519,35 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             self.assertIn("research_note:codex:source_set", failures)
             self.assertIn("research_note:codex:surface_family_coverage", failures)
 
+    def test_validate_json_ignores_code_block_headings_in_research_notes(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_migration_root(root)
+            self.migrate_and_summarize(root)
+            codex_note = root / "specs/vanilla-harness-capability-profiles/research-notes/codex.md"
+            original = codex_note.read_text(encoding="utf-8")
+            surface_body = original.split("## Surface Findings\n\n", 1)[1].split("\n## Evidence Classification", 1)[0]
+            indented_surface_body = "".join(f"    {line}\n" for line in surface_body.splitlines())
+            codex_note.write_text(
+                original.replace("## Source Set", "Source Set", 1)
+                .replace("- [Fixture source](https://example.com/codex)", "No source URL here.", 1)
+                .replace("## Surface Findings", "Surface Findings", 1)
+                .replace(surface_body, "No surface family matrix here.\n", 1)
+                + "\n```markdown\n## Source Set\n- [Fixture source](https://example.com/codex)\n```\n"
+                + f"\n    ## Surface Findings\n{indented_surface_body}",
+                encoding="utf-8",
+            )
+
+            completed = self.run_manager(root, "validate", "--json")
+
+            self.assertNotEqual(completed.returncode, 0)
+            payload = json.loads(completed.stdout)
+            failures = {result["name"]: result for result in payload["results"] if not result["ok"]}
+            self.assertIn("research_note:codex:section:source_set", failures)
+            self.assertIn("research_note:codex:section:surface_findings", failures)
+            self.assertIn("research_note:codex:source_set", failures)
+            self.assertIn("research_note:codex:surface_family_coverage", failures)
+
     def test_validate_json_rejects_malformed_schema_pressure_table_rows(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

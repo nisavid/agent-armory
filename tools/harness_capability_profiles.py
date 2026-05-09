@@ -669,10 +669,39 @@ def normalized_heading_title(title: str) -> str:
     return re.sub(r"\s+", " ", title.strip()).casefold()
 
 
+def strip_markdown_code_blocks(markdown: str) -> str:
+    visible_lines: list[str] = []
+    fence_char: str | None = None
+    fence_length = 0
+    for line in markdown.splitlines(keepends=True):
+        stripped = line.lstrip(" ")
+        indent = len(line) - len(stripped)
+        if indent <= 3:
+            if fence_char is not None:
+                closing_fence = re.match(rf"{re.escape(fence_char)}{{{fence_length},}}\s*$", stripped)
+                if closing_fence:
+                    fence_char = None
+                    fence_length = 0
+                continue
+            opening_fence = re.match(r"(`{3,}|~{3,})", stripped)
+            if opening_fence:
+                marker = opening_fence.group(1)
+                fence_char = marker[0]
+                fence_length = len(marker)
+                continue
+        if fence_char is not None:
+            continue
+        if line.startswith(("    ", "\t")):
+            visible_lines.append("\n" if line.endswith("\n") else "")
+            continue
+        visible_lines.append(line)
+    return "".join(visible_lines)
+
+
 def markdown_h2_sections(markdown: str) -> dict[str, str]:
     sections: dict[str, list[str]] = {}
     current_section: str | None = None
-    for line in markdown.splitlines():
+    for line in strip_markdown_code_blocks(markdown).splitlines():
         match = re.match(r"^\s*##\s+(?P<title>.+?)\s*$", line)
         if match:
             current_section = normalized_heading_title(match.group("title"))

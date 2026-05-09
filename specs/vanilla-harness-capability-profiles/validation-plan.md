@@ -82,7 +82,8 @@ The implemented Manager Core validation now requires:
 - every standard surface family to appear explicitly in every research note;
 - schema-pressure finding rows with affected harnesses, motivating evidence,
   example claim shape, proposed validation rule, migration impact, and one of
-  `accepted`, `deferred`, `rejected`, or `needs more evidence`.
+  `accepted`, `deferred`, `rejected`, `needs more evidence`, or
+  `needs-more-evidence`.
 
 ## Profile enrichment and six-profile refresh slice
 
