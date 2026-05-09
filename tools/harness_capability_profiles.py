@@ -665,11 +665,30 @@ def markdown_table_rows(markdown: str, heading: str) -> list[dict[str, str]]:
     return rows
 
 
+def normalized_heading_title(title: str) -> str:
+    return re.sub(r"\s+", " ", title.strip()).casefold()
+
+
+def markdown_h2_sections(markdown: str) -> dict[str, str]:
+    sections: dict[str, list[str]] = {}
+    current_section: str | None = None
+    for line in markdown.splitlines():
+        match = re.match(r"^\s*##\s+(?P<title>.+?)\s*$", line)
+        if match:
+            current_section = normalized_heading_title(match.group("title"))
+            sections[current_section] = []
+            continue
+        if current_section is not None:
+            sections[current_section].append(line)
+    return {title: "\n".join(lines) for title, lines in sections.items()}
+
+
 def validate_required_markdown_sections(markdown: str, required_sections: list[str], prefix: str, path: Path) -> list[CheckResult]:
     results: list[CheckResult] = []
-    headings = {line.strip().casefold() for line in markdown.splitlines()}
+    sections = markdown_h2_sections(markdown)
     for section in required_sections:
-        if section.casefold() not in headings:
+        required_title = normalized_heading_title(section.removeprefix("## "))
+        if required_title not in sections:
             results.append(CheckResult(f"{prefix}:section:{section.removeprefix('## ').casefold().replace(' ', '_')}", False, f"missing section: {section}", path.as_posix()))
     return results
 
@@ -682,16 +701,20 @@ def validate_research_note(root: Path, harness_id: str) -> list[CheckResult]:
         return [CheckResult(f"research_note:{harness_id}:path", False, missing_detail, relative_path.as_posix())]
     markdown = path.read_text(encoding="utf-8")
     results = validate_required_markdown_sections(markdown, RESEARCH_NOTE_SECTIONS, f"research_note:{harness_id}", relative_path)
-    if "Checked at:" not in markdown:
+    sections = markdown_h2_sections(markdown)
+    version_basis = sections.get("version basis", "")
+    source_set = sections.get("source set", "")
+    surface_findings = sections.get("surface findings", "")
+    if "Checked at:" not in version_basis:
         results.append(CheckResult(f"research_note:{harness_id}:checked_at", False, "missing checked-at timestamp", relative_path.as_posix()))
-    if "Version basis:" not in markdown:
+    if "Version basis:" not in version_basis:
         results.append(CheckResult(f"research_note:{harness_id}:version_basis", False, "missing version basis", relative_path.as_posix()))
-    if not re.search(r"https?://", markdown):
+    if not re.search(r"https?://", source_set):
         results.append(CheckResult(f"research_note:{harness_id}:source_set", False, "missing source URL", relative_path.as_posix()))
     missing_families = [
         family
         for family in SURFACE_FAMILIES
-        if not re.search(rf"(?<![A-Za-z0-9_]){re.escape(family)}(?![A-Za-z0-9_])", markdown)
+        if not re.search(rf"(?<![A-Za-z0-9_]){re.escape(family)}(?![A-Za-z0-9_])", surface_findings)
     ]
     if missing_families:
         results.append(

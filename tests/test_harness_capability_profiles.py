@@ -467,6 +467,58 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             payload = json.loads(completed.stdout)
             self.assertEqual(payload["result"], "passed")
 
+    def test_validate_json_accepts_extra_whitespace_in_research_note_headings(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_migration_root(root)
+            self.migrate_and_summarize(root)
+            codex_note = root / "specs/vanilla-harness-capability-profiles/research-notes/codex.md"
+            codex_note.write_text(
+                codex_note.read_text(encoding="utf-8")
+                .replace("## Version Basis", "##   Version   Basis  ", 1)
+                .replace("## Source Set", "##  Source   Set  ", 1)
+                .replace("## Surface Findings", "## Surface   Findings  ", 1),
+                encoding="utf-8",
+            )
+
+            completed = self.run_manager(root, "validate", "--json")
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            payload = json.loads(completed.stdout)
+            self.assertEqual(payload["result"], "passed")
+
+    def test_validate_json_rejects_misplaced_research_note_markers(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_migration_root(root)
+            self.migrate_and_summarize(root)
+            codex_note = root / "specs/vanilla-harness-capability-profiles/research-notes/codex.md"
+            original = codex_note.read_text(encoding="utf-8")
+            version_markers = "Checked at: 2026-05-08T12:00:00-04:00.\nVersion basis: fixture."
+            source_marker = "- [Fixture source](https://example.com/codex)"
+            surface_body = original.split("## Surface Findings\n\n", 1)[1].split("\n## Evidence Classification", 1)[0]
+            codex_note.write_text(
+                original.replace(version_markers, "No version marker here.", 1)
+                .replace(source_marker, "No source URL here.", 1)
+                .replace(surface_body, "No surface family matrix here.\n", 1)
+                .replace(
+                    "No local observation.",
+                    f"No local observation.\n\n{version_markers}\n\n{source_marker}\n\n{surface_body}",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            completed = self.run_manager(root, "validate", "--json")
+
+            self.assertNotEqual(completed.returncode, 0)
+            payload = json.loads(completed.stdout)
+            failures = {result["name"]: result for result in payload["results"] if not result["ok"]}
+            self.assertIn("research_note:codex:checked_at", failures)
+            self.assertIn("research_note:codex:version_basis", failures)
+            self.assertIn("research_note:codex:source_set", failures)
+            self.assertIn("research_note:codex:surface_family_coverage", failures)
+
     def test_validate_json_rejects_malformed_schema_pressure_table_rows(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
