@@ -688,7 +688,11 @@ def validate_research_note(root: Path, harness_id: str) -> list[CheckResult]:
         results.append(CheckResult(f"research_note:{harness_id}:version_basis", False, "missing version basis", relative_path.as_posix()))
     if not re.search(r"https?://", markdown):
         results.append(CheckResult(f"research_note:{harness_id}:source_set", False, "missing source URL", relative_path.as_posix()))
-    missing_families = [family for family in SURFACE_FAMILIES if f"`{family}`" not in markdown]
+    missing_families = [
+        family
+        for family in SURFACE_FAMILIES
+        if not re.search(rf"(?<![A-Za-z0-9_]){re.escape(family)}(?![A-Za-z0-9_])", markdown)
+    ]
     if missing_families:
         results.append(
             CheckResult(

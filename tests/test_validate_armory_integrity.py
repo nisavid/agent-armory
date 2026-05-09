@@ -3751,7 +3751,7 @@ class MarkdownLinkTests(unittest.TestCase):
 
 class HarnessCatalogTests(unittest.TestCase):
     def write_migrated_profiles(self, root: Path) -> None:
-        from tests.test_harness_capability_profiles import AGGREGATE_FIXTURE, HarnessCapabilityProfileManagerTests
+        from tests.test_harness_capability_profiles import AGGREGATE_FIXTURE, write_research_outputs_fixture
 
         docs = root / "docs"
         docs.mkdir(parents=True, exist_ok=True)
@@ -3768,7 +3768,7 @@ class HarnessCatalogTests(unittest.TestCase):
                 text=True,
             )
             self.assertEqual(completed.returncode, 0, completed.stderr)
-        HarnessCapabilityProfileManagerTests().write_research_outputs(root)
+        write_research_outputs_fixture(root)
 
     def test_validate_harness_catalog_delegates_to_manager_core_profiles(self):
         with tempfile.TemporaryDirectory() as tmpdir:

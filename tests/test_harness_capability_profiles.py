@@ -99,39 +99,32 @@ local_observations = []
 """
 
 
-class HarnessCapabilityProfileManagerTests(unittest.TestCase):
-    def write_migration_root(self, root: Path) -> None:
-        docs = root / "docs"
-        docs.mkdir()
-        (docs / "harness-capabilities.toml").write_text(AGGREGATE_FIXTURE.strip() + "\n", encoding="utf-8")
-        shutil.copyfile(REPO_ROOT / "docs/harness-capabilities.md", docs / "harness-capabilities.md")
-
-    def write_research_outputs(self, root: Path) -> None:
-        research_dir = root / "specs/vanilla-harness-capability-profiles/research-notes"
-        research_dir.mkdir(parents=True, exist_ok=True)
-        surface_lines = "\n".join(
-            f"- `{family}`: source-backed fact, local observation, implementation inference, hypothesis, unsupported claim, unknown, or not-applicable."
-            for family in [
-                "instructions_context",
-                "skills",
-                "mcp_tools",
-                "hooks_events",
-                "plugins_bundles",
-                "agent_profiles_subagents",
-                "memory_context_retrieval",
-                "config_settings",
-                "permissions_approvals_sandboxing",
-                "scheduling_automation",
-                "commands_shortcuts",
-                "providers_connectors",
-                "runtime_modes",
-                "cross_harness_import_compatibility",
-                "lifecycle_reload_update",
-            ]
-        )
-        for harness_id in ["claude_code", "codex", "cursor", "hermes_agent", "openclaw", "opencode"]:
-            (research_dir / f"{harness_id}.md").write_text(
-                f"""# Research Note: {harness_id}
+def write_research_outputs_fixture(root: Path) -> None:
+    research_dir = root / "specs/vanilla-harness-capability-profiles/research-notes"
+    research_dir.mkdir(parents=True, exist_ok=True)
+    surface_lines = "\n".join(
+        f"- `{family}`: source-backed fact, local observation, implementation inference, hypothesis, unsupported claim, unknown, or not-applicable."
+        for family in [
+            "instructions_context",
+            "skills",
+            "mcp_tools",
+            "hooks_events",
+            "plugins_bundles",
+            "agent_profiles_subagents",
+            "memory_context_retrieval",
+            "config_settings",
+            "permissions_approvals_sandboxing",
+            "scheduling_automation",
+            "commands_shortcuts",
+            "providers_connectors",
+            "runtime_modes",
+            "cross_harness_import_compatibility",
+            "lifecycle_reload_update",
+        ]
+    )
+    for harness_id in ["claude_code", "codex", "cursor", "hermes_agent", "openclaw", "opencode"]:
+        (research_dir / f"{harness_id}.md").write_text(
+            f"""# Research Note: {harness_id}
 
 Status: draft
 
@@ -180,10 +173,10 @@ Fixture uncertainty.
 
 Scratch artifacts are summarized, not committed as raw project truth.
 """,
-                encoding="utf-8",
-            )
-        (root / "specs/vanilla-harness-capability-profiles/schema-pressure-report.md").write_text(
-            """# Schema Pressure Report: Harness Surfaces
+            encoding="utf-8",
+        )
+    (root / "specs/vanilla-harness-capability-profiles/schema-pressure-report.md").write_text(
+        """# Schema Pressure Report: Harness Surfaces
 
 Status: draft
 
@@ -228,8 +221,19 @@ Latest cycle: clean.
 
 Scratch artifacts are summarized, not committed as raw project truth.
 """,
-            encoding="utf-8",
-        )
+        encoding="utf-8",
+    )
+
+
+class HarnessCapabilityProfileManagerTests(unittest.TestCase):
+    def write_migration_root(self, root: Path) -> None:
+        docs = root / "docs"
+        docs.mkdir()
+        (docs / "harness-capabilities.toml").write_text(AGGREGATE_FIXTURE.strip() + "\n", encoding="utf-8")
+        shutil.copyfile(REPO_ROOT / "docs/harness-capabilities.md", docs / "harness-capabilities.md")
+
+    def write_research_outputs(self, root: Path) -> None:
+        write_research_outputs_fixture(root)
 
     def migrate_and_summarize(self, root: Path) -> None:
         migrate = self.run_manager(root, "migrate", "--apply", "--json")
@@ -434,7 +438,7 @@ Scratch artifacts are summarized, not committed as raw project truth.
             self.migrate_and_summarize(root)
             codex_note = root / "specs/vanilla-harness-capability-profiles/research-notes/codex.md"
             codex_note.write_text(
-                codex_note.read_text(encoding="utf-8").replace("## Source Set", "Source Set", 1).replace("`skills`", "skills", 1),
+                codex_note.read_text(encoding="utf-8").replace("## Source Set", "Source Set", 1).replace("`skills`", "`skillz`", 1),
                 encoding="utf-8",
             )
             report = root / "specs/vanilla-harness-capability-profiles/schema-pressure-report.md"
