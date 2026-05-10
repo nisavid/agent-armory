@@ -1696,7 +1696,7 @@ CANONICAL_DOC_STATUSES = {
     "docs/evidence-taxonomy.md": "Forge Canon",
     "docs/security-and-control.md": "Forge Canon",
     "docs/equipment-promotion.md": "Forge Canon",
-    "docs/story-closeout.md": "Forge Core",
+    "docs/story-closeout.md": "Armory Operating Contract",
 }
 
 

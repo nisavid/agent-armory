@@ -10,6 +10,19 @@ This document is the canonical vocabulary surface for Smiths and Forgewrights. U
 
 **Agent Equipment** is reusable tooling, behavior, workflow, knowledge, or configuration that equips an Agent or agentic system.
 
+**Agentic Engineering** is software engineering performed agentically: code is
+written by AI Agents, and the surrounding work is managed with methodical
+attention to how Agents navigate tasks, fail, recover, use context, and benefit
+from equipment.
+
+**Agent Engineering** is the engineering of Agents, agentic systems, agent
+roles, and agent workflows.
+
+**Agent Meta-Engineering** is Agent Engineering whose problem domain is
+engineering work: creating or refining the Agents, agentic systems, roles,
+workflows, operating models, and equipment that make Agentic Engineering more
+capable.
+
 **Equipment Candidate** is proposed, specified, planned, or implemented equipment that has not completed validation and publication.
 
 **Equipment Design Bundle** gathers the early design and validation-planning
@@ -54,6 +67,10 @@ functions of the Forge.
 
 **Forge Equipment Core** is the minimal Agent Equipment necessary for agents to
 autonomously operate Forge functions in a manner that fulfills Forge contracts.
+
+**Armory Operating Contract** is a durable rule surface that governs Agentic
+Engineering or repository operations across the Agent Armory, rather than a
+specific Forge function or Equipment Candidate.
 
 **Armory Equipment Core** is the minimal Agent Equipment necessary for agents
 to autonomously operate Armory functions outside the Forge. It may share
@@ -241,6 +258,11 @@ induced candidate for future work.
 ## Relationships
 
 - The Agent Armory contains Agent Equipment and the Agent Equipment Forge.
+- Agentic Engineering is software engineering performed agentically, while
+  Agent Engineering is the engineering of Agents and agentic systems.
+- Agent Meta-Engineering is Agent Engineering focused on engineering work; it
+  can produce the Agents, workflows, operating models, and Agent Equipment that
+  improve Agentic Engineering.
 - The Agent Equipment Forge is created by Forgewrights and used by Smiths.
 - Smiths create Agent Equipment for one or more Agent Harnesses.
 - An Equipment Design Bundle keeps one Equipment Candidate's capability card,
@@ -271,11 +293,19 @@ induced candidate for future work.
 - Seed Validation checks completed Forge Seed integrity; live repository
   integrity belongs to Armory Integrity Validation and Forge-scoped live
   integrity belongs to Forge Integrity Validation.
+- Armory Operating Contracts state cross-Armory operating rules in readable
+  form; deterministic validators enforce selected machine-checkable slices of
+  those rules.
+- Story Closeout is an Armory Operating Contract because it governs cohesive
+  change sets across the Armory rather than a specific Forge function.
 - The Forge Conveyor routes Smiths from preloaded agent instructions into the Forge Canon.
 - The Forge Tour routes human readers into the Forge without exposing agent-only machinery first.
 - Reflection Findings are source material for future Cognition Enhancement
   Equipment and may also induce Tooling Requests, Equipment Candidates, or
   issue-tracked work in narrower equipment stories.
+- Portable Agentic Engineering workflow equipment is downstream of repo-local
+  Armory Operating Contracts until the rules are coherent and pressure-tested
+  enough to package.
 - Head Gear is the planned generic Cognition Enhancement Equipment line; it is
   intended to prepare the Agent to clarify, equip, execute, and reflect before
   domain-specific equipment takes over.

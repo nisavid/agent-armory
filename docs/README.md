@@ -94,6 +94,9 @@ agent equipment.
   control assumptions for people evaluating trust.
 - [Design decisions](adr/): the decision records behind durable choices in the
   Forge.
+- [Agentic Engineering Operating Model Review](reviews/agentic-engineering-operating-model.md):
+  current review of cross-Armory operating contracts, validation boundaries,
+  and manual Harness Capability Profile refresh certification.
 
 ## Roadmap
 
