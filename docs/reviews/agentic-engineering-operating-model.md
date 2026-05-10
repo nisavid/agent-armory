@@ -222,5 +222,10 @@ Validation performed during the review:
 - `python3.14 tools/harness_capability_profiles.py validate --json`
 - `python3.14 -m unittest`
 - `git diff --check`
-- `rg -n --pcre2 "(AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9_]{36,}|sk-[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|-----BEGIN [A-Z ]*PRIVATE KEY-----)" ...`
+- Local secret-pattern scan over changed files returned no matches:
+
+  ```sh
+  rg -n --pcre2 "(AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9_]{36,}|sk-[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|-----BEGIN [A-Z ]*PRIVATE KEY-----)" AGENTS.md CONTEXT.md docs/README.md docs/story-closeout.md docs/ubiquitous-language.md docs/reviews/agentic-engineering-operating-model.md tools/validate_armory_integrity.py
+  ```
+
 - `python3.14 tools/validate_armory_integrity.py --final-closeout`
