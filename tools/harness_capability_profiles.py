@@ -551,7 +551,7 @@ def validate_version_observations(profile: dict[str, Any], harness_id: str, rela
         if not isinstance(record, dict):
             results.append(CheckResult(prefix, False, "version observation must be a table", path))
             continue
-        results.extend(validate_string_fields(record, ["id", "observed_version", "checked_at", "source_url"], prefix, path))
+        results.extend(validate_string_fields(record, ["id", "observed_version", "checked_at"], prefix, path))
         source_kind = record.get("source_kind")
         if source_kind not in SOURCE_KINDS:
             results.append(CheckResult(f"{prefix}:source_kind", False, "invalid source kind", path))

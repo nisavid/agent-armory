@@ -468,11 +468,12 @@ evidence_class = "unknown"
 
             self.assertNotEqual(completed.returncode, 0)
             failures = {result["name"] for result in json.loads(completed.stdout)["results"] if not result["ok"]}
-            self.assertIn("profile:codex:claim:0:claim_triage", failures)
-            self.assertIn("profile:codex:claim:0:triage_rationale", failures)
-            self.assertIn("profile:codex:claim:0:install_activation", failures)
-            self.assertIn("profile:codex:claim:0:configuration_surface", failures)
-            self.assertIn("profile:codex:claim:0:reload_update_behavior", failures)
+            first_claim_index = claim_index(codex_profile, "claim-codex-instructions_context")
+            self.assertIn(f"profile:codex:claim:{first_claim_index}:claim_triage", failures)
+            self.assertIn(f"profile:codex:claim:{first_claim_index}:triage_rationale", failures)
+            self.assertIn(f"profile:codex:claim:{first_claim_index}:install_activation", failures)
+            self.assertIn(f"profile:codex:claim:{first_claim_index}:configuration_surface", failures)
+            self.assertIn(f"profile:codex:claim:{first_claim_index}:reload_update_behavior", failures)
 
     def test_validate_rejects_unpaired_migrated_status_and_evidence_basis(self):
         with tempfile.TemporaryDirectory() as tmpdir:
