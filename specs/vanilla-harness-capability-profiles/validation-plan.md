@@ -102,8 +102,9 @@ canonical profiles.
 The implemented profile enrichment validation now requires:
 
 - stable evidence IDs derived from source URL and claim scope;
-- `[[version_observation]]` records with checked-at, source URL, source kind,
-  canonical-change, and evidence-class fields;
+- `[[version_observation]]` records with `id`, `observed_version`,
+  `checked_at`, `source_url`, `source_kind`, `canonical_profile_change`, and
+  `evidence_class` fields;
 - `[[harness_extension]]` records with evidence references and schema-pressure
   IDs;
 - refreshed claims to carry Capability Claim Triage, triage rationale,

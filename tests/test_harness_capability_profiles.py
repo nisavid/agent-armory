@@ -246,6 +246,35 @@ def replace_in_claim_block(profile_text: str, claim_id: str, old: str, new: str)
     return profile_text[:start] + block.replace(old, new, 1) + profile_text[next_claim:]
 
 
+def claim_index(profile_path: Path, claim_id: str) -> int:
+    with profile_path.open("rb") as handle:
+        claims = tomllib.load(handle)["claim"]
+    for index, claim in enumerate(claims):
+        if claim["id"] == claim_id:
+            return index
+    raise AssertionError(f"{claim_id!r} not found in {profile_path}")
+
+
+def refresh_claim_with_triage(profile_text: str, claim_id: str, triage: str = "changed") -> str:
+    profile_text = replace_in_claim_block(
+        profile_text,
+        claim_id,
+        'migration_status = "migrated_from_aggregate"',
+        'migration_status = "refreshed_from_migrated_claim"',
+    )
+    return replace_in_claim_block(
+        profile_text,
+        claim_id,
+        'evidence_basis = "aggregate_catalog_migration"',
+        'evidence_basis = "current_first_party_source"\n'
+        f'claim_triage = "{triage}"\n'
+        'triage_rationale = "Regression fixture refreshed this claim."\n'
+        'install_activation = "Regression fixture activation."\n'
+        'configuration_surface = "Regression fixture configuration."\n'
+        'reload_update_behavior = "Regression fixture reload behavior."',
+    )
+
+
 def append_enriched_codex_records(profile_text: str, extension_evidence_id: str = "ev-codex-plugin-support-18bcdf25dd") -> str:
     return (
         profile_text.rstrip()
@@ -364,9 +393,9 @@ load_attachment_point = "configured skill roots"
 activation = "explicit or implicit"
 mutability = "filesystem-backed and plugin-provided"
 scope = ["project", "user", "plugin"]
-evidence_ids = ["{skill_evidence_id}"]
-evidence_class = "source_backed"
-""".format(skill_evidence_id=skill_evidence_id),
+evidence_ids = []
+evidence_class = "local_observation"
+""",
             )
             text = insert_claim_block_detail(
                 text,
@@ -445,6 +474,52 @@ evidence_class = "unknown"
             self.assertIn("profile:codex:claim:0:configuration_surface", failures)
             self.assertIn("profile:codex:claim:0:reload_update_behavior", failures)
 
+    def test_validate_rejects_unpaired_migrated_status_and_evidence_basis(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_migration_root(root)
+            self.migrate_and_summarize(root)
+            codex_profile = root / "docs/harness-capabilities/vanilla/codex.toml"
+            text = codex_profile.read_text(encoding="utf-8")
+            text = replace_in_claim_block(
+                text,
+                "claim-codex-skills",
+                'migration_status = "migrated_from_aggregate"',
+                'migration_status = "refreshed_from_migrated_claim"',
+            )
+            codex_profile.write_text(text, encoding="utf-8")
+
+            completed = self.run_manager(root, "validate", "--json")
+
+            self.assertNotEqual(completed.returncode, 0)
+            failures = {result["name"] for result in json.loads(completed.stdout)["results"] if not result["ok"]}
+            skills_index = claim_index(codex_profile, "claim-codex-skills")
+            self.assertIn(f"profile:codex:claim:{skills_index}:migration_evidence_pair", failures)
+
+    def test_validate_rejects_required_refreshed_family_claims_without_nested_surface(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_migration_root(root)
+            self.migrate_and_summarize(root)
+            codex_profile = root / "docs/harness-capabilities/vanilla/codex.toml"
+            text = codex_profile.read_text(encoding="utf-8")
+            required_claims = [
+                ("claim-codex-memory_context_retrieval", "memory_like_surface"),
+                ("claim-codex-scheduling_automation", "automation_surface"),
+                ("claim-codex-cross_harness_import_compatibility", "compatibility_bridge"),
+            ]
+            for claim_id_value, _ in required_claims:
+                text = refresh_claim_with_triage(text, claim_id_value)
+            codex_profile.write_text(text, encoding="utf-8")
+
+            completed = self.run_manager(root, "validate", "--json")
+
+            self.assertNotEqual(completed.returncode, 0)
+            failures = {result["name"] for result in json.loads(completed.stdout)["results"] if not result["ok"]}
+            for claim_id_value, nested_table in required_claims:
+                index = claim_index(codex_profile, claim_id_value)
+                self.assertIn(f"profile:codex:claim:{index}:{nested_table}", failures)
+
     def test_validate_rejects_malformed_enrichment_extension_records(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -497,8 +572,9 @@ schema_pressure_ids = ["SP-003"]
             self.assertIn("profile:codex:version_observation:0:source_url", failures)
             self.assertIn("profile:codex:version_observation:0:canonical_profile_change", failures)
             self.assertIn("profile:codex:version_observation:0:evidence_class", failures)
-            self.assertIn("profile:codex:claim:9:automation_surface:0:runner_locus", failures)
-            self.assertIn("profile:codex:claim:9:automation_surface:0:evidence_refs", failures)
+            automation_index = claim_index(codex_profile, "claim-codex-scheduling_automation")
+            self.assertIn(f"profile:codex:claim:{automation_index}:automation_surface:0:runner_locus", failures)
+            self.assertIn(f"profile:codex:claim:{automation_index}:automation_surface:0:evidence_refs", failures)
             self.assertIn("profile:codex:harness_extension:0:name", failures)
             self.assertIn("profile:codex:harness_extension:0:evidence_refs", failures)
 

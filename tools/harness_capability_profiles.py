@@ -533,7 +533,7 @@ def validate_record_evidence_refs(
     if missing_refs:
         results.append(CheckResult(f"{prefix}:evidence_refs", False, f"unknown evidence ids: {', '.join(missing_refs)}", path))
     evidence_class = record.get("evidence_class")
-    if require_refs_for_source and evidence_class in {"source_backed", "fallback_source", "local_observation"} and not refs:
+    if require_refs_for_source and evidence_class in {"source_backed", "fallback_source"} and not refs:
         results.append(CheckResult(f"{prefix}:evidence_refs", False, "evidence-backed enrichment needs evidence", path))
     return results
 
@@ -595,6 +595,8 @@ def validate_claim_detail_records(
     claim_index: int,
     evidence_ids: set[str],
     relative_path: Path,
+    *,
+    refreshed_claim: bool,
 ) -> list[CheckResult]:
     path = relative_path.as_posix()
     nested_specs = {
@@ -626,6 +628,21 @@ def validate_claim_detail_records(
         ],
     }
     results: list[CheckResult] = []
+    family_required_tables = {
+        "memory_context_retrieval": "memory_like_surface",
+        "scheduling_automation": "automation_surface",
+        "cross_harness_import_compatibility": "compatibility_bridge",
+    }
+    required_table = family_required_tables.get(str(claim.get("family")))
+    if refreshed_claim and required_table and not claim.get(required_table):
+        results.append(
+            CheckResult(
+                f"profile:{harness_id}:claim:{claim_index}:{required_table}",
+                False,
+                f"refreshed {claim.get('family')} claim needs {required_table}",
+                path,
+            )
+        )
     for table_name, string_fields in nested_specs.items():
         records = claim.get(table_name, [])
         if records is None:
@@ -787,11 +804,27 @@ def validate_profile_data(profile: dict[str, Any], harness_id: str, relative_pat
                     results.append(CheckResult(f"profile:{harness_id}:claim:{index}:{field}", False, f"must be {expected}", relative_path.as_posix()))
             migration_status = claim.get("migration_status")
             evidence_basis = claim.get("evidence_basis")
-            if migration_status not in CLAIM_MIGRATION_STATUSES:
+            valid_migration_status = migration_status in CLAIM_MIGRATION_STATUSES
+            valid_evidence_basis = evidence_basis in CLAIM_EVIDENCE_BASES
+            if not valid_migration_status:
                 results.append(CheckResult(f"profile:{harness_id}:claim:{index}:migration_status", False, "invalid migration status", relative_path.as_posix()))
-            if evidence_basis not in CLAIM_EVIDENCE_BASES:
+            if not valid_evidence_basis:
                 results.append(CheckResult(f"profile:{harness_id}:claim:{index}:evidence_basis", False, "invalid evidence basis", relative_path.as_posix()))
-            refreshed_claim = migration_status != CLAIM_MIGRATION_STATUS or evidence_basis != CLAIM_EVIDENCE_BASIS
+            if valid_migration_status and valid_evidence_basis:
+                migrated_status = migration_status == CLAIM_MIGRATION_STATUS
+                aggregate_basis = evidence_basis == CLAIM_EVIDENCE_BASIS
+                if migrated_status != aggregate_basis:
+                    results.append(
+                        CheckResult(
+                            f"profile:{harness_id}:claim:{index}:migration_evidence_pair",
+                            False,
+                            "migrated aggregate status and aggregate evidence basis must be paired",
+                            relative_path.as_posix(),
+                        )
+                    )
+                refreshed_claim = not (migrated_status and aggregate_basis)
+            else:
+                refreshed_claim = True
             if refreshed_claim:
                 claim_triage = claim.get("claim_triage")
                 if claim_triage not in CLAIM_TRIAGE_VALUES:
@@ -799,7 +832,16 @@ def validate_profile_data(profile: dict[str, Any], harness_id: str, relative_pat
                 for field in ["triage_rationale", "install_activation", "configuration_surface", "reload_update_behavior"]:
                     if not non_empty_string(claim.get(field)):
                         results.append(CheckResult(f"profile:{harness_id}:claim:{index}:{field}", False, f"missing {field}", relative_path.as_posix()))
-            results.extend(validate_claim_detail_records(claim, harness_id, index, evidence_ids, relative_path))
+            results.extend(
+                validate_claim_detail_records(
+                    claim,
+                    harness_id,
+                    index,
+                    evidence_ids,
+                    relative_path,
+                    refreshed_claim=refreshed_claim,
+                )
+            )
             if not non_empty_string(claim.get("limitations")) and not non_empty_string(claim.get("uncertainty")):
                 results.append(
                     CheckResult(

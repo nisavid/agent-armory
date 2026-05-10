@@ -96,8 +96,8 @@ Optional nested claim tables record accepted issue #45 enrichment fields:
   `evidence_class`.
 - `[[claim.memory_like_surface]]` records `persistence_scope`,
   `retrieval_trigger`, `mutability`, `freshness`, `privacy_boundary`,
-  `write_authority`, `api_stability`, `evidence_ids`, and
-  `evidence_class`.
+  `write_authority`, `api_stability`, `evidence_ids`, `evidence_class`, and
+  optional `unknowns`.
 - `[[claim.automation_surface]]` records `trigger_class`, `runner_locus`,
   `recurrence_shape`, `permission_sandbox_context`,
   `missed_run_behavior`, `output_delivery`, `evidence_ids`, and

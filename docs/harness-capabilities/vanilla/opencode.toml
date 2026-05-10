@@ -9,7 +9,7 @@ evidence_category = "source-supported"
 summary_scheduling = "OpenCode has source-backed external scheduling through GitHub Action integration; no native durable scheduler is proven by checked sources."
 scheduling = "OpenCode can run from GitHub Action workflows and other external runners. Checked first-party sources do not prove a native durable scheduler."
 limitations = "The current release includes security and compatibility fixes, including a Plan Mode security bypass fix. Native scheduling and lifecycle reload semantics remain unresolved."
-uncertainty = "Snapshots and context pressure are memory-like signals, but persistent memory scope, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
+uncertainty = "Memory-like persistence, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
 refresh_notes = "Refresh from GitHub releases and OpenCode docs. Keep external runner support distinct from native scheduler support."
 components = [
     "CLI",
@@ -185,7 +185,7 @@ install_activation = "Instructions load through skills, agents, command template
 configuration_surface = "Config files, skill files, agent definitions, and command templates shape context."
 reload_update_behavior = "Reload behavior for instruction files is not proven as a universal lifecycle contract."
 limitations = "The current release includes security and compatibility fixes, including a Plan Mode security bypass fix. Native scheduling and lifecycle reload semantics remain unresolved."
-uncertainty = "Snapshots and context pressure are memory-like signals, but persistent memory scope, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
+uncertainty = "Memory-like persistence, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
 
 [[claim.detail]]
 component = "instruction and context loaders"
@@ -225,7 +225,7 @@ install_activation = "Skills load through OpenCode skill files and built-in skil
 configuration_surface = "Skill files and built-in release contents shape availability."
 reload_update_behavior = "Skill reload/update behavior needs source-specific lifecycle evidence."
 limitations = "The current release includes security and compatibility fixes, including a Plan Mode security bypass fix. Native scheduling and lifecycle reload semantics remain unresolved."
-uncertainty = "Snapshots and context pressure are memory-like signals, but persistent memory scope, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
+uncertainty = "Memory-like persistence, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
 
 [[claim.detail]]
 component = "skills"
@@ -262,7 +262,7 @@ install_activation = "MCP attaches through configured MCP servers."
 configuration_surface = "MCP server configuration shapes available tools/resources."
 reload_update_behavior = "MCP compatibility behavior can change by release."
 limitations = "The current release includes security and compatibility fixes, including a Plan Mode security bypass fix. Native scheduling and lifecycle reload semantics remain unresolved."
-uncertainty = "Snapshots and context pressure are memory-like signals, but persistent memory scope, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
+uncertainty = "Memory-like persistence, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
 
 [[claim.detail]]
 component = "MCP and tool surfaces"
@@ -298,7 +298,7 @@ install_activation = "Hooks attach through plugin hook definitions."
 configuration_surface = "Plugin configuration determines hook availability."
 reload_update_behavior = "Hook reload/update behavior follows plugin lifecycle, which remains underspecified."
 limitations = "The current release includes security and compatibility fixes, including a Plan Mode security bypass fix. Native scheduling and lifecycle reload semantics remain unresolved."
-uncertainty = "Snapshots and context pressure are memory-like signals, but persistent memory scope, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
+uncertainty = "Memory-like persistence, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
 
 [[claim.detail]]
 component = "hooks and event surfaces"
@@ -331,7 +331,7 @@ install_activation = "Plugins attach through OpenCode plugin configuration."
 configuration_surface = "Plugin files/configuration shape available tools and hooks."
 reload_update_behavior = "Plugin reload/update behavior needs more evidence."
 limitations = "The current release includes security and compatibility fixes, including a Plan Mode security bypass fix. Native scheduling and lifecycle reload semantics remain unresolved."
-uncertainty = "Snapshots and context pressure are memory-like signals, but persistent memory scope, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
+uncertainty = "Memory-like persistence, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
 
 [[claim.detail]]
 component = "plugins and bundles"
@@ -366,7 +366,7 @@ install_activation = "Agents and subagents attach through OpenCode agent definit
 configuration_surface = "Agent configuration shapes routing and behavior."
 reload_update_behavior = "Agent reload/update behavior needs more evidence."
 limitations = "The current release includes security and compatibility fixes, including a Plan Mode security bypass fix. Native scheduling and lifecycle reload semantics remain unresolved."
-uncertainty = "Snapshots and context pressure are memory-like signals, but persistent memory scope, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
+uncertainty = "Memory-like persistence, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
 
 [[claim.detail]]
 component = "agent profiles and subagents"
@@ -386,7 +386,7 @@ evidence_class = "source_backed"
 id = "claim-opencode-memory_context_retrieval"
 family = "memory_context_retrieval"
 status = "unknown"
-statement = "OpenCode snapshots and context pressure are memory-like signals, but the checked source set does not prove stable memory persistence, retrieval, or write authority."
+statement = "Checked OpenCode sources do not prove a stable memory/context retrieval surface."
 evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
@@ -395,22 +395,22 @@ evidence_basis = "explicit_unknown"
 claim_triage = "unknown"
 triage_rationale = "The refresh records memory-like schema pressure without claiming a memory API."
 install_activation = "No stable memory activation was proven."
-configuration_surface = "Snapshot/context behavior exists as a signal but lacks stable memory configuration fields."
+configuration_surface = "No stable memory configuration surface was proven."
 reload_update_behavior = "Freshness, write authority, and privacy boundaries remain unknown."
 limitations = "No checked first-party source proves this surface strongly enough for a supported canonical claim."
-uncertainty = "OpenCode snapshots and context pressure are memory-like signals, but the checked source set does not prove stable memory persistence, retrieval, or write authority."
+uncertainty = "No checked first-party source proves stable memory persistence, retrieval, write authority, or API shape."
 
 [[claim.memory_like_surface]]
-persistence_scope = "session snapshots and context pressure signals"
-retrieval_trigger = "snapshot/session behavior"
+persistence_scope = "not proven by checked sources"
+retrieval_trigger = "not proven by checked sources"
 mutability = "unknown"
 freshness = "unknown"
-privacy_boundary = "workspace and session boundaries"
+privacy_boundary = "unknown"
 write_authority = "unknown"
 api_stability = "unknown"
 evidence_ids = []
 evidence_class = "unknown"
-unknowns = "Snapshots and context pressure do not prove stable memory API shape."
+unknowns = "No checked first-party source proves a stable OpenCode memory surface."
 
 [[claim]]
 id = "claim-opencode-config_settings"
@@ -431,7 +431,7 @@ install_activation = "Configuration activates through OpenCode config files and 
 configuration_surface = "Config and permission files shape behavior."
 reload_update_behavior = "Reload/update behavior for config remains underspecified."
 limitations = "The current release includes security and compatibility fixes, including a Plan Mode security bypass fix. Native scheduling and lifecycle reload semantics remain unresolved."
-uncertainty = "Snapshots and context pressure are memory-like signals, but persistent memory scope, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
+uncertainty = "Memory-like persistence, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
 
 [[claim.detail]]
 component = "configuration settings"
@@ -468,7 +468,7 @@ install_activation = "Permissions activate through configured permission setting
 configuration_surface = "Permission config and Plan Mode/runtime behavior shape effects."
 reload_update_behavior = "Default posture and Plan Mode behavior should be interpreted against current release fixes."
 limitations = "The current release includes security and compatibility fixes, including a Plan Mode security bypass fix. Native scheduling and lifecycle reload semantics remain unresolved."
-uncertainty = "Snapshots and context pressure are memory-like signals, but persistent memory scope, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
+uncertainty = "Memory-like persistence, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
 
 [[claim.detail]]
 component = "permissions, approvals, and sandboxing"
@@ -504,7 +504,7 @@ install_activation = "Automation activates through GitHub Action or another exte
 configuration_surface = "Workflow configuration and OpenCode CLI/run settings shape execution."
 reload_update_behavior = "Missed-run behavior belongs to the external scheduler, not a proven OpenCode native scheduler."
 limitations = "The current release includes security and compatibility fixes, including a Plan Mode security bypass fix. Native scheduling and lifecycle reload semantics remain unresolved."
-uncertainty = "Snapshots and context pressure are memory-like signals, but persistent memory scope, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
+uncertainty = "Memory-like persistence, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
 
 [[claim.detail]]
 component = "scheduling and automation"
@@ -550,7 +550,7 @@ install_activation = "Commands activate from markdown command files or config-de
 configuration_surface = "Command files and config shape availability."
 reload_update_behavior = "Command reload/update behavior needs lifecycle evidence."
 limitations = "The current release includes security and compatibility fixes, including a Plan Mode security bypass fix. Native scheduling and lifecycle reload semantics remain unresolved."
-uncertainty = "Snapshots and context pressure are memory-like signals, but persistent memory scope, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
+uncertainty = "Memory-like persistence, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
 
 [[claim.detail]]
 component = "commands and shortcuts"
@@ -587,7 +587,7 @@ install_activation = "Connectors attach through custom provider config, GitHub i
 configuration_surface = "Provider setup, config files, and integration setup shape availability."
 reload_update_behavior = "Provider/connector taxonomy remains schema pressure."
 limitations = "The current release includes security and compatibility fixes, including a Plan Mode security bypass fix. Native scheduling and lifecycle reload semantics remain unresolved."
-uncertainty = "Snapshots and context pressure are memory-like signals, but persistent memory scope, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
+uncertainty = "Memory-like persistence, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
 
 [[claim.detail]]
 component = "providers and connectors"
@@ -627,7 +627,7 @@ install_activation = "Runtime mode activates through CLI/TUI, desktop, IDE, serv
 configuration_surface = "Invocation surface and config select runtime behavior."
 reload_update_behavior = "Runtime behavior can change by release; v1.14.46 includes legacy session and Plan Mode fixes."
 limitations = "The current release includes security and compatibility fixes, including a Plan Mode security bypass fix. Native scheduling and lifecycle reload semantics remain unresolved."
-uncertainty = "Snapshots and context pressure are memory-like signals, but persistent memory scope, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
+uncertainty = "Memory-like persistence, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
 
 [[claim.detail]]
 component = "runtime modes"
