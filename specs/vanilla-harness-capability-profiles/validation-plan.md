@@ -99,14 +99,14 @@ canonical profiles.
 6. Validate profile schema, migrations, evidence references, claim-id
    stability, summary alignment, and unknown disposition.
 
-The implemented profile enrichment validation now requires:
+The implemented profile enrichment validation now checks:
 
 - stable evidence IDs derived from source URL and claim scope;
-- `[[version_observation]]` records with `id`, `observed_version`,
+- `[[version_observation]]` records, when present, with `id`, `observed_version`,
   `checked_at`, `source_url`, `source_kind`, `canonical_profile_change`, and
   `evidence_class` fields;
-- `[[harness_extension]]` records with evidence references and schema-pressure
-  IDs;
+- `[[harness_extension]]` records, when present, with evidence references and
+  schema-pressure IDs;
 - refreshed claims to carry Capability Claim Triage, triage rationale,
   install/activation, configuration, and reload/update fields;
 - optional `[[claim.detail]]`, `[[claim.memory_like_surface]]`,

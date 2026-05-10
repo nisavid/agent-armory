@@ -100,7 +100,7 @@ CLAIM_EVIDENCE_BASES = {
     "local_observation",
     "explicit_unknown",
     "explicit_unsupported",
-    "not_applicable",
+    "not-applicable",
 }
 CLAIM_TRIAGE_VALUES = {"retained", "changed", "new", "unsupported", "unknown", "not-applicable", "retired"}
 ENRICHMENT_EVIDENCE_CLASSES = {
@@ -111,7 +111,7 @@ ENRICHMENT_EVIDENCE_CLASSES = {
     "hypothesis",
     "unsupported",
     "unknown",
-    "not_applicable",
+    "not-applicable",
 }
 RESEARCH_NOTE_SECTIONS = [
     "## Version Basis",
