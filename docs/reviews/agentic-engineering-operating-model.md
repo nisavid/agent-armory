@@ -211,8 +211,10 @@ classified as a cross-Armory operating contract, and the review preserves the
 existing mutation-gate, evidence-durability, audit, and closeout controls for
 future manual Harness Capability Profile refresh work.
 
-GitHub Advanced Security secret scanning is unavailable on this repository.
-The available local secret-pattern scan over changed files returned no matches.
+GitHub repository metadata reports secret scanning and secret scanning push
+protection as enabled. The GitHub secret scanning alerts API returned no open
+or resolved alerts, and the local secret-pattern scan over changed files
+returned no matches.
 
 Validation performed during the review:
 
