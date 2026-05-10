@@ -544,12 +544,19 @@ def validate_version_observations(profile: dict[str, Any], harness_id: str, rela
     if records is None:
         return []
     if not isinstance(records, list):
-        return [CheckResult(f"profile:{harness_id}:version_observation", False, "version observations must be tables", path)]
+        return [
+            CheckResult(
+                f"profile:{harness_id}:version_observation",
+                False,
+                "version_observation must be an array of tables",
+                path,
+            )
+        ]
     results: list[CheckResult] = []
     for index, record in enumerate(records):
         prefix = f"profile:{harness_id}:version_observation:{index}"
         if not isinstance(record, dict):
-            results.append(CheckResult(prefix, False, "version observation must be a table", path))
+            results.append(CheckResult(prefix, False, "version_observation entry must be a table", path))
             continue
         results.extend(validate_string_fields(record, ["id", "observed_version", "checked_at"], prefix, path))
         source_kind = record.get("source_kind")
@@ -574,12 +581,19 @@ def validate_harness_extensions(
     if records is None:
         return []
     if not isinstance(records, list):
-        return [CheckResult(f"profile:{harness_id}:harness_extension", False, "harness extensions must be tables", path)]
+        return [
+            CheckResult(
+                f"profile:{harness_id}:harness_extension",
+                False,
+                "harness_extension must be an array of tables",
+                path,
+            )
+        ]
     results: list[CheckResult] = []
     for index, record in enumerate(records):
         prefix = f"profile:{harness_id}:harness_extension:{index}"
         if not isinstance(record, dict):
-            results.append(CheckResult(prefix, False, "harness extension must be a table", path))
+            results.append(CheckResult(prefix, False, "harness_extension entry must be a table", path))
             continue
         results.extend(validate_string_fields(record, ["id", "name", "scope", "description"], prefix, path))
         if not string_list(record.get("schema_pressure_ids")):
@@ -649,12 +663,12 @@ def validate_claim_detail_records(
             continue
         prefix_base = f"profile:{harness_id}:claim:{claim_index}:{table_name}"
         if not isinstance(records, list):
-            results.append(CheckResult(prefix_base, False, f"{table_name} must be tables", path))
+            results.append(CheckResult(prefix_base, False, f"{table_name} must be an array of tables", path))
             continue
         for record_index, record in enumerate(records):
             prefix = f"{prefix_base}:{record_index}"
             if not isinstance(record, dict):
-                results.append(CheckResult(prefix, False, f"{table_name} must be a table", path))
+                results.append(CheckResult(prefix, False, f"{table_name} entry must be a table", path))
                 continue
             results.extend(validate_string_fields(record, string_fields, prefix, path))
             if table_name == "detail" and not string_list(record.get("scope")):
