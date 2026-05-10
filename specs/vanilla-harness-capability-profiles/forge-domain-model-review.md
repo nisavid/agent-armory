@@ -8,7 +8,7 @@ This review covers the domain boundaries that affected the Vanilla Harness
 Capability Profiles Epic before child issue projection. It checked
 terminology, live validation boundaries, Seed-era names that still carried live
 responsibilities, and the split between Forge Canon, Forge Core, Forge
-Equipment Core, and Armory Equipment Core.
+Equipment Core, Armory Operating Contracts, and Armory Equipment Core.
 
 The review does not execute the validation boundary refactor. It records the
 decisions and blockers that the prerequisite implementation story must apply.
@@ -46,14 +46,20 @@ contract itself belongs to Forge Core.
 ### Forge Core
 
 Forge Core is the materialized and enacted Forge process, contract, component,
-and deterministic-tool layer. Current Forge Core surfaces include story
-closeout contracts, Forgewright handoff and Tooling Gap process, templates,
-validation gates, source-disposition checks, and deterministic repository
-validators.
+and deterministic-tool layer. Current Forge Core surfaces include Forgewright
+handoff and Tooling Gap process, templates, validation gates,
+source-disposition checks, and deterministic repository validators.
 
 The validation boundary refactor should classify existing validator checks
 against Forge Core or Armory Integrity Validation rather than leaving them
 under Seed Validation.
+
+### Armory Operating Contracts
+
+Armory Operating Contracts are durable rule surfaces that govern Agentic
+Engineering or repository operations across the Agent Armory, rather than a
+specific Forge function or Equipment Candidate. Story Closeout belongs here
+because it governs cohesive change sets across the Armory.
 
 ### Forge Equipment Core
 
@@ -126,7 +132,7 @@ surface.
 | `docs/vision.md` | Armory/Forge Canon input | Experience and architecture north star used by Forge and non-Forge Armory work. |
 | `docs/smith-runbook.md` | Forge Core contract documentation | Procedure for Smith work; describes enacted workflow expectations. |
 | `docs/forgewright-runbook.md` | Forge Core contract documentation | Procedure for Forge maintenance and Tooling Gap intake. |
-| `docs/story-closeout.md` | Forge Core contract documentation | Story closeout process and review gates. |
+| `docs/story-closeout.md` | Armory Operating Contract | Story closeout process and review gates across cohesive Armory change sets. |
 | `templates/` | Forge Core | Standard starting surfaces supplied by the Forge. |
 | `examples/` | Forge Canon teaching surfaces | Demonstrations of the Forge method, not published equipment. |
 | `specs/<equipment>/` | Equipment Design Bundles or Equipment Blueprints | Candidate-specific design and validation-planning records. |
@@ -149,7 +155,8 @@ status lock with live classification or a status scheme that does not force
 current docs to look like historical seed artifacts.
 
 Implementation disposition: active canonical docs use live Armory Canon, Forge
-Canon, and Forge Core status labels under Armory Integrity Validation.
+Canon, Forge Core, and Armory Operating Contract status labels under Armory
+Integrity Validation.
 
 ### F2: Live Closeout Mentions Seed Validation
 
