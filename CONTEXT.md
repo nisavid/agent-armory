@@ -12,6 +12,24 @@ _Avoid_: narrowing this term to one methodology, content model, directory struct
 Reusable tooling, behavior, workflow, knowledge, or configuration that equips an Agent or agentic system.
 _Avoid_: asset, artifact, extension when used as the general term
 
+**Agentic Engineering**:
+Software engineering performed agentically: code is written by AI Agents, and
+the surrounding work is managed with methodical attention to how Agents
+navigate tasks, fail, recover, use context, and benefit from equipment.
+_Avoid_: vibe coding, Agent Engineering, Agent Meta-Engineering
+
+**Agent Engineering**:
+The engineering of Agents, agentic systems, agent roles, and agent workflows.
+_Avoid_: Agentic Engineering when the work is ordinary software engineering
+performed by Agents
+
+**Agent Meta-Engineering**:
+Agent Engineering whose problem domain is engineering work: creating or
+refining the Agents, agentic systems, roles, workflows, operating models, and
+equipment that make Agentic Engineering more capable.
+_Avoid_: Agentic Engineering, generic Agent Engineering outside the engineering
+work domain
+
 **Equipment Candidate**:
 A proposed, specified, planned, or implemented equipment surface that has not yet been validated and published for use.
 _Avoid_: Published Agent Equipment
@@ -82,18 +100,26 @@ _Avoid_: handoff docs, source notes
 The materialized and enacted Forge processes, contracts, components, and
 deterministic tools that implement the core features and functions of the
 Forge.
-_Avoid_: Forge Canon, Forge Equipment Core
+_Avoid_: Forge Canon, Forge Equipment Core, Armory Operating Contract
 
 **Forge Equipment Core**:
 The minimal Agent Equipment necessary for agents to autonomously operate Forge
 functions in a manner that fulfills Forge contracts.
 _Avoid_: Forge Canon, Forge Core
 
+**Armory Operating Contract**:
+A durable rule surface that governs Agentic Engineering or repository
+operations across the Agent Armory, rather than a specific Forge function or
+Equipment Candidate.
+_Avoid_: Forge Core when the rule applies across the Armory; Armory Equipment
+Core when the surface is a process contract rather than Agent Equipment
+
 **Armory Equipment Core**:
 The minimal Agent Equipment necessary for agents to autonomously operate Armory
 functions outside the Forge. It may share equipment with the Forge Equipment
 Core.
-_Avoid_: Forge Equipment Core when the function is outside the Forge
+_Avoid_: Forge Equipment Core when the function is outside the Forge; Armory
+Operating Contract when the surface is policy or process rather than equipment
 
 **Agentic Engineering Operating Model Review**:
 A structured review of the contracts and guidance under which Agents perform
@@ -496,6 +522,11 @@ _Avoid_: chat-only conclusion, undocumented resume instruction
 ## Relationships
 
 - The **Agent Armory** contains **Agent Equipment** and the **Agent Equipment Forge**.
+- **Agentic Engineering** is software engineering performed agentically, while
+  **Agent Engineering** is the engineering of Agents and agentic systems.
+- **Agent Meta-Engineering** is Agent Engineering focused on engineering work;
+  it can produce the Agents, workflows, operating models, and **Agent
+  Equipment** that improve **Agentic Engineering**.
 - The **Agent Equipment Forge** is created by **Forgewrights** and used by **Smiths**.
 - **Smiths** create **Agent Equipment** for one or more **Agent Harnesses**.
 - An **Equipment Design Bundle** gathers the early design and
@@ -524,6 +555,9 @@ _Avoid_: chat-only conclusion, undocumented resume instruction
   Refresh** is the future recurring **Agent Equipment** that can invoke it.
 - A **Forge Example** demonstrates how a **Smith** applies the **Agent Equipment Forge** but is not automatically **Agent Equipment**.
 - **Agent Ops**, **Periodic Actions**, and **Harness Capability Refresh** are downstream **Agent Equipment** specified by the **Forge Seed**.
+- Portable Agentic Engineering workflow equipment is downstream of repo-local
+  **Armory Operating Contracts** until the rules are coherent and
+  pressure-tested enough to package.
 - In an **Agent-Operated Repository**, **Initiative Authority** stays with the human operator while agents drive assigned execution.
 - A **Repo Draft PRD** can become the source for a **Published PRD Issue** after review.
 - A **Published PRD Issue** is the tracking surface; material repo-draft changes need explicit issue re-projection.
@@ -537,6 +571,9 @@ _Avoid_: chat-only conclusion, undocumented resume instruction
 - Historical **Seed Validation** used a standard-library tool without
   runtime dependencies. Current live validation tooling belongs under **Armory
   Integrity Validation** and its scoped validation suites.
+- **Armory Operating Contracts** state cross-Armory operating rules in readable
+  form; deterministic validators enforce selected machine-checkable slices of
+  those rules.
 - A **Harness Fact Refresh** follows the **Harness Evidence Source Policy**
   before updating Vanilla Harness Capability Profile claims.
 - The **Equipment Promotion Path** distinguishes **Forge Examples**, **Equipment Candidates**, validation, and **Published Agent Equipment**.
@@ -550,6 +587,8 @@ _Avoid_: chat-only conclusion, undocumented resume instruction
 - A **Change Set Security Closeout** uses the **Repository Threat Model** when deciding which security analyses and fixes are required before merge-readiness.
 - A **Change Set Documentation Closeout** updates affected **Forge Canon**, agent-facing policy, and human-facing orientation so established precedents and remaining ambiguities are represented accurately.
 - **Story Closeout** depends on current change-set validation, **Change Set Security Closeout**, **Change Set Documentation Closeout**, **Cross-Boundary Coherence Ralph Review**, and **Story Quality Ralph Review**.
+- **Story Closeout** is an **Armory Operating Contract** because it governs
+  cohesive change sets across the Armory rather than a specific Forge function.
 - **Intent Model Refresh** is the first **Story Closeout** gate so every downstream closeout check uses the current model of **Underlying Intent**.
 - **Cross-Boundary Coherence Ralph Review** precedes **Story Quality Ralph Review** because quality review depends on coherent process evidence.
 - A **Story Quality Ralph Review** includes an **Intent Alignment Check** that compares **Effective Intent** with the refreshed model of **Underlying Intent** before final Story Closeout.
@@ -562,6 +601,11 @@ _Avoid_: chat-only conclusion, undocumented resume instruction
 
 ## Flagged ambiguities
 
+- "Agentic Engineering" can mean software engineering performed by Agents or
+  engineering work done on Agents. Resolution: use **Agentic Engineering** for
+  software engineering performed agentically, **Agent Engineering** for
+  engineering Agents and agentic systems, and **Agent Meta-Engineering** for
+  engineering the agentic systems that perform or improve engineering work.
 - "Agent" can mean the running causal stream or a reusable harness declaration. Resolution: use **Agent** for the running stream and **Agent Profile** for the reusable declaration.
 - "Handoff docs" can mean accepted source material or current project docs. Resolution: use **Source Handoff** for provenance and **Forge Canon** for the live Forge surface.
 - "Tooling Work" can mean seeding the **Agent Equipment Forge** or implementing downstream equipment. Resolution: use **Forge Seed** for the first pass and name downstream equipment, such as Agent Ops or Periodic Actions, separately.

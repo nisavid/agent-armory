@@ -1,6 +1,6 @@
 # Story Closeout
 
-Status: Forge Core
+Status: Armory Operating Contract
 
 ## Purpose
 

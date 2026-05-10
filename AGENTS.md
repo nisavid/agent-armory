@@ -20,6 +20,12 @@ Do not narrow that purpose into a specific content model, methodology, directory
 - "Equipment for agents" means skills, MCPs, plugins, scripts, policy frameworks, workflows, agent roles, and other tools that an agent or agentic system can equip.
 - Treat future terms of art as project vocabulary only after they appear in committed content or the user defines them.
 
+## Armory Operating Contracts
+
+- Use root `AGENTS.md` as the repo-local agent policy entrypoint. Keep detailed cross-Armory operating-model rules in named Armory Operating Contract docs.
+- Use `docs/story-closeout.md` for cross-Armory closeout gate order, interdependency rules, review sequencing, and rerun rules.
+- Add or revise named Armory Operating Contract docs when cross-Armory rules need more detail than `AGENTS.md` can carry durably.
+
 ## Forge Conveyor
 
 Smiths creating or modifying Agent Equipment should start with:
