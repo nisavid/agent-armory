@@ -86,6 +86,33 @@ EVIDENCE_CATEGORIES = {
     "practitioner wisdom",
     "hypothesis",
 }
+CLAIM_MIGRATION_STATUSES = {
+    CLAIM_MIGRATION_STATUS,
+    "refreshed_from_migrated_claim",
+    "new_from_profile_enrichment",
+    "split_from_migrated_claim",
+    "retired_by_profile_enrichment",
+}
+CLAIM_EVIDENCE_BASES = {
+    CLAIM_EVIDENCE_BASIS,
+    "current_first_party_source",
+    "fallback_source",
+    "local_observation",
+    "explicit_unknown",
+    "explicit_unsupported",
+    "not_applicable",
+}
+CLAIM_TRIAGE_VALUES = {"retained", "changed", "new", "unsupported", "unknown", "not-applicable", "retired"}
+ENRICHMENT_EVIDENCE_CLASSES = {
+    "source_backed",
+    "fallback_source",
+    "local_observation",
+    "implementation_inference",
+    "hypothesis",
+    "unsupported",
+    "unknown",
+    "not_applicable",
+}
 RESEARCH_NOTE_SECTIONS = [
     "## Version Basis",
     "## Source Set",
@@ -466,6 +493,164 @@ def string_list(value: Any) -> bool:
     return isinstance(value, list) and all(isinstance(item, str) for item in value)
 
 
+def valid_http_url(value: Any) -> bool:
+    if not non_empty_string(value):
+        return False
+    parsed_url = urlparse(value)
+    return parsed_url.scheme in {"http", "https"} and bool(parsed_url.netloc)
+
+
+def validate_string_fields(
+    record: dict[str, Any],
+    fields: list[str],
+    prefix: str,
+    path: str,
+) -> list[CheckResult]:
+    return [CheckResult(f"{prefix}:{field}", False, f"missing {field}", path) for field in fields if not non_empty_string(record.get(field))]
+
+
+def validate_evidence_class(record: dict[str, Any], prefix: str, path: str) -> list[CheckResult]:
+    evidence_class = record.get("evidence_class")
+    if evidence_class not in ENRICHMENT_EVIDENCE_CLASSES:
+        return [CheckResult(f"{prefix}:evidence_class", False, "invalid evidence class", path)]
+    return []
+
+
+def validate_record_evidence_refs(
+    record: dict[str, Any],
+    evidence_ids: set[str],
+    prefix: str,
+    path: str,
+    *,
+    require_refs_for_source: bool = True,
+) -> list[CheckResult]:
+    results: list[CheckResult] = []
+    refs = record.get("evidence_ids")
+    if not isinstance(refs, list) or not all(isinstance(ref, str) for ref in refs):
+        results.append(CheckResult(f"{prefix}:evidence_ids", False, "evidence_ids must be a list of strings", path))
+        refs = []
+    missing_refs = [ref for ref in refs if ref not in evidence_ids]
+    if missing_refs:
+        results.append(CheckResult(f"{prefix}:evidence_refs", False, f"unknown evidence ids: {', '.join(missing_refs)}", path))
+    evidence_class = record.get("evidence_class")
+    if require_refs_for_source and evidence_class in {"source_backed", "fallback_source", "local_observation"} and not refs:
+        results.append(CheckResult(f"{prefix}:evidence_refs", False, "evidence-backed enrichment needs evidence", path))
+    return results
+
+
+def validate_version_observations(profile: dict[str, Any], harness_id: str, relative_path: Path) -> list[CheckResult]:
+    records = profile.get("version_observation", [])
+    path = relative_path.as_posix()
+    if records is None:
+        return []
+    if not isinstance(records, list):
+        return [CheckResult(f"profile:{harness_id}:version_observation", False, "version observations must be tables", path)]
+    results: list[CheckResult] = []
+    for index, record in enumerate(records):
+        prefix = f"profile:{harness_id}:version_observation:{index}"
+        if not isinstance(record, dict):
+            results.append(CheckResult(prefix, False, "version observation must be a table", path))
+            continue
+        results.extend(validate_string_fields(record, ["id", "observed_version", "checked_at", "source_url"], prefix, path))
+        source_kind = record.get("source_kind")
+        if source_kind not in SOURCE_KINDS:
+            results.append(CheckResult(f"{prefix}:source_kind", False, "invalid source kind", path))
+        if not valid_http_url(record.get("source_url")):
+            results.append(CheckResult(f"{prefix}:source_url", False, "source url must be http or https with a host", path))
+        if not isinstance(record.get("canonical_profile_change"), bool):
+            results.append(CheckResult(f"{prefix}:canonical_profile_change", False, "canonical_profile_change must be boolean", path))
+        results.extend(validate_evidence_class(record, prefix, path))
+    return results
+
+
+def validate_harness_extensions(
+    profile: dict[str, Any],
+    harness_id: str,
+    evidence_ids: set[str],
+    relative_path: Path,
+) -> list[CheckResult]:
+    records = profile.get("harness_extension", [])
+    path = relative_path.as_posix()
+    if records is None:
+        return []
+    if not isinstance(records, list):
+        return [CheckResult(f"profile:{harness_id}:harness_extension", False, "harness extensions must be tables", path)]
+    results: list[CheckResult] = []
+    for index, record in enumerate(records):
+        prefix = f"profile:{harness_id}:harness_extension:{index}"
+        if not isinstance(record, dict):
+            results.append(CheckResult(prefix, False, "harness extension must be a table", path))
+            continue
+        results.extend(validate_string_fields(record, ["id", "name", "scope", "description"], prefix, path))
+        if not string_list(record.get("schema_pressure_ids")):
+            results.append(CheckResult(f"{prefix}:schema_pressure_ids", False, "schema_pressure_ids must be a list of strings", path))
+        results.extend(validate_evidence_class(record, prefix, path))
+        results.extend(validate_record_evidence_refs(record, evidence_ids, prefix, path))
+    return results
+
+
+def validate_claim_detail_records(
+    claim: dict[str, Any],
+    harness_id: str,
+    claim_index: int,
+    evidence_ids: set[str],
+    relative_path: Path,
+) -> list[CheckResult]:
+    path = relative_path.as_posix()
+    nested_specs = {
+        "detail": ["component", "load_attachment_point", "activation", "mutability"],
+        "compatibility_bridge": [
+            "imported_from",
+            "imported_convention",
+            "activation",
+            "disable_behavior",
+            "precedence",
+            "fidelity_limits",
+        ],
+        "memory_like_surface": [
+            "persistence_scope",
+            "retrieval_trigger",
+            "mutability",
+            "freshness",
+            "privacy_boundary",
+            "write_authority",
+            "api_stability",
+        ],
+        "automation_surface": [
+            "trigger_class",
+            "runner_locus",
+            "recurrence_shape",
+            "permission_sandbox_context",
+            "missed_run_behavior",
+            "output_delivery",
+        ],
+    }
+    results: list[CheckResult] = []
+    for table_name, string_fields in nested_specs.items():
+        records = claim.get(table_name, [])
+        if records is None:
+            continue
+        prefix_base = f"profile:{harness_id}:claim:{claim_index}:{table_name}"
+        if not isinstance(records, list):
+            results.append(CheckResult(prefix_base, False, f"{table_name} must be tables", path))
+            continue
+        for record_index, record in enumerate(records):
+            prefix = f"{prefix_base}:{record_index}"
+            if not isinstance(record, dict):
+                results.append(CheckResult(prefix, False, f"{table_name} must be a table", path))
+                continue
+            results.extend(validate_string_fields(record, string_fields, prefix, path))
+            if table_name == "detail" and not string_list(record.get("scope")):
+                results.append(CheckResult(f"{prefix}:scope", False, "scope must be a list of strings", path))
+            if table_name == "compatibility_bridge" and not string_list(record.get("surviving_components")):
+                results.append(
+                    CheckResult(f"{prefix}:surviving_components", False, "surviving_components must be a list of strings", path)
+                )
+            results.extend(validate_evidence_class(record, prefix, path))
+            results.extend(validate_record_evidence_refs(record, evidence_ids, prefix, path))
+    return results
+
+
 def validate_profile_data(profile: dict[str, Any], harness_id: str, relative_path: Path) -> list[CheckResult]:
     results: list[CheckResult] = []
 
@@ -547,6 +732,9 @@ def validate_profile_data(profile: dict[str, Any], harness_id: str, relative_pat
                         )
                     )
 
+    results.extend(validate_version_observations(profile, harness_id, relative_path))
+    results.extend(validate_harness_extensions(profile, harness_id, evidence_ids, relative_path))
+
     claims = profile.get("claim")
     claim_ids: set[str] = set()
     families: set[str] = set()
@@ -593,12 +781,25 @@ def validate_profile_data(profile: dict[str, Any], harness_id: str, relative_pat
             expected_claim_values = {
                 "applicability_scope": CLAIM_APPLICABILITY_SCOPE,
                 "capability_origin": CLAIM_CAPABILITY_ORIGIN,
-                "migration_status": CLAIM_MIGRATION_STATUS,
-                "evidence_basis": CLAIM_EVIDENCE_BASIS,
             }
             for field, expected in expected_claim_values.items():
                 if claim.get(field) != expected:
                     results.append(CheckResult(f"profile:{harness_id}:claim:{index}:{field}", False, f"must be {expected}", relative_path.as_posix()))
+            migration_status = claim.get("migration_status")
+            evidence_basis = claim.get("evidence_basis")
+            if migration_status not in CLAIM_MIGRATION_STATUSES:
+                results.append(CheckResult(f"profile:{harness_id}:claim:{index}:migration_status", False, "invalid migration status", relative_path.as_posix()))
+            if evidence_basis not in CLAIM_EVIDENCE_BASES:
+                results.append(CheckResult(f"profile:{harness_id}:claim:{index}:evidence_basis", False, "invalid evidence basis", relative_path.as_posix()))
+            refreshed_claim = migration_status != CLAIM_MIGRATION_STATUS or evidence_basis != CLAIM_EVIDENCE_BASIS
+            if refreshed_claim:
+                claim_triage = claim.get("claim_triage")
+                if claim_triage not in CLAIM_TRIAGE_VALUES:
+                    results.append(CheckResult(f"profile:{harness_id}:claim:{index}:claim_triage", False, "invalid or missing claim triage", relative_path.as_posix()))
+                for field in ["triage_rationale", "install_activation", "configuration_surface", "reload_update_behavior"]:
+                    if not non_empty_string(claim.get(field)):
+                        results.append(CheckResult(f"profile:{harness_id}:claim:{index}:{field}", False, f"missing {field}", relative_path.as_posix()))
+            results.extend(validate_claim_detail_records(claim, harness_id, index, evidence_ids, relative_path))
             if not non_empty_string(claim.get("limitations")) and not non_empty_string(claim.get("uncertainty")):
                 results.append(
                     CheckResult(
@@ -937,7 +1138,7 @@ def render_summary(profiles: list[dict[str, Any]]) -> str:
         "",
         f"Checked at: {checked_at_summary}.",
         "",
-        "The profiles preserve source-backed version, component, scheduling, limitation, uncertainty, refresh-note, and local-observation fields. No local harness binaries, workspace configs, gateways, plugin installs, cloud agents, or automation state were inspected during the migrated seed refresh.",
+        "The profiles preserve source-backed version, component, scheduling, limitation, uncertainty, refresh-note, local-observation, claim-triage, and enrichment fields. No local harness binaries, workspace configs, gateways, plugin installs, cloud agents, or automation state were inspected during the issue #45 profile refresh.",
         "",
         "Documentation indexes can lag behind current release evidence. For version anchors, prefer GitHub releases or official changelogs over generated indexes or secondary metadata.",
         "",

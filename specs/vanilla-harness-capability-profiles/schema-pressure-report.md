@@ -4,9 +4,9 @@ Status: issue #44 schema pressure
 
 ## Research Scope
 
-This report compares the six issue #44 research notes against the current Vanilla Harness Capability Profile v1alpha1 schema. The scope is descriptive harness integration surfaces only: instructions/context, skills, MCP/tools, hooks/events, plugins/bundles, Agent Profiles/subagents, memory/context retrieval, config/settings, permissions/approvals/sandboxing, scheduling/automation, commands/shortcuts, providers/connectors, runtime modes, cross-harness import/compatibility, and lifecycle reload/update.
+This report compares the six issue #44 research notes against the Vanilla Harness Capability Profile v1alpha1 schema. The scope is descriptive harness integration surfaces only: instructions/context, skills, MCP/tools, hooks/events, plugins/bundles, Agent Profiles/subagents, memory/context retrieval, config/settings, permissions/approvals/sandboxing, scheduling/automation, commands/shortcuts, providers/connectors, runtime modes, cross-harness import/compatibility, and lifecycle reload/update.
 
-This story does not apply canonical profile changes. Accepted findings are inputs for the profile enrichment story, not current profile mutations.
+Issue #45 applies accepted findings from this report to the canonical profiles while keeping deferred, rejected, and needs-more-evidence findings explicit.
 
 ## Current Schema Comparison
 
@@ -25,7 +25,7 @@ The research notes show pressure where a flat family claim cannot describe integ
 
 | ID | Disposition | Affected harnesses | Motivating evidence | Example claim shape | Proposed validation rule | Migration impact |
 | --- | --- | --- | --- | --- | --- | --- |
-| SP-001 | accepted | codex, claude_code, hermes_agent, opencode, openclaw | Current releases differ from migrated profile versions: [Codex](https://github.com/openai/codex/releases/tag/rust-v0.130.0), [Claude Code](https://github.com/anthropics/claude-code/releases/tag/v2.1.136), [Hermes](https://github.com/NousResearch/hermes-agent/releases/tag/v2026.5.7), [OpenCode](https://github.com/anomalyco/opencode/releases/tag/v1.14.41), [OpenClaw](https://github.com/openclaw/openclaw/releases/tag/v2026.5.7) | `[[version_observation]] harness_version = "rust-v0.130.0"; canonical_profile_change = false` | Require checked-at, source URL, observed version, and whether the observation changes canonical profile claims. | Add a noncanonical research-note-to-profile enrichment migration path so issue #44 drift does not mutate profile TOML directly. |
+| SP-001 | accepted | codex, claude_code, hermes_agent, opencode, openclaw | Current releases differ from migrated profile versions: [Codex](https://github.com/openai/codex/releases/tag/rust-v0.130.0), [Claude Code](https://github.com/anthropics/claude-code/releases/tag/v2.1.138), [Hermes](https://github.com/NousResearch/hermes-agent/releases/tag/v2026.5.7), [OpenCode](https://github.com/anomalyco/opencode/releases/tag/v1.14.46), [OpenClaw](https://github.com/openclaw/openclaw/releases/tag/v2026.5.7) | `[[version_observation]] observed_version = "rust-v0.130.0"; canonical_profile_change = true` | Require checked-at, source URL, observed version, and whether the observation changes canonical profile claims. | Canonical profiles carry one current version observation per supported harness. |
 | SP-002 | accepted | all | [Issue #44](https://github.com/nisavid/agent-armory/issues/44) requires source-backed facts, local observations, implementation inferences, hypotheses, unsupported claims, unknowns, and not-applicable surfaces. Research notes record each category explicitly. | `fact.evidence_class = "source_backed"; fact.source_ids = ["ev-..."]` | Require every enriched fact or detail to carry one evidence classification from a controlled value set. | Existing profile-level `evidence_category` remains but cannot be the only evidence classifier after enrichment. |
 | SP-003 | accepted | all | Skills, plugins, subagents, commands, MCP, hooks, and config surfaces all need load path, activation, scope, and reload detail, for example [Claude Code skills](https://code.claude.com/docs/en/skills) and [Cursor plugins](https://cursor.com/docs/plugins). | `[[claim.detail]] component = "skills"; load_scope = ["project", "user"]; activation = ["implicit", "explicit"]` | For supported claims with structured details, require component, load or attachment point, activation, mutability, scope, and evidence references when known. | Future migration should add optional nested detail tables while preserving stable family claim IDs. |
 | SP-004 | accepted | cursor, openclaw, codex, claude_code | Cursor describes Agent Skills as an open standard, while OpenClaw documents compatible Codex, Claude, and Cursor bundles. Codex and Claude Code support skills/plugins but do not prove reciprocal import. Sources: [Cursor skills](https://cursor.com/docs/skills), [OpenClaw compatible bundles](https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/plugins/bundles.md). | `[[claim.compatibility_bridge]] imported_from = "cursor"; fidelity = "partial"; surviving_components = ["skills"]` | Cross-harness import claims require source harness, imported convention, supported components, activation/disable behavior, fidelity limits, and evidence. | Enrichment must not convert compatibility bridges into native support claims. |
@@ -50,9 +50,15 @@ Multiple Capability Analysis Angles can model the same claim. Scheduling can be 
 
 ## Migration Implications
 
-Issue #45 should enrich profiles without replacing stable family claim IDs. The likely migration path is to keep each current `claim-<harness>-<family>` row and add optional nested detail tables for version observations, evidence-classified facts, component details, compatibility bridges, memory-like surfaces, automation surfaces, connector surfaces, and lifecycle behavior.
+Issue #45 enriches profiles without replacing stable family claim IDs. Each current `claim-<harness>-<family>` row remains and records Capability Claim Triage, evidence basis, integration-surface fields, and explicit unknowns where source evidence is insufficient.
 
-Profile enrichment should also update current release/version metadata, but only after accepted findings are converted into validation rules and the six profiles are refreshed against current first-party sources.
+The accepted profile fields are `[[version_observation]]`,
+`[[harness_extension]]`, `[[claim.detail]]`,
+`[[claim.memory_like_surface]]`, `[[claim.automation_surface]]`, and
+`[[claim.compatibility_bridge]]`. SP-007 remains deferred to the Capability
+Profiling Protocol story. SP-008 and SP-009 remain needs-more-evidence and are
+recorded as claim uncertainty rather than flattened into shared hook or
+connector taxonomies. SP-010 remains rejected.
 
 ## Ralph Review Disposition
 
@@ -64,7 +70,7 @@ Findings:
 - The first report draft did not separate external scheduler support from native scheduler support. Fixed by SP-006 and the OpenCode note.
 - The first report draft treated memory-like surfaces as one family. Fixed by SP-005 and the per-harness memory-like notes.
 
-Ralph Review Cycle 2: clean. No open findings for issue #44 schema-pressure publication. Accepted findings remain inputs to future profile enrichment, not applied profile changes.
+Ralph Review Cycle 2: clean. No open findings for issue #44 schema-pressure publication. Accepted findings are applied by issue #45 where they fit the current profile boundary.
 
 ## Scratch Artifact Disposition
 

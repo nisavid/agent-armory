@@ -225,7 +225,77 @@ Scratch artifacts are summarized, not committed as raw project truth.
     )
 
 
+def insert_claim_block_detail(profile_text: str, claim_id: str, detail: str) -> str:
+    claim_marker = f'id = "{claim_id}"'
+    start = profile_text.index(claim_marker)
+    next_claim = profile_text.find("\n[[claim]]", start + len(claim_marker))
+    if next_claim == -1:
+        next_claim = len(profile_text)
+    return profile_text[:next_claim].rstrip() + "\n" + detail.strip() + "\n" + profile_text[next_claim:]
+
+
+def replace_in_claim_block(profile_text: str, claim_id: str, old: str, new: str) -> str:
+    claim_marker = f'id = "{claim_id}"'
+    start = profile_text.index(claim_marker)
+    next_claim = profile_text.find("\n[[claim]]", start + len(claim_marker))
+    if next_claim == -1:
+        next_claim = len(profile_text)
+    block = profile_text[start:next_claim]
+    if old not in block:
+        raise AssertionError(f"{old!r} not found in {claim_id}")
+    return profile_text[:start] + block.replace(old, new, 1) + profile_text[next_claim:]
+
+
+def append_enriched_codex_records(profile_text: str, extension_evidence_id: str = "ev-codex-plugin-support-18bcdf25dd") -> str:
+    return (
+        profile_text.rstrip()
+        + f"""
+
+[[version_observation]]
+id = "vo-codex-rust-v0-130-0"
+observed_version = "rust-v0.130.0"
+checked_at = "2026-05-10T17:40:00-04:00"
+source_url = "https://github.com/openai/codex/releases/tag/rust-v0.130.0"
+source_kind = "first_party"
+canonical_profile_change = true
+evidence_class = "source_backed"
+
+[[harness_extension]]
+id = "ext-codex-plugin-share-metadata"
+name = "Plugin share metadata"
+scope = "codex plugin sharing"
+description = "Codex plugin share settings expose link metadata and discoverability controls."
+evidence_ids = ["{extension_evidence_id}"]
+evidence_class = "source_backed"
+schema_pressure_ids = ["SP-003"]
+"""
+    )
+
+
 class HarnessCapabilityProfileManagerTests(unittest.TestCase):
+    def test_canonical_profiles_are_issue45_enriched_and_triaged(self):
+        profile_paths = sorted((REPO_ROOT / "docs/harness-capabilities/vanilla").glob("*.toml"))
+        self.assertEqual(len(profile_paths), 6)
+        for profile_path in profile_paths:
+            with profile_path.open("rb") as handle:
+                profile = tomllib.load(handle)
+            self.assertTrue(profile.get("version_observation"), profile_path)
+            self.assertTrue(profile.get("harness_extension"), profile_path)
+            for claim in profile["claim"]:
+                with self.subTest(profile=profile_path.name, claim=claim["id"]):
+                    self.assertNotEqual(claim["migration_status"], "migrated_from_aggregate")
+                    self.assertNotEqual(claim["evidence_basis"], "aggregate_catalog_migration")
+                    self.assertIn(claim.get("claim_triage"), {"retained", "changed", "new", "unsupported", "unknown", "not-applicable", "retired"})
+                    for field in ["triage_rationale", "install_activation", "configuration_surface", "reload_update_behavior"]:
+                        self.assertIsInstance(claim.get(field), str)
+                        self.assertTrue(claim[field].strip())
+                    if claim["family"] == "memory_context_retrieval":
+                        self.assertTrue(claim.get("memory_like_surface"))
+                    if claim["family"] == "scheduling_automation":
+                        self.assertTrue(claim.get("automation_surface"))
+                    if claim["family"] == "cross_harness_import_compatibility":
+                        self.assertTrue(claim.get("compatibility_bridge"))
+
     def write_migration_root(self, root: Path) -> None:
         docs = root / "docs"
         docs.mkdir()
@@ -252,6 +322,185 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             text=True,
             timeout=30,
         )
+
+    def test_validate_accepts_enriched_claim_extensions_without_claim_id_churn(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_migration_root(root)
+            self.migrate_and_summarize(root)
+            codex_profile = root / "docs/harness-capabilities/vanilla/codex.toml"
+            text = codex_profile.read_text(encoding="utf-8")
+            with codex_profile.open("rb") as handle:
+                skill_evidence_id = tomllib.load(handle)["evidence"][0]["id"]
+            text = text.replace(
+                'id = "claim-codex-skills"\nfamily = "skills"\nstatus = "supported"',
+                'id = "claim-codex-skills"\nfamily = "skills"\nstatus = "supported"\n'
+                'claim_triage = "changed"\n'
+                'triage_rationale = "Current first-party Codex docs still support skills; release evidence adds plugin-share metadata without changing the family claim identity."\n'
+                'install_activation = "Skills are loaded from configured project, user, or plugin skill roots and can activate explicitly or implicitly."\n'
+                'configuration_surface = "Skill roots and plugin installation determine which skills are visible in the vanilla harness surface."\n'
+                'reload_update_behavior = "Skill and plugin metadata should be refreshed when installed skill or plugin files change."',
+                1,
+            )
+            text = replace_in_claim_block(
+                text,
+                "claim-codex-skills",
+                'migration_status = "migrated_from_aggregate"',
+                'migration_status = "refreshed_from_migrated_claim"',
+            )
+            text = replace_in_claim_block(
+                text,
+                "claim-codex-skills",
+                'evidence_basis = "aggregate_catalog_migration"',
+                'evidence_basis = "current_first_party_source"',
+            )
+            text = insert_claim_block_detail(
+                text,
+                "claim-codex-skills",
+                """
+[[claim.detail]]
+component = "skills"
+load_attachment_point = "configured skill roots"
+activation = "explicit or implicit"
+mutability = "filesystem-backed and plugin-provided"
+scope = ["project", "user", "plugin"]
+evidence_ids = ["{skill_evidence_id}"]
+evidence_class = "source_backed"
+""".format(skill_evidence_id=skill_evidence_id),
+            )
+            text = insert_claim_block_detail(
+                text,
+                "claim-codex-memory_context_retrieval",
+                """
+[[claim.memory_like_surface]]
+persistence_scope = "thread"
+retrieval_trigger = "implicit context restoration in app automation"
+mutability = "unknown"
+freshness = "unknown"
+privacy_boundary = "workspace and automation context"
+write_authority = "unknown"
+api_stability = "unknown"
+evidence_ids = []
+evidence_class = "unknown"
+unknowns = "First-party docs do not define a stable shared memory API."
+""",
+            )
+            text = insert_claim_block_detail(
+                text,
+                "claim-codex-scheduling_automation",
+                """
+[[claim.automation_surface]]
+trigger_class = "recurring schedule"
+runner_locus = "Codex app automation"
+recurrence_shape = "cron-like schedule"
+permission_sandbox_context = "inherits Codex sandbox and approval policy"
+missed_run_behavior = "unknown"
+output_delivery = "thread continuation"
+evidence_ids = []
+evidence_class = "unknown"
+""",
+            )
+            text = insert_claim_block_detail(
+                text,
+                "claim-codex-cross_harness_import_compatibility",
+                """
+[[claim.compatibility_bridge]]
+imported_from = "none-proven"
+imported_convention = "none proven by checked first-party sources"
+surviving_components = []
+activation = "not applicable"
+disable_behavior = "not applicable"
+precedence = "not applicable"
+fidelity_limits = "No checked source proves Codex can import another harness bundle convention."
+evidence_ids = []
+evidence_class = "unknown"
+""",
+            )
+            codex_profile.write_text(append_enriched_codex_records(text, skill_evidence_id), encoding="utf-8")
+
+            completed = self.run_manager(root, "validate", "--json")
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            payload = json.loads(completed.stdout)
+            self.assertEqual(payload["result"], "passed")
+
+    def test_validate_rejects_refreshed_claim_missing_triage_and_integration_detail(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_migration_root(root)
+            self.migrate_and_summarize(root)
+            codex_profile = root / "docs/harness-capabilities/vanilla/codex.toml"
+            text = codex_profile.read_text(encoding="utf-8")
+            text = text.replace('migration_status = "migrated_from_aggregate"', 'migration_status = "refreshed_from_migrated_claim"', 1)
+            text = text.replace('evidence_basis = "aggregate_catalog_migration"', 'evidence_basis = "current_first_party_source"', 1)
+            codex_profile.write_text(text, encoding="utf-8")
+
+            completed = self.run_manager(root, "validate", "--json")
+
+            self.assertNotEqual(completed.returncode, 0)
+            failures = {result["name"] for result in json.loads(completed.stdout)["results"] if not result["ok"]}
+            self.assertIn("profile:codex:claim:0:claim_triage", failures)
+            self.assertIn("profile:codex:claim:0:triage_rationale", failures)
+            self.assertIn("profile:codex:claim:0:install_activation", failures)
+            self.assertIn("profile:codex:claim:0:configuration_surface", failures)
+            self.assertIn("profile:codex:claim:0:reload_update_behavior", failures)
+
+    def test_validate_rejects_malformed_enrichment_extension_records(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_migration_root(root)
+            self.migrate_and_summarize(root)
+            codex_profile = root / "docs/harness-capabilities/vanilla/codex.toml"
+            text = codex_profile.read_text(encoding="utf-8")
+            text = insert_claim_block_detail(
+                text,
+                "claim-codex-scheduling_automation",
+                """
+[[claim.automation_surface]]
+trigger_class = "recurring schedule"
+runner_locus = ""
+recurrence_shape = "cron-like schedule"
+permission_sandbox_context = "inherits Codex sandbox and approval policy"
+missed_run_behavior = "unknown"
+output_delivery = "thread continuation"
+evidence_ids = ["ev-codex-missing"]
+evidence_class = "source_backed"
+""",
+            )
+            text = text.rstrip() + """
+
+[[version_observation]]
+observed_version = "rust-v0.130.0"
+checked_at = "2026-05-10T17:40:00-04:00"
+source_url = "file:///tmp/release"
+source_kind = "local"
+canonical_profile_change = "yes"
+evidence_class = "rumor"
+
+[[harness_extension]]
+id = "ext-codex-invalid"
+name = ""
+scope = "codex"
+description = "Missing evidence references."
+evidence_ids = ["ev-codex-missing"]
+evidence_class = "source_backed"
+schema_pressure_ids = ["SP-003"]
+"""
+            codex_profile.write_text(text, encoding="utf-8")
+
+            completed = self.run_manager(root, "validate", "--json")
+
+            self.assertNotEqual(completed.returncode, 0)
+            failures = {result["name"] for result in json.loads(completed.stdout)["results"] if not result["ok"]}
+            self.assertIn("profile:codex:version_observation:0:id", failures)
+            self.assertIn("profile:codex:version_observation:0:source_kind", failures)
+            self.assertIn("profile:codex:version_observation:0:source_url", failures)
+            self.assertIn("profile:codex:version_observation:0:canonical_profile_change", failures)
+            self.assertIn("profile:codex:version_observation:0:evidence_class", failures)
+            self.assertIn("profile:codex:claim:9:automation_surface:0:runner_locus", failures)
+            self.assertIn("profile:codex:claim:9:automation_surface:0:evidence_refs", failures)
+            self.assertIn("profile:codex:harness_extension:0:name", failures)
+            self.assertIn("profile:codex:harness_extension:0:evidence_refs", failures)
 
     def test_migrate_dry_run_reports_six_profile_writes_without_mutating_files(self):
         with tempfile.TemporaryDirectory() as tmpdir:

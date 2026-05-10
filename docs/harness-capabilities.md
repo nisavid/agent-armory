@@ -18,9 +18,9 @@ Use first-party sources where available. Use third-party fallback metadata only 
 
 ## Refresh summary
 
-Checked at: 2026-05-03T09:25:05-04:00.
+Checked at: 2026-05-10T19:13:40-04:00.
 
-The profiles preserve source-backed version, component, scheduling, limitation, uncertainty, refresh-note, and local-observation fields. No local harness binaries, workspace configs, gateways, plugin installs, cloud agents, or automation state were inspected during the migrated seed refresh.
+The profiles preserve source-backed version, component, scheduling, limitation, uncertainty, refresh-note, local-observation, claim-triage, and enrichment fields. No local harness binaries, workspace configs, gateways, plugin installs, cloud agents, or automation state were inspected during the issue #45 profile refresh.
 
 Documentation indexes can lag behind current release evidence. For version anchors, prefer GitHub releases or official changelogs over generated indexes or secondary metadata.
 
@@ -28,12 +28,12 @@ Documentation indexes can lag behind current release evidence. For version ancho
 
 | Harness | Profile | Version basis | Checked version | Evidence | Scheduling posture |
 | --- | --- | --- | --- | --- | --- |
-| Codex | [Codex profile](harness-capabilities/vanilla/codex.toml) | GitHub releases for openai/codex, plus first-party OpenAI Codex docs. | 0.128.0 stable; 0.129.0-alpha.2 prerelease observed | source-supported | App automations and external schedulers around codex exec; keep stable and prerelease claims separate. |
-| Claude Code | [Claude Code profile](harness-capabilities/vanilla/claude_code.toml) | Official Claude Code changelog entry dated 2026-05-01, with first-party documentation for capabilities. | 2.1.126 | documentation-supported | Routines, Desktop scheduled tasks, and session-scoped scheduled tasks. |
-| Cursor | [Cursor profile](harness-capabilities/vanilla/cursor.toml) | Official Cursor changelog and first-party docs. | 3.2 numbered release; changelog state checked through 2026-05-01 | documentation-supported | Cloud Agent Automations with schedule and event triggers. |
-| Hermes Agent | [Hermes Agent profile](harness-capabilities/vanilla/hermes_agent.toml) | GitHub latest release v2026.4.30 and tag-pinned first-party docs. | 0.12.0 (v2026.4.30) | source-supported | Cron jobs, gateway cron ticker, curator schedule, hooks, and terminal background processes. |
-| OpenCode | [OpenCode profile](harness-capabilities/vanilla/opencode.toml) | GitHub latest release for anomalyco/opencode and first-party OpenCode docs. | 1.14.33 | source-supported | GitHub Actions cron or external schedulers around opencode run; no verified native durable scheduler. |
-| OpenClaw | [OpenClaw profile](harness-capabilities/vanilla/openclaw.toml) | GitHub latest non-prerelease v2026.5.2 and tag-pinned source/docs. | 2026.5.2 | source-supported | Cron jobs, heartbeat turns, hooks, webhooks, and plugin background services. |
+| Codex | [Codex profile](harness-capabilities/vanilla/codex.toml) | GitHub release rust-v0.130.0 for openai/codex, plus first-party OpenAI Codex docs for integration surfaces. | 0.130.0 (rust-v0.130.0) | source-supported | Codex supports app automations and noninteractive runs that can be scheduled externally; both inherit Codex sandbox and approval constraints. |
+| Claude Code | [Claude Code profile](harness-capabilities/vanilla/claude_code.toml) | GitHub release v2.1.138 for anthropics/claude-code, plus first-party Claude Code docs for integration surfaces. | 2.1.138 | documentation-supported | Claude Code supports cloud routines, desktop scheduled tasks, and session scheduled tasks with distinct runner loci and permission contexts. |
+| Cursor | [Cursor profile](harness-capabilities/vanilla/cursor.toml) | Official Cursor changelog through the 2026-05-07 Cursor 3.3 entry, plus first-party Cursor docs for integration surfaces. | 3.3 changelog state through 2026-05-07 | documentation-supported | Cursor Cloud Agent automations support schedule and event triggers; plan parallelism, PR review, and multitask surfaces are current changelog-backed runtime surfaces. |
+| Hermes Agent | [Hermes Agent profile](harness-capabilities/vanilla/hermes_agent.toml) | GitHub release v2026.5.7, named Hermes Agent v0.13.0, plus first-party Hermes docs carried by the migrated profile. | 0.13.0 (v2026.5.7) | source-supported | Hermes supports cron, no_agent cron mode, curator/background processes, Kanban workers, gateway ticks, and heartbeat-like multi-agent worker flows. |
+| OpenCode | [OpenCode profile](harness-capabilities/vanilla/opencode.toml) | GitHub release v1.14.46 for anomalyco/opencode, plus first-party OpenCode docs for integration surfaces. | 1.14.46 | source-supported | OpenCode has source-backed external scheduling through GitHub Action integration; no native durable scheduler is proven by checked sources. |
+| OpenClaw | [OpenClaw profile](harness-capabilities/vanilla/openclaw.toml) | GitHub release v2026.5.7 for openclaw/openclaw, plus tag-pinned first-party docs carried by the migrated profile. | 2026.5.7 | source-supported | OpenClaw supports cron, heartbeat turns, hooks, webhooks, background services, and release-backed cron JSON status surfaces. |
 
 ## Harness notes
 
@@ -41,103 +41,103 @@ Documentation indexes can lag behind current release evidence. For version ancho
 
 The [Codex profile](harness-capabilities/vanilla/codex.toml) preserves source-backed component, scheduling, limitation, uncertainty, refresh-note, source, and local-observation records.
 
-Scheduling support: App automations and external schedulers around codex exec; keep stable and prerelease claims separate.
+Scheduling support: Codex supports app automations and noninteractive runs that can be scheduled externally; both inherit Codex sandbox and approval constraints.
 
-Limitations: Hooks require the relevant hook feature support and should not be treated as a complete enforcement boundary without verification. Some app-server and plugin APIs remain experimental, and unattended automations still run under sandbox and approval constraints.
+Limitations: App-server, plugin-sharing, and hook details remain feature-specific surfaces. Unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention.
 
 Key sources:
 
-- [stable release version, release date, and release notes](https://github.com/openai/codex/releases/tag/rust-v0.128.0)
-- [latest observed prerelease version](https://github.com/openai/codex/releases/tag/rust-v0.129.0-alpha.2)
+- [current stable release version, release date, and release notes](https://github.com/openai/codex/releases/tag/rust-v0.130.0)
 - [Codex change history](https://developers.openai.com/codex/changelog)
 - [skill support](https://developers.openai.com/codex/skills)
 - [plugin support](https://developers.openai.com/codex/plugins)
 - [plugin authoring support](https://developers.openai.com/codex/plugins/build)
+- [hook support](https://developers.openai.com/codex/hooks)
 
 ### Claude Code
 
 The [Claude Code profile](harness-capabilities/vanilla/claude_code.toml) preserves source-backed component, scheduling, limitation, uncertainty, refresh-note, source, and local-observation records.
 
-Scheduling support: Routines, Desktop scheduled tasks, and session-scoped scheduled tasks.
+Scheduling support: Claude Code supports cloud routines, desktop scheduled tasks, and session scheduled tasks with distinct runner loci and permission contexts.
 
-Limitations: Session-scoped scheduled tasks require a supporting Claude Code version and expire after a bounded period. Routines are preview-like cloud infrastructure. Desktop scheduled tasks require the Desktop app and an awake machine. Plugin-loaded agents can have restrictions on hooks, MCP servers, and permission modes.
+Limitations: The latest release notes are internal-fix scoped, so surface claims rely on first-party docs. Routines, desktop tasks, and session tasks must remain distinct automation surfaces.
 
 Key sources:
 
-- [latest Claude Code version and release date](https://code.claude.com/docs/en/changelog)
-- [first-party changelog mirror](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)
+- [latest Claude Code release version and release date](https://github.com/anthropics/claude-code/releases/tag/v2.1.138)
 - [skill support](https://code.claude.com/docs/en/skills)
 - [MCP support](https://code.claude.com/docs/en/mcp)
 - [hook support](https://code.claude.com/docs/en/hooks)
 - [subagent support](https://code.claude.com/docs/en/sub-agents)
+- [plugin support and limits](https://code.claude.com/docs/en/plugins-reference)
 
 ### Cursor
 
 The [Cursor profile](harness-capabilities/vanilla/cursor.toml) preserves source-backed component, scheduling, limitation, uncertainty, refresh-note, source, and local-observation records.
 
-Scheduling support: Cloud Agent Automations with schedule and event triggers.
+Scheduling support: Cursor Cloud Agent automations support schedule and event triggers; plan parallelism, PR review, and multitask surfaces are current changelog-backed runtime surfaces.
 
-Limitations: Cloud Agent execution and some hooks are plan- or environment-dependent. Slack triggers can be limited by channel type. Parallel subagents increase token and cost pressure. Marketplace plugins should be reviewed as third-party code before trusted use.
+Limitations: Cursor version evidence is changelog-based rather than a GitHub release tag. Team marketplace, admin model controls, plan gates, and Cloud Agent availability remain environment-scoped.
 
 Key sources:
 
-- [latest official changelog state](https://cursor.com/changelog)
-- [Cursor 3.2 numbered release](https://cursor.com/changelog/04-24-26)
-- [latest observed unnumbered changelog entry](https://cursor.com/changelog/05-01-26)
+- [latest official changelog state through Cursor 3.3](https://cursor.com/changelog)
+- [Cursor 3.3 changelog entry from 2026-05-07](https://cursor.com/changelog/05-07-26)
 - [rules and AGENTS.md support](https://cursor.com/docs/rules)
 - [Agent Skills support](https://cursor.com/docs/skills)
 - [MCP support](https://cursor.com/docs/mcp)
+- [hook support](https://cursor.com/docs/hooks)
 
 ### Hermes Agent
 
 The [Hermes Agent profile](harness-capabilities/vanilla/hermes_agent.toml) preserves source-backed component, scheduling, limitation, uncertainty, refresh-note, source, and local-observation records.
 
-Scheduling support: Cron jobs, gateway cron ticker, curator schedule, hooks, and terminal background processes.
+Scheduling support: Hermes supports cron, no_agent cron mode, curator/background processes, Kanban workers, gateway ticks, and heartbeat-like multi-agent worker flows.
 
-Limitations: Profiles are separate state directories, not hard isolation boundaries. Cron jobs cannot recursively create cron jobs. Some workdir jobs are sequential because process cwd is global. Delegated subagents are synchronous and not durable if the parent is interrupted. Project plugins require explicit enablement.
+Limitations: Some detailed docs remain tag-pinned to the migrated version basis, while v2026.5.7 release notes supply current feature and lifecycle evidence. Cross-harness import fidelity remains unproven.
 
 Key sources:
 
-- [release version, date, and release notes](https://github.com/NousResearch/hermes-agent/releases/tag/v2026.4.30)
-- [package version](https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/pyproject.toml)
+- [current release version, date, and release notes](https://github.com/NousResearch/hermes-agent/releases/tag/v2026.5.7)
 - [documentation index](https://hermes-agent.nousresearch.com/docs/llms.txt)
 - [skill support](https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/website/docs/user-guide/features/skills.md)
 - [MCP support](https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/website/docs/user-guide/features/mcp.md)
 - [hook support](https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/website/docs/user-guide/features/hooks.md)
+- [plugin support](https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/website/docs/user-guide/features/plugins.md)
 
 ### OpenCode
 
 The [OpenCode profile](harness-capabilities/vanilla/opencode.toml) preserves source-backed component, scheduling, limitation, uncertainty, refresh-note, source, and local-observation records.
 
-Scheduling support: GitHub Actions cron or external schedulers around opencode run; no verified native durable scheduler.
+Scheduling support: OpenCode has source-backed external scheduling through GitHub Action integration; no native durable scheduler is proven by checked sources.
 
-Limitations: Default permission posture can be broad unless configured. Legacy tools permission is deprecated in favor of permission. MCP servers can create context pressure. npm plugins auto-install with Bun and can define tools and hooks; review plugins as executable third-party code.
+Limitations: The current release includes security and compatibility fixes, including a Plan Mode security bypass fix. Native scheduling and lifecycle reload semantics remain unresolved.
 
 Key sources:
 
-- [release version, date, and release notes](https://github.com/anomalyco/opencode/releases/tag/v1.14.33)
-- [active repository identity](https://github.com/anomalyco/opencode)
+- [current release version, date, and release notes](https://github.com/anomalyco/opencode/releases/tag/v1.14.46)
 - [documentation index](https://opencode.ai/docs/)
 - [CLI and run support](https://opencode.ai/docs/cli/)
 - [skill support](https://opencode.ai/docs/skills/)
 - [plugin and hook support](https://opencode.ai/docs/plugins/)
+- [agent and subagent support](https://opencode.ai/docs/agents/)
 
 ### OpenClaw
 
 The [OpenClaw profile](harness-capabilities/vanilla/openclaw.toml) preserves source-backed component, scheduling, limitation, uncertainty, refresh-note, source, and local-observation records.
 
-Scheduling support: Cron jobs, heartbeat turns, hooks, webhooks, and plugin background services.
+Scheduling support: OpenClaw supports cron, heartbeat turns, hooks, webhooks, background services, and release-backed cron JSON status surfaces.
 
-Limitations: Compatible Codex, Claude, and Cursor bundles are partial bridges, not full harness equivalence. MCP bridge behavior has limits around route metadata, live event queues, push/edit/react support, and approval visibility. Multi-agent workspaces are not hard OS sandboxes unless sandboxing is configured. Some plugin changes require Gateway restart.
+Limitations: Several detailed docs remain tag-pinned to v2026.5.2 while v2026.5.7 release notes add current security, memory, scheduling, and lifecycle evidence. Compatible-bundle support must not be treated as native support for every imported component.
 
 Key sources:
 
-- [release version, date, and release notes](https://github.com/openclaw/openclaw/releases/tag/v2026.5.2)
-- [package version](https://github.com/openclaw/openclaw/blob/v2026.5.2/package.json)
-- [adjacent prerelease context](https://github.com/openclaw/openclaw/releases/tag/v2026.5.2-beta.3)
+- [current release version, date, and release notes](https://github.com/openclaw/openclaw/releases/tag/v2026.5.7)
 - [feature overview](https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/concepts/features.md)
 - [skill support](https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/tools/skills.md)
 - [plugin support](https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/tools/plugin.md)
+- [plugin manifest support](https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/plugins/manifest.md)
+- [compatible bundle support](https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/plugins/bundles.md)
 
 ## Periodic Actions projection order
 

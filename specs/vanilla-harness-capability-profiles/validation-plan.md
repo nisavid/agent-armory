@@ -99,6 +99,20 @@ canonical profiles.
 6. Validate profile schema, migrations, evidence references, claim-id
    stability, summary alignment, and unknown disposition.
 
+The implemented profile enrichment validation now requires:
+
+- stable evidence IDs derived from source URL and claim scope;
+- `[[version_observation]]` records with checked-at, source URL, source kind,
+  canonical-change, and evidence-class fields;
+- `[[harness_extension]]` records with evidence references and schema-pressure
+  IDs;
+- refreshed claims to carry Capability Claim Triage, triage rationale,
+  install/activation, configuration, and reload/update fields;
+- optional `[[claim.detail]]`, `[[claim.memory_like_surface]]`,
+  `[[claim.automation_surface]]`, and `[[claim.compatibility_bridge]]`
+  records to validate their required descriptive fields and evidence
+  references.
+
 ## Capability Profiling Protocol slice
 
 Use machine-readable study artifacts to support future live-study evidence
