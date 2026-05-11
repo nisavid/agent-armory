@@ -1180,6 +1180,32 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             self.assertNotEqual(tampered.returncode, 0)
             self.assertIn("mutation harness_id must match plan harness_id", json.loads(tampered.stdout)["error"])
 
+    def test_manual_refresh_apply_rejects_non_string_mutation_harness_id(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            _scout_input, _scout_report, _analysis_report, plan_path, _replacement = self.prepare_refresh_artifacts(root)
+            plan = json.loads(plan_path.read_text(encoding="utf-8"))
+            plan["mutations"][0]["harness_id"] = None
+            plan_path.write_text(json.dumps(plan, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+            tampered = self.run_manager(
+                root,
+                "apply",
+                "--plan",
+                str(plan_path),
+                "--allow-effect",
+                "profile_mutation",
+                "--security-ref",
+                "specs/vanilla-harness-capability-profiles/security-control-classification.md#profile-mutation",
+                "--approval-ref",
+                "issue-48-fixture-approval",
+                "--json",
+            )
+
+            self.assertNotEqual(tampered.returncode, 0)
+            self.assertIn("mutation harness_id must be a non-empty string", json.loads(tampered.stdout)["error"])
+
     def test_manual_refresh_apply_requires_profile_mutation_for_tampered_effect_requirements(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

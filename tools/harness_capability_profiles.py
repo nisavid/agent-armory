@@ -2357,9 +2357,12 @@ def validate_refresh_mutation_scope(plan_harness_id: str, mutation: dict[str, An
     relative = Path(str(mutation.get("path", "")))
     if invalid_relative_path(relative) or not allowed_mutation_path(relative.as_posix()):
         raise ManagerError(f"{relative.as_posix()}: mutation path not allowed")
-    mutation_harness_id = mutation.get("harness_id")
-    if non_empty_string(mutation_harness_id) and mutation_harness_id != plan_harness_id:
-        raise ManagerError(f"{relative.as_posix()}: mutation harness_id must match plan harness_id")
+    if "harness_id" in mutation:
+        mutation_harness_id = mutation.get("harness_id")
+        if not non_empty_string(mutation_harness_id):
+            raise ManagerError(f"{relative.as_posix()}: mutation harness_id must be a non-empty string")
+        if mutation_harness_id != plan_harness_id:
+            raise ManagerError(f"{relative.as_posix()}: mutation harness_id must match plan harness_id")
     if relative.as_posix().startswith(VANILLA_PROFILE_DIR.as_posix() + "/") and relative.stem != plan_harness_id:
         raise ManagerError(f"{relative.as_posix()}: mutation path must match plan harness_id")
     return relative
