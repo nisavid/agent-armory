@@ -3750,30 +3750,21 @@ class MarkdownLinkTests(unittest.TestCase):
 
 
 class HarnessCatalogTests(unittest.TestCase):
-    def write_migrated_profiles(self, root: Path) -> None:
-        from tests.test_harness_capability_profiles import AGGREGATE_FIXTURE, write_research_outputs_fixture
-
+    def write_canonical_profiles(self, root: Path) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
         docs = root / "docs"
         docs.mkdir(parents=True, exist_ok=True)
-        (docs / "harness-capabilities.toml").write_text(AGGREGATE_FIXTURE.strip() + "\n", encoding="utf-8")
-        shutil.copyfile(Path(__file__).resolve().parents[1] / "docs/harness-capabilities.md", docs / "harness-capabilities.md")
-        manager = Path(__file__).resolve().parents[1] / "tools/harness_capability_profiles.py"
-        for args in (["migrate", "--apply"], ["summarize", "--write"]):
-            completed = subprocess.run(
-                [sys.executable, str(manager), "--root", str(root), *args],
-                cwd=Path(__file__).resolve().parents[1],
-                check=False,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-            )
-            self.assertEqual(completed.returncode, 0, completed.stderr)
-        write_research_outputs_fixture(root)
+        shutil.copyfile(repo_root / "docs/harness-capabilities.md", docs / "harness-capabilities.md")
+        shutil.copytree(repo_root / "docs/harness-capabilities", docs / "harness-capabilities")
+        shutil.copytree(
+            repo_root / "specs/vanilla-harness-capability-profiles",
+            root / "specs/vanilla-harness-capability-profiles",
+        )
 
     def test_validate_harness_catalog_delegates_to_manager_core_profiles(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
-            self.write_migrated_profiles(root)
+            self.write_canonical_profiles(root)
 
             results = validate_harness_catalog(root)
 
@@ -3792,7 +3783,7 @@ class HarnessCatalogTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
-            self.write_migrated_profiles(root)
+            self.write_canonical_profiles(root)
             (root / "docs/harness-capabilities.toml").write_text(AGGREGATE_FIXTURE.strip() + "\n", encoding="utf-8")
 
             results = validate_harness_catalog(root)
@@ -3810,7 +3801,7 @@ class HarnessCatalogTests(unittest.TestCase):
     def test_validate_harness_catalog_preserves_manager_core_failure_names(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
-            self.write_migrated_profiles(root)
+            self.write_canonical_profiles(root)
             profile = root / "docs/harness-capabilities/vanilla/codex.toml"
             profile.write_text(profile.read_text(encoding="utf-8").replace('schema_version = "vanilla-harness-capability-profile.v1alpha1"\n', "", 1), encoding="utf-8")
 

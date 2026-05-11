@@ -539,10 +539,25 @@ def validate_record_evidence_refs(
     return results
 
 
-def validate_version_observations(profile: dict[str, Any], harness_id: str, relative_path: Path) -> list[CheckResult]:
+def validate_version_observations(
+    profile: dict[str, Any],
+    harness_id: str,
+    relative_path: Path,
+    *,
+    require_enrichment: bool,
+) -> list[CheckResult]:
     records = profile.get("version_observation", [])
     path = relative_path.as_posix()
-    if records is None:
+    if records is None or records == []:
+        if require_enrichment:
+            return [
+                CheckResult(
+                    f"profile:{harness_id}:version_observation",
+                    False,
+                    "version_observation must be a non-empty array of tables",
+                    path,
+                )
+            ]
         return []
     if not isinstance(records, list):
         return [
@@ -584,10 +599,21 @@ def validate_harness_extensions(
     evidence_ids: set[str],
     schema_pressure_ids: set[str] | None,
     relative_path: Path,
+    *,
+    require_enrichment: bool,
 ) -> list[CheckResult]:
     records = profile.get("harness_extension", [])
     path = relative_path.as_posix()
-    if records is None:
+    if records is None or records == []:
+        if require_enrichment:
+            return [
+                CheckResult(
+                    f"profile:{harness_id}:harness_extension",
+                    False,
+                    "harness_extension must be a non-empty array of tables",
+                    path,
+                )
+            ]
         return []
     if not isinstance(records, list):
         return [
@@ -718,6 +744,7 @@ def validate_profile_data(
     relative_path: Path,
     *,
     schema_pressure_ids: set[str] | None = None,
+    require_enrichment: bool = False,
 ) -> list[CheckResult]:
     results: list[CheckResult] = []
 
@@ -799,8 +826,17 @@ def validate_profile_data(
                         )
                     )
 
-    results.extend(validate_version_observations(profile, harness_id, relative_path))
-    results.extend(validate_harness_extensions(profile, harness_id, evidence_ids, schema_pressure_ids, relative_path))
+    results.extend(validate_version_observations(profile, harness_id, relative_path, require_enrichment=require_enrichment))
+    results.extend(
+        validate_harness_extensions(
+            profile,
+            harness_id,
+            evidence_ids,
+            schema_pressure_ids,
+            relative_path,
+            require_enrichment=require_enrichment,
+        )
+    )
 
     claims = profile.get("claim")
     claim_ids: set[str] = set()
@@ -877,6 +913,15 @@ def validate_profile_data(
                 refreshed_claim = not (migrated_status and aggregate_basis)
             else:
                 refreshed_claim = True
+            if require_enrichment and not refreshed_claim:
+                results.append(
+                    CheckResult(
+                        f"profile:{harness_id}:claim:{index}:migration_status",
+                        False,
+                        "canonical profile claim must be refreshed from migrated aggregate status",
+                        relative_path.as_posix(),
+                    )
+                )
             if refreshed_claim:
                 claim_triage = claim.get("claim_triage")
                 if claim_triage not in CLAIM_TRIAGE_VALUES:
@@ -934,7 +979,13 @@ def validate_profile(root: Path, harness_id: str, schema_pressure_ids: set[str] 
         profile = load_toml(path)
     except tomllib.TOMLDecodeError as error:
         return [CheckResult(f"profile:{harness_id}:toml", False, f"TOML invalid: {error.msg}", relative_path.as_posix())]
-    return validate_profile_data(profile, harness_id, relative_path, schema_pressure_ids=schema_pressure_ids)
+    return validate_profile_data(
+        profile,
+        harness_id,
+        relative_path,
+        schema_pressure_ids=schema_pressure_ids,
+        require_enrichment=True,
+    )
 
 
 def markdown_table_rows(markdown: str, heading: str) -> list[dict[str, str]]:
