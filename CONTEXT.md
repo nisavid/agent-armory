@@ -593,8 +593,9 @@ _Avoid_: chat-only conclusion, undocumented resume instruction
 - **Seed Validation** checks the completed **Forge Seed**; live repository
   integrity belongs to **Armory Integrity Validation** and Forge-scoped live
   integrity belongs to **Forge Integrity Validation**.
-- The **Harness Capability Catalog** is a **Forge Canon** surface informed by
-  the **Source Handoff** and by **Harness Fact Refresh**.
+- The **Harness Capability Catalog** is a **Forge Canon** front door backed by
+  validated **Vanilla Harness Capability Profiles** and maintained through the
+  **Harness Capability Profile Manager**.
 - A **Capability Profile** analyzes a **Capability Surface** for a stated
   scope, state, evidence basis, and intended use.
 - A **Harness Capability Profile** analyzes a **Harness Capability Surface**.

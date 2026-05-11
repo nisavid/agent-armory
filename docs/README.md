@@ -71,8 +71,8 @@ agent equipment.
 
 - [Harness components](harness-components.md): where skills, MCP/tools, hooks,
   agent profiles, plugins, scripts, docs, and config fit.
-- [Harness capabilities](harness-capabilities.md): evidence-backed facts for
-  supported agent harnesses.
+- [Harness capabilities](harness-capabilities.md): evidence-backed Vanilla
+  Harness Capability Profiles for supported agent harnesses.
 - [Evidence taxonomy](evidence-taxonomy.md): how the Forge labels claims and
   decides what can be trusted.
 - [Security and control](security-and-control.md): what equipment may do, what
@@ -113,8 +113,9 @@ The current roadmap points to equipment lines that still have future slices:
 - [Periodic Actions](../specs/periodic-actions.md): recurring agent actions
   across harnesses.
 - [Vanilla Harness Capability Profiles](../specs/vanilla-harness-capability-profiles/):
-  source-backed descriptions of supported harness integration surfaces. The
-  recurring refresh path remains future work.
+  source-backed descriptions of supported harness integration surfaces, with
+  manual profile validation and refresh tooling. The recurring refresh path
+  remains future work.
 - [Capability Profiling Protocol](../specs/capability-profiling-protocol/):
   reusable study-plan, study-report, and jig-adequacy structure for Capability
   Surface studies.

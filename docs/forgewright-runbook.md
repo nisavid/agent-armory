@@ -48,6 +48,9 @@ Refresh harness facts before relying on moving harness capabilities.
 
 Use first-party docs, releases, source, or schemas where available. Label third-party metadata as fallback, and keep local CLI observations separate from source-backed facts. Record checked date, version basis, source URL, uncertainty, and the affected Forge surfaces.
 
+Use the Harness Capability Profile Manager Core and the Manual Refresh Review
+Workflow when the refresh changes Vanilla Harness Capability Profiles.
+
 ## Change set closeout
 
 Use `docs/story-closeout.md` for story-level closeout order, interdependency rules, and review sequencing.
