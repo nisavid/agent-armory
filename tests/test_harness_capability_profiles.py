@@ -698,6 +698,32 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             self.assertNotEqual(blank_ref.returncode, 0)
             self.assertIn("sources[0].claim_refs[1] must be a non-empty string", json.loads(blank_ref.stdout)["error"])
 
+    def test_manual_refresh_analyze_rejects_malformed_scout_claim_records(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            scout_input = self.write_refresh_scout_input(root)
+            scout_report = root / "scratch/scout-report.json"
+            analysis_report = root / "scratch/analysis-report.json"
+
+            scout = self.run_manager(root, "scout", "--input", str(scout_input), "--write-output", str(scout_report), "--json")
+            self.assertEqual(scout.returncode, 0, scout.stderr)
+            payload = json.loads(scout_report.read_text(encoding="utf-8"))
+            payload["sources"] = ["not-an-object"]
+            scout_report.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+            blocked = self.run_manager(root, "analyze", "--scout-report", str(scout_report), "--write-output", str(analysis_report), "--json")
+
+            self.assertNotEqual(blocked.returncode, 0)
+            self.assertIn("sources[0] must be an object", json.loads(blocked.stdout)["error"])
+
+            payload["sources"] = "not-a-list"
+            scout_report.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            blocked_sources = self.run_manager(root, "analyze", "--scout-report", str(scout_report), "--write-output", str(analysis_report), "--json")
+
+            self.assertNotEqual(blocked_sources.returncode, 0)
+            self.assertIn("sources must be a list", json.loads(blocked_sources.stdout)["error"])
+
     def test_manual_refresh_analyze_compares_version_tokens_without_prefix_substrings(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -854,6 +880,33 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
 
             self.assertNotEqual(duplicate.returncode, 0)
             self.assertIn("duplicate mutation for path", json.loads(duplicate.stdout)["error"])
+
+    def test_manual_refresh_plan_rejects_invalid_replacement_toml_with_manager_error(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            scout_input = self.write_refresh_scout_input(root)
+            scout_report = root / "scratch/scout-report.json"
+            analysis_report = root / "scratch/analysis-report.json"
+            replacement = root / "scratch/broken-replacement.toml"
+            replacement.write_text("[[claim]\nid = \"missing-close-quote\n", encoding="utf-8")
+            scout = self.run_manager(root, "scout", "--input", str(scout_input), "--write-output", str(scout_report), "--json")
+            self.assertEqual(scout.returncode, 0, scout.stderr)
+            analyze = self.run_manager(root, "analyze", "--scout-report", str(scout_report), "--write-output", str(analysis_report), "--json")
+            self.assertEqual(analyze.returncode, 0, analyze.stderr)
+
+            invalid = self.run_manager(
+                root,
+                "plan",
+                "--analysis-report",
+                str(analysis_report),
+                "--profile-replacement",
+                f"codex:{replacement}",
+                "--json",
+            )
+
+            self.assertNotEqual(invalid.returncode, 0)
+            self.assertIn("scratch/broken-replacement.toml: TOML invalid", json.loads(invalid.stdout)["error"])
 
     def test_manual_refresh_audit_rejects_cross_report_harness_mismatch(self):
         with tempfile.TemporaryDirectory() as tmpdir:

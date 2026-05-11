@@ -2208,12 +2208,20 @@ def refresh_scout(
     return result
 
 
-def claim_refs_from(records: list[dict[str, Any]]) -> set[str]:
+def claim_refs_from(records: Any, record_key: str) -> set[str]:
+    if not isinstance(records, list):
+        raise ManagerError(f"{record_key} must be a list")
     refs: set[str] = set()
-    for record in records:
+    for index, record in enumerate(records):
+        if not isinstance(record, dict):
+            raise ManagerError(f"{record_key}[{index}] must be an object")
         claim_refs = record.get("claim_refs", [])
-        if isinstance(claim_refs, list):
-            refs.update(str(ref) for ref in claim_refs if non_empty_string(ref))
+        if not isinstance(claim_refs, list):
+            raise ManagerError(f"{record_key}[{index}].claim_refs must be a list")
+        for ref_index, ref in enumerate(claim_refs):
+            if not non_empty_string(ref):
+                raise ManagerError(f"{record_key}[{index}].claim_refs[{ref_index}] must be a non-empty string")
+            refs.add(str(ref))
     return refs
 
 
@@ -2250,9 +2258,9 @@ def refresh_analyze(root: Path, *, scout_report_path: str, output_path: str | No
         "observed_versions": observed_versions,
         "disposition": "changed" if changed_versions else "unchanged",
     }
-    source_claim_refs = claim_refs_from(scout.get("sources", []))
-    hypothesis_claim_refs = claim_refs_from(scout.get("hypotheses", []))
-    unknown_claim_refs = claim_refs_from(scout.get("unknowns", []))
+    source_claim_refs = claim_refs_from(scout.get("sources", []), "sources")
+    hypothesis_claim_refs = claim_refs_from(scout.get("hypotheses", []), "hypotheses")
+    unknown_claim_refs = claim_refs_from(scout.get("unknowns", []), "unknowns")
     similar_by_family: dict[str, list[str]] = {}
     for other in load_profiles(root):
         if other.get("harness_id") == harness_id:
@@ -2493,7 +2501,10 @@ def refresh_plan(
         if harness_id != analysis_harness_id:
             raise ManagerError("--profile-replacement harness_id must match analysis report harness_id")
         replacement_path, replacement_relative = user_path(root, str(replacement_path_raw), expected_kind="file")
-        replacement_profile = load_toml(replacement_path)
+        try:
+            replacement_profile = load_toml(replacement_path)
+        except tomllib.TOMLDecodeError as error:
+            raise ManagerError(f"{replacement_relative.as_posix()}: TOML invalid: {error.msg}") from error
         results = validate_profile_data(
             replacement_profile,
             harness_id,
