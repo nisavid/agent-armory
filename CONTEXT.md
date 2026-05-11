@@ -258,6 +258,31 @@ prior evidence, version deltas, claim criticality, similar capabilities,
 applicability scope changes, and current intended use.
 _Avoid_: exhaustive re-proof of every claim, unexamined evidence reuse
 
+**Study Target Declaration**:
+The machine-readable declaration of the Capability Surface target, scope,
+state or Capability State Graph, claims under study, required evidence,
+available controls, operator preferences, permitted effects, and selected
+rigor for a Capability Profiling Protocol study.
+_Avoid_: study result, profile claim
+
+**Study Plan**:
+A pre-execution Capability Profiling Protocol artifact that records the study
+target, Capability State Graph, Capability Analysis Angles, rigor controls,
+permitted effects, approvals, observation points, and sufficiency criteria.
+_Avoid_: study report, profile mutation plan
+
+**Study Report**:
+A post-execution Capability Profiling Protocol artifact that records observed
+results, claim confidence, test sufficiency, limitations, failed controls,
+artifact disposition, and profile impact.
+_Avoid_: raw transcript, unreviewed scratch output
+
+**Jig Adequacy Report**:
+A Capability Profiling Protocol report for a clean-room profiling jig that
+classifies controls as claimed, verified, unsupported, or unknown and records
+how those controls affect selected rigor.
+_Avoid_: assuming a clean-room jig is fully adequate without control evidence
+
 **Standard Clean-Room Profiling Jig**:
 The ideal preferred baseline study environment and Capability Surface for
 official Vanilla Harness Capability Profiles, designed to maximize control over

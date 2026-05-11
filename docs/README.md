@@ -115,6 +115,9 @@ The current roadmap points to equipment lines that still have future slices:
 - [Vanilla Harness Capability Profiles](../specs/vanilla-harness-capability-profiles/):
   source-backed descriptions of supported harness integration surfaces. The
   recurring refresh path remains future work.
+- [Capability Profiling Protocol](../specs/capability-profiling-protocol/):
+  reusable study-plan, study-report, and jig-adequacy structure for Capability
+  Surface studies.
 - [Head Gear / Reflection and cognition equipment](https://github.com/nisavid/agent-armory/issues/25):
   future generic cognition enhancement equipment that turns underspecified
   intent and recent agent experience into durable insight, routed follow-up, and

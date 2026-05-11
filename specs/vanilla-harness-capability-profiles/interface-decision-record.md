@@ -32,7 +32,7 @@ for research, triage, schema pressure, and manual refresh review.
 - Script: `tools/harness_capability_profiles.py`.
 - Config: deferred until Agent Equipment Config is available.
 - Local docs: bundle docs, per-harness profiles, schema docs, research notes,
-  study artifacts, and closeout evidence.
+  study artifacts, protocol examples, and closeout evidence.
 
 ## Rationale
 
@@ -82,3 +82,7 @@ Review this decision when the profile schema stabilizes, when the Capability
 Profiling Protocol receives machine-readable plan/report schemas, when Agent
 Equipment Config can supply shared config, or when Effective Harness
 Capability Surface tooling becomes active.
+
+The current Capability Profiling Protocol surface validates study-plan,
+study-report, and jig-adequacy structure through the Manager Core while leaving
+inference-heavy study design and claim interpretation to agent-guided review.

@@ -1,0 +1,43 @@
+schema_version = "capability-profiling-protocol.v1alpha1"
+artifact_kind = "study_report"
+id = "study-report-vanilla-codex-skills"
+title = "Vanilla Codex skill loading study report"
+status = "example"
+protocol_version = "v1alpha1"
+plan_id = "study-plan-vanilla-codex-skills"
+plan_ref = "examples/capability-profiling-protocol/vanilla-codex-skill-study-plan.toml"
+
+[execution]
+executed_at = "2026-05-10T20:00:00-04:00"
+deviations = ["No live local Codex fixture was executed."]
+failed_controls = []
+limitations = ["Passive study cannot prove local installation behavior."]
+
+[[evidence]]
+id = "evidence-codex-skills-doc"
+kind = "first_party_source"
+ref = "https://developers.openai.com/codex/skills"
+disposition = "durable_project_evidence"
+summary = "First-party skill support documentation."
+
+[[observed_result]]
+id = "result-codex-skills-source"
+claim_ref = "claim-codex-skills"
+observation_point_ref = "observe-default-skill-source"
+outcome = "supports"
+evidence_refs = ["evidence-codex-skills-doc"]
+summary = "First-party documentation supports the descriptive skill claim."
+
+[[claim_assessment]]
+claim_ref = "claim-codex-skills"
+claim_confidence = "medium"
+test_sufficiency = "sufficient_for_source_backed_profile_claim"
+limitations = ["No local fixture observation was run."]
+failed_controls = []
+profile_impact = "Supports retaining the source-backed vanilla profile claim."
+
+[[artifact]]
+id = "artifact-source-summary"
+disposition = "durable_project_evidence"
+path_or_ref = "docs/harness-capabilities/vanilla/codex.toml#claim-codex-skills"
+summary = "Curated profile claim remains the durable evidence surface."

@@ -133,3 +133,12 @@ These artifacts are validated by the Manager Core for structure, source
 traceability, required surface-family coverage, and schema-pressure finding
 shape. Issue #45 applies the accepted enrichment findings to the canonical
 profiles while keeping unresolved schema pressure explicit.
+
+## Protocol study artifacts
+
+The Capability Profiling Protocol schema lives under
+`specs/capability-profiling-protocol/`, with representative examples under
+`examples/capability-profiling-protocol/`. Manager Core validation checks study
+plan, study report, and jig adequacy report structure so later selected study
+reports can support profile claims without making raw transcripts or local
+scratch output part of canonical profile truth.

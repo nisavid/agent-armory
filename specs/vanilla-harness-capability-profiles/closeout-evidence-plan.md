@@ -12,6 +12,8 @@ Durable closeout evidence includes:
 - Manager Core command summaries and JSON-compatible result summaries;
 - selected research notes;
 - selected study reports when they support material claims;
+- Capability Profiling Protocol specs, schema references, and representative
+  validated examples when protocol structure affects future study evidence;
 - audit summaries for manual refresh;
 - Forge Domain Model Review disposition;
 - issue projection records for the epic and child stories;
