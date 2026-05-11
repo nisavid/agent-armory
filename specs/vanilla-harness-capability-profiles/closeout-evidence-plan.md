@@ -14,7 +14,8 @@ Durable closeout evidence includes:
 - selected study reports when they support material claims;
 - Capability Profiling Protocol specs, schema references, and representative
   validated examples when protocol structure affects future study evidence;
-- audit summaries for manual refresh;
+- audit summaries for manual refresh, including the apply result and passing
+  Manager Core validation result when a mutation plan is audited;
 - Manual Refresh Scout Reports, Analysis Reports, Update Plans, and Diffs when
   they are portable review summaries rather than raw fetched cache output;
 - Forge Domain Model Review disposition;

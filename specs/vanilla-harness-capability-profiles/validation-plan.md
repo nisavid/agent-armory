@@ -173,8 +173,9 @@ The implemented first manual refresh story validates:
 The deterministic checks cover the Manager Core boundary: `scout` and
 `analyze` do not mutate canonical profiles, `plan` records only explicit
 agent-authored replacement candidates with precondition hashes, `diff` renders
-reviewable planned changes, `apply` refuses stale plans and requires explicit
-`profile_mutation` approval, and `audit` summarizes source, claim,
+reviewable planned changes, `apply` refuses stale plans, verifies planned-content
+hashes, enforces harness-scope and canonical-path restrictions, and requires
+explicit `profile_mutation` approval; `audit` summarizes source, claim,
 schema-pressure, scratch-disposition, apply, validation, and follow-up evidence.
 Agent-guided judgment remains in the workflow review artifact and the prepared
 input/replacement files, not in hidden inference inside the CLI.

@@ -46,7 +46,9 @@ Profiles through the Harness Capability Profile Manager Core.
    - Write only planned canonical profile or schema content.
 6. Audit the refresh.
    - Provide the apply result for mutation plans.
-   - Provide passing validation result artifacts from post-apply gates.
+   - Provide the passing Manager Core validation result artifact from post-apply
+     gates, plus any other passing closeout validation artifacts used as
+     supporting evidence.
    - Record sources checked, profile files changed, claims added, changed,
      retired, unsupported, or left unknown, schema pressure, selected-rigor
      deviations, scratch disposition, validation results, and follow-up

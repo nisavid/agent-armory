@@ -465,7 +465,7 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
         text = source.read_text(encoding="utf-8")
         current_refresh_notes = 'refresh_notes = "Refresh from GitHub releases first, then first-party OpenAI Codex docs. Keep app, CLI, plugin, hook, and automation surfaces distinct."'
         planned_refresh_notes = 'refresh_notes = "Manual refresh fixture preserves source-backed Codex evidence and records a reviewable refresh-note mutation."'
-        self.assertIn(current_refresh_notes, text)
+        self.assertEqual(text.count(current_refresh_notes), 1)
         text = text.replace(current_refresh_notes, planned_refresh_notes, 1)
         replacement.write_text(text, encoding="utf-8")
         return replacement
@@ -901,6 +901,75 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             )
             self.assertNotEqual(failed_audit.returncode, 0)
             self.assertIn("validation result did not pass", json.loads(failed_audit.stdout)["error"])
+
+            spoofed_validation = root / "scratch/spoofed-validation.json"
+            spoofed_validation.write_text(
+                json.dumps({"result": "passed"}, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            spoofed_audit = self.run_manager(
+                root,
+                "audit",
+                "--scout-report",
+                str(scout_report),
+                "--analysis-report",
+                str(analysis_report),
+                "--plan",
+                str(plan_path),
+                "--apply-result",
+                str(apply_result),
+                "--validation-result",
+                str(spoofed_validation),
+                "--json",
+            )
+            self.assertNotEqual(spoofed_audit.returncode, 0)
+            self.assertIn("validation result did not pass", json.loads(spoofed_audit.stdout)["error"])
+
+            integrity_only_validation = root / "scratch/integrity-only-validation.json"
+            integrity_only_validation.write_text(
+                json.dumps(
+                    {
+                        "schema": "armory_integrity.validation_result.v1",
+                        "result": "passed",
+                        "results": [{"name": "fixture", "ok": True, "detail": "passed", "path": "."}],
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            integrity_only_audit = self.run_manager(
+                root,
+                "audit",
+                "--scout-report",
+                str(scout_report),
+                "--analysis-report",
+                str(analysis_report),
+                "--plan",
+                str(plan_path),
+                "--apply-result",
+                str(apply_result),
+                "--validation-result",
+                str(integrity_only_validation),
+                "--json",
+            )
+            self.assertNotEqual(integrity_only_audit.returncode, 0)
+            self.assertIn("requires Manager Core validation result", json.loads(integrity_only_audit.stdout)["error"])
+
+    def test_manual_refresh_plan_rejects_duplicate_mutation_paths(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            _scout_input, _scout_report, _analysis_report, plan_path, _replacement = self.prepare_refresh_artifacts(root)
+            plan = json.loads(plan_path.read_text(encoding="utf-8"))
+            plan["mutations"].append(dict(plan["mutations"][0]))
+            plan_path.write_text(json.dumps(plan, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+            blocked = self.run_manager(root, "diff", "--plan", str(plan_path), "--json")
+
+            self.assertNotEqual(blocked.returncode, 0)
+            self.assertIn("duplicate mutation for path", json.loads(blocked.stdout)["error"])
 
     def test_manual_refresh_apply_refuses_stale_plan_and_explicit_apply_writes_planned_profile_only(self):
         with tempfile.TemporaryDirectory() as tmpdir:

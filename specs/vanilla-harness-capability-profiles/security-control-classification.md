@@ -52,8 +52,9 @@ output.
 - Controls: staged `scout`, `analyze`, `plan`, `apply`, and `audit`; no
   mutation during scout or analyze; explicit replacement candidates; plan
   precondition hashes; reviewable `diff`; approved `profile_mutation` at
-  apply; stale-plan refusal; audit summary; tests and active repository
-  integrity validation.
+  apply; stale-plan refusal; planned-content hash checks; harness-scope and
+  canonical-path enforcement; audit summary with Manager Core validation
+  evidence; tests and active repository integrity validation.
 
 ### Live-study effects
 

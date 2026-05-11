@@ -87,6 +87,7 @@ REFRESH_UPDATE_PLAN_SCHEMA = "harness_capability_profiles.refresh_update_plan.v1
 REFRESH_DIFF_SCHEMA = "harness_capability_profiles.refresh_diff.v1"
 REFRESH_APPLY_SCHEMA = "harness_capability_profiles.refresh_apply.v1"
 REFRESH_AUDIT_SCHEMA = "harness_capability_profiles.refresh_audit.v1"
+SUPPORTED_REFRESH_VALIDATION_SCHEMAS = {VALIDATION_RESULT_SCHEMA, "armory_integrity.validation_result.v1"}
 VALIDATION_NAME = "Vanilla Harness Capability Profile Manager Core"
 SUMMARY_SOURCE_LIMIT = 6
 CLAIM_STATUSES = {"supported", "unsupported", "unknown", "not-applicable"}
@@ -2329,9 +2330,17 @@ def refresh_plan_mutations(plan: dict[str, Any]) -> list[dict[str, Any]]:
     if not isinstance(raw_mutations, list):
         raise ManagerError("plan mutations must be a list")
     mutations: list[dict[str, Any]] = []
+    seen_paths: set[str] = set()
     for mutation in raw_mutations:
         if not isinstance(mutation, dict) or mutation.get("type") != "replace_file":
             raise ManagerError("plan contains unsupported mutation")
+        raw_path = mutation.get("path")
+        if not non_empty_string(raw_path):
+            raise ManagerError("mutation missing path")
+        path = str(raw_path)
+        if path in seen_paths:
+            raise ManagerError(f"duplicate mutation for path: {path}")
+        seen_paths.add(path)
         mutations.append(mutation)
     return mutations
 
@@ -2356,10 +2365,14 @@ def report_harness_id(payload: dict[str, Any], artifact_name: str) -> str:
 
 
 def validation_result_passed(payload: dict[str, Any]) -> bool:
+    if payload.get("schema") not in SUPPORTED_REFRESH_VALIDATION_SCHEMAS:
+        return False
+    if payload.get("result") != "passed":
+        return False
     results = payload.get("results")
     if isinstance(results, list):
         return bool(results) and all(isinstance(result, dict) and result.get("ok") is True for result in results)
-    return payload.get("result") == "passed"
+    return False
 
 
 def validation_result_summary(payload: dict[str, Any], relative: Path) -> dict[str, Any]:
@@ -2413,7 +2426,7 @@ def refresh_plan(
         results = validate_profile_data(
             replacement_profile,
             harness_id,
-            profile_path(harness_id),
+            replacement_relative,
             require_enrichment=True,
             schema_pressure_ids=schema_pressure_ids,
         )
@@ -2528,7 +2541,7 @@ def refresh_apply(
         approval_ref=approval_ref,
         allow_embedded_approval=False,
     )
-    writes: list[str] = []
+    validated_targets: list[tuple[Path, str]] = []
     for mutation in mutations:
         relative = validate_refresh_mutation_scope(plan_harness_id, mutation)
         planned_content = str(mutation.get("content", ""))
@@ -2555,10 +2568,11 @@ def refresh_apply(
         current_hash = file_sha256(current_path)
         if current_hash != mutation.get("precondition_sha256"):
             raise ManagerError(f"{relative.as_posix()}: stale plan precondition")
-    for mutation in mutations:
-        relative = Path(str(mutation["path"]))
+        validated_targets.append((relative, planned_content))
+    writes: list[str] = []
+    for relative, planned_content in validated_targets:
         target = checked_write_file(root, relative)
-        target.write_text(str(mutation.get("content", "")), encoding="utf-8")
+        target.write_text(planned_content, encoding="utf-8")
         writes.append(relative.as_posix())
     return {
         "schema": REFRESH_APPLY_SCHEMA,
@@ -2619,6 +2633,8 @@ def refresh_audit(
         validation_summaries.append(summary)
     if planned_paths and not validation_summaries:
         raise ManagerError("refresh audit requires validation results for mutation plans")
+    if planned_paths and not any(summary.get("schema") == VALIDATION_RESULT_SCHEMA for summary in validation_summaries):
+        raise ManagerError("refresh audit requires Manager Core validation result for mutation plans")
     triage_counts: dict[str, int] = {}
     for triage in analysis.get("claim_triage", []):
         if isinstance(triage, dict):
