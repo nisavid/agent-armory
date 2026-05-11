@@ -10,8 +10,9 @@ system: Armory and Forge validation boundaries, per-harness profile migration,
 schema-pressure research, six refreshed Vanilla Harness Capability Profiles,
 the Capability Profiling Protocol, and manual profile refresh workflow.
 
-Recurring refresh integration remains deferred to Agent Equipment Config and
-Periodic Actions.
+Recurring refresh integration remains deferred until Agent Equipment Config and
+Periodic Actions provide the required configuration and scheduled-action
+surfaces.
 
 ## Delivered Surface
 
