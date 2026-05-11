@@ -105,7 +105,7 @@ The implemented profile enrichment validation now checks:
 - `[[version_observation]]` records, when present, with `id`, `observed_version`,
   `checked_at`, `source_url`, `source_kind`, `canonical_profile_change`, and
   `evidence_class` fields, with `source_url` and `source_kind` required except
-  for `local_observation` records;
+  for `local_observation` records, where they are omitted;
 - `[[harness_extension]]` records, when present, with evidence references and
   schema-pressure IDs;
 - refreshed claims to carry Capability Claim Triage, triage rationale,

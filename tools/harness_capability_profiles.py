@@ -561,10 +561,16 @@ def validate_version_observations(profile: dict[str, Any], harness_id: str, rela
         results.extend(validate_string_fields(record, ["id", "observed_version", "checked_at"], prefix, path))
         evidence_class = record.get("evidence_class")
         source_kind = record.get("source_kind")
-        if evidence_class != "local_observation" and source_kind not in SOURCE_KINDS:
-            results.append(CheckResult(f"{prefix}:source_kind", False, "invalid source kind", path))
-        if evidence_class != "local_observation" and not valid_http_url(record.get("source_url")):
-            results.append(CheckResult(f"{prefix}:source_url", False, "source url must be http or https with a host", path))
+        if evidence_class == "local_observation":
+            if "source_kind" in record:
+                results.append(CheckResult(f"{prefix}:source_kind", False, "local observations omit source_kind", path))
+            if "source_url" in record:
+                results.append(CheckResult(f"{prefix}:source_url", False, "local observations omit source_url", path))
+        else:
+            if source_kind not in SOURCE_KINDS:
+                results.append(CheckResult(f"{prefix}:source_kind", False, "invalid source kind", path))
+            if not valid_http_url(record.get("source_url")):
+                results.append(CheckResult(f"{prefix}:source_url", False, "source url must be http or https with a host", path))
         if not isinstance(record.get("canonical_profile_change"), bool):
             results.append(CheckResult(f"{prefix}:canonical_profile_change", False, "canonical_profile_change must be boolean", path))
         results.extend(validate_evidence_class(record, prefix, path))

@@ -476,6 +476,32 @@ evidence_class = "local_observation"
             payload = json.loads(completed.stdout)
             self.assertEqual(payload["result"], "passed")
 
+    def test_validate_rejects_local_observation_version_observation_with_source_metadata(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_migration_root(root)
+            self.migrate_and_summarize(root)
+            codex_profile = root / "docs/harness-capabilities/vanilla/codex.toml"
+            text = codex_profile.read_text(encoding="utf-8").rstrip() + """
+
+[[version_observation]]
+id = "vo-codex-local"
+observed_version = "local smoke"
+checked_at = "2026-05-10T17:40:00-04:00"
+source_url = "https://example.invalid/local"
+source_kind = "first_party"
+canonical_profile_change = false
+evidence_class = "local_observation"
+"""
+            codex_profile.write_text(text, encoding="utf-8")
+
+            completed = self.run_manager(root, "validate", "--json")
+
+            self.assertNotEqual(completed.returncode, 0)
+            failures = {result["name"] for result in json.loads(completed.stdout)["results"] if not result["ok"]}
+            self.assertIn("profile:codex:version_observation:0:source_kind", failures)
+            self.assertIn("profile:codex:version_observation:0:source_url", failures)
+
     def test_validate_rejects_refreshed_claim_missing_triage_and_integration_detail(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
