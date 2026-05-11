@@ -463,11 +463,10 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
         source = root / "docs/harness-capabilities/vanilla/codex.toml"
         replacement = scratch / "codex-planned.toml"
         text = source.read_text(encoding="utf-8")
-        text = text.replace(
-            'refresh_notes = "Refresh from GitHub releases first, then first-party OpenAI Codex docs. Keep app, CLI, plugin, hook, and automation surfaces distinct."',
-            'refresh_notes = "Manual refresh fixture preserves source-backed Codex evidence and records a reviewable refresh-note mutation."',
-            1,
-        )
+        current_refresh_notes = 'refresh_notes = "Refresh from GitHub releases first, then first-party OpenAI Codex docs. Keep app, CLI, plugin, hook, and automation surfaces distinct."'
+        planned_refresh_notes = 'refresh_notes = "Manual refresh fixture preserves source-backed Codex evidence and records a reviewable refresh-note mutation."'
+        self.assertIn(current_refresh_notes, text)
+        text = text.replace(current_refresh_notes, planned_refresh_notes, 1)
         replacement.write_text(text, encoding="utf-8")
         return replacement
 
@@ -575,6 +574,7 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             self.assertIn("source-codex-release", audit_payload["sources_checked"])
             self.assertEqual(audit_payload["profile_files_planned"], ["docs/harness-capabilities/vanilla/codex.toml"])
             self.assertEqual(audit_payload["profile_files_changed"], ["docs/harness-capabilities/vanilla/codex.toml"])
+            self.assertIn("not_applicable", audit_payload["claim_change_summary"])
             self.assertEqual(audit_payload["validation_results"][0]["result"], "passed")
             self.assertEqual(audit_payload["scratch_evidence_disposition"], scout_payload["scratch_disposition"])
             self.assertTrue(audit_payload["selected_rigor_deviations"])
@@ -642,6 +642,20 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
 
             self.assertNotEqual(blocked.returncode, 0)
             self.assertIn("approval required for effects", json.loads(blocked.stdout)["error"])
+
+    def test_manual_refresh_requires_explicit_effects_for_effectful_scout_evidence(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            scout_input = self.write_refresh_scout_input(root)
+            payload = json.loads(scout_input.read_text(encoding="utf-8"))
+            payload.pop("effects")
+            scout_input.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+            blocked = self.run_manager(root, "scout", "--input", str(scout_input), "--json")
+
+            self.assertNotEqual(blocked.returncode, 0)
+            self.assertIn("effects must be explicit", json.loads(blocked.stdout)["error"])
 
     def test_manual_refresh_analyze_compares_version_tokens_without_prefix_substrings(self):
         with tempfile.TemporaryDirectory() as tmpdir:

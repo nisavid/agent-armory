@@ -2041,6 +2041,8 @@ def summarize(root: Path, *, write: bool) -> dict[str, Any]:
 def refresh_effect_records(payload: dict[str, Any], default_effect: str = "passive_scanning") -> list[dict[str, str]]:
     effects = payload.get("effects")
     if effects is None:
+        if payload.get("local_observations") or payload.get("study_reports"):
+            raise ManagerError("effects must be explicit when scout input includes local observations or study reports")
         return [{"effect": default_effect, "classification_ref": "default-passive", "approval_ref": "not-required"}]
     if not isinstance(effects, list):
         raise ManagerError("effects must be a list")
@@ -2638,6 +2640,7 @@ def refresh_audit(
             "changed": triage_counts.get("deeper_review", 0) + triage_counts.get("changed", 0),
             "retired": triage_counts.get("retired", 0),
             "unsupported": triage_counts.get("unsupported", 0),
+            "not_applicable": triage_counts.get("not-applicable", 0),
             "unknown": triage_counts.get("keep_visible", 0) + triage_counts.get("unknown", 0),
             "accepted_reuse": triage_counts.get("accept_reuse", 0),
         },
