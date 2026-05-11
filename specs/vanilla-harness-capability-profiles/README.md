@@ -20,6 +20,8 @@ Smiths consume profile facts when crafting Agent Equipment.
 - [Forge Domain Model Review](forge-domain-model-review.md)
 - [Schema pressure report](schema-pressure-report.md)
 - [Capability Profiling Protocol](../capability-profiling-protocol/)
+- [Manual refresh review workflow](workflows/manual-refresh-review.md)
+- [Manual refresh examples](../../examples/harness-capability-refresh/)
 - Research notes:
   - [Codex](research-notes/codex.md)
   - [Claude Code](research-notes/claude_code.md)
@@ -106,6 +108,12 @@ Workflow templates live under
 templates are `research-note.md`, `claim-triage.md`,
 `schema-pressure-review.md`, `manual-refresh-review.md`,
 `study-plan-review.md`, and `study-report-review.md`.
+
+The implemented first manual-refresh workflow uses
+`manual-refresh-review.md` as the agent-guided checklist for the deterministic
+Manager Core commands. The template records scouting scope, claim-triage
+judgment, explicit mutation intent, reviewable diffs, effect approval evidence,
+and audit disposition without turning those judgments into hidden tool logic.
 
 ## Settled boundaries
 
@@ -449,16 +457,30 @@ The story is accepted when:
 
 Manual refresh uses staged commands with dry-run defaults:
 
-1. `scout` fetches or inspects evidence sources and records a refresh report or
-   cache.
-2. `analyze` compares evidence against current profiles and reports harness
-   surface, profile, and schema changes.
-3. `plan` produces a profile update and migration plan.
-4. `diff` shows the planned profile, schema, and evidence-promotion changes
-   against the current repository state.
-5. `apply` updates profile files only after explicit execution.
-6. `audit` summarizes sources, changed claims, unresolved uncertainty, schema
-   pressure, and files changed.
+1. `scout` normalizes a curated scout input artifact into a Manual Refresh
+   Scout Report. Network reads, local probing, command execution, live-study
+   effects, and external disclosure must be classified and approved before the
+   agent records their results. The deterministic command records evidence; it
+   does not perform open-ended research or mutate canonical profiles.
+2. `analyze` compares a Manual Refresh Scout Report against current profiles,
+   prior evidence basis, schema pressure, version deltas, and similar claims in
+   other harnesses. It emits a Manual Refresh Analysis Report with Capability
+   Claim Triage and follow-up issue candidates.
+3. `plan` turns explicit agent-authored replacement candidates into a Manual
+   Refresh Update Plan with precondition hashes, planned content hashes,
+   validation commands, effect requirements, evidence promotions, and follow-up
+   issue candidates. The command validates replacement profiles but does not
+   infer profile rewrites.
+4. `diff` compares the Manual Refresh Update Plan against the current profile,
+   schema, and durable evidence files before apply.
+5. `apply` requires an explicit plan reference, verifies current profile state
+   still matches plan preconditions, refuses stale plans, requires approved
+   `profile_mutation`, and writes only planned canonical profile or schema
+   content.
+6. `audit` emits a Manual Refresh Audit Summary for sources checked, profile
+   files changed, claim dispositions, schema pressure, selected-rigor
+   deviations, scratch evidence disposition, validation commands or results,
+   and follow-up disposition.
 
 Canonical profile mutation must be explicit and reviewable. The manager should
 not silently mutate profile files while scouting or analyzing.

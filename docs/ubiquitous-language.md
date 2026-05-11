@@ -156,6 +156,26 @@ structured IO, claim IDs, evidence-link checks, summary generation, diffs,
 deterministic migration, dry-run and apply mechanics, audit formatting, fixture
 checks, and machine-readable study plan or report validation.
 
+**Manual Refresh Scout Report** is a normalized, noncanonical refresh artifact
+that records curated source evidence, fallback evidence, local observations,
+selected study reports, evidence notes, hypotheses, unknowns, effect
+classification, and scratch disposition for one harness.
+
+**Manual Refresh Analysis Report** is a normalized, noncanonical refresh
+artifact that compares a Manual Refresh Scout Report with current Vanilla
+Harness Capability Profiles, prior evidence basis, schema pressure, version
+deltas, similar claims, and Capability Claim Triage.
+
+**Manual Refresh Update Plan** is a reviewable refresh artifact that records
+explicit canonical profile or schema mutations, precondition hashes, planned
+content hashes, validation commands, evidence promotions, and follow-up issue
+candidates.
+
+**Manual Refresh Audit Summary** is a refresh closeout artifact that records
+checked sources, changed profile files, claim dispositions, schema pressure,
+selected-rigor deviations, scratch evidence disposition, validation commands or
+results, and follow-up disposition.
+
 **Capability Profiling Protocol** is a generic meta-protocol that generates a
 study protocol for a selected Capability Surface target by considering target
 type, desired rigor, available controls, permitted effects, operator
@@ -305,6 +325,10 @@ induced candidate for future work.
   through deterministic manager-core tooling, agent-guided workflows, and
   optional evidence adapters; Harness Capability Refresh is future recurring
   Agent Equipment that can invoke it.
+- Manual refresh moves through Manual Refresh Scout Report, Manual Refresh
+  Analysis Report, Manual Refresh Update Plan, explicit apply, and Manual
+  Refresh Audit Summary artifacts so deterministic Manager Core operations stay
+  separate from agent-guided judgment.
 - The Capability Profiling Protocol produces Study Plans before execution and
   Study Reports after execution; Jig Adequacy Reports use the same protocol
   vocabulary because clean-room jigs are Capability Surfaces.
@@ -354,6 +378,10 @@ induced candidate for future work.
 - Use **Harness Fact Refresh** for source-backed profile updates and **Harness
   Capability Refresh** for the downstream recurring equipment that invokes the
   profile manager over time.
+- Use **Manual Refresh Scout Report**, **Manual Refresh Analysis Report**,
+  **Manual Refresh Update Plan**, and **Manual Refresh Audit Summary** for the
+  staged manual workflow artifacts; use **Harness Capability Refresh** for the
+  deferred recurring equipment.
 - Use **Study Plan** for intended protocol shape before execution and **Study
   Report** for observed outcomes after execution.
 - Use **Jig Adequacy Report** when the target under study is the control

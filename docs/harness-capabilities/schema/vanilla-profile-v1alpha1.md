@@ -142,3 +142,22 @@ The Capability Profiling Protocol schema lives under
 plan, study report, and jig adequacy report structure so later selected study
 reports can support profile claims without making raw transcripts or local
 scratch output part of canonical profile truth.
+
+## Manual refresh artifacts
+
+Manual refresh commands use stable JSON artifacts for noncanonical refresh
+state:
+
+- Manual Refresh Scout Reports record curated evidence and effect
+  classification without mutating profile files.
+- Manual Refresh Analysis Reports record version deltas, Capability Claim
+  Triage, schema pressure, similar-claim context, and follow-up candidates.
+- Manual Refresh Update Plans record explicit canonical file replacements with
+  precondition hashes and planned content hashes.
+- Manual Refresh Audit Summaries record source, profile-change,
+  claim-disposition, schema-pressure, scratch-disposition, validation, and
+  follow-up evidence.
+
+These artifacts support review and closeout. Canonical Vanilla Harness
+Capability Profile truth remains the per-harness TOML files under
+`docs/harness-capabilities/vanilla/`.

@@ -1,0 +1,45 @@
+{
+  "analysis_report_path": "scratch/analysis-report.json",
+  "claim_change_summary": {
+    "accepted_reuse": 10,
+    "added": 0,
+    "changed": 3,
+    "retired": 0,
+    "unknown": 1,
+    "unsupported": 1
+  },
+  "dry_run": true,
+  "follow_up_disposition": [
+    {
+      "rationale": "Memory write authority remains unclear in the example refresh.",
+      "source_id": "unknown-codex-memory-write-authority",
+      "title": "[high] Refresh Codex unknown-codex-memory-write-authority unknown"
+    }
+  ],
+  "plan_path": "scratch/update-plan.json",
+  "profile_files_changed": [
+    "docs/harness-capabilities/vanilla/codex.toml"
+  ],
+  "result": "audited",
+  "schema": "harness_capability_profiles.refresh_audit.v1",
+  "schema_pressure": [
+    {
+      "disposition": "known",
+      "id": "SP-001"
+    }
+  ],
+  "scout_report_path": "scratch/scout-report.json",
+  "scratch_evidence_disposition": "Raw fetched pages and temporary notes stay instance-scoped scratch unless promoted through audit.",
+  "selected_rigor_deviations": [
+    "passive source review only"
+  ],
+  "sources_checked": [
+    "source-codex-release"
+  ],
+  "validation_commands": [
+    "python3.14 tools/harness_capability_profiles.py validate --json",
+    "python3.14 tools/validate_armory_integrity.py --json",
+    "git diff --check"
+  ],
+  "validation_results": "Example only; run validation commands after apply and project results into PR closeout."
+}

@@ -232,6 +232,33 @@ mechanics, audit formatting, fixture checks, and machine-readable study plan or
 report validation.
 _Avoid_: agent-guided judgment, source interpretation, open-ended research
 
+**Manual Refresh Scout Report**:
+A normalized, noncanonical refresh artifact that records curated source
+evidence, fallback evidence, local observations, selected study reports,
+evidence notes, hypotheses, unknowns, effect classification, and scratch
+disposition for one harness.
+_Avoid_: canonical profile mutation, raw cache dump
+
+**Manual Refresh Analysis Report**:
+A normalized, noncanonical refresh artifact that compares a Manual Refresh
+Scout Report with current Vanilla Harness Capability Profiles, prior evidence
+basis, schema pressure, version deltas, similar claims, and Capability Claim
+Triage.
+_Avoid_: mutation plan, profile rewrite
+
+**Manual Refresh Update Plan**:
+A reviewable refresh artifact that records explicit canonical profile or schema
+mutations, precondition hashes, planned content hashes, validation commands,
+evidence promotions, and follow-up issue candidates.
+_Avoid_: scout cache, implicit profile edit
+
+**Manual Refresh Audit Summary**:
+A refresh closeout artifact that records checked sources, changed profile
+files, claim dispositions, schema pressure, selected-rigor deviations, scratch
+evidence disposition, validation commands or results, and follow-up
+disposition.
+_Avoid_: raw transcript, hidden local cache
+
 **Capability Profiling Protocol**:
 A generic meta-protocol that generates a study protocol for a selected
 Capability Surface target by considering target type, desired rigor, available
