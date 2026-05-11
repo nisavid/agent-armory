@@ -56,6 +56,10 @@ GitHub Issues are the preferred active tracker for follow-up work. Use a local
 follow-up capture only when a durable repo note is needed before issue
 projection is available or appropriate.
 
+Place fallback captures under `docs/follow-ups/<short-slug>.md`. Recreate that
+directory only for unprojected fallback captures; do not use it as a parallel
+tracker after GitHub Issues carry the active work.
+
 Each follow-up capture should include:
 
 - `Status: Follow-Up Capture`
