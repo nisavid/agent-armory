@@ -68,9 +68,9 @@ projection.
 
 ## Issue projection
 
-Issue projection is maintained in GitHub issue #4 and child issues #42 through
-#49. The issue #49 closeout reconciliation records that the pre-Config manual
-profile surface is complete, Agent Equipment Config can resume against current
-profiles, and periodic refresh integration remains deferred until Agent
-Equipment Config and Periodic Actions provide the required configuration and
-scheduled-action surfaces.
+Issue projection is maintained in GitHub issue #4 and child issues #42 through #49.
+The issue #49 closeout reconciliation records that the pre-Config manual profile
+surface is complete, Agent Equipment Config can resume against current profiles,
+and periodic refresh integration remains deferred until Agent Equipment Config
+and Periodic Actions provide the required configuration and scheduled-action
+surfaces.

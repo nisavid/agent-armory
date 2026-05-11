@@ -4,9 +4,9 @@ Status: Closeout Evidence
 
 ## Scope
 
-This closeout covers issue #49 for the Harness Capability Profiles epic, issue
-#4. The pre-Config scope is the manual, source-backed capability-profile
-system: Armory and Forge validation boundaries, per-harness profile migration,
+This closeout covers issue #49 for the Harness Capability Profiles epic, issue #4.
+The pre-Config scope is the manual, source-backed capability-profile system:
+Armory and Forge validation boundaries, per-harness profile migration,
 schema-pressure research, six refreshed Vanilla Harness Capability Profiles,
 the Capability Profiling Protocol, and manual profile refresh workflow.
 
