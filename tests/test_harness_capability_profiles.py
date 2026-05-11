@@ -375,6 +375,941 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             timeout=30,
         )
 
+    def write_refresh_scout_input(self, root: Path, *, effect: str = "passive_scanning") -> Path:
+        scratch = root / "scratch"
+        scratch.mkdir(exist_ok=True)
+        input_path = scratch / "codex-refresh-scout-input.json"
+        input_path.write_text(
+            json.dumps(
+                {
+                    "schema": "harness_capability_profiles.refresh_scout_input.v1",
+                    "harness_id": "codex",
+                    "checked_at": "2026-05-11T10:00:00-04:00",
+                    "effects": [
+                        {
+                            "effect": effect,
+                            "classification_ref": "" if effect != "passive_scanning" else "passive-source-review",
+                            "approval_ref": "" if effect != "passive_scanning" else "not-required",
+                        }
+                    ],
+                    "sources": [
+                        {
+                            "id": "source-codex-release",
+                            "kind": "first_party_source",
+                            "url": "https://github.com/openai/codex/releases/tag/rust-v0.131.0",
+                            "observed_version": "0.131.0",
+                            "summary": "Fixture Codex release evidence.",
+                            "claim_refs": ["claim-codex-lifecycle_reload_update"],
+                        },
+                        {
+                            "id": "source-codex-fallback",
+                            "kind": "fallback_source",
+                            "url": "https://example.com/codex/fallback",
+                            "summary": "Fixture fallback metadata.",
+                            "claim_refs": ["claim-codex-runtime_modes"],
+                        },
+                    ],
+                    "local_observations": [
+                        {
+                            "id": "local-codex-version",
+                            "summary": "Fixture local CLI observation.",
+                            "claim_refs": ["claim-codex-runtime_modes"],
+                        }
+                    ],
+                    "study_reports": [
+                        {
+                            "id": "study-codex-skills",
+                            "path": "examples/capability-profiling-protocol/vanilla-codex-skill-study-report.toml",
+                            "summary": "Selected fixture study report.",
+                            "selected": True,
+                            "rigor_deviation": "passive source review only",
+                        }
+                    ],
+                    "evidence_notes": [
+                        {
+                            "id": "note-codex-release",
+                            "summary": "Curated durable release note.",
+                            "durability": "curated_durable_evidence",
+                        }
+                    ],
+                    "hypotheses": [
+                        {
+                            "id": "hypothesis-codex-hook-reload",
+                            "summary": "Hook reload behavior may have changed.",
+                            "claim_refs": ["claim-codex-hooks_events"],
+                        }
+                    ],
+                    "unknowns": [
+                        {
+                            "id": "unknown-codex-memory-write-authority",
+                            "summary": "Memory write authority remains unclear.",
+                            "claim_refs": ["claim-codex-memory_context_retrieval"],
+                            "follow_up": True,
+                        }
+                    ],
+                    "scratch_disposition": "raw fetched pages are instance-scoped scratch and are not promoted",
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        return input_path
+
+    def write_codex_profile_replacement(self, root: Path) -> Path:
+        scratch = root / "scratch"
+        scratch.mkdir(exist_ok=True)
+        source = root / "docs/harness-capabilities/vanilla/codex.toml"
+        replacement = scratch / "codex-planned.toml"
+        text = source.read_text(encoding="utf-8")
+        current_refresh_notes = 'refresh_notes = "Refresh from GitHub releases first, then first-party OpenAI Codex docs. Keep app, CLI, plugin, hook, and automation surfaces distinct."'
+        planned_refresh_notes = 'refresh_notes = "Manual refresh fixture preserves source-backed Codex evidence and records a reviewable refresh-note mutation."'
+        self.assertEqual(text.count(current_refresh_notes), 1)
+        text = text.replace(current_refresh_notes, planned_refresh_notes, 1)
+        replacement.write_text(text, encoding="utf-8")
+        return replacement
+
+    def prepare_refresh_artifacts(self, root: Path) -> tuple[Path, Path, Path, Path, Path]:
+        scout_input = self.write_refresh_scout_input(root)
+        scout_report = root / "scratch/scout-report.json"
+        analysis_report = root / "scratch/analysis-report.json"
+        plan_path = root / "scratch/update-plan.json"
+        replacement = self.write_codex_profile_replacement(root)
+
+        scout = self.run_manager(root, "scout", "--input", str(scout_input), "--write-output", str(scout_report), "--json")
+        self.assertEqual(scout.returncode, 0, scout.stderr)
+        analyze = self.run_manager(root, "analyze", "--scout-report", str(scout_report), "--write-output", str(analysis_report), "--json")
+        self.assertEqual(analyze.returncode, 0, analyze.stderr)
+        plan = self.run_manager(
+            root,
+            "plan",
+            "--analysis-report",
+            str(analysis_report),
+            "--profile-replacement",
+            f"codex:{replacement}",
+            "--write-output",
+            str(plan_path),
+            "--json",
+        )
+        self.assertEqual(plan.returncode, 0, plan.stderr)
+        return scout_input, scout_report, analysis_report, plan_path, replacement
+
+    def test_manual_refresh_scout_analyze_plan_diff_and_audit_json_contract(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            before = (root / "docs/harness-capabilities/vanilla/codex.toml").read_text(encoding="utf-8")
+
+            scout_input, scout_report, analysis_report, plan_path, _replacement = self.prepare_refresh_artifacts(root)
+
+            after = (root / "docs/harness-capabilities/vanilla/codex.toml").read_text(encoding="utf-8")
+            self.assertEqual(after, before)
+
+            scout_payload = json.loads(scout_report.read_text(encoding="utf-8"))
+            self.assertEqual(scout_payload["schema"], "harness_capability_profiles.refresh_scout_report.v1")
+            self.assertEqual(scout_payload["harness_id"], "codex")
+            self.assertTrue(scout_payload["dry_run"])
+            self.assertEqual(scout_payload["evidence_counts"]["first_party_source"], 1)
+            self.assertEqual(scout_payload["evidence_counts"]["fallback_source"], 1)
+            self.assertTrue(scout_payload["durable_evidence_candidates"])
+
+            analysis_payload = json.loads(analysis_report.read_text(encoding="utf-8"))
+            self.assertEqual(analysis_payload["schema"], "harness_capability_profiles.refresh_analysis_report.v1")
+            self.assertEqual(analysis_payload["version_delta"]["disposition"], "changed")
+            self.assertTrue(any(item["triage"] == "deeper_review" for item in analysis_payload["claim_triage"]))
+            self.assertTrue(analysis_payload["follow_up_issue_candidates"])
+            self.assertTrue(analysis_payload["schema_pressure"])
+
+            plan_payload = json.loads(plan_path.read_text(encoding="utf-8"))
+            self.assertEqual(plan_payload["schema"], "harness_capability_profiles.refresh_update_plan.v1")
+            self.assertEqual(plan_payload["result"], "planned")
+            self.assertEqual(plan_payload["mutations"][0]["path"], "docs/harness-capabilities/vanilla/codex.toml")
+            self.assertEqual(plan_payload["mutations"][0]["claim_change_summary"]["changed"], 0)
+            self.assertIn("python3.14 tools/harness_capability_profiles.py validate --json", plan_payload["validation_commands"])
+
+            diff = self.run_manager(root, "diff", "--plan", str(plan_path), "--json")
+            self.assertEqual(diff.returncode, 0, diff.stderr)
+            diff_payload = json.loads(diff.stdout)
+            self.assertEqual(diff_payload["schema"], "harness_capability_profiles.refresh_diff.v1")
+            self.assertIn("Manual refresh fixture", diff_payload["diffs"][0]["unified_diff"])
+
+            apply = self.run_manager(
+                root,
+                "apply",
+                "--plan",
+                str(plan_path),
+                "--allow-effect",
+                "profile_mutation",
+                "--security-ref",
+                "specs/vanilla-harness-capability-profiles/security-control-classification.md#profile-mutation",
+                "--approval-ref",
+                "issue-48-fixture-approval",
+                "--json",
+            )
+            self.assertEqual(apply.returncode, 0, apply.stderr)
+            apply_result = root / "scratch/apply-result.json"
+            apply_result.write_text(apply.stdout, encoding="utf-8")
+            validate = self.run_manager(root, "validate", "--json")
+            self.assertEqual(validate.returncode, 0, validate.stderr)
+            validation_result = root / "scratch/manager-validation.json"
+            validation_result.write_text(validate.stdout, encoding="utf-8")
+            integrity_validation_result = root / "scratch/integrity-validation.json"
+            integrity_validation_result.write_text(
+                json.dumps(
+                    {
+                        "schema": "armory_integrity.validation_result.v1",
+                        "results": [{"name": "fixture", "ok": True, "detail": "passed", "path": "."}],
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            audit = self.run_manager(
+                root,
+                "audit",
+                "--scout-report",
+                str(scout_report),
+                "--analysis-report",
+                str(analysis_report),
+                "--plan",
+                str(plan_path),
+                "--apply-result",
+                str(apply_result),
+                "--validation-result",
+                str(validation_result),
+                "--validation-result",
+                str(integrity_validation_result),
+                "--json",
+            )
+            self.assertEqual(audit.returncode, 0, audit.stderr)
+            audit_payload = json.loads(audit.stdout)
+            self.assertEqual(audit_payload["schema"], "harness_capability_profiles.refresh_audit.v1")
+            self.assertIn("source-codex-release", audit_payload["sources_checked"])
+            self.assertEqual(audit_payload["profile_files_planned"], ["docs/harness-capabilities/vanilla/codex.toml"])
+            self.assertEqual(audit_payload["profile_files_changed"], ["docs/harness-capabilities/vanilla/codex.toml"])
+            self.assertEqual(
+                audit_payload["claim_change_summary"],
+                {
+                    "accepted_reuse": 0,
+                    "added": 0,
+                    "changed": 0,
+                    "not_applicable": 0,
+                    "retired": 0,
+                    "unknown": 0,
+                    "unsupported": 0,
+                },
+            )
+            self.assertTrue(audit_payload["claim_triage_summary"])
+            self.assertEqual(audit_payload["validation_results"][0]["result"], "passed")
+            self.assertEqual(audit_payload["validation_results"][1]["schema"], "armory_integrity.validation_result.v1")
+            self.assertEqual(audit_payload["validation_results"][1]["result"], "passed")
+            self.assertEqual(audit_payload["scratch_evidence_disposition"], scout_payload["scratch_disposition"])
+            self.assertTrue(audit_payload["selected_rigor_deviations"])
+
+            self.assertIn("Manual refresh fixture", (root / "docs/harness-capabilities/vanilla/codex.toml").read_text(encoding="utf-8"))
+            self.assertTrue(scout_input.is_file())
+
+    def test_manual_refresh_diff_rejects_mutation_paths_outside_refresh_scope(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            _scout_input, _scout_report, _analysis_report, plan_path, _replacement = self.prepare_refresh_artifacts(root)
+            plan = json.loads(plan_path.read_text(encoding="utf-8"))
+            plan["mutations"][0]["path"] = "CONTEXT.md"
+            plan_path.write_text(json.dumps(plan, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+            diff = self.run_manager(root, "diff", "--plan", str(plan_path), "--json")
+
+            self.assertNotEqual(diff.returncode, 0)
+            self.assertIn("mutation path not allowed", json.loads(diff.stdout)["error"])
+
+    def test_manual_refresh_effect_gates_block_unapproved_scout_and_apply(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            scout_input = self.write_refresh_scout_input(root, effect="external_network_access")
+            blocked_scout = self.run_manager(root, "scout", "--input", str(scout_input), "--json")
+            self.assertNotEqual(blocked_scout.returncode, 0)
+            self.assertIn("approval required for effects", json.loads(blocked_scout.stdout)["error"])
+
+            scout_report = root / "scratch/scout-report.json"
+            allowed_scout = self.run_manager(
+                root,
+                "scout",
+                "--input",
+                str(scout_input),
+                "--allow-effect",
+                "external_network_access",
+                "--security-ref",
+                "specs/vanilla-harness-capability-profiles/security-control-classification.md#network-scouting",
+                "--approval-ref",
+                "issue-48-fixture-approval",
+                "--write-output",
+                str(scout_report),
+                "--json",
+            )
+            self.assertEqual(allowed_scout.returncode, 0, allowed_scout.stderr)
+
+            _scout_input, _scout_report, _analysis_report, plan_path, _replacement = self.prepare_refresh_artifacts(root)
+            blocked_apply = self.run_manager(root, "apply", "--plan", str(plan_path), "--json")
+            self.assertNotEqual(blocked_apply.returncode, 0)
+            self.assertIn("profile_mutation", json.loads(blocked_apply.stdout)["error"])
+
+    def test_manual_refresh_effect_refs_treat_null_as_unapproved(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            scout_input = self.write_refresh_scout_input(root, effect="external_network_access")
+            payload = json.loads(scout_input.read_text(encoding="utf-8"))
+            payload["effects"][0]["classification_ref"] = None
+            payload["effects"][0]["approval_ref"] = None
+            scout_input.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+            blocked = self.run_manager(root, "scout", "--input", str(scout_input), "--json")
+
+            self.assertNotEqual(blocked.returncode, 0)
+            self.assertIn("approval required for effects", json.loads(blocked.stdout)["error"])
+
+    def test_manual_refresh_requires_explicit_effects_for_effectful_scout_evidence(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            scout_input = self.write_refresh_scout_input(root)
+            payload = json.loads(scout_input.read_text(encoding="utf-8"))
+            payload.pop("effects")
+            scout_input.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+            blocked = self.run_manager(root, "scout", "--input", str(scout_input), "--json")
+
+            self.assertNotEqual(blocked.returncode, 0)
+            self.assertIn("effects must be explicit", json.loads(blocked.stdout)["error"])
+
+            payload["effects"] = []
+            scout_input.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            empty_effects = self.run_manager(root, "scout", "--input", str(scout_input), "--json")
+
+            self.assertNotEqual(empty_effects.returncode, 0)
+            self.assertIn("effects must be explicit", json.loads(empty_effects.stdout)["error"])
+
+    def test_manual_refresh_scout_rejects_malformed_claim_refs(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            scout_input = self.write_refresh_scout_input(root)
+            payload = json.loads(scout_input.read_text(encoding="utf-8"))
+            payload["sources"][0]["claim_refs"] = "claim-codex-lifecycle_reload_update"
+            scout_input.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+            blocked = self.run_manager(root, "scout", "--input", str(scout_input), "--json")
+
+            self.assertNotEqual(blocked.returncode, 0)
+            self.assertIn("sources[0].claim_refs must be a list", json.loads(blocked.stdout)["error"])
+
+            payload["sources"][0]["claim_refs"] = ["claim-codex-lifecycle_reload_update", ""]
+            scout_input.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            blank_ref = self.run_manager(root, "scout", "--input", str(scout_input), "--json")
+
+            self.assertNotEqual(blank_ref.returncode, 0)
+            self.assertIn("sources[0].claim_refs[1] must be a non-empty string", json.loads(blank_ref.stdout)["error"])
+
+    def test_manual_refresh_analyze_rejects_malformed_scout_claim_records(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            scout_input = self.write_refresh_scout_input(root)
+            scout_report = root / "scratch/scout-report.json"
+            analysis_report = root / "scratch/analysis-report.json"
+
+            scout = self.run_manager(root, "scout", "--input", str(scout_input), "--write-output", str(scout_report), "--json")
+            self.assertEqual(scout.returncode, 0, scout.stderr)
+            payload = json.loads(scout_report.read_text(encoding="utf-8"))
+            payload["sources"] = ["not-an-object"]
+            scout_report.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+            blocked = self.run_manager(root, "analyze", "--scout-report", str(scout_report), "--write-output", str(analysis_report), "--json")
+
+            self.assertNotEqual(blocked.returncode, 0)
+            self.assertIn("sources[0] must be an object", json.loads(blocked.stdout)["error"])
+
+            payload["sources"] = "not-a-list"
+            scout_report.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            blocked_sources = self.run_manager(root, "analyze", "--scout-report", str(scout_report), "--write-output", str(analysis_report), "--json")
+
+            self.assertNotEqual(blocked_sources.returncode, 0)
+            self.assertIn("sources must be a list", json.loads(blocked_sources.stdout)["error"])
+
+    def test_manual_refresh_analyze_compares_version_tokens_without_prefix_substrings(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            scout_input = self.write_refresh_scout_input(root)
+            payload = json.loads(scout_input.read_text(encoding="utf-8"))
+            profile_path = root / "docs/harness-capabilities/vanilla/codex.toml"
+            profile_path.write_text(
+                profile_path.read_text(encoding="utf-8").replace(
+                    'checked_version = "0.128.0 stable"',
+                    'checked_version = "0.130.0 (rust-v0.130.0)"',
+                    1,
+                ),
+                encoding="utf-8",
+            )
+            scout_report = root / "scratch/scout-report.json"
+            analysis_report = root / "scratch/analysis-report.json"
+
+            payload["sources"][0]["observed_version"] = "rust-v0.130.0"
+            scout_input.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            scout = self.run_manager(root, "scout", "--input", str(scout_input), "--write-output", str(scout_report), "--json")
+            self.assertEqual(scout.returncode, 0, scout.stderr)
+            analyze = self.run_manager(root, "analyze", "--scout-report", str(scout_report), "--write-output", str(analysis_report), "--json")
+            self.assertEqual(analyze.returncode, 0, analyze.stderr)
+            self.assertEqual(json.loads(analysis_report.read_text(encoding="utf-8"))["version_delta"]["disposition"], "unchanged")
+
+            payload["sources"][0]["observed_version"] = "0.13.0"
+            scout_input.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            scout = self.run_manager(root, "scout", "--input", str(scout_input), "--write-output", str(scout_report), "--json")
+            self.assertEqual(scout.returncode, 0, scout.stderr)
+            analyze = self.run_manager(root, "analyze", "--scout-report", str(scout_report), "--write-output", str(analysis_report), "--json")
+            self.assertEqual(analyze.returncode, 0, analyze.stderr)
+            self.assertEqual(json.loads(analysis_report.read_text(encoding="utf-8"))["version_delta"]["disposition"], "changed")
+
+    def test_manual_refresh_absolute_paths_preserve_symlink_detection(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            scout_input = self.write_refresh_scout_input(root)
+            link = root / "scratch-link"
+            link.symlink_to(root / "scratch", target_is_directory=True)
+
+            blocked = self.run_manager(root, "scout", "--input", str(link / scout_input.name), "--json")
+
+            self.assertNotEqual(blocked.returncode, 0)
+            self.assertIn("path contains symlink", json.loads(blocked.stdout)["error"])
+
+    def test_manual_refresh_write_outputs_cannot_overwrite_canonical_profiles(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            scout_input = self.write_refresh_scout_input(root)
+            target = root / "docs/harness-capabilities/vanilla/codex.toml"
+            before = target.read_text(encoding="utf-8")
+
+            blocked = self.run_manager(
+                root,
+                "scout",
+                "--input",
+                str(scout_input),
+                "--write-output",
+                str(target),
+                "--json",
+            )
+
+            self.assertNotEqual(blocked.returncode, 0)
+            self.assertIn("refresh output may not overwrite canonical profile or schema paths", json.loads(blocked.stdout)["error"])
+            self.assertEqual(target.read_text(encoding="utf-8"), before)
+
+    def test_manual_refresh_write_output_guard_does_not_create_blocked_parent_directories(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            scout_input = self.write_refresh_scout_input(root)
+            blocked_parent = root / "docs/harness-capabilities/vanilla/newsubdir"
+            target = blocked_parent / "report.json"
+
+            blocked = self.run_manager(
+                root,
+                "scout",
+                "--input",
+                str(scout_input),
+                "--write-output",
+                str(target),
+                "--json",
+            )
+
+            self.assertNotEqual(blocked.returncode, 0)
+            self.assertIn("refresh output may not overwrite canonical profile or schema paths", json.loads(blocked.stdout)["error"])
+            self.assertFalse(blocked_parent.exists())
+
+    def test_manual_refresh_write_outputs_must_be_json_artifacts(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            scout_input = self.write_refresh_scout_input(root)
+            target = root / "scratch/scout-report.md"
+
+            blocked = self.run_manager(
+                root,
+                "scout",
+                "--input",
+                str(scout_input),
+                "--write-output",
+                str(target),
+                "--json",
+            )
+
+            self.assertNotEqual(blocked.returncode, 0)
+            self.assertIn("refresh output path must end in .json", json.loads(blocked.stdout)["error"])
+
+    def test_manual_refresh_plan_rejects_replacement_for_different_harness(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            scout_input = self.write_refresh_scout_input(root)
+            scout_report = root / "scratch/scout-report.json"
+            analysis_report = root / "scratch/analysis-report.json"
+            scout = self.run_manager(root, "scout", "--input", str(scout_input), "--write-output", str(scout_report), "--json")
+            self.assertEqual(scout.returncode, 0, scout.stderr)
+            analyze = self.run_manager(root, "analyze", "--scout-report", str(scout_report), "--write-output", str(analysis_report), "--json")
+            self.assertEqual(analyze.returncode, 0, analyze.stderr)
+
+            mismatch = self.run_manager(
+                root,
+                "plan",
+                "--analysis-report",
+                str(analysis_report),
+                "--profile-replacement",
+                "claude_code:docs/harness-capabilities/vanilla/claude_code.toml",
+                "--json",
+            )
+
+            self.assertNotEqual(mismatch.returncode, 0)
+            self.assertIn("must match analysis report harness_id", json.loads(mismatch.stdout)["error"])
+
+    def test_manual_refresh_plan_rejects_duplicate_profile_replacements(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            _scout_input, _scout_report, analysis_report, _plan_path, replacement = self.prepare_refresh_artifacts(root)
+
+            duplicate = self.run_manager(
+                root,
+                "plan",
+                "--analysis-report",
+                str(analysis_report),
+                "--profile-replacement",
+                f"codex:{replacement}",
+                "--profile-replacement",
+                f"codex:{replacement}",
+                "--json",
+            )
+
+            self.assertNotEqual(duplicate.returncode, 0)
+            self.assertIn("duplicate mutation for path", json.loads(duplicate.stdout)["error"])
+
+    def test_manual_refresh_plan_rejects_invalid_replacement_toml_with_manager_error(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            scout_input = self.write_refresh_scout_input(root)
+            scout_report = root / "scratch/scout-report.json"
+            analysis_report = root / "scratch/analysis-report.json"
+            replacement = root / "scratch/broken-replacement.toml"
+            replacement.write_text("[[claim]\nid = \"missing-close-quote\n", encoding="utf-8")
+            scout = self.run_manager(root, "scout", "--input", str(scout_input), "--write-output", str(scout_report), "--json")
+            self.assertEqual(scout.returncode, 0, scout.stderr)
+            analyze = self.run_manager(root, "analyze", "--scout-report", str(scout_report), "--write-output", str(analysis_report), "--json")
+            self.assertEqual(analyze.returncode, 0, analyze.stderr)
+
+            invalid = self.run_manager(
+                root,
+                "plan",
+                "--analysis-report",
+                str(analysis_report),
+                "--profile-replacement",
+                f"codex:{replacement}",
+                "--json",
+            )
+
+            self.assertNotEqual(invalid.returncode, 0)
+            self.assertIn("scratch/broken-replacement.toml: TOML invalid", json.loads(invalid.stdout)["error"])
+
+    def test_manual_refresh_audit_rejects_cross_report_harness_mismatch(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            _scout_input, scout_report, analysis_report, plan_path, _replacement = self.prepare_refresh_artifacts(root)
+            analysis = json.loads(analysis_report.read_text(encoding="utf-8"))
+            analysis["harness_id"] = "cursor"
+            analysis_report.write_text(json.dumps(analysis, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+            audit = self.run_manager(
+                root,
+                "audit",
+                "--scout-report",
+                str(scout_report),
+                "--analysis-report",
+                str(analysis_report),
+                "--plan",
+                str(plan_path),
+                "--json",
+            )
+
+            self.assertNotEqual(audit.returncode, 0)
+            self.assertIn("refresh audit artifacts must share harness_id", json.loads(audit.stdout)["error"])
+
+    def test_manual_refresh_audit_requires_apply_and_passing_validation_for_mutations(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            _scout_input, scout_report, analysis_report, plan_path, _replacement = self.prepare_refresh_artifacts(root)
+
+            without_apply = self.run_manager(
+                root,
+                "audit",
+                "--scout-report",
+                str(scout_report),
+                "--analysis-report",
+                str(analysis_report),
+                "--plan",
+                str(plan_path),
+                "--json",
+            )
+            self.assertNotEqual(without_apply.returncode, 0)
+            self.assertIn("requires apply result", json.loads(without_apply.stdout)["error"])
+
+            apply = self.run_manager(
+                root,
+                "apply",
+                "--plan",
+                str(plan_path),
+                "--allow-effect",
+                "profile_mutation",
+                "--security-ref",
+                "specs/vanilla-harness-capability-profiles/security-control-classification.md#profile-mutation",
+                "--approval-ref",
+                "issue-48-fixture-approval",
+                "--json",
+            )
+            self.assertEqual(apply.returncode, 0, apply.stderr)
+            apply_result = root / "scratch/apply-result.json"
+            apply_result.write_text(apply.stdout, encoding="utf-8")
+
+            without_validation = self.run_manager(
+                root,
+                "audit",
+                "--scout-report",
+                str(scout_report),
+                "--analysis-report",
+                str(analysis_report),
+                "--plan",
+                str(plan_path),
+                "--apply-result",
+                str(apply_result),
+                "--json",
+            )
+            self.assertNotEqual(without_validation.returncode, 0)
+            self.assertIn("requires validation results", json.loads(without_validation.stdout)["error"])
+
+            failed_validation = root / "scratch/failed-validation.json"
+            failed_validation.write_text(
+                json.dumps(
+                    {
+                        "schema": "harness_capability_profiles.validation_result.v1",
+                        "result": "failed",
+                        "results": [{"name": "fixture", "ok": False, "detail": "failed", "path": "."}],
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            failed_audit = self.run_manager(
+                root,
+                "audit",
+                "--scout-report",
+                str(scout_report),
+                "--analysis-report",
+                str(analysis_report),
+                "--plan",
+                str(plan_path),
+                "--apply-result",
+                str(apply_result),
+                "--validation-result",
+                str(failed_validation),
+                "--json",
+            )
+            self.assertNotEqual(failed_audit.returncode, 0)
+            self.assertIn("validation result did not pass", json.loads(failed_audit.stdout)["error"])
+
+            spoofed_validation = root / "scratch/spoofed-validation.json"
+            spoofed_validation.write_text(
+                json.dumps({"result": "passed"}, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            spoofed_audit = self.run_manager(
+                root,
+                "audit",
+                "--scout-report",
+                str(scout_report),
+                "--analysis-report",
+                str(analysis_report),
+                "--plan",
+                str(plan_path),
+                "--apply-result",
+                str(apply_result),
+                "--validation-result",
+                str(spoofed_validation),
+                "--json",
+            )
+            self.assertNotEqual(spoofed_audit.returncode, 0)
+            self.assertIn("validation result did not pass", json.loads(spoofed_audit.stdout)["error"])
+
+            integrity_only_validation = root / "scratch/integrity-only-validation.json"
+            integrity_only_validation.write_text(
+                json.dumps(
+                    {
+                        "schema": "armory_integrity.validation_result.v1",
+                        "result": "passed",
+                        "results": [{"name": "fixture", "ok": True, "detail": "passed", "path": "."}],
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            integrity_only_audit = self.run_manager(
+                root,
+                "audit",
+                "--scout-report",
+                str(scout_report),
+                "--analysis-report",
+                str(analysis_report),
+                "--plan",
+                str(plan_path),
+                "--apply-result",
+                str(apply_result),
+                "--validation-result",
+                str(integrity_only_validation),
+                "--json",
+            )
+            self.assertNotEqual(integrity_only_audit.returncode, 0)
+            self.assertIn("requires Manager Core validation result", json.loads(integrity_only_audit.stdout)["error"])
+
+    def test_manual_refresh_audit_rejects_apply_writes_for_no_mutation_plan(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            _scout_input, scout_report, analysis_report, plan_path, _replacement = self.prepare_refresh_artifacts(root)
+            plan = json.loads(plan_path.read_text(encoding="utf-8"))
+            plan["mutations"] = []
+            plan["effect_requirements"] = []
+            plan_path.write_text(json.dumps(plan, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            apply_result = root / "scratch/apply-result.json"
+            apply_result.write_text(
+                json.dumps(
+                    {
+                        "schema": "harness_capability_profiles.refresh_apply.v1",
+                        "result": "applied",
+                        "dry_run": False,
+                        "plan_path": "scratch/update-plan.json",
+                        "effects": [],
+                        "writes": ["docs/harness-capabilities/vanilla/codex.toml"],
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            audit = self.run_manager(
+                root,
+                "audit",
+                "--scout-report",
+                str(scout_report),
+                "--analysis-report",
+                str(analysis_report),
+                "--plan",
+                str(plan_path),
+                "--apply-result",
+                str(apply_result),
+                "--json",
+            )
+
+            self.assertNotEqual(audit.returncode, 0)
+            self.assertIn("apply result writes must match plan mutations", json.loads(audit.stdout)["error"])
+
+    def test_manual_refresh_plan_rejects_duplicate_mutation_paths(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            _scout_input, _scout_report, _analysis_report, plan_path, _replacement = self.prepare_refresh_artifacts(root)
+            plan = json.loads(plan_path.read_text(encoding="utf-8"))
+            duplicate_mutation = dict(plan["mutations"][0])
+            duplicate_mutation["path"] = "./docs/harness-capabilities/vanilla/codex.toml"
+            plan["mutations"].append(duplicate_mutation)
+            plan_path.write_text(json.dumps(plan, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+            blocked = self.run_manager(root, "diff", "--plan", str(plan_path), "--json")
+
+            self.assertNotEqual(blocked.returncode, 0)
+            self.assertIn("duplicate mutation for path", json.loads(blocked.stdout)["error"])
+
+    def test_manual_refresh_apply_refuses_stale_plan_and_explicit_apply_writes_planned_profile_only(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            _scout_input, _scout_report, _analysis_report, plan_path, _replacement = self.prepare_refresh_artifacts(root)
+            target = root / "docs/harness-capabilities/vanilla/codex.toml"
+            original = target.read_text(encoding="utf-8")
+
+            target.write_text(original.replace("Codex", "Codex stale fixture", 1), encoding="utf-8")
+            stale_apply = self.run_manager(
+                root,
+                "apply",
+                "--plan",
+                str(plan_path),
+                "--allow-effect",
+                "profile_mutation",
+                "--security-ref",
+                "specs/vanilla-harness-capability-profiles/security-control-classification.md#profile-mutation",
+                "--approval-ref",
+                "issue-48-fixture-approval",
+                "--json",
+            )
+            self.assertNotEqual(stale_apply.returncode, 0)
+            self.assertIn("stale plan precondition", json.loads(stale_apply.stdout)["error"])
+
+            target.write_text(original, encoding="utf-8")
+            apply = self.run_manager(
+                root,
+                "apply",
+                "--plan",
+                str(plan_path),
+                "--allow-effect",
+                "profile_mutation",
+                "--security-ref",
+                "specs/vanilla-harness-capability-profiles/security-control-classification.md#profile-mutation",
+                "--approval-ref",
+                "issue-48-fixture-approval",
+                "--json",
+            )
+            self.assertEqual(apply.returncode, 0, apply.stderr)
+            payload = json.loads(apply.stdout)
+            self.assertEqual(payload["schema"], "harness_capability_profiles.refresh_apply.v1")
+            self.assertEqual(payload["writes"], ["docs/harness-capabilities/vanilla/codex.toml"])
+            self.assertIn("Manual refresh fixture", target.read_text(encoding="utf-8"))
+
+            validate = self.run_manager(root, "validate", "--json")
+            self.assertEqual(validate.returncode, 0, validate.stderr)
+
+    def test_manual_refresh_apply_rejects_tampered_plan_content(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            _scout_input, _scout_report, _analysis_report, plan_path, _replacement = self.prepare_refresh_artifacts(root)
+            plan = json.loads(plan_path.read_text(encoding="utf-8"))
+            plan["mutations"][0]["content"] = plan["mutations"][0]["content"].replace("Codex", "Tampered Codex", 1)
+            plan_path.write_text(json.dumps(plan, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+            tampered = self.run_manager(
+                root,
+                "apply",
+                "--plan",
+                str(plan_path),
+                "--allow-effect",
+                "profile_mutation",
+                "--security-ref",
+                "specs/vanilla-harness-capability-profiles/security-control-classification.md#profile-mutation",
+                "--approval-ref",
+                "issue-48-fixture-approval",
+                "--json",
+            )
+
+            self.assertNotEqual(tampered.returncode, 0)
+            self.assertIn("planned content hash mismatch", json.loads(tampered.stdout)["error"])
+
+    def test_manual_refresh_apply_rejects_mutation_path_outside_plan_harness_scope(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            _scout_input, _scout_report, _analysis_report, plan_path, _replacement = self.prepare_refresh_artifacts(root)
+            plan = json.loads(plan_path.read_text(encoding="utf-8"))
+            plan["mutations"][0]["path"] = "docs/harness-capabilities/vanilla/claude_code.toml"
+            plan["mutations"][0]["harness_id"] = "claude_code"
+            plan_path.write_text(json.dumps(plan, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+            tampered = self.run_manager(
+                root,
+                "apply",
+                "--plan",
+                str(plan_path),
+                "--allow-effect",
+                "profile_mutation",
+                "--security-ref",
+                "specs/vanilla-harness-capability-profiles/security-control-classification.md#profile-mutation",
+                "--approval-ref",
+                "issue-48-fixture-approval",
+                "--json",
+            )
+
+            self.assertNotEqual(tampered.returncode, 0)
+            self.assertIn("mutation harness_id must match plan harness_id", json.loads(tampered.stdout)["error"])
+
+    def test_manual_refresh_apply_rejects_non_string_mutation_harness_id(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            _scout_input, _scout_report, _analysis_report, plan_path, _replacement = self.prepare_refresh_artifacts(root)
+            plan = json.loads(plan_path.read_text(encoding="utf-8"))
+            plan["mutations"][0]["harness_id"] = None
+            plan_path.write_text(json.dumps(plan, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+            tampered = self.run_manager(
+                root,
+                "apply",
+                "--plan",
+                str(plan_path),
+                "--allow-effect",
+                "profile_mutation",
+                "--security-ref",
+                "specs/vanilla-harness-capability-profiles/security-control-classification.md#profile-mutation",
+                "--approval-ref",
+                "issue-48-fixture-approval",
+                "--json",
+            )
+
+            self.assertNotEqual(tampered.returncode, 0)
+            self.assertIn("mutation harness_id must be a non-empty string", json.loads(tampered.stdout)["error"])
+
+    def test_manual_refresh_apply_requires_profile_mutation_for_tampered_effect_requirements(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            _scout_input, _scout_report, _analysis_report, plan_path, _replacement = self.prepare_refresh_artifacts(root)
+            plan = json.loads(plan_path.read_text(encoding="utf-8"))
+            plan["effect_requirements"] = []
+            plan_path.write_text(json.dumps(plan, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+            tampered = self.run_manager(root, "apply", "--plan", str(plan_path), "--json")
+
+            self.assertNotEqual(tampered.returncode, 0)
+            self.assertIn("profile_mutation", json.loads(tampered.stdout)["error"])
+
+    def test_manual_refresh_apply_requires_cli_approval_not_embedded_plan_approval(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            _scout_input, _scout_report, _analysis_report, plan_path, _replacement = self.prepare_refresh_artifacts(root)
+            plan = json.loads(plan_path.read_text(encoding="utf-8"))
+            plan["effect_requirements"] = [
+                {
+                    "effect": "profile_mutation",
+                    "classification_ref": "fake-embedded-classification",
+                    "approval_ref": "fake-embedded-approval",
+                }
+            ]
+            plan_path.write_text(json.dumps(plan, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+            tampered = self.run_manager(root, "apply", "--plan", str(plan_path), "--json")
+
+            self.assertNotEqual(tampered.returncode, 0)
+            self.assertIn("profile_mutation", json.loads(tampered.stdout)["error"])
+
     def test_repository_capability_profiling_protocol_examples_are_present_and_validated(self):
         required_paths = [
             "specs/capability-profiling-protocol/README.md",

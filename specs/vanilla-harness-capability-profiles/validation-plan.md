@@ -159,7 +159,7 @@ studies or certify inference-heavy conclusions.
 
 ## Manual refresh and study execution validation
 
-Later stories validate:
+The implemented first manual refresh story validates:
 
 - manual refresh staged commands;
 - effect gating and approval references;
@@ -169,6 +169,16 @@ Later stories validate:
 - audit output;
 - selected study execution results where live-study evidence supports profile
   claims.
+
+The deterministic checks cover the Manager Core boundary: `scout` and
+`analyze` do not mutate canonical profiles, `plan` records only explicit
+agent-authored replacement candidates with precondition hashes, `diff` renders
+reviewable planned changes, `apply` refuses stale plans, verifies planned-content
+hashes, enforces harness-scope and canonical-path restrictions, and requires
+explicit `profile_mutation` approval; `audit` summarizes source, claim,
+schema-pressure, scratch-disposition, apply, validation, and follow-up evidence.
+Agent-guided judgment remains in the workflow review artifact and the prepared
+input/replacement files, not in hidden inference inside the CLI.
 
 ## Closeout and issue projection validation
 
@@ -190,6 +200,12 @@ commands include:
 ```sh
 python3.14 -m unittest
 python3.14 tools/harness_capability_profiles.py validate --json
+python3.14 tools/harness_capability_profiles.py scout --input <scout-input.json> --json
+python3.14 tools/harness_capability_profiles.py analyze --scout-report <scout-report.json> --json
+python3.14 tools/harness_capability_profiles.py plan --analysis-report <analysis-report.json> --json
+python3.14 tools/harness_capability_profiles.py diff --plan <update-plan.json> --json
+python3.14 tools/harness_capability_profiles.py apply --plan <update-plan.json> --allow-effect profile_mutation --security-ref <ref> --approval-ref <ref> --json
+python3.14 tools/harness_capability_profiles.py audit --scout-report <scout-report.json> --analysis-report <analysis-report.json> --plan <update-plan.json> --apply-result <apply-result.json> --validation-result <validation-result.json> --json
 python3.14 tools/validate_armory_integrity.py
 git diff --check
 ```

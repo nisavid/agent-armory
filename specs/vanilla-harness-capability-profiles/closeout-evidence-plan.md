@@ -14,7 +14,10 @@ Durable closeout evidence includes:
 - selected study reports when they support material claims;
 - Capability Profiling Protocol specs, schema references, and representative
   validated examples when protocol structure affects future study evidence;
-- audit summaries for manual refresh;
+- audit summaries for manual refresh, including the apply result and passing
+  Manager Core validation result when a mutation plan is audited;
+- Manual Refresh Scout Reports, Analysis Reports, Update Plans, and Diffs when
+  they are portable review summaries rather than raw fetched cache output;
 - Forge Domain Model Review disposition;
 - issue projection records for the epic and child stories;
 - security/control classification updates;
@@ -24,7 +27,9 @@ Durable closeout evidence includes:
 
 Scratch evidence includes raw scout output, fetched page bodies, fixture logs,
 temporary local observations, live-study transcripts, local cache files, and
-temporary generated reports. Scratch evidence is summarized by scope,
+temporary generated reports. Manual refresh command outputs remain scratch
+unless they are curated into a portable review summary, audit summary, issue
+projection, or PR closeout evidence. Scratch evidence is summarized by scope,
 disposition, and durable conclusion before closeout. It is not committed unless
 explicitly promoted as portable review evidence.
 

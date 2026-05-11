@@ -24,12 +24,14 @@ output.
 
 ### Network scouting
 
-- Behavior: network reads from first-party or allowed fallback sources.
+- Behavior: network reads from first-party or allowed fallback sources,
+  followed by curated scout input captured for the Manager Core.
 - Risk: source spoofing, stale generated docs, rate limits, changed page shape,
   tracking URLs, or accidental trust in third-party metadata.
 - Controls: source-kind labeling, first-party preference, source URL and claim
-  scope recording, scratch/cache defaults, and durable evidence export only
-  through audit or curated notes.
+  scope recording, explicit `external_network_access` approval when a scout
+  result came from live network reads, scratch/cache defaults, and durable
+  evidence export only through audit or curated notes.
 
 ### Local probing
 
@@ -48,8 +50,11 @@ output.
 - Risk: unreviewed canonical claim changes, broken claim IDs, lost evidence
   links, or generated-summary drift.
 - Controls: staged `scout`, `analyze`, `plan`, `apply`, and `audit`; no
-  mutation during scout or analyze; explicit apply; audit summary; tests and
-  active repository integrity validation.
+  mutation during scout or analyze; explicit replacement candidates; plan
+  precondition hashes; reviewable `diff`; approved `profile_mutation` at
+  apply; stale-plan refusal; planned-content hash checks; harness-scope and
+  canonical-path enforcement; audit summary with Manager Core validation
+  evidence; tests and active repository integrity validation.
 
 ### Live-study effects
 
@@ -82,6 +87,14 @@ require explicit apply behavior. Network scouting and local probing do not
 write canonical profile files. Privileged operations, externally visible
 mutations, or user-harness modifications require operator approval and a study
 plan that names the permitted effects.
+
+The manual refresh command flow treats the scout input, scout report, analysis
+report, update plan, diff, and audit summary as review artifacts. The
+deterministic Manager Core validates effect approval references, profile
+replacement shape, precondition hashes, and allowed mutation paths. It does not
+decide source meaning or infer canonical profile rewrites from prose.
+Refresh-output writes are not a profile mutation path and must not overwrite
+canonical profile or schema paths.
 
 Study plans that allow active non-mutating use, local mutation, profile
 mutation, external network access, external disclosure, process execution, or

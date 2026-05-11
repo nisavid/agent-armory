@@ -9,6 +9,11 @@ pre-Config work is the
 Equipment Design Bundle; recurring refresh integration remains deferred until
 Agent Equipment Config and Periodic Actions exist.
 
+Manual profile refresh now belongs to the Harness Capability Profile Manager
+Core and its agent-guided workflow. This recurring-refresh blueprint should
+invoke that staged scout, analyze, plan, diff, apply, and audit surface later;
+it should not introduce a separate profile mutation path.
+
 This spec describes desired behavior for future Agent Equipment. It does not implement Agent Equipment, create a live scheduler, or assert that current harness facts are already refreshed.
 
 ## Purpose

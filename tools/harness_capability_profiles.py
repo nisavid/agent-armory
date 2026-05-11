@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import difflib
 import hashlib
 import json
 import re
@@ -79,6 +80,15 @@ FAMILY_KEYWORDS = {
 MIGRATION_RESULT_SCHEMA = "harness_capability_profiles.migrate_result.v1"
 SUMMARY_RESULT_SCHEMA = "harness_capability_profiles.summary_result.v1"
 VALIDATION_RESULT_SCHEMA = "harness_capability_profiles.validation_result.v1"
+ARMORY_INTEGRITY_VALIDATION_SCHEMA = "armory_integrity.validation_result.v1"
+REFRESH_SCOUT_INPUT_SCHEMA = "harness_capability_profiles.refresh_scout_input.v1"
+REFRESH_SCOUT_REPORT_SCHEMA = "harness_capability_profiles.refresh_scout_report.v1"
+REFRESH_ANALYSIS_REPORT_SCHEMA = "harness_capability_profiles.refresh_analysis_report.v1"
+REFRESH_UPDATE_PLAN_SCHEMA = "harness_capability_profiles.refresh_update_plan.v1"
+REFRESH_DIFF_SCHEMA = "harness_capability_profiles.refresh_diff.v1"
+REFRESH_APPLY_SCHEMA = "harness_capability_profiles.refresh_apply.v1"
+REFRESH_AUDIT_SCHEMA = "harness_capability_profiles.refresh_audit.v1"
+SUPPORTED_REFRESH_VALIDATION_SCHEMAS = {VALIDATION_RESULT_SCHEMA, ARMORY_INTEGRITY_VALIDATION_SCHEMA}
 VALIDATION_NAME = "Vanilla Harness Capability Profile Manager Core"
 SUMMARY_SOURCE_LIMIT = 6
 CLAIM_STATUSES = {"supported", "unsupported", "unknown", "not-applicable"}
@@ -216,6 +226,11 @@ CAPABILITY_PROTOCOL_EFFECTS = {
     "harness_runtime_state_change",
 }
 CAPABILITY_PROTOCOL_APPROVAL_EFFECTS = CAPABILITY_PROTOCOL_EFFECTS - {"passive_scanning"}
+REFRESH_SOURCE_KINDS = {"first_party_source", "fallback_source"}
+REFRESH_MUTATION_PATH_PREFIXES = (
+    "docs/harness-capabilities/vanilla/",
+    "docs/harness-capabilities/schema/",
+)
 JIG_CONTROL_DISPOSITIONS = {"claimed", "verified", "unsupported", "unknown"}
 
 
@@ -301,6 +316,59 @@ def checked_write_file(root: Path, relative: Path) -> Path:
     if path.exists() and path.is_symlink():
         raise ManagerError(f"{relative.as_posix()}: path contains symlink")
     return path
+
+
+def user_path(root: Path, raw_path: str, *, expected_kind: str | None = None, for_write: bool = False) -> tuple[Path, Path]:
+    candidate = Path(raw_path)
+    if candidate.is_absolute():
+        try:
+            root_resolved = root.resolve(strict=True)
+        except OSError as error:
+            raise ManagerError("repository root missing") from error
+        try:
+            relative = candidate.relative_to(root_resolved)
+        except ValueError as error:
+            raise ManagerError(f"{raw_path}: path escapes repository root") from error
+    else:
+        relative = candidate
+    if for_write:
+        path = checked_write_file(root, relative)
+        return path, relative
+    ok, detail, path = path_status(root, relative, expected_kind=expected_kind)
+    if not ok:
+        raise ManagerError(f"{relative.as_posix()}: {detail}")
+    return path, relative
+
+
+def load_json_file(root: Path, raw_path: str, *, expected_schema: str | None = None) -> tuple[dict[str, Any], Path, Path]:
+    path, relative = user_path(root, raw_path, expected_kind="file")
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        raise ManagerError(f"{relative.as_posix()}: JSON invalid: {error.msg}") from error
+    if not isinstance(payload, dict):
+        raise ManagerError(f"{relative.as_posix()}: JSON root must be an object")
+    if expected_schema is not None and payload.get("schema") != expected_schema:
+        raise ManagerError(f"{relative.as_posix()}: expected schema {expected_schema}")
+    return payload, path, relative
+
+
+def write_json_file(root: Path, raw_path: str | None, payload: dict[str, Any]) -> dict[str, Any] | None:
+    if raw_path is None:
+        return None
+    path, relative = user_path(root, raw_path, for_write=True)
+    if any(relative.as_posix().startswith(prefix) for prefix in REFRESH_MUTATION_PATH_PREFIXES):
+        raise ManagerError("refresh output may not overwrite canonical profile or schema paths")
+    if relative.suffix != ".json":
+        raise ManagerError("refresh output path must end in .json")
+    content = json.dumps(payload, indent=2, sort_keys=True) + "\n"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
+    return {"path": relative.as_posix(), "sha256": hashlib.sha256(content.encode("utf-8")).hexdigest()}
+
+
+def file_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def load_toml(path: Path) -> dict[str, Any]:
@@ -1972,6 +2040,734 @@ def summarize(root: Path, *, write: bool) -> dict[str, Any]:
     }
 
 
+def refresh_effect_records(payload: dict[str, Any], default_effect: str = "passive_scanning") -> list[dict[str, str]]:
+    effects = payload.get("effects")
+    effectful_evidence = bool(payload.get("local_observations") or payload.get("study_reports"))
+    if effects is None or effects == []:
+        if effectful_evidence:
+            raise ManagerError("effects must be explicit when scout input includes local observations or study reports")
+        return [{"effect": default_effect, "classification_ref": "default-passive", "approval_ref": "not-required"}]
+    if not isinstance(effects, list):
+        raise ManagerError("effects must be a list")
+    records: list[dict[str, str]] = []
+    for index, effect_record in enumerate(effects):
+        if not isinstance(effect_record, dict):
+            raise ManagerError(f"effects[{index}] must be an object")
+        effect = effect_record.get("effect")
+        if effect not in CAPABILITY_PROTOCOL_EFFECTS:
+            raise ManagerError(f"effects[{index}]: invalid effect")
+        classification_ref = effect_record.get("classification_ref", "")
+        approval_ref = effect_record.get("approval_ref", "")
+        if classification_ref is None:
+            classification_ref = ""
+        if approval_ref is None:
+            approval_ref = ""
+        if not isinstance(classification_ref, str):
+            raise ManagerError(f"effects[{index}].classification_ref must be a string")
+        if not isinstance(approval_ref, str):
+            raise ManagerError(f"effects[{index}].approval_ref must be a string")
+        records.append(
+            {
+                "effect": str(effect),
+                "classification_ref": classification_ref,
+                "approval_ref": approval_ref,
+            }
+        )
+    return records
+
+
+def require_effect_approval(
+    effects: list[dict[str, str]],
+    *,
+    allowed_effects: set[str],
+    security_ref: str,
+    approval_ref: str,
+    allow_embedded_approval: bool = True,
+) -> list[dict[str, str]]:
+    blocked: list[str] = []
+    approved_records: list[dict[str, str]] = []
+    for record in effects:
+        effect = record["effect"]
+        if effect == "passive_scanning":
+            approved_records.append(record)
+            continue
+        record_security = record.get("classification_ref", "")
+        record_approval = record.get("approval_ref", "")
+        cli_approved = effect in allowed_effects and bool(security_ref.strip()) and bool(approval_ref.strip())
+        record_approved = allow_embedded_approval and bool(record_security.strip()) and bool(record_approval.strip())
+        if cli_approved:
+            approved_records.append({"effect": effect, "classification_ref": security_ref, "approval_ref": approval_ref})
+        elif record_approved:
+            approved_records.append(record)
+        else:
+            blocked.append(effect)
+    if blocked:
+        raise ManagerError(f"approval required for effects: {', '.join(sorted(set(blocked)))}")
+    return approved_records
+
+
+def normalized_refresh_records(payload: dict[str, Any], key: str) -> list[dict[str, Any]]:
+    records = payload.get(key, [])
+    if records is None:
+        return []
+    if not isinstance(records, list):
+        raise ManagerError(f"{key} must be a list")
+    normalized: list[dict[str, Any]] = []
+    for index, record in enumerate(records):
+        if not isinstance(record, dict):
+            raise ManagerError(f"{key}[{index}] must be an object")
+        record_id = record.get("id")
+        if not non_empty_string(record_id):
+            raise ManagerError(f"{key}[{index}].id must be a non-empty string")
+        summary = record.get("summary")
+        if not non_empty_string(summary):
+            raise ManagerError(f"{key}[{index}].summary must be a non-empty string")
+        if "claim_refs" in record:
+            claim_refs = record.get("claim_refs")
+            if not isinstance(claim_refs, list):
+                raise ManagerError(f"{key}[{index}].claim_refs must be a list")
+            for claim_index, claim_ref in enumerate(claim_refs):
+                if not non_empty_string(claim_ref):
+                    raise ManagerError(f"{key}[{index}].claim_refs[{claim_index}] must be a non-empty string")
+        normalized.append(record)
+    return normalized
+
+
+def refresh_scout(
+    root: Path,
+    *,
+    input_path: str,
+    output_path: str | None,
+    allowed_effects: set[str],
+    security_ref: str,
+    approval_ref: str,
+) -> dict[str, Any]:
+    payload, _path, input_relative = load_json_file(root, input_path, expected_schema=REFRESH_SCOUT_INPUT_SCHEMA)
+    harness_id = payload.get("harness_id")
+    if harness_id not in REQUIRED_HARNESSES:
+        raise ManagerError("harness_id must name a supported harness")
+    effects = require_effect_approval(
+        refresh_effect_records(payload),
+        allowed_effects=allowed_effects,
+        security_ref=security_ref,
+        approval_ref=approval_ref,
+    )
+    sources = normalized_refresh_records(payload, "sources")
+    for index, source in enumerate(sources):
+        if source.get("kind") not in REFRESH_SOURCE_KINDS:
+            raise ManagerError(f"sources[{index}].kind must be one of {', '.join(sorted(REFRESH_SOURCE_KINDS))}")
+        if not valid_http_url(source.get("url")):
+            raise ManagerError(f"sources[{index}].url must be an http(s) URL")
+    local_observations = normalized_refresh_records(payload, "local_observations")
+    study_reports = normalized_refresh_records(payload, "study_reports")
+    for report in study_reports:
+        report_path = report.get("path")
+        if non_empty_string(report_path):
+            user_path(root, str(report_path), expected_kind="file")
+    evidence_notes = normalized_refresh_records(payload, "evidence_notes")
+    hypotheses = normalized_refresh_records(payload, "hypotheses")
+    unknowns = normalized_refresh_records(payload, "unknowns")
+    evidence_counts = {
+        "first_party_source": sum(1 for source in sources if source.get("kind") == "first_party_source"),
+        "fallback_source": sum(1 for source in sources if source.get("kind") == "fallback_source"),
+        "local_observation": len(local_observations),
+        "selected_study_report": sum(1 for report in study_reports if report.get("selected") is True),
+        "curated_evidence_note": len(evidence_notes),
+        "hypothesis": len(hypotheses),
+        "unknown": len(unknowns),
+    }
+    durable_candidates = [
+        note["id"]
+        for note in evidence_notes
+        if note.get("durability") in {"curated_durable_evidence", "durable_project_evidence"}
+    ]
+    result: dict[str, Any] = {
+        "schema": REFRESH_SCOUT_REPORT_SCHEMA,
+        "result": "scouted",
+        "dry_run": True,
+        "canonical_profile_mutation": False,
+        "input_path": input_relative.as_posix(),
+        "harness_id": harness_id,
+        "checked_at": payload.get("checked_at", ""),
+        "effects": effects,
+        "evidence_counts": evidence_counts,
+        "sources": sources,
+        "local_observations": local_observations,
+        "selected_study_reports": [report for report in study_reports if report.get("selected") is True],
+        "evidence_notes": evidence_notes,
+        "hypotheses": hypotheses,
+        "unknowns": unknowns,
+        "durable_evidence_candidates": durable_candidates,
+        "scratch_disposition": payload.get(
+            "scratch_disposition",
+            "raw scout artifacts are instance-scoped scratch unless explicitly promoted",
+        ),
+    }
+    write = write_json_file(root, output_path, result)
+    if write is not None:
+        result["writes"] = [write]
+    return result
+
+
+def claim_refs_from(records: Any, record_key: str) -> set[str]:
+    if not isinstance(records, list):
+        raise ManagerError(f"{record_key} must be a list")
+    refs: set[str] = set()
+    for index, record in enumerate(records):
+        if not isinstance(record, dict):
+            raise ManagerError(f"{record_key}[{index}] must be an object")
+        claim_refs = record.get("claim_refs", [])
+        if not isinstance(claim_refs, list):
+            raise ManagerError(f"{record_key}[{index}].claim_refs must be a list")
+        for ref_index, ref in enumerate(claim_refs):
+            if not non_empty_string(ref):
+                raise ManagerError(f"{record_key}[{index}].claim_refs[{ref_index}] must be a non-empty string")
+            refs.add(str(ref))
+    return refs
+
+
+VERSION_TOKEN_PATTERN = re.compile(r"(?<!\d)(?:[A-Za-z]+-v|v)?(?P<version>\d+(?:\.\d+)+(?:[-+][0-9A-Za-z.-]+)?)")
+
+
+def version_tokens(value: str) -> set[str]:
+    return {match.group("version") for match in VERSION_TOKEN_PATTERN.finditer(value)}
+
+
+def observed_version_changed(observed_version: str, checked_version: str) -> bool:
+    observed_tokens = version_tokens(observed_version)
+    checked_tokens = version_tokens(checked_version)
+    if observed_tokens and checked_tokens:
+        return observed_tokens.isdisjoint(checked_tokens)
+    return observed_version.strip() != checked_version.strip()
+
+
+def refresh_analyze(root: Path, *, scout_report_path: str, output_path: str | None) -> dict[str, Any]:
+    scout, _path, scout_relative = load_json_file(root, scout_report_path, expected_schema=REFRESH_SCOUT_REPORT_SCHEMA)
+    harness_id = scout.get("harness_id")
+    if harness_id not in REQUIRED_HARNESSES:
+        raise ManagerError("scout report harness_id must name a supported harness")
+    profile = load_profile(root, str(harness_id))
+    checked_version = str(profile.get("checked_version", ""))
+    observed_versions = [
+        str(source["observed_version"])
+        for source in scout.get("sources", [])
+        if isinstance(source, dict) and non_empty_string(source.get("observed_version"))
+    ]
+    changed_versions = [version for version in observed_versions if observed_version_changed(version, checked_version)]
+    version_delta = {
+        "current_profile_version": checked_version,
+        "observed_versions": observed_versions,
+        "disposition": "changed" if changed_versions else "unchanged",
+    }
+    source_claim_refs = claim_refs_from(scout.get("sources", []), "sources")
+    hypothesis_claim_refs = claim_refs_from(scout.get("hypotheses", []), "hypotheses")
+    unknown_claim_refs = claim_refs_from(scout.get("unknowns", []), "unknowns")
+    similar_by_family: dict[str, list[str]] = {}
+    for other in load_profiles(root):
+        if other.get("harness_id") == harness_id:
+            continue
+        for claim in other.get("claim", []):
+            if claim.get("status") == "supported":
+                similar_by_family.setdefault(str(claim.get("family", "")), []).append(
+                    f"{other.get('harness_id')}:{claim.get('id')}"
+                )
+    claim_triage: list[dict[str, Any]] = []
+    for claim in profile.get("claim", []):
+        claim_ref = str(claim.get("id", ""))
+        family = str(claim.get("family", ""))
+        if claim_ref in unknown_claim_refs or claim.get("status") == "unknown":
+            triage = "keep_visible"
+            rationale = "Claim remains uncertain or has explicit unknown refresh evidence."
+        elif changed_versions and (claim_ref in source_claim_refs or claim_ref in hypothesis_claim_refs):
+            triage = "deeper_review"
+            rationale = "Refresh evidence indicates a version or source delta for this claim."
+        elif changed_versions and family in {"lifecycle_reload_update", "runtime_modes", "permissions_approvals_sandboxing"}:
+            triage = "deeper_review"
+            rationale = "Version delta affects a material integration surface."
+        elif claim.get("status") in {"unsupported", "not-applicable"}:
+            triage = str(claim.get("status"))
+            rationale = "Existing explicit non-support disposition can be retained unless new evidence changes it."
+        else:
+            triage = "accept_reuse"
+            rationale = "Existing claim is well-grounded and no direct delta was reported."
+        claim_triage.append(
+            {
+                "claim_id": claim_ref,
+                "family": family,
+                "current_status": claim.get("status", ""),
+                "prior_evidence_basis": claim.get("evidence_basis", ""),
+                "triage": triage,
+                "rationale": rationale,
+                "similar_claims": similar_by_family.get(family, [])[:3],
+            }
+        )
+    schema_pressure_ids = sorted(load_schema_pressure_report_ids(root) or [])
+    follow_ups = [
+        {
+            "title": f"[high] Refresh {profile.get('display_name')} {unknown.get('id')} unknown",
+            "source_id": unknown.get("id", ""),
+            "rationale": unknown.get("summary", ""),
+        }
+        for unknown in scout.get("unknowns", [])
+        if isinstance(unknown, dict) and unknown.get("follow_up") is True
+    ]
+    result: dict[str, Any] = {
+        "schema": REFRESH_ANALYSIS_REPORT_SCHEMA,
+        "result": "analyzed",
+        "dry_run": True,
+        "canonical_profile_mutation": False,
+        "scout_report_path": scout_relative.as_posix(),
+        "harness_id": harness_id,
+        "profile_path": profile_path(str(harness_id)).as_posix(),
+        "version_delta": version_delta,
+        "claim_triage": claim_triage,
+        "schema_pressure": [{"id": item, "disposition": "known"} for item in schema_pressure_ids],
+        "follow_up_issue_candidates": follow_ups,
+        "scratch_disposition": scout.get("scratch_disposition", ""),
+    }
+    write = write_json_file(root, output_path, result)
+    if write is not None:
+        result["writes"] = [write]
+    return result
+
+
+def allowed_mutation_path(relative_path: str) -> bool:
+    return any(relative_path.startswith(prefix) for prefix in REFRESH_MUTATION_PATH_PREFIXES)
+
+
+def refresh_plan_harness_id(plan: dict[str, Any]) -> str:
+    harness_id = plan.get("harness_id")
+    if harness_id not in REQUIRED_HARNESSES:
+        raise ManagerError("plan harness_id must name a supported harness")
+    return str(harness_id)
+
+
+def refresh_plan_mutations(plan: dict[str, Any]) -> list[dict[str, Any]]:
+    raw_mutations = plan.get("mutations", [])
+    if not isinstance(raw_mutations, list):
+        raise ManagerError("plan mutations must be a list")
+    mutations: list[dict[str, Any]] = []
+    seen_paths: set[str] = set()
+    for mutation in raw_mutations:
+        if not isinstance(mutation, dict) or mutation.get("type") != "replace_file":
+            raise ManagerError("plan contains unsupported mutation")
+        raw_path = mutation.get("path")
+        if not non_empty_string(raw_path):
+            raise ManagerError("mutation missing path")
+        path = Path(str(raw_path)).as_posix()
+        if path in seen_paths:
+            raise ManagerError(f"duplicate mutation for path: {path}")
+        seen_paths.add(path)
+        mutations.append(mutation)
+    return mutations
+
+
+def validate_refresh_mutation_scope(plan_harness_id: str, mutation: dict[str, Any]) -> Path:
+    relative = Path(str(mutation.get("path", "")))
+    if invalid_relative_path(relative) or not allowed_mutation_path(relative.as_posix()):
+        raise ManagerError(f"{relative.as_posix()}: mutation path not allowed")
+    if "harness_id" in mutation:
+        mutation_harness_id = mutation.get("harness_id")
+        if not non_empty_string(mutation_harness_id):
+            raise ManagerError(f"{relative.as_posix()}: mutation harness_id must be a non-empty string")
+        if mutation_harness_id != plan_harness_id:
+            raise ManagerError(f"{relative.as_posix()}: mutation harness_id must match plan harness_id")
+    if relative.as_posix().startswith(VANILLA_PROFILE_DIR.as_posix() + "/") and relative.stem != plan_harness_id:
+        raise ManagerError(f"{relative.as_posix()}: mutation path must match plan harness_id")
+    return relative
+
+
+def report_harness_id(payload: dict[str, Any], artifact_name: str) -> str:
+    harness_id = payload.get("harness_id")
+    if harness_id not in REQUIRED_HARNESSES:
+        raise ManagerError(f"{artifact_name} harness_id must name a supported harness")
+    return str(harness_id)
+
+
+def validation_result_passed(payload: dict[str, Any]) -> bool:
+    schema = payload.get("schema")
+    results = payload.get("results")
+    results_ok = isinstance(results, list) and bool(results) and all(
+        isinstance(result, dict) and result.get("ok") is True for result in results
+    )
+    if schema == VALIDATION_RESULT_SCHEMA:
+        return payload.get("result") == "passed" and results_ok
+    if schema == ARMORY_INTEGRITY_VALIDATION_SCHEMA:
+        return payload.get("result") in {None, "passed"} and results_ok
+    return False
+
+
+def validation_result_summary(payload: dict[str, Any], relative: Path) -> dict[str, Any]:
+    results = payload.get("results", [])
+    check_count = len(results) if isinstance(results, list) else 0
+    failed_count = (
+        sum(1 for result in results if not (isinstance(result, dict) and result.get("ok") is True))
+        if isinstance(results, list)
+        else 0
+    )
+    passed = validation_result_passed(payload)
+    return {
+        "path": relative.as_posix(),
+        "schema": str(payload.get("schema", "")),
+        "result": "passed" if passed else "failed",
+        "checks": check_count,
+        "failed": failed_count,
+    }
+
+
+def empty_claim_change_summary() -> dict[str, int]:
+    return {
+        "added": 0,
+        "changed": 0,
+        "retired": 0,
+        "unsupported": 0,
+        "not_applicable": 0,
+        "unknown": 0,
+        "accepted_reuse": 0,
+    }
+
+
+def profile_claims_by_id(profile: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    claims = profile.get("claim", [])
+    if not isinstance(claims, list):
+        return {}
+    return {
+        str(claim["id"]): claim
+        for claim in claims
+        if isinstance(claim, dict) and non_empty_string(claim.get("id"))
+    }
+
+
+def profile_claim_change_summary(before_content: str, after_content: str) -> dict[str, int]:
+    before_claims = profile_claims_by_id(tomllib.loads(before_content))
+    after_claims = profile_claims_by_id(tomllib.loads(after_content))
+    summary = empty_claim_change_summary()
+    before_ids = set(before_claims)
+    after_ids = set(after_claims)
+    added_ids = after_ids - before_ids
+    retired_ids = before_ids - after_ids
+    changed_ids = {claim_id for claim_id in before_ids & after_ids if before_claims[claim_id] != after_claims[claim_id]}
+    summary["added"] = len(added_ids)
+    summary["retired"] = len(retired_ids)
+    summary["changed"] = len(changed_ids)
+    affected_after_ids = added_ids | changed_ids
+    for claim_id in affected_after_ids:
+        status = str(after_claims[claim_id].get("status", "unknown"))
+        if status == "unsupported":
+            summary["unsupported"] += 1
+        elif status == "not-applicable":
+            summary["not_applicable"] += 1
+        elif status == "unknown":
+            summary["unknown"] += 1
+    return summary
+
+
+def sum_claim_change_summaries(summaries: list[dict[str, Any]]) -> dict[str, int]:
+    total = empty_claim_change_summary()
+    for summary in summaries:
+        if not isinstance(summary, dict):
+            continue
+        for key in total:
+            value = summary.get(key, 0)
+            if isinstance(value, int):
+                total[key] += value
+    return total
+
+
+def parse_replacement_arg(value: str) -> tuple[str, Path]:
+    if ":" not in value:
+        raise ManagerError("--profile-replacement must use harness_id:path")
+    harness_id, raw_path = value.split(":", 1)
+    if harness_id not in REQUIRED_HARNESSES:
+        raise ManagerError("--profile-replacement harness_id must name a supported harness")
+    return harness_id, Path(raw_path)
+
+
+def refresh_plan(
+    root: Path,
+    *,
+    analysis_report_path: str,
+    profile_replacements: list[str],
+    output_path: str | None,
+) -> dict[str, Any]:
+    analysis, _analysis_path, analysis_relative = load_json_file(
+        root, analysis_report_path, expected_schema=REFRESH_ANALYSIS_REPORT_SCHEMA
+    )
+    analysis_harness_id = analysis.get("harness_id")
+    if analysis_harness_id not in REQUIRED_HARNESSES:
+        raise ManagerError("analysis report harness_id must name a supported harness")
+    mutations: list[dict[str, Any]] = []
+    schema_pressure_ids = load_schema_pressure_report_ids(root)
+    seen_targets: set[str] = set()
+    for replacement_arg in profile_replacements:
+        harness_id, replacement_path_raw = parse_replacement_arg(replacement_arg)
+        if harness_id != analysis_harness_id:
+            raise ManagerError("--profile-replacement harness_id must match analysis report harness_id")
+        replacement_path, replacement_relative = user_path(root, str(replacement_path_raw), expected_kind="file")
+        try:
+            replacement_profile = load_toml(replacement_path)
+        except tomllib.TOMLDecodeError as error:
+            raise ManagerError(f"{replacement_relative.as_posix()}: TOML invalid: {error.msg}") from error
+        results = validate_profile_data(
+            replacement_profile,
+            harness_id,
+            replacement_relative,
+            require_enrichment=True,
+            schema_pressure_ids=schema_pressure_ids,
+        )
+        failures = [result for result in results if not result.ok]
+        if failures:
+            raise ManagerError(f"{replacement_relative.as_posix()}: replacement profile failed validation: {failures[0].name}")
+        target_relative = profile_path(harness_id)
+        if not allowed_mutation_path(target_relative.as_posix()):
+            raise ManagerError(f"{target_relative.as_posix()}: mutation path not allowed")
+        target_key = target_relative.as_posix()
+        if target_key in seen_targets:
+            raise ManagerError(f"duplicate mutation for path: {target_key}")
+        seen_targets.add(target_key)
+        current_path = checked_read_file(root, target_relative)
+        current_content = current_path.read_text(encoding="utf-8")
+        planned_content = replacement_path.read_text(encoding="utf-8")
+        mutations.append(
+            {
+                "type": "replace_file",
+                "harness_id": harness_id,
+                "path": target_relative.as_posix(),
+                "source_path": replacement_relative.as_posix(),
+                "precondition_sha256": hashlib.sha256(current_content.encode("utf-8")).hexdigest(),
+                "planned_sha256": hashlib.sha256(planned_content.encode("utf-8")).hexdigest(),
+                "claim_change_summary": profile_claim_change_summary(current_content, planned_content),
+                "content": planned_content,
+            }
+        )
+    result: dict[str, Any] = {
+        "schema": REFRESH_UPDATE_PLAN_SCHEMA,
+        "result": "planned",
+        "dry_run": True,
+        "analysis_report_path": analysis_relative.as_posix(),
+        "harness_id": analysis_harness_id,
+        "mutations": mutations,
+        "effect_requirements": [
+            {
+                "effect": "profile_mutation",
+                "classification_ref": "",
+                "approval_ref": "",
+            }
+        ]
+        if mutations
+        else [],
+        "claim_triage": analysis.get("claim_triage", []),
+        "schema_migrations": [],
+        "evidence_promotions": [],
+        "follow_up_issue_candidates": analysis.get("follow_up_issue_candidates", []),
+        "validation_commands": [
+            "python3.14 tools/harness_capability_profiles.py validate --json",
+            "python3.14 tools/validate_armory_integrity.py --json",
+            "git diff --check",
+        ],
+    }
+    write = write_json_file(root, output_path, result)
+    if write is not None:
+        result["writes"] = [write]
+    return result
+
+
+def refresh_diff(root: Path, *, plan_path: str) -> dict[str, Any]:
+    plan, _path, plan_relative = load_json_file(root, plan_path, expected_schema=REFRESH_UPDATE_PLAN_SCHEMA)
+    plan_harness_id = refresh_plan_harness_id(plan)
+    diffs: list[dict[str, Any]] = []
+    for mutation in refresh_plan_mutations(plan):
+        relative = validate_refresh_mutation_scope(plan_harness_id, mutation)
+        current_path = checked_read_file(root, relative)
+        current_text = current_path.read_text(encoding="utf-8")
+        planned_text = str(mutation.get("content", ""))
+        unified = "".join(
+            difflib.unified_diff(
+                current_text.splitlines(keepends=True),
+                planned_text.splitlines(keepends=True),
+                fromfile=f"current/{relative.as_posix()}",
+                tofile=f"planned/{relative.as_posix()}",
+            )
+        )
+        diffs.append(
+            {
+                "path": relative.as_posix(),
+                "precondition_matches": file_sha256(current_path) == mutation.get("precondition_sha256"),
+                "unified_diff": unified,
+            }
+        )
+    return {
+        "schema": REFRESH_DIFF_SCHEMA,
+        "result": "diffed",
+        "dry_run": True,
+        "plan_path": plan_relative.as_posix(),
+        "diffs": diffs,
+    }
+
+
+def refresh_apply(
+    root: Path,
+    *,
+    plan_path: str,
+    allowed_effects: set[str],
+    security_ref: str,
+    approval_ref: str,
+) -> dict[str, Any]:
+    plan, _path, plan_relative = load_json_file(root, plan_path, expected_schema=REFRESH_UPDATE_PLAN_SCHEMA)
+    plan_harness_id = refresh_plan_harness_id(plan)
+    mutations = refresh_plan_mutations(plan)
+    effect_requirements = plan.get("effect_requirements", [])
+    if (
+        mutations
+        and isinstance(effect_requirements, list)
+        and not any(isinstance(record, dict) and record.get("effect") == "profile_mutation" for record in effect_requirements)
+    ):
+        effect_requirements = list(effect_requirements) + [
+            {"effect": "profile_mutation", "classification_ref": "", "approval_ref": ""}
+        ]
+    effects = require_effect_approval(
+        refresh_effect_records({"effects": effect_requirements}, default_effect="profile_mutation"),
+        allowed_effects=allowed_effects,
+        security_ref=security_ref,
+        approval_ref=approval_ref,
+        allow_embedded_approval=False,
+    )
+    validated_targets: list[tuple[Path, str]] = []
+    for mutation in mutations:
+        relative = validate_refresh_mutation_scope(plan_harness_id, mutation)
+        planned_content = str(mutation.get("content", ""))
+        planned_hash = hashlib.sha256(planned_content.encode("utf-8")).hexdigest()
+        if planned_hash != mutation.get("planned_sha256"):
+            raise ManagerError(f"{relative.as_posix()}: planned content hash mismatch")
+        if relative.as_posix().startswith(VANILLA_PROFILE_DIR.as_posix() + "/"):
+            try:
+                planned_profile = tomllib.loads(planned_content)
+            except tomllib.TOMLDecodeError as error:
+                raise ManagerError(f"{relative.as_posix()}: planned profile TOML invalid: {error.msg}") from error
+            harness_id = str(mutation.get("harness_id", relative.stem))
+            results = validate_profile_data(
+                planned_profile,
+                harness_id,
+                relative,
+                require_enrichment=True,
+                schema_pressure_ids=load_schema_pressure_report_ids(root),
+            )
+            failures = [result for result in results if not result.ok]
+            if failures:
+                raise ManagerError(f"{relative.as_posix()}: planned profile failed validation: {failures[0].name}")
+        current_path = checked_read_file(root, relative)
+        current_hash = file_sha256(current_path)
+        if current_hash != mutation.get("precondition_sha256"):
+            raise ManagerError(f"{relative.as_posix()}: stale plan precondition")
+        validated_targets.append((relative, planned_content))
+    writes: list[str] = []
+    for relative, planned_content in validated_targets:
+        target = checked_write_file(root, relative)
+        target.write_text(planned_content, encoding="utf-8")
+        writes.append(relative.as_posix())
+    return {
+        "schema": REFRESH_APPLY_SCHEMA,
+        "result": "applied",
+        "dry_run": False,
+        "plan_path": plan_relative.as_posix(),
+        "effects": effects,
+        "writes": writes,
+    }
+
+
+def refresh_audit(
+    root: Path,
+    *,
+    scout_report_path: str,
+    analysis_report_path: str,
+    plan_path: str,
+    apply_result_path: str | None,
+    validation_result_paths: list[str],
+    output_path: str | None,
+) -> dict[str, Any]:
+    scout, _scout_path, scout_relative = load_json_file(root, scout_report_path, expected_schema=REFRESH_SCOUT_REPORT_SCHEMA)
+    analysis, _analysis_path, analysis_relative = load_json_file(
+        root, analysis_report_path, expected_schema=REFRESH_ANALYSIS_REPORT_SCHEMA
+    )
+    plan, _plan_path, plan_relative = load_json_file(root, plan_path, expected_schema=REFRESH_UPDATE_PLAN_SCHEMA)
+    artifact_harness_ids = {
+        report_harness_id(scout, "scout report"),
+        report_harness_id(analysis, "analysis report"),
+        refresh_plan_harness_id(plan),
+    }
+    if len(artifact_harness_ids) != 1:
+        raise ManagerError("refresh audit artifacts must share harness_id")
+    mutations = refresh_plan_mutations(plan)
+    planned_paths = [validate_refresh_mutation_scope(next(iter(artifact_harness_ids)), mutation).as_posix() for mutation in mutations]
+    applied_writes: list[str] = []
+    apply_relative: Path | None = None
+    if apply_result_path is not None:
+        apply_result, _apply_path, apply_relative = load_json_file(
+            root, apply_result_path, expected_schema=REFRESH_APPLY_SCHEMA
+        )
+        if apply_result.get("plan_path") != plan_relative.as_posix():
+            raise ManagerError("refresh audit apply result must reference the audited plan")
+        raw_writes = apply_result.get("writes", [])
+        if not isinstance(raw_writes, list) or not all(isinstance(write, str) for write in raw_writes):
+            raise ManagerError("refresh audit apply result writes must be a string list")
+        applied_writes = raw_writes
+    elif planned_paths:
+        raise ManagerError("refresh audit requires apply result for mutation plans")
+    if apply_result_path is not None and sorted(applied_writes) != sorted(planned_paths):
+        raise ManagerError("refresh audit apply result writes must match plan mutations")
+    validation_summaries: list[dict[str, Any]] = []
+    for raw_validation_path in validation_result_paths:
+        validation_result, _validation_path, validation_relative = load_json_file(root, raw_validation_path)
+        summary = validation_result_summary(validation_result, validation_relative)
+        if summary["result"] != "passed":
+            raise ManagerError(f"{validation_relative.as_posix()}: validation result did not pass")
+        validation_summaries.append(summary)
+    if planned_paths and not validation_summaries:
+        raise ManagerError("refresh audit requires validation results for mutation plans")
+    if planned_paths and not any(summary.get("schema") == VALIDATION_RESULT_SCHEMA for summary in validation_summaries):
+        raise ManagerError("refresh audit requires Manager Core validation result for mutation plans")
+    applied_write_set = set(applied_writes)
+    claim_change_summary = sum_claim_change_summaries(
+        [
+            mutation.get("claim_change_summary", {})
+            for mutation in mutations
+            if isinstance(mutation.get("path"), str) and mutation["path"] in applied_write_set
+        ]
+    )
+    result: dict[str, Any] = {
+        "schema": REFRESH_AUDIT_SCHEMA,
+        "result": "audited",
+        "dry_run": True,
+        "scout_report_path": scout_relative.as_posix(),
+        "analysis_report_path": analysis_relative.as_posix(),
+        "plan_path": plan_relative.as_posix(),
+        "apply_result_path": apply_relative.as_posix() if apply_relative is not None else "",
+        "sources_checked": [source.get("id", "") for source in scout.get("sources", []) if isinstance(source, dict)],
+        "profile_files_planned": planned_paths,
+        "profile_files_changed": applied_writes,
+        "claim_change_summary": claim_change_summary,
+        "claim_triage_summary": analysis.get("claim_triage", []),
+        "schema_pressure": analysis.get("schema_pressure", []),
+        "selected_rigor_deviations": [
+            report.get("rigor_deviation", "")
+            for report in scout.get("selected_study_reports", [])
+            if isinstance(report, dict) and non_empty_string(report.get("rigor_deviation"))
+        ],
+        "scratch_evidence_disposition": scout.get("scratch_disposition", ""),
+        "validation_results": validation_summaries,
+        "validation_commands": plan.get("validation_commands", []),
+        "follow_up_disposition": analysis.get("follow_up_issue_candidates", []),
+    }
+    write = write_json_file(root, output_path, result)
+    if write is not None:
+        result["writes"] = [write]
+    return result
+
+
+def command_error(schema: str, error: Exception) -> dict[str, Any]:
+    return {"schema": schema, "result": "failed", "error": str(error)}
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Manage Vanilla Harness Capability Profiles.")
     parser.add_argument("--root", default=".", help="Repository root.")
@@ -1987,6 +2783,55 @@ def main(argv: list[str] | None = None) -> int:
     summarize_parser = subparsers.add_parser("summarize", help="Render the human-facing harness capability summary from profiles.")
     summarize_parser.add_argument("--write", action="store_true", help="Write docs/harness-capabilities.md.")
     summarize_parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON.")
+
+    scout_parser = subparsers.add_parser("scout", help="Normalize manual refresh scouting evidence without mutating profiles.")
+    scout_parser.add_argument("--input", required=True, help="JSON scout input artifact.")
+    scout_parser.add_argument("--write-output", help="Write the normalized scout report JSON to this path.")
+    scout_parser.add_argument("--allow-effect", action="append", default=[], help="Approved effect token for this run.")
+    scout_parser.add_argument("--security-ref", default="", help="Security/control classification reference for approved effects.")
+    scout_parser.add_argument("--approval-ref", default="", help="Operator approval reference for approved effects.")
+    scout_parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON.")
+
+    analyze_parser = subparsers.add_parser("analyze", help="Analyze a scout report against current profiles.")
+    analyze_parser.add_argument("--scout-report", required=True, help="Scout report JSON artifact.")
+    analyze_parser.add_argument("--write-output", help="Write the analysis report JSON to this path.")
+    analyze_parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON.")
+
+    plan_parser = subparsers.add_parser("plan", help="Build a reviewable manual refresh update plan.")
+    plan_parser.add_argument("--analysis-report", required=True, help="Analysis report JSON artifact.")
+    plan_parser.add_argument(
+        "--profile-replacement",
+        action="append",
+        default=[],
+        help="Explicit profile replacement in the form harness_id:path.",
+    )
+    plan_parser.add_argument("--write-output", help="Write the update plan JSON to this path.")
+    plan_parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON.")
+
+    diff_parser = subparsers.add_parser("diff", help="Show reviewable diffs for a manual refresh update plan.")
+    diff_parser.add_argument("--plan", required=True, help="Update plan JSON artifact.")
+    diff_parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON.")
+
+    apply_parser = subparsers.add_parser("apply", help="Apply an explicit manual refresh update plan.")
+    apply_parser.add_argument("--plan", required=True, help="Update plan JSON artifact.")
+    apply_parser.add_argument("--allow-effect", action="append", default=[], help="Approved effect token for this run.")
+    apply_parser.add_argument("--security-ref", default="", help="Security/control classification reference for approved effects.")
+    apply_parser.add_argument("--approval-ref", default="", help="Operator approval reference for approved effects.")
+    apply_parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON.")
+
+    audit_parser = subparsers.add_parser("audit", help="Summarize a manual refresh run for review and closeout.")
+    audit_parser.add_argument("--scout-report", required=True, help="Scout report JSON artifact.")
+    audit_parser.add_argument("--analysis-report", required=True, help="Analysis report JSON artifact.")
+    audit_parser.add_argument("--plan", required=True, help="Update plan JSON artifact.")
+    audit_parser.add_argument("--apply-result", help="Apply result JSON artifact for mutation plans.")
+    audit_parser.add_argument(
+        "--validation-result",
+        action="append",
+        default=[],
+        help="Passing validation result JSON artifact produced after apply; repeat for multiple validation gates.",
+    )
+    audit_parser.add_argument("--write-output", help="Write the audit summary JSON to this path.")
+    audit_parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON.")
 
     args = parser.parse_args(argv)
     root = Path(args.root).resolve()
@@ -2046,6 +2891,124 @@ def main(argv: list[str] | None = None) -> int:
             action = "Wrote" if args.write else "Would write"
             for write in payload["writes"]:
                 print(f"{action} {write['path']}")
+        return 0
+    if args.command == "scout":
+        try:
+            payload = refresh_scout(
+                root,
+                input_path=args.input,
+                output_path=args.write_output,
+                allowed_effects=set(args.allow_effect),
+                security_ref=args.security_ref,
+                approval_ref=args.approval_ref,
+            )
+        except Exception as error:
+            payload = command_error(REFRESH_SCOUT_REPORT_SCHEMA, error)
+            if args.json:
+                print(json.dumps(payload, indent=2, sort_keys=True))
+            else:
+                print(f"FAIL {error}", file=sys.stderr)
+            return 1
+        if args.json:
+            print(json.dumps(payload, indent=2, sort_keys=True))
+        else:
+            print(f"Scouted {payload['harness_id']} evidence: {sum(payload['evidence_counts'].values())} records")
+        return 0
+    if args.command == "analyze":
+        try:
+            payload = refresh_analyze(root, scout_report_path=args.scout_report, output_path=args.write_output)
+        except Exception as error:
+            payload = command_error(REFRESH_ANALYSIS_REPORT_SCHEMA, error)
+            if args.json:
+                print(json.dumps(payload, indent=2, sort_keys=True))
+            else:
+                print(f"FAIL {error}", file=sys.stderr)
+            return 1
+        if args.json:
+            print(json.dumps(payload, indent=2, sort_keys=True))
+        else:
+            print(f"Analyzed {payload['harness_id']} refresh: {payload['version_delta']['disposition']} version delta")
+        return 0
+    if args.command == "plan":
+        try:
+            payload = refresh_plan(
+                root,
+                analysis_report_path=args.analysis_report,
+                profile_replacements=args.profile_replacement,
+                output_path=args.write_output,
+            )
+        except Exception as error:
+            payload = command_error(REFRESH_UPDATE_PLAN_SCHEMA, error)
+            if args.json:
+                print(json.dumps(payload, indent=2, sort_keys=True))
+            else:
+                print(f"FAIL {error}", file=sys.stderr)
+            return 1
+        if args.json:
+            print(json.dumps(payload, indent=2, sort_keys=True))
+        else:
+            print(f"Planned {len(payload['mutations'])} explicit mutations")
+        return 0
+    if args.command == "diff":
+        try:
+            payload = refresh_diff(root, plan_path=args.plan)
+        except Exception as error:
+            payload = command_error(REFRESH_DIFF_SCHEMA, error)
+            if args.json:
+                print(json.dumps(payload, indent=2, sort_keys=True))
+            else:
+                print(f"FAIL {error}", file=sys.stderr)
+            return 1
+        if args.json:
+            print(json.dumps(payload, indent=2, sort_keys=True))
+        else:
+            for diff_result in payload["diffs"]:
+                print(diff_result["unified_diff"], end="")
+        return 0
+    if args.command == "apply":
+        try:
+            payload = refresh_apply(
+                root,
+                plan_path=args.plan,
+                allowed_effects=set(args.allow_effect),
+                security_ref=args.security_ref,
+                approval_ref=args.approval_ref,
+            )
+        except Exception as error:
+            payload = command_error(REFRESH_APPLY_SCHEMA, error)
+            if args.json:
+                print(json.dumps(payload, indent=2, sort_keys=True))
+            else:
+                print(f"FAIL {error}", file=sys.stderr)
+            return 1
+        if args.json:
+            print(json.dumps(payload, indent=2, sort_keys=True))
+        else:
+            for path in payload["writes"]:
+                print(f"Wrote {path}")
+        return 0
+    if args.command == "audit":
+        try:
+            payload = refresh_audit(
+                root,
+                scout_report_path=args.scout_report,
+                analysis_report_path=args.analysis_report,
+                plan_path=args.plan,
+                apply_result_path=args.apply_result,
+                validation_result_paths=args.validation_result,
+                output_path=args.write_output,
+            )
+        except Exception as error:
+            payload = command_error(REFRESH_AUDIT_SCHEMA, error)
+            if args.json:
+                print(json.dumps(payload, indent=2, sort_keys=True))
+            else:
+                print(f"FAIL {error}", file=sys.stderr)
+            return 1
+        if args.json:
+            print(json.dumps(payload, indent=2, sort_keys=True))
+        else:
+            print(f"Audited refresh for {payload.get('profile_files_changed', [])}")
         return 0
     return 2
 

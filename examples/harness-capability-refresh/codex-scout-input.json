@@ -1,0 +1,61 @@
+{
+  "checked_at": "2026-05-11T10:00:00-04:00",
+  "effects": [
+    {
+      "approval_ref": "not-required",
+      "classification_ref": "passive-source-review",
+      "effect": "passive_scanning"
+    }
+  ],
+  "evidence_notes": [
+    {
+      "durability": "curated_durable_evidence",
+      "id": "note-codex-release",
+      "summary": "Curated release note retained as a reviewable source summary."
+    }
+  ],
+  "harness_id": "codex",
+  "hypotheses": [
+    {
+      "claim_refs": [
+        "claim-codex-hooks_events"
+      ],
+      "id": "hypothesis-codex-hook-reload",
+      "summary": "Hook reload behavior may require a deeper study."
+    }
+  ],
+  "local_observations": [],
+  "schema": "harness_capability_profiles.refresh_scout_input.v1",
+  "scratch_disposition": "Raw fetched pages and temporary notes stay instance-scoped scratch unless promoted through audit.",
+  "sources": [
+    {
+      "claim_refs": [
+        "claim-codex-lifecycle_reload_update"
+      ],
+      "id": "source-codex-release",
+      "kind": "first_party_source",
+      "observed_version": "0.131.0",
+      "summary": "Example release evidence for Codex.",
+      "url": "https://github.com/openai/codex/releases/tag/rust-v0.131.0"
+    }
+  ],
+  "study_reports": [
+    {
+      "id": "study-codex-skills",
+      "path": "examples/capability-profiling-protocol/vanilla-codex-skill-study-report.toml",
+      "rigor_deviation": "passive source review only",
+      "selected": true,
+      "summary": "Selected example Study Report for Codex skill support."
+    }
+  ],
+  "unknowns": [
+    {
+      "claim_refs": [
+        "claim-codex-memory_context_retrieval"
+      ],
+      "follow_up": true,
+      "id": "unknown-codex-memory-write-authority",
+      "summary": "Memory write authority remains unclear in the example refresh."
+    }
+  ]
+}
