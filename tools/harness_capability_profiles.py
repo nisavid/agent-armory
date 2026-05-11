@@ -559,10 +559,11 @@ def validate_version_observations(profile: dict[str, Any], harness_id: str, rela
             results.append(CheckResult(prefix, False, "version_observation entry must be a table", path))
             continue
         results.extend(validate_string_fields(record, ["id", "observed_version", "checked_at"], prefix, path))
+        evidence_class = record.get("evidence_class")
         source_kind = record.get("source_kind")
-        if source_kind not in SOURCE_KINDS:
+        if evidence_class != "local_observation" and source_kind not in SOURCE_KINDS:
             results.append(CheckResult(f"{prefix}:source_kind", False, "invalid source kind", path))
-        if not valid_http_url(record.get("source_url")):
+        if evidence_class != "local_observation" and not valid_http_url(record.get("source_url")):
             results.append(CheckResult(f"{prefix}:source_url", False, "source url must be http or https with a host", path))
         if not isinstance(record.get("canonical_profile_change"), bool):
             results.append(CheckResult(f"{prefix}:canonical_profile_change", False, "canonical_profile_change must be boolean", path))
@@ -648,6 +649,15 @@ def validate_claim_detail_records(
         "cross_harness_import_compatibility": "compatibility_bridge",
     }
     required_table = family_required_tables.get(str(claim.get("family")))
+    if refreshed_claim and not claim.get("detail"):
+        results.append(
+            CheckResult(
+                f"profile:{harness_id}:claim:{claim_index}:detail",
+                False,
+                f"refreshed {claim.get('family')} claim needs detail",
+                path,
+            )
+        )
     if refreshed_claim and required_table and not claim.get(required_table):
         results.append(
             CheckResult(

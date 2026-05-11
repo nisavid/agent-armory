@@ -198,6 +198,20 @@ reload_update_behavior = "Instruction/context reload behavior is not proven as a
 limitations = "No checked first-party source proves this surface strongly enough for a supported canonical claim."
 uncertainty = "OpenClaw compatible bundles, skills, commands, and multi-agent configs carry instructions, but source-shaped instruction load paths are not proven enough for canonical support."
 
+[[claim.detail]]
+component = "instruction-like context surface"
+load_attachment_point = "compatible bundles, skills, commands, and multi-agent configs without a proven canonical instruction load path"
+activation = "unknown"
+mutability = "unknown"
+scope = [
+    "compatible bundles",
+    "skills",
+    "commands",
+    "multi-agent config",
+]
+evidence_ids = []
+evidence_class = "unknown"
+
 [[claim]]
 id = "claim-openclaw-skills"
 family = "skills"

@@ -400,6 +400,17 @@ reload_update_behavior = "Freshness, write authority, and privacy boundaries rem
 limitations = "No checked first-party source proves this surface strongly enough for a supported canonical claim."
 uncertainty = "No checked first-party source proves stable memory persistence, retrieval, write authority, or API shape."
 
+[[claim.detail]]
+component = "memory-like context retrieval surface"
+load_attachment_point = "not proven by checked first-party sources"
+activation = "unknown"
+mutability = "unknown"
+scope = [
+    "unknown",
+]
+evidence_ids = []
+evidence_class = "unknown"
+
 [[claim.memory_like_surface]]
 persistence_scope = "not proven by checked sources"
 retrieval_trigger = "not proven by checked sources"
@@ -668,6 +679,18 @@ reload_update_behavior = "Compatibility remains unknown until a first-party sour
 limitations = "No checked first-party source proves this surface strongly enough for a supported canonical claim."
 uncertainty = "OpenCode GitHub and ACP surfaces are connectors, not proof of native import for other harness equipment conventions."
 
+[[claim.detail]]
+component = "cross-harness import surface"
+load_attachment_point = "GitHub, ACP, and ecosystem integrations, without proven harness bundle import"
+activation = "not applicable until native import support is proven"
+mutability = "not applicable"
+scope = [
+    "connectors",
+    "cross-harness equipment bundles",
+]
+evidence_ids = []
+evidence_class = "unknown"
+
 [[claim.compatibility_bridge]]
 imported_from = "none-proven"
 imported_convention = "no native import convention proven by checked first-party sources"
@@ -696,3 +719,16 @@ configuration_surface = "Config/plugin/runtime surfaces exist but need sourced r
 reload_update_behavior = "Lifecycle reload/update remains needs-more-evidence."
 limitations = "No checked first-party source proves this surface strongly enough for a supported canonical claim."
 uncertainty = "OpenCode release notes mention session and process fixes, but checked sources do not prove a stable lifecycle reload model for config, skills, or plugins."
+
+[[claim.detail]]
+component = "lifecycle reload and update surface"
+load_attachment_point = "config, plugin, and runtime surfaces without a proven stable lifecycle reload model"
+activation = "unknown"
+mutability = "unknown"
+scope = [
+    "config",
+    "plugins",
+    "runtime",
+]
+evidence_ids = []
+evidence_class = "unknown"

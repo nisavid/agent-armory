@@ -453,6 +453,29 @@ evidence_class = "unknown"
             payload = json.loads(completed.stdout)
             self.assertEqual(payload["result"], "passed")
 
+    def test_validate_accepts_local_observation_version_observation_without_source_url(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_migration_root(root)
+            self.migrate_and_summarize(root)
+            codex_profile = root / "docs/harness-capabilities/vanilla/codex.toml"
+            text = codex_profile.read_text(encoding="utf-8").rstrip() + """
+
+[[version_observation]]
+id = "vo-codex-local"
+observed_version = "local smoke"
+checked_at = "2026-05-10T17:40:00-04:00"
+canonical_profile_change = false
+evidence_class = "local_observation"
+"""
+            codex_profile.write_text(text, encoding="utf-8")
+
+            completed = self.run_manager(root, "validate", "--json")
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            payload = json.loads(completed.stdout)
+            self.assertEqual(payload["result"], "passed")
+
     def test_validate_rejects_refreshed_claim_missing_triage_and_integration_detail(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -496,6 +519,23 @@ evidence_class = "unknown"
             failures = {result["name"] for result in json.loads(completed.stdout)["results"] if not result["ok"]}
             skills_index = claim_index(codex_profile, "claim-codex-skills")
             self.assertIn(f"profile:codex:claim:{skills_index}:migration_evidence_pair", failures)
+
+    def test_validate_rejects_refreshed_claim_without_detail(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_migration_root(root)
+            self.migrate_and_summarize(root)
+            codex_profile = root / "docs/harness-capabilities/vanilla/codex.toml"
+            text = codex_profile.read_text(encoding="utf-8")
+            text = refresh_claim_with_triage(text, "claim-codex-skills")
+            codex_profile.write_text(text, encoding="utf-8")
+
+            completed = self.run_manager(root, "validate", "--json")
+
+            self.assertNotEqual(completed.returncode, 0)
+            failures = {result["name"] for result in json.loads(completed.stdout)["results"] if not result["ok"]}
+            skills_index = claim_index(codex_profile, "claim-codex-skills")
+            self.assertIn(f"profile:codex:claim:{skills_index}:detail", failures)
 
     def test_validate_rejects_required_refreshed_family_claims_without_nested_surface(self):
         with tempfile.TemporaryDirectory() as tmpdir:

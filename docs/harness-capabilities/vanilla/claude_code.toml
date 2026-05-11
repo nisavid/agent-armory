@@ -395,6 +395,19 @@ reload_update_behavior = "Freshness, write authority, and privacy boundaries rem
 limitations = "No checked first-party source proves this surface strongly enough for a supported canonical claim."
 uncertainty = "Claude Code routines and scheduled tasks reuse prompt/config state, and MCP resources can be referenced, but no stable shared memory API is proven."
 
+[[claim.detail]]
+component = "memory-like context surface"
+load_attachment_point = "routine prompt/config state and MCP resource references, without a proven stable shared memory API"
+activation = "unknown beyond routine, scheduled task, and MCP resource references"
+mutability = "unknown"
+scope = [
+    "routine",
+    "scheduled task",
+    "MCP resource",
+]
+evidence_ids = []
+evidence_class = "unknown"
+
 [[claim.memory_like_surface]]
 persistence_scope = "routine prompt/config state and MCP resources"
 retrieval_trigger = "runner or MCP-resource reference"
@@ -671,6 +684,17 @@ configuration_surface = "No cross-harness compatibility configuration surface wa
 reload_update_behavior = "Compatibility remains unknown until a source names bridge fidelity."
 limitations = "No checked first-party source proves this surface strongly enough for a supported canonical claim."
 uncertainty = "No checked first-party Claude Code source proves native import of Codex, Cursor, OpenCode, Hermes, or OpenClaw equipment."
+
+[[claim.detail]]
+component = "cross-harness import surface"
+load_attachment_point = "no native import path proven by checked first-party sources"
+activation = "not applicable until native import support is proven"
+mutability = "not applicable"
+scope = [
+    "cross-harness equipment bundles",
+]
+evidence_ids = []
+evidence_class = "unknown"
 
 [[claim.compatibility_bridge]]
 imported_from = "none-proven"

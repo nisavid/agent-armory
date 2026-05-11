@@ -104,15 +104,19 @@ The implemented profile enrichment validation now checks:
 - stable evidence IDs derived from source URL and claim scope;
 - `[[version_observation]]` records, when present, with `id`, `observed_version`,
   `checked_at`, `source_url`, `source_kind`, `canonical_profile_change`, and
-  `evidence_class` fields;
+  `evidence_class` fields, with `source_url` and `source_kind` required except
+  for `local_observation` records;
 - `[[harness_extension]]` records, when present, with evidence references and
   schema-pressure IDs;
 - refreshed claims to carry Capability Claim Triage, triage rationale,
-  install/activation, configuration, and reload/update fields;
-- optional `[[claim.detail]]`, `[[claim.memory_like_surface]]`,
-  `[[claim.automation_surface]]`, and `[[claim.compatibility_bridge]]`
-  records to validate their required descriptive fields and evidence
-  references.
+  install/activation, configuration, reload/update fields, and at least one
+  `[[claim.detail]]` row;
+- `[[claim.memory_like_surface]]`, `[[claim.automation_surface]]`, and
+  `[[claim.compatibility_bridge]]` records when refreshed memory,
+  scheduling, or cross-harness compatibility claims require those
+  family-specific tables;
+- nested claim records to validate their required descriptive fields and
+  evidence references.
 
 ## Capability Profiling Protocol slice
 

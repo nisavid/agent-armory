@@ -197,6 +197,19 @@ reload_update_behavior = "Instruction reload behavior is not proven as a unified
 limitations = "No checked first-party source proves this surface strongly enough for a supported canonical claim."
 uncertainty = "Hermes skills, delegation, and current /goal support carry instruction-like material, but explicit instruction load paths are not yet fully source-shaped for this profile family."
 
+[[claim.detail]]
+component = "instruction-like context surface"
+load_attachment_point = "skills, delegation, and /goal surfaces without a proven canonical instruction load path"
+activation = "unknown"
+mutability = "unknown"
+scope = [
+    "skills",
+    "delegation",
+    "goal",
+]
+evidence_ids = []
+evidence_class = "unknown"
+
 [[claim]]
 id = "claim-hermes_agent-skills"
 family = "skills"
@@ -705,6 +718,20 @@ configuration_surface = "Skills compatibility language does not prove bundle imp
 reload_update_behavior = "Import fidelity remains unknown until source-backed bridge fields exist."
 limitations = "No checked first-party source proves this surface strongly enough for a supported canonical claim."
 uncertainty = "Hermes uses AgentSkills-compatible language, but no checked source proves native import fidelity for Codex, Claude Code, Cursor, OpenCode, or OpenClaw bundles."
+
+[[claim.detail]]
+component = "AgentSkills-compatible compatibility signal"
+load_attachment_point = "skill installation surfaces, without proven full bundle import fidelity"
+activation = "skill installation surfaces only"
+mutability = "unknown for imported non-skill bundle components"
+scope = [
+    "skills",
+    "cross-harness equipment bundles",
+]
+evidence_ids = [
+    "ev-hermes_agent-skill-support-90fff712d9",
+]
+evidence_class = "source_backed"
 
 [[claim.compatibility_bridge]]
 imported_from = "AgentSkills-compatible signal"

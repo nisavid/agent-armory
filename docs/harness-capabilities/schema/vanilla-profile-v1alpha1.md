@@ -46,7 +46,9 @@ Each `[[version_observation]]` record has `id`, `observed_version`,
 
 Version observations let a profile record current release or changelog state
 without changing stable claim IDs. `canonical_profile_change` is true when the
-observation is part of the current canonical profile refresh.
+observation is part of the current canonical profile refresh. `source_url` and
+`source_kind` are required for source-backed observations and omitted for
+`local_observation` records.
 
 ## Harness extensions
 
@@ -89,7 +91,11 @@ Every profile covers the standard surface-family rubric:
 - `cross_harness_import_compatibility`
 - `lifecycle_reload_update`
 
-Optional nested claim tables record accepted issue #45 enrichment fields:
+Nested claim tables record accepted issue #45 enrichment fields. Refreshed
+claims require at least one `[[claim.detail]]` row. Refreshed
+`memory_context_retrieval`, `scheduling_automation`, and
+`cross_harness_import_compatibility` claims also require their matching
+family-specific nested table.
 
 - `[[claim.detail]]` records `component`, `load_attachment_point`,
   `activation`, `mutability`, `scope`, `evidence_ids`, and

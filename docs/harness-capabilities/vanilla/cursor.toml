@@ -415,6 +415,19 @@ reload_update_behavior = "Freshness and write authority remain unknown."
 limitations = "No checked first-party source proves this surface strongly enough for a supported canonical claim."
 uncertainty = "Cursor subagents have isolated context windows, but persistent shared memory, retrieval freshness, write authority, and privacy boundaries are not proven."
 
+[[claim.detail]]
+component = "subagent context window"
+load_attachment_point = "isolated subagent context windows, without proven persistent shared memory"
+activation = "subagent invocation and resume behavior"
+mutability = "context windows are isolated; persistent memory mutability unknown"
+scope = [
+    "subagent",
+    "workspace",
+    "cloud agent",
+]
+evidence_ids = []
+evidence_class = "unknown"
+
 [[claim.memory_like_surface]]
 persistence_scope = "subagent context window"
 retrieval_trigger = "subagent invocation and resume behavior"
@@ -696,6 +709,20 @@ reload_update_behavior = "Compatibility remains needs-more-evidence until a sour
 limitations = "No checked first-party source proves this surface strongly enough for a supported canonical claim."
 uncertainty = "Cursor describes Agent Skills as an open standard, but native import fidelity for another harness equipment bundle is not proven."
 
+[[claim.detail]]
+component = "Agent Skills open-standard compatibility signal"
+load_attachment_point = "skill directories, without proven full bundle import fidelity"
+activation = "skills load from project or user skill directories"
+mutability = "unknown for imported non-skill bundle components"
+scope = [
+    "skills",
+    "cross-harness equipment bundles",
+]
+evidence_ids = [
+    "ev-cursor-agent-skills-support-daa3804e4b",
+]
+evidence_class = "source_backed"
+
 [[claim.compatibility_bridge]]
 imported_from = "Agent Skills open-standard signal"
 imported_convention = "Cursor Agent Skills convention; full bundle import not proven"
@@ -728,3 +755,16 @@ configuration_surface = "MCP and plugin settings may affect lifecycle, but durab
 reload_update_behavior = "Lifecycle reload/update remains explicit schema pressure."
 limitations = "No checked first-party source proves this surface strongly enough for a supported canonical claim."
 uncertainty = "Cursor can toggle MCP servers and load plugins, but checked sources do not prove a durable lifecycle reload model across profile surfaces."
+
+[[claim.detail]]
+component = "lifecycle reload and update surface"
+load_attachment_point = "MCP and plugin settings, without a proven unified lifecycle reload model"
+activation = "unknown"
+mutability = "unknown"
+scope = [
+    "MCP",
+    "plugins",
+    "settings",
+]
+evidence_ids = []
+evidence_class = "unknown"
