@@ -102,12 +102,15 @@ canonical profiles.
 The implemented profile enrichment validation now checks:
 
 - stable evidence IDs derived from source URL and claim scope;
-- `[[version_observation]]` records, when present, with `id`, `observed_version`,
-  `checked_at`, `source_url`, `source_kind`, `canonical_profile_change`, and
-  `evidence_class` fields, with `source_url` and `source_kind` required except
-  for `local_observation` records, where they are omitted;
-- `[[harness_extension]]` records, when present, with evidence references and
-  schema-pressure IDs;
+- canonical profiles to include non-empty `[[version_observation]]` records
+  with `id`, `observed_version`, `checked_at`, `source_url`, `source_kind`,
+  `canonical_profile_change`, and `evidence_class` fields, with `source_url`
+  and `source_kind` required except for `local_observation` records, where
+  they are omitted;
+- canonical profiles to include non-empty `[[harness_extension]]` records with
+  evidence references and schema-pressure IDs;
+- migration-generated base profiles to validate through the migration path
+  before canonical enrichment is added;
 - refreshed claims to carry Capability Claim Triage, triage rationale,
   install/activation, configuration, reload/update fields, and at least one
   `[[claim.detail]]` row;
