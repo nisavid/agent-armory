@@ -208,7 +208,7 @@ python3.14 tools/harness_capability_profiles.py plan --analysis-report <analysis
 python3.14 tools/harness_capability_profiles.py diff --plan <update-plan.json> --json
 python3.14 tools/harness_capability_profiles.py apply --plan <update-plan.json> --allow-effect profile_mutation --security-ref <ref> --approval-ref <ref> --json
 python3.14 tools/harness_capability_profiles.py audit --scout-report <scout-report.json> --analysis-report <analysis-report.json> --plan <update-plan.json> --apply-result <apply-result.json> --validation-result <validation-result.json> --json
-python3.14 tools/validate_armory_integrity.py
+python3.14 tools/validate_armory_integrity.py --final-closeout --json
 git diff --check
 ```
 

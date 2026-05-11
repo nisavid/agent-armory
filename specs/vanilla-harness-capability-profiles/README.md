@@ -144,8 +144,8 @@ and audit disposition without turning those judgments into hidden tool logic.
   migration, and schema-candidate discovery through a deterministic core plus
   agent-guided workflows and optional evidence adapters.
 - Periodic orchestration belongs to Harness Capability Refresh, not the profile
-  manager. Periodic refresh integration is deferred until Periodic Actions
-  exists, and Periodic Actions depends on Agent Equipment Config.
+  manager. Periodic refresh integration is deferred until Agent Equipment
+  Config and Periodic Actions exist.
 - The Manager Core supports validation, summary alignment, protocol artifact
   validation, deterministic migration, and staged manual refresh commands:
   scout, analyze, plan, diff, apply, and audit.
