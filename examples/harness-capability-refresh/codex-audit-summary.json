@@ -8,6 +8,7 @@
     "unknown": 1,
     "unsupported": 1
   },
+  "apply_result_path": "scratch/apply-result.json",
   "dry_run": true,
   "follow_up_disposition": [
     {
@@ -18,6 +19,9 @@
   ],
   "plan_path": "scratch/update-plan.json",
   "profile_files_changed": [
+    "docs/harness-capabilities/vanilla/codex.toml"
+  ],
+  "profile_files_planned": [
     "docs/harness-capabilities/vanilla/codex.toml"
   ],
   "result": "audited",
@@ -41,5 +45,13 @@
     "python3.14 tools/validate_armory_integrity.py --json",
     "git diff --check"
   ],
-  "validation_results": "Example only; run validation commands after apply and project results into PR closeout."
+  "validation_results": [
+    {
+      "checks": 20,
+      "failed": 0,
+      "path": "scratch/manager-validation.json",
+      "result": "passed",
+      "schema": "harness_capability_profiles.validation_result.v1"
+    }
+  ]
 }

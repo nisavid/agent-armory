@@ -474,13 +474,13 @@ Manual refresh uses staged commands with dry-run defaults:
 4. `diff` compares the Manual Refresh Update Plan against the current profile,
    schema, and durable evidence files before apply.
 5. `apply` requires an explicit plan reference, verifies current profile state
-   still matches plan preconditions, refuses stale plans, requires approved
-   `profile_mutation`, and writes only planned canonical profile or schema
+   still matches plan preconditions, refuses stale plans, requires an approved
+   `profile_mutation` effect, and writes only planned canonical profile or schema
    content.
 6. `audit` emits a Manual Refresh Audit Summary for sources checked, profile
-   files changed, claim dispositions, schema pressure, selected-rigor
-   deviations, scratch evidence disposition, validation commands or results,
-   and follow-up disposition.
+   files planned and changed, claim dispositions, schema pressure,
+   selected-rigor deviations, scratch evidence disposition, apply result,
+   validation results, and follow-up disposition.
 
 Canonical profile mutation must be explicit and reviewable. The manager should
 not silently mutate profile files while scouting or analyzing.
@@ -518,8 +518,8 @@ The manual refresh manager story is accepted when:
   only the planned canonical profile or schema changes;
 - `audit` records sources checked, profile files changed, claims added,
   changed, retired, unsupported, or left unknown, schema pressure, selected
-  rigor deviations, scratch evidence disposition, validation results, and
-  follow-up disposition;
+  rigor deviations, scratch evidence disposition, apply result, validation
+  results, and follow-up disposition;
 - scratch artifacts remain out of committed project truth unless explicitly
   promoted as curated durable evidence;
 - manual refresh does not depend on Periodic Actions or Agent Equipment Config;

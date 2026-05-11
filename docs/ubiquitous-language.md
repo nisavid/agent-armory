@@ -172,9 +172,9 @@ content hashes, validation commands, evidence promotions, and follow-up issue
 candidates.
 
 **Manual Refresh Audit Summary** is a refresh closeout artifact that records
-checked sources, changed profile files, claim dispositions, schema pressure,
-selected-rigor deviations, scratch evidence disposition, validation commands or
-results, and follow-up disposition.
+checked sources, planned and changed profile files, claim dispositions, schema
+pressure, selected-rigor deviations, scratch evidence disposition, apply
+result, validation results, and follow-up disposition.
 
 **Capability Profiling Protocol** is a generic meta-protocol that generates a
 study protocol for a selected Capability Surface target by considering target

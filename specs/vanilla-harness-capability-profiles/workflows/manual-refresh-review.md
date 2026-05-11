@@ -45,14 +45,16 @@ Profiles through the Harness Capability Profile Manager Core.
    - Refuse stale plans.
    - Write only planned canonical profile or schema content.
 6. Audit the refresh.
+   - Provide the apply result for mutation plans.
+   - Provide passing validation result artifacts from post-apply gates.
    - Record sources checked, profile files changed, claims added, changed,
      retired, unsupported, or left unknown, schema pressure, selected-rigor
      deviations, scratch disposition, validation results, and follow-up
      disposition.
 
-Generated scout, analysis, plan, and audit artifacts are JSON files. Manager
-Core `--write-output` paths must end in `.json` and must not point at canonical
-profile or schema paths.
+Generated scout, analysis, plan, diff, apply, and audit outputs are JSON.
+Manager Core `--write-output` paths must end in `.json` and must not point at
+canonical profile or schema paths.
 
 ## Output Contract
 

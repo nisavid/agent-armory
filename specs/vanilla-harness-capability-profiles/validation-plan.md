@@ -173,11 +173,11 @@ The implemented first manual refresh story validates:
 The deterministic checks cover the Manager Core boundary: `scout` and
 `analyze` do not mutate canonical profiles, `plan` records only explicit
 agent-authored replacement candidates with precondition hashes, `diff` renders
-reviewable planned changes, `apply` refuses stale plans and requires approved
-`profile_mutation`, and `audit` summarizes source, claim, schema-pressure,
-scratch-disposition, validation, and follow-up evidence. Agent-guided judgment
-remains in the workflow review artifact and the prepared input/replacement
-files, not in hidden inference inside the CLI.
+reviewable planned changes, `apply` refuses stale plans and requires explicit
+`profile_mutation` approval, and `audit` summarizes source, claim,
+schema-pressure, scratch-disposition, apply, validation, and follow-up evidence.
+Agent-guided judgment remains in the workflow review artifact and the prepared
+input/replacement files, not in hidden inference inside the CLI.
 
 ## Closeout and issue projection validation
 
@@ -204,7 +204,7 @@ python3.14 tools/harness_capability_profiles.py analyze --scout-report <scout-re
 python3.14 tools/harness_capability_profiles.py plan --analysis-report <analysis-report.json> --json
 python3.14 tools/harness_capability_profiles.py diff --plan <update-plan.json> --json
 python3.14 tools/harness_capability_profiles.py apply --plan <update-plan.json> --allow-effect profile_mutation --security-ref <ref> --approval-ref <ref> --json
-python3.14 tools/harness_capability_profiles.py audit --scout-report <scout-report.json> --analysis-report <analysis-report.json> --plan <update-plan.json> --json
+python3.14 tools/harness_capability_profiles.py audit --scout-report <scout-report.json> --analysis-report <analysis-report.json> --plan <update-plan.json> --apply-result <apply-result.json> --validation-result <validation-result.json> --json
 python3.14 tools/validate_armory_integrity.py
 git diff --check
 ```

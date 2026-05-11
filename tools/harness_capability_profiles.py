@@ -2353,6 +2353,31 @@ def report_harness_id(payload: dict[str, Any], artifact_name: str) -> str:
     return str(harness_id)
 
 
+def validation_result_passed(payload: dict[str, Any]) -> bool:
+    results = payload.get("results")
+    if isinstance(results, list):
+        return bool(results) and all(isinstance(result, dict) and result.get("ok") is True for result in results)
+    return payload.get("result") == "passed"
+
+
+def validation_result_summary(payload: dict[str, Any], relative: Path) -> dict[str, Any]:
+    results = payload.get("results", [])
+    check_count = len(results) if isinstance(results, list) else 0
+    failed_count = (
+        sum(1 for result in results if not (isinstance(result, dict) and result.get("ok") is True))
+        if isinstance(results, list)
+        else 0
+    )
+    passed = validation_result_passed(payload)
+    return {
+        "path": relative.as_posix(),
+        "schema": str(payload.get("schema", "")),
+        "result": "passed" if passed else "failed",
+        "checks": check_count,
+        "failed": failed_count,
+    }
+
+
 def parse_replacement_arg(value: str) -> tuple[str, Path]:
     if ":" not in value:
         raise ManagerError("--profile-replacement must use harness_id:path")
@@ -2549,6 +2574,8 @@ def refresh_audit(
     scout_report_path: str,
     analysis_report_path: str,
     plan_path: str,
+    apply_result_path: str | None,
+    validation_result_paths: list[str],
     output_path: str | None,
 ) -> dict[str, Any]:
     scout, _scout_path, scout_relative = load_json_file(root, scout_report_path, expected_schema=REFRESH_SCOUT_REPORT_SCHEMA)
@@ -2563,6 +2590,33 @@ def refresh_audit(
     }
     if len(artifact_harness_ids) != 1:
         raise ManagerError("refresh audit artifacts must share harness_id")
+    mutations = refresh_plan_mutations(plan)
+    planned_paths = [validate_refresh_mutation_scope(next(iter(artifact_harness_ids)), mutation).as_posix() for mutation in mutations]
+    applied_writes: list[str] = []
+    apply_relative: Path | None = None
+    if apply_result_path is not None:
+        apply_result, _apply_path, apply_relative = load_json_file(
+            root, apply_result_path, expected_schema=REFRESH_APPLY_SCHEMA
+        )
+        if apply_result.get("plan_path") != plan_relative.as_posix():
+            raise ManagerError("refresh audit apply result must reference the audited plan")
+        raw_writes = apply_result.get("writes", [])
+        if not isinstance(raw_writes, list) or not all(isinstance(write, str) for write in raw_writes):
+            raise ManagerError("refresh audit apply result writes must be a string list")
+        applied_writes = raw_writes
+    elif planned_paths:
+        raise ManagerError("refresh audit requires apply result for mutation plans")
+    if planned_paths and sorted(applied_writes) != sorted(planned_paths):
+        raise ManagerError("refresh audit apply result writes must match plan mutations")
+    validation_summaries: list[dict[str, Any]] = []
+    for raw_validation_path in validation_result_paths:
+        validation_result, _validation_path, validation_relative = load_json_file(root, raw_validation_path)
+        summary = validation_result_summary(validation_result, validation_relative)
+        if summary["result"] != "passed":
+            raise ManagerError(f"{validation_relative.as_posix()}: validation result did not pass")
+        validation_summaries.append(summary)
+    if planned_paths and not validation_summaries:
+        raise ManagerError("refresh audit requires validation results for mutation plans")
     triage_counts: dict[str, int] = {}
     for triage in analysis.get("claim_triage", []):
         if isinstance(triage, dict):
@@ -2575,8 +2629,10 @@ def refresh_audit(
         "scout_report_path": scout_relative.as_posix(),
         "analysis_report_path": analysis_relative.as_posix(),
         "plan_path": plan_relative.as_posix(),
+        "apply_result_path": apply_relative.as_posix() if apply_relative is not None else "",
         "sources_checked": [source.get("id", "") for source in scout.get("sources", []) if isinstance(source, dict)],
-        "profile_files_changed": [mutation.get("path", "") for mutation in plan.get("mutations", []) if isinstance(mutation, dict)],
+        "profile_files_planned": planned_paths,
+        "profile_files_changed": applied_writes,
         "claim_change_summary": {
             "added": triage_counts.get("new", 0),
             "changed": triage_counts.get("deeper_review", 0) + triage_counts.get("changed", 0),
@@ -2592,7 +2648,7 @@ def refresh_audit(
             if isinstance(report, dict) and non_empty_string(report.get("rigor_deviation"))
         ],
         "scratch_evidence_disposition": scout.get("scratch_disposition", ""),
-        "validation_results": "run validation commands after apply and project results into PR closeout",
+        "validation_results": validation_summaries,
         "validation_commands": plan.get("validation_commands", []),
         "follow_up_disposition": analysis.get("follow_up_issue_candidates", []),
     }
@@ -2661,6 +2717,13 @@ def main(argv: list[str] | None = None) -> int:
     audit_parser.add_argument("--scout-report", required=True, help="Scout report JSON artifact.")
     audit_parser.add_argument("--analysis-report", required=True, help="Analysis report JSON artifact.")
     audit_parser.add_argument("--plan", required=True, help="Update plan JSON artifact.")
+    audit_parser.add_argument("--apply-result", help="Apply result JSON artifact for mutation plans.")
+    audit_parser.add_argument(
+        "--validation-result",
+        action="append",
+        default=[],
+        help="Passing validation result JSON artifact produced after apply; repeat for multiple validation gates.",
+    )
     audit_parser.add_argument("--write-output", help="Write the audit summary JSON to this path.")
     audit_parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON.")
 
@@ -2825,6 +2888,8 @@ def main(argv: list[str] | None = None) -> int:
                 scout_report_path=args.scout_report,
                 analysis_report_path=args.analysis_report,
                 plan_path=args.plan,
+                apply_result_path=args.apply_result,
+                validation_result_paths=args.validation_result,
                 output_path=args.write_output,
             )
         except Exception as error:

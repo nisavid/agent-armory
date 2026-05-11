@@ -534,6 +534,26 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             self.assertEqual(diff_payload["schema"], "harness_capability_profiles.refresh_diff.v1")
             self.assertIn("Manual refresh fixture", diff_payload["diffs"][0]["unified_diff"])
 
+            apply = self.run_manager(
+                root,
+                "apply",
+                "--plan",
+                str(plan_path),
+                "--allow-effect",
+                "profile_mutation",
+                "--security-ref",
+                "specs/vanilla-harness-capability-profiles/security-control-classification.md#profile-mutation",
+                "--approval-ref",
+                "issue-48-fixture-approval",
+                "--json",
+            )
+            self.assertEqual(apply.returncode, 0, apply.stderr)
+            apply_result = root / "scratch/apply-result.json"
+            apply_result.write_text(apply.stdout, encoding="utf-8")
+            validate = self.run_manager(root, "validate", "--json")
+            self.assertEqual(validate.returncode, 0, validate.stderr)
+            validation_result = root / "scratch/manager-validation.json"
+            validation_result.write_text(validate.stdout, encoding="utf-8")
             audit = self.run_manager(
                 root,
                 "audit",
@@ -543,17 +563,23 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
                 str(analysis_report),
                 "--plan",
                 str(plan_path),
+                "--apply-result",
+                str(apply_result),
+                "--validation-result",
+                str(validation_result),
                 "--json",
             )
             self.assertEqual(audit.returncode, 0, audit.stderr)
             audit_payload = json.loads(audit.stdout)
             self.assertEqual(audit_payload["schema"], "harness_capability_profiles.refresh_audit.v1")
             self.assertIn("source-codex-release", audit_payload["sources_checked"])
+            self.assertEqual(audit_payload["profile_files_planned"], ["docs/harness-capabilities/vanilla/codex.toml"])
             self.assertEqual(audit_payload["profile_files_changed"], ["docs/harness-capabilities/vanilla/codex.toml"])
+            self.assertEqual(audit_payload["validation_results"][0]["result"], "passed")
             self.assertEqual(audit_payload["scratch_evidence_disposition"], scout_payload["scratch_disposition"])
             self.assertTrue(audit_payload["selected_rigor_deviations"])
 
-            self.assertFalse((root / "docs/harness-capabilities/vanilla/codex.toml").read_text(encoding="utf-8").count("Manual refresh fixture"))
+            self.assertIn("Manual refresh fixture", (root / "docs/harness-capabilities/vanilla/codex.toml").read_text(encoding="utf-8"))
             self.assertTrue(scout_input.is_file())
 
     def test_manual_refresh_diff_rejects_mutation_paths_outside_refresh_scope(self):
@@ -776,6 +802,91 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
 
             self.assertNotEqual(audit.returncode, 0)
             self.assertIn("refresh audit artifacts must share harness_id", json.loads(audit.stdout)["error"])
+
+    def test_manual_refresh_audit_requires_apply_and_passing_validation_for_mutations(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            _scout_input, scout_report, analysis_report, plan_path, _replacement = self.prepare_refresh_artifacts(root)
+
+            without_apply = self.run_manager(
+                root,
+                "audit",
+                "--scout-report",
+                str(scout_report),
+                "--analysis-report",
+                str(analysis_report),
+                "--plan",
+                str(plan_path),
+                "--json",
+            )
+            self.assertNotEqual(without_apply.returncode, 0)
+            self.assertIn("requires apply result", json.loads(without_apply.stdout)["error"])
+
+            apply = self.run_manager(
+                root,
+                "apply",
+                "--plan",
+                str(plan_path),
+                "--allow-effect",
+                "profile_mutation",
+                "--security-ref",
+                "specs/vanilla-harness-capability-profiles/security-control-classification.md#profile-mutation",
+                "--approval-ref",
+                "issue-48-fixture-approval",
+                "--json",
+            )
+            self.assertEqual(apply.returncode, 0, apply.stderr)
+            apply_result = root / "scratch/apply-result.json"
+            apply_result.write_text(apply.stdout, encoding="utf-8")
+
+            without_validation = self.run_manager(
+                root,
+                "audit",
+                "--scout-report",
+                str(scout_report),
+                "--analysis-report",
+                str(analysis_report),
+                "--plan",
+                str(plan_path),
+                "--apply-result",
+                str(apply_result),
+                "--json",
+            )
+            self.assertNotEqual(without_validation.returncode, 0)
+            self.assertIn("requires validation results", json.loads(without_validation.stdout)["error"])
+
+            failed_validation = root / "scratch/failed-validation.json"
+            failed_validation.write_text(
+                json.dumps(
+                    {
+                        "schema": "harness_capability_profiles.validation_result.v1",
+                        "result": "failed",
+                        "results": [{"name": "fixture", "ok": False, "detail": "failed", "path": "."}],
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            failed_audit = self.run_manager(
+                root,
+                "audit",
+                "--scout-report",
+                str(scout_report),
+                "--analysis-report",
+                str(analysis_report),
+                "--plan",
+                str(plan_path),
+                "--apply-result",
+                str(apply_result),
+                "--validation-result",
+                str(failed_validation),
+                "--json",
+            )
+            self.assertNotEqual(failed_audit.returncode, 0)
+            self.assertIn("validation result did not pass", json.loads(failed_audit.stdout)["error"])
 
     def test_manual_refresh_apply_refuses_stale_plan_and_explicit_apply_writes_planned_profile_only(self):
         with tempfile.TemporaryDirectory() as tmpdir:

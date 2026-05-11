@@ -253,9 +253,9 @@ evidence promotions, and follow-up issue candidates.
 _Avoid_: scout cache, implicit profile edit
 
 **Manual Refresh Audit Summary**:
-A refresh closeout artifact that records checked sources, changed profile
-files, claim dispositions, schema pressure, selected-rigor deviations, scratch
-evidence disposition, validation commands or results, and follow-up
+A refresh closeout artifact that records checked sources, planned and changed
+profile files, claim dispositions, schema pressure, selected-rigor deviations,
+scratch evidence disposition, apply result, validation results, and follow-up
 disposition.
 _Avoid_: raw transcript, hidden local cache
 
