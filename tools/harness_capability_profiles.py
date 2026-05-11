@@ -2041,8 +2041,9 @@ def summarize(root: Path, *, write: bool) -> dict[str, Any]:
 
 def refresh_effect_records(payload: dict[str, Any], default_effect: str = "passive_scanning") -> list[dict[str, str]]:
     effects = payload.get("effects")
-    if effects is None:
-        if payload.get("local_observations") or payload.get("study_reports"):
+    effectful_evidence = bool(payload.get("local_observations") or payload.get("study_reports"))
+    if effects is None or effects == []:
+        if effectful_evidence:
             raise ManagerError("effects must be explicit when scout input includes local observations or study reports")
         return [{"effect": default_effect, "classification_ref": "default-passive", "approval_ref": "not-required"}]
     if not isinstance(effects, list):
@@ -2337,7 +2338,7 @@ def refresh_plan_mutations(plan: dict[str, Any]) -> list[dict[str, Any]]:
         raw_path = mutation.get("path")
         if not non_empty_string(raw_path):
             raise ManagerError("mutation missing path")
-        path = str(raw_path)
+        path = Path(str(raw_path)).as_posix()
         if path in seen_paths:
             raise ManagerError(f"duplicate mutation for path: {path}")
         seen_paths.add(path)

@@ -670,6 +670,13 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             self.assertNotEqual(blocked.returncode, 0)
             self.assertIn("effects must be explicit", json.loads(blocked.stdout)["error"])
 
+            payload["effects"] = []
+            scout_input.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            empty_effects = self.run_manager(root, "scout", "--input", str(scout_input), "--json")
+
+            self.assertNotEqual(empty_effects.returncode, 0)
+            self.assertIn("effects must be explicit", json.loads(empty_effects.stdout)["error"])
+
     def test_manual_refresh_analyze_compares_version_tokens_without_prefix_substrings(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -976,7 +983,9 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             self.write_canonical_validation_root(root)
             _scout_input, _scout_report, _analysis_report, plan_path, _replacement = self.prepare_refresh_artifacts(root)
             plan = json.loads(plan_path.read_text(encoding="utf-8"))
-            plan["mutations"].append(dict(plan["mutations"][0]))
+            duplicate_mutation = dict(plan["mutations"][0])
+            duplicate_mutation["path"] = "./docs/harness-capabilities/vanilla/codex.toml"
+            plan["mutations"].append(duplicate_mutation)
             plan_path.write_text(json.dumps(plan, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
             blocked = self.run_manager(root, "diff", "--plan", str(plan_path), "--json")
