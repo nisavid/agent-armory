@@ -556,6 +556,20 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             self.assertFalse((root / "docs/harness-capabilities/vanilla/codex.toml").read_text(encoding="utf-8").count("Manual refresh fixture"))
             self.assertTrue(scout_input.is_file())
 
+    def test_manual_refresh_diff_rejects_mutation_paths_outside_refresh_scope(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            _scout_input, _scout_report, _analysis_report, plan_path, _replacement = self.prepare_refresh_artifacts(root)
+            plan = json.loads(plan_path.read_text(encoding="utf-8"))
+            plan["mutations"][0]["path"] = "CONTEXT.md"
+            plan_path.write_text(json.dumps(plan, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+            diff = self.run_manager(root, "diff", "--plan", str(plan_path), "--json")
+
+            self.assertNotEqual(diff.returncode, 0)
+            self.assertIn("mutation path not allowed", json.loads(diff.stdout)["error"])
+
     def test_manual_refresh_effect_gates_block_unapproved_scout_and_apply(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -655,6 +669,30 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             self.assertNotEqual(mismatch.returncode, 0)
             self.assertIn("must match analysis report harness_id", json.loads(mismatch.stdout)["error"])
 
+    def test_manual_refresh_audit_rejects_cross_report_harness_mismatch(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            _scout_input, scout_report, analysis_report, plan_path, _replacement = self.prepare_refresh_artifacts(root)
+            analysis = json.loads(analysis_report.read_text(encoding="utf-8"))
+            analysis["harness_id"] = "cursor"
+            analysis_report.write_text(json.dumps(analysis, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+            audit = self.run_manager(
+                root,
+                "audit",
+                "--scout-report",
+                str(scout_report),
+                "--analysis-report",
+                str(analysis_report),
+                "--plan",
+                str(plan_path),
+                "--json",
+            )
+
+            self.assertNotEqual(audit.returncode, 0)
+            self.assertIn("refresh audit artifacts must share harness_id", json.loads(audit.stdout)["error"])
+
     def test_manual_refresh_apply_refuses_stale_plan_and_explicit_apply_writes_planned_profile_only(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -728,6 +766,33 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
 
             self.assertNotEqual(tampered.returncode, 0)
             self.assertIn("planned content hash mismatch", json.loads(tampered.stdout)["error"])
+
+    def test_manual_refresh_apply_rejects_mutation_path_outside_plan_harness_scope(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            _scout_input, _scout_report, _analysis_report, plan_path, _replacement = self.prepare_refresh_artifacts(root)
+            plan = json.loads(plan_path.read_text(encoding="utf-8"))
+            plan["mutations"][0]["path"] = "docs/harness-capabilities/vanilla/claude_code.toml"
+            plan["mutations"][0]["harness_id"] = "claude_code"
+            plan_path.write_text(json.dumps(plan, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+            tampered = self.run_manager(
+                root,
+                "apply",
+                "--plan",
+                str(plan_path),
+                "--allow-effect",
+                "profile_mutation",
+                "--security-ref",
+                "specs/vanilla-harness-capability-profiles/security-control-classification.md#profile-mutation",
+                "--approval-ref",
+                "issue-48-fixture-approval",
+                "--json",
+            )
+
+            self.assertNotEqual(tampered.returncode, 0)
+            self.assertIn("mutation harness_id must match plan harness_id", json.loads(tampered.stdout)["error"])
 
     def test_manual_refresh_apply_requires_profile_mutation_for_tampered_effect_requirements(self):
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -2292,6 +2292,44 @@ def allowed_mutation_path(relative_path: str) -> bool:
     return any(relative_path.startswith(prefix) for prefix in REFRESH_MUTATION_PATH_PREFIXES)
 
 
+def refresh_plan_harness_id(plan: dict[str, Any]) -> str:
+    harness_id = plan.get("harness_id")
+    if harness_id not in REQUIRED_HARNESSES:
+        raise ManagerError("plan harness_id must name a supported harness")
+    return str(harness_id)
+
+
+def refresh_plan_mutations(plan: dict[str, Any]) -> list[dict[str, Any]]:
+    raw_mutations = plan.get("mutations", [])
+    if not isinstance(raw_mutations, list):
+        raise ManagerError("plan mutations must be a list")
+    mutations: list[dict[str, Any]] = []
+    for mutation in raw_mutations:
+        if not isinstance(mutation, dict) or mutation.get("type") != "replace_file":
+            raise ManagerError("plan contains unsupported mutation")
+        mutations.append(mutation)
+    return mutations
+
+
+def validate_refresh_mutation_scope(plan_harness_id: str, mutation: dict[str, Any]) -> Path:
+    relative = Path(str(mutation.get("path", "")))
+    if invalid_relative_path(relative) or not allowed_mutation_path(relative.as_posix()):
+        raise ManagerError(f"{relative.as_posix()}: mutation path not allowed")
+    mutation_harness_id = mutation.get("harness_id")
+    if non_empty_string(mutation_harness_id) and mutation_harness_id != plan_harness_id:
+        raise ManagerError(f"{relative.as_posix()}: mutation harness_id must match plan harness_id")
+    if relative.as_posix().startswith(VANILLA_PROFILE_DIR.as_posix() + "/") and relative.stem != plan_harness_id:
+        raise ManagerError(f"{relative.as_posix()}: mutation path must match plan harness_id")
+    return relative
+
+
+def report_harness_id(payload: dict[str, Any], artifact_name: str) -> str:
+    harness_id = payload.get("harness_id")
+    if harness_id not in REQUIRED_HARNESSES:
+        raise ManagerError(f"{artifact_name} harness_id must name a supported harness")
+    return str(harness_id)
+
+
 def parse_replacement_arg(value: str) -> tuple[str, Path]:
     if ":" not in value:
         raise ManagerError("--profile-replacement must use harness_id:path")
@@ -2382,11 +2420,10 @@ def refresh_plan(
 
 def refresh_diff(root: Path, *, plan_path: str) -> dict[str, Any]:
     plan, _path, plan_relative = load_json_file(root, plan_path, expected_schema=REFRESH_UPDATE_PLAN_SCHEMA)
+    plan_harness_id = refresh_plan_harness_id(plan)
     diffs: list[dict[str, Any]] = []
-    for mutation in plan.get("mutations", []):
-        if not isinstance(mutation, dict) or mutation.get("type") != "replace_file":
-            raise ManagerError("plan contains unsupported mutation")
-        relative = Path(str(mutation.get("path", "")))
+    for mutation in refresh_plan_mutations(plan):
+        relative = validate_refresh_mutation_scope(plan_harness_id, mutation)
         current_path = checked_read_file(root, relative)
         current_text = current_path.read_text(encoding="utf-8")
         planned_text = str(mutation.get("content", ""))
@@ -2423,14 +2460,8 @@ def refresh_apply(
     approval_ref: str,
 ) -> dict[str, Any]:
     plan, _path, plan_relative = load_json_file(root, plan_path, expected_schema=REFRESH_UPDATE_PLAN_SCHEMA)
-    raw_mutations = plan.get("mutations", [])
-    if not isinstance(raw_mutations, list):
-        raise ManagerError("plan mutations must be a list")
-    mutations: list[dict[str, Any]] = []
-    for mutation in raw_mutations:
-        if not isinstance(mutation, dict):
-            raise ManagerError("plan contains unsupported mutation")
-        mutations.append(mutation)
+    plan_harness_id = refresh_plan_harness_id(plan)
+    mutations = refresh_plan_mutations(plan)
     effect_requirements = plan.get("effect_requirements", [])
     if (
         mutations
@@ -2449,11 +2480,7 @@ def refresh_apply(
     )
     writes: list[str] = []
     for mutation in mutations:
-        if mutation.get("type") != "replace_file":
-            raise ManagerError("plan contains unsupported mutation")
-        relative = Path(str(mutation.get("path", "")))
-        if invalid_relative_path(relative) or not allowed_mutation_path(relative.as_posix()):
-            raise ManagerError(f"{relative.as_posix()}: mutation path not allowed")
+        relative = validate_refresh_mutation_scope(plan_harness_id, mutation)
         planned_content = str(mutation.get("content", ""))
         planned_hash = hashlib.sha256(planned_content.encode("utf-8")).hexdigest()
         if planned_hash != mutation.get("planned_sha256"):
@@ -2506,6 +2533,13 @@ def refresh_audit(
         root, analysis_report_path, expected_schema=REFRESH_ANALYSIS_REPORT_SCHEMA
     )
     plan, _plan_path, plan_relative = load_json_file(root, plan_path, expected_schema=REFRESH_UPDATE_PLAN_SCHEMA)
+    artifact_harness_ids = {
+        report_harness_id(scout, "scout report"),
+        report_harness_id(analysis, "analysis report"),
+        refresh_plan_harness_id(plan),
+    }
+    if len(artifact_harness_ids) != 1:
+        raise ManagerError("refresh audit artifacts must share harness_id")
     triage_counts: dict[str, int] = {}
     for triage in analysis.get("claim_triage", []):
         if isinstance(triage, dict):
