@@ -828,6 +828,20 @@ schema_pressure_ids = ["SP-003"]
             self.assertIn("research_note:codex:path", failures)
             self.assertIn("schema_pressure:path", failures)
 
+    def test_validate_json_omits_schema_pressure_id_cascade_when_report_missing(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            (root / "specs/vanilla-harness-capability-profiles/schema-pressure-report.md").unlink()
+
+            completed = self.run_manager(root, "validate", "--json")
+
+            self.assertNotEqual(completed.returncode, 0)
+            payload = json.loads(completed.stdout)
+            failures = {result["name"] for result in payload["results"] if not result["ok"]}
+            self.assertIn("schema_pressure:path", failures)
+            self.assertFalse(any(":schema_pressure_ids:" in failure for failure in failures))
+
     def test_validate_json_rejects_incomplete_research_and_schema_pressure_rows(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

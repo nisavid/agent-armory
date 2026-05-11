@@ -958,10 +958,10 @@ def validate_profile_data(
     return results
 
 
-def load_schema_pressure_report_ids(root: Path) -> set[str]:
+def load_schema_pressure_report_ids(root: Path) -> set[str] | None:
     path = repo_path(root, SCHEMA_PRESSURE_REPORT_PATH)
     if not path.is_file():
-        return set()
+        return None
     row_ids: set[str] = set()
     for line in path.read_text(encoding="utf-8").splitlines():
         match = re.match(r"^\|\s*(SP-\d+)\s*\|", line)
