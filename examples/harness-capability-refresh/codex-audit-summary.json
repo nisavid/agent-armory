@@ -1,13 +1,26 @@
 {
   "analysis_report_path": "scratch/analysis-report.json",
   "claim_change_summary": {
-    "accepted_reuse": 10,
+    "accepted_reuse": 0,
     "added": 0,
-    "changed": 3,
+    "changed": 0,
+    "not_applicable": 0,
     "retired": 0,
-    "unknown": 1,
-    "unsupported": 1
+    "unknown": 0,
+    "unsupported": 0
   },
+  "claim_triage_summary": [
+    {
+      "claim_id": "claim-codex-instructions_context",
+      "reason": "Source-backed claim remains supported by checked Codex skills, plugin, subagent, automation, and noninteractive docs.",
+      "triage": "accept_reuse"
+    },
+    {
+      "claim_id": "unknown-codex-memory-write-authority",
+      "reason": "Checked sources do not prove durable memory write authority in the vanilla harness.",
+      "triage": "unknown"
+    }
+  ],
   "apply_result_path": "scratch/apply-result.json",
   "dry_run": true,
   "follow_up_disposition": [

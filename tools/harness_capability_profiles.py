@@ -2393,6 +2393,65 @@ def validation_result_summary(payload: dict[str, Any], relative: Path) -> dict[s
     }
 
 
+def empty_claim_change_summary() -> dict[str, int]:
+    return {
+        "added": 0,
+        "changed": 0,
+        "retired": 0,
+        "unsupported": 0,
+        "not_applicable": 0,
+        "unknown": 0,
+        "accepted_reuse": 0,
+    }
+
+
+def profile_claims_by_id(profile: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    claims = profile.get("claim", [])
+    if not isinstance(claims, list):
+        return {}
+    return {
+        str(claim["id"]): claim
+        for claim in claims
+        if isinstance(claim, dict) and non_empty_string(claim.get("id"))
+    }
+
+
+def profile_claim_change_summary(before_content: str, after_content: str) -> dict[str, int]:
+    before_claims = profile_claims_by_id(tomllib.loads(before_content))
+    after_claims = profile_claims_by_id(tomllib.loads(after_content))
+    summary = empty_claim_change_summary()
+    before_ids = set(before_claims)
+    after_ids = set(after_claims)
+    added_ids = after_ids - before_ids
+    retired_ids = before_ids - after_ids
+    changed_ids = {claim_id for claim_id in before_ids & after_ids if before_claims[claim_id] != after_claims[claim_id]}
+    summary["added"] = len(added_ids)
+    summary["retired"] = len(retired_ids)
+    summary["changed"] = len(changed_ids)
+    affected_after_ids = added_ids | changed_ids
+    for claim_id in affected_after_ids:
+        status = str(after_claims[claim_id].get("status", "unknown"))
+        if status == "unsupported":
+            summary["unsupported"] += 1
+        elif status == "not-applicable":
+            summary["not_applicable"] += 1
+        elif status == "unknown":
+            summary["unknown"] += 1
+    return summary
+
+
+def sum_claim_change_summaries(summaries: list[dict[str, Any]]) -> dict[str, int]:
+    total = empty_claim_change_summary()
+    for summary in summaries:
+        if not isinstance(summary, dict):
+            continue
+        for key in total:
+            value = summary.get(key, 0)
+            if isinstance(value, int):
+                total[key] += value
+    return total
+
+
 def parse_replacement_arg(value: str) -> tuple[str, Path]:
     if ":" not in value:
         raise ManagerError("--profile-replacement must use harness_id:path")
@@ -2437,6 +2496,7 @@ def refresh_plan(
         if not allowed_mutation_path(target_relative.as_posix()):
             raise ManagerError(f"{target_relative.as_posix()}: mutation path not allowed")
         current_path = checked_read_file(root, target_relative)
+        current_content = current_path.read_text(encoding="utf-8")
         planned_content = replacement_path.read_text(encoding="utf-8")
         mutations.append(
             {
@@ -2444,8 +2504,9 @@ def refresh_plan(
                 "harness_id": harness_id,
                 "path": target_relative.as_posix(),
                 "source_path": replacement_relative.as_posix(),
-                "precondition_sha256": file_sha256(current_path),
+                "precondition_sha256": hashlib.sha256(current_content.encode("utf-8")).hexdigest(),
                 "planned_sha256": hashlib.sha256(planned_content.encode("utf-8")).hexdigest(),
+                "claim_change_summary": profile_claim_change_summary(current_content, planned_content),
                 "content": planned_content,
             }
         )
@@ -2635,11 +2696,14 @@ def refresh_audit(
         raise ManagerError("refresh audit requires validation results for mutation plans")
     if planned_paths and not any(summary.get("schema") == VALIDATION_RESULT_SCHEMA for summary in validation_summaries):
         raise ManagerError("refresh audit requires Manager Core validation result for mutation plans")
-    triage_counts: dict[str, int] = {}
-    for triage in analysis.get("claim_triage", []):
-        if isinstance(triage, dict):
-            value = str(triage.get("triage", "unknown"))
-            triage_counts[value] = triage_counts.get(value, 0) + 1
+    applied_write_set = set(applied_writes)
+    claim_change_summary = sum_claim_change_summaries(
+        [
+            mutation.get("claim_change_summary", {})
+            for mutation in mutations
+            if isinstance(mutation.get("path"), str) and mutation["path"] in applied_write_set
+        ]
+    )
     result: dict[str, Any] = {
         "schema": REFRESH_AUDIT_SCHEMA,
         "result": "audited",
@@ -2651,15 +2715,8 @@ def refresh_audit(
         "sources_checked": [source.get("id", "") for source in scout.get("sources", []) if isinstance(source, dict)],
         "profile_files_planned": planned_paths,
         "profile_files_changed": applied_writes,
-        "claim_change_summary": {
-            "added": triage_counts.get("new", 0),
-            "changed": triage_counts.get("deeper_review", 0) + triage_counts.get("changed", 0),
-            "retired": triage_counts.get("retired", 0),
-            "unsupported": triage_counts.get("unsupported", 0),
-            "not_applicable": triage_counts.get("not-applicable", 0),
-            "unknown": triage_counts.get("keep_visible", 0) + triage_counts.get("unknown", 0),
-            "accepted_reuse": triage_counts.get("accept_reuse", 0),
-        },
+        "claim_change_summary": claim_change_summary,
+        "claim_triage_summary": analysis.get("claim_triage", []),
         "schema_pressure": analysis.get("schema_pressure", []),
         "selected_rigor_deviations": [
             report.get("rigor_deviation", "")

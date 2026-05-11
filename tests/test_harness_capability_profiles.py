@@ -525,6 +525,7 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             self.assertEqual(plan_payload["schema"], "harness_capability_profiles.refresh_update_plan.v1")
             self.assertEqual(plan_payload["result"], "planned")
             self.assertEqual(plan_payload["mutations"][0]["path"], "docs/harness-capabilities/vanilla/codex.toml")
+            self.assertEqual(plan_payload["mutations"][0]["claim_change_summary"]["changed"], 0)
             self.assertIn("python3.14 tools/harness_capability_profiles.py validate --json", plan_payload["validation_commands"])
 
             diff = self.run_manager(root, "diff", "--plan", str(plan_path), "--json")
@@ -574,7 +575,19 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             self.assertIn("source-codex-release", audit_payload["sources_checked"])
             self.assertEqual(audit_payload["profile_files_planned"], ["docs/harness-capabilities/vanilla/codex.toml"])
             self.assertEqual(audit_payload["profile_files_changed"], ["docs/harness-capabilities/vanilla/codex.toml"])
-            self.assertIn("not_applicable", audit_payload["claim_change_summary"])
+            self.assertEqual(
+                audit_payload["claim_change_summary"],
+                {
+                    "accepted_reuse": 0,
+                    "added": 0,
+                    "changed": 0,
+                    "not_applicable": 0,
+                    "retired": 0,
+                    "unknown": 0,
+                    "unsupported": 0,
+                },
+            )
+            self.assertTrue(audit_payload["claim_triage_summary"])
             self.assertEqual(audit_payload["validation_results"][0]["result"], "passed")
             self.assertEqual(audit_payload["scratch_evidence_disposition"], scout_payload["scratch_disposition"])
             self.assertTrue(audit_payload["selected_rigor_deviations"])

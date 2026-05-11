@@ -478,9 +478,9 @@ Manual refresh uses staged commands with dry-run defaults:
    `profile_mutation` effect, and writes only planned canonical profile or schema
    content.
 6. `audit` emits a Manual Refresh Audit Summary for sources checked, profile
-   files planned and changed, claim dispositions, schema pressure,
-   selected-rigor deviations, scratch evidence disposition, apply result,
-   validation results, and follow-up disposition.
+   files planned and changed, applied claim deltas, analysis triage, schema
+   pressure, selected-rigor deviations, scratch evidence disposition, apply
+   result, validation results, and follow-up disposition.
 
 Canonical profile mutation must be explicit and reviewable. The manager should
 not silently mutate profile files while scouting or analyzing.

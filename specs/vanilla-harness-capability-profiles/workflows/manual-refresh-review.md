@@ -49,10 +49,9 @@ Profiles through the Harness Capability Profile Manager Core.
    - Provide the passing Manager Core validation result artifact from post-apply
      gates, plus any other passing closeout validation artifacts used as
      supporting evidence.
-   - Record sources checked, profile files changed, claims added, changed,
-     retired, unsupported, or left unknown, schema pressure, selected-rigor
-     deviations, scratch disposition, validation results, and follow-up
-     disposition.
+   - Record sources checked, profile files changed, applied claim deltas,
+     analysis triage, schema pressure, selected-rigor deviations, scratch
+     disposition, validation results, and follow-up disposition.
 
 Generated scout, analysis, plan, diff, apply, and audit outputs are JSON.
 Manager Core `--write-output` paths must end in `.json` and must not point at
