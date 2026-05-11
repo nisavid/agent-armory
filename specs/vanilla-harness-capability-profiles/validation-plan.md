@@ -27,7 +27,7 @@ Use spec-driven TDD for migration and validation before research enrichment.
 3. Add failing tests for integration from the live repository validation
    command produced by the validation boundary refactor.
 4. Implement the Manager Core migration and validation behavior.
-5. Migrate the current aggregate TOML into six vanilla profile files.
+5. Migrate the aggregate TOML input into six vanilla profile files.
 6. Remove `docs/harness-capabilities.toml` as authored truth.
 7. Verify the human-facing summary remains aligned with validated profiles.
 
@@ -192,10 +192,12 @@ Before issue projection and story closeout, validate:
 - remaining unknowns and follow-up issue links;
 - Cross-Boundary Coherence and Story Quality Ralph Review results.
 
+The issue #49 closeout reconciliation records the final epic verification in
+[Harness Capability Profiles Epic Closeout](../../docs/closeout/harness-capability-profiles-epic.md).
+
 ## Required commands
 
-The exact command names are finalized during implementation. Expected closeout
-commands include:
+Closeout commands include:
 
 ```sh
 python3.14 -m unittest
@@ -210,11 +212,11 @@ python3.14 tools/validate_armory_integrity.py
 git diff --check
 ```
 
-## Completion criteria before returning to Config
+## Completion criteria for returning to Config
 
-Manual refresh is complete enough to unblock Agent Equipment Config when all
-six vanilla profiles exist in the new schema, all standard surface families are
-covered, material claims have evidence or explicit unsupported/unknown status,
-Capability Claim Triage has run against current first-party evidence, pressure
-research notes exist, manager validation and audit pass, and remaining
+Agent Equipment Config can resume after all six vanilla profiles exist in the
+new schema, all standard surface families are covered, material claims have
+evidence or explicit unsupported or unknown status, Capability Claim Triage has
+run against current first-party evidence, pressure research notes exist,
+Manager Core validation and manual refresh audit behavior pass, and remaining
 unknowns are issue-tracked or accepted as non-blocking.

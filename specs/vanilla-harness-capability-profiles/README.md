@@ -42,13 +42,14 @@ Smiths consume profile facts when crafting Agent Equipment.
 - [#48 Implement manual Harness Capability Profile refresh](https://github.com/nisavid/agent-armory/issues/48)
 - [#49 Close out Harness Capability Profiles issue projection](https://github.com/nisavid/agent-armory/issues/49)
 
-The projected issues are native sub-issues of #4 in story order. Tracker
-dependencies make #43 blocked by #42, #44 blocked by #43, #45 blocked by #43
-and #44, #46 blocked by #42, #48 blocked by #45 and #46, and #49 blocked by the
-completed implementation stories. #23 and #36 are blocked by #4 for the
-pre-Config manual profile surface. Periodic refresh remains deferred until
+The projected issues are native sub-issues of #4 in story order. Issues #42,
+#43, #44, #45, #46, #47, and #48 have delivered the pre-Config manual profile
+surface. Issue #49 owns final projection and closeout reconciliation. After
+that closeout lands, Agent Equipment Config can resume against the current
+Vanilla Harness Capability Profiles. Periodic refresh remains deferred until
 [#23 Agent Equipment Config](https://github.com/nisavid/agent-armory/issues/23)
-and [#3 Periodic Actions](https://github.com/nisavid/agent-armory/issues/3).
+and [#3 Periodic Actions](https://github.com/nisavid/agent-armory/issues/3)
+provide the required configuration and scheduled-action surfaces.
 
 ## Purpose
 
@@ -81,15 +82,14 @@ Every Manager Core command exposes stable JSON output, even when it also prints
 human summaries. Agent-guided workflows, tests, and future automation consume
 JSON rather than scraping prose.
 
-The Manager Core uses one script with subcommands, provisionally
-`tools/harness_capability_profiles.py`, so schema loading, profile discovery,
-error handling, JSON output, and dry-run or apply semantics remain consistent.
+The Manager Core uses `tools/harness_capability_profiles.py` with subcommands
+so schema loading, profile discovery, error handling, JSON output, and dry-run
+or apply semantics remain consistent.
 
 Detailed Vanilla Harness Capability Profile validation belongs to
 `tools/harness_capability_profiles.py validate`. The live repository validation
-command established by the validation boundary refactor should invoke or
-require the Manager Core's validation result without duplicating detailed
-profile schema rules.
+command invokes the Manager Core's validation result without duplicating
+detailed profile schema rules.
 
 This epic defines the agent-guided workflows required for manual refresh of
 Vanilla Harness Capability Profiles: research notes, Capability Claim Triage,
@@ -98,16 +98,12 @@ review. Later work may promote some of these workflows into reusable Agent
 Equipment, but they are part of the Harness Capability Profile Manager system
 needed to complete this epic.
 
-The first implementation slice includes lightweight workflow templates or
-checklists for those agent-guided steps under this Equipment Design Bundle.
-They are local execution aids for the epic, not global repo policy or
-Published Agent Equipment.
+Workflow checklists under this Equipment Design Bundle are local execution aids
+for the epic, not global repo policy or Published Agent Equipment.
 
 Workflow templates live under
-`specs/vanilla-harness-capability-profiles/workflows/`. Planned starter
-templates are `research-note.md`, `claim-triage.md`,
-`schema-pressure-review.md`, `manual-refresh-review.md`,
-`study-plan-review.md`, and `study-report-review.md`.
+`specs/vanilla-harness-capability-profiles/workflows/`. The implemented manual
+refresh checklist is `manual-refresh-review.md`.
 
 The implemented first manual-refresh workflow uses
 `manual-refresh-review.md` as the agent-guided checklist for the deterministic
@@ -121,14 +117,12 @@ and audit disposition without turning those judgments into hidden tool logic.
 - Each supported harness has one per-harness structured Vanilla Harness
   Capability Profile under `docs/harness-capabilities/vanilla/<harness-id>.toml`.
 - Shared schema and migrations live under `docs/harness-capabilities/schema/`.
-- The current aggregate `docs/harness-capabilities.toml` is migrated into
-  per-harness vanilla profiles and then removed once the manager can validate
-  the new files and generate needed summaries. Authored truth should not remain
-  split across old and new profile formats.
-- The first implementation uses deterministic migration to seed the six
-  per-harness vanilla profiles from the aggregate TOML. Migrated claims retain
-  their evidence basis and are marked for schema pressure or equivalent review
-  until research enriches them under the new rubric.
+- The aggregate `docs/harness-capabilities.toml` has been migrated into
+  per-harness vanilla profiles and removed as authored truth. Authored truth
+  must not be split across old and new profile formats.
+- Deterministic migration seeds the six per-harness vanilla profiles when
+  migration fixtures are needed. Current canonical profiles carry refreshed
+  source-backed evidence, claim triage, and accepted schema-enrichment fields.
 - Profiles are descriptive records of Harness Capability Surfaces, not Forge
   projection guidance or Smith instructions.
 - Vanilla Harness Capability Profiles describe the Vanilla Harness Capability
@@ -152,13 +146,13 @@ and audit disposition without turning those judgments into hidden tool logic.
 - Periodic orchestration belongs to Harness Capability Refresh, not the profile
   manager. Periodic refresh integration is deferred until Periodic Actions
   exists, and Periodic Actions depends on Agent Equipment Config.
-- The first manager-core implementation target is read-only: validate profiles,
-  summarize them, compare profile revisions, and report schema pressure without
-  network scouting or automatic file mutation.
-- Vanilla Harness Capability Profile work blocks returning to Agent Equipment
-  Config until the manager supports manual refresh: evidence scouting, change
-  analysis, schema-candidate discovery, migration planning, controlled profile
-  updates, and audit output.
+- The Manager Core supports validation, summary alignment, protocol artifact
+  validation, deterministic migration, and staged manual refresh commands:
+  scout, analyze, plan, diff, apply, and audit.
+- Agent Equipment Config can resume after issue #49 closes the pre-Config
+  manual profile surface. Future recurring refresh remains deferred to Harness
+  Capability Refresh after Agent Equipment Config and Periodic Actions provide
+  the required configuration and scheduled-action surfaces.
 - Effective Harness Capability Surface inventory or evaluation tooling is
   deferred. The base profile schema should still be shaped so future tooling
   can compose Vanilla Harness Capability Profiles with installed equipment,
@@ -174,38 +168,35 @@ and audit disposition without turning those judgments into hidden tool logic.
 - Manual refresh manager.
 - Closeout and issue projection alignment.
 
-Project child issues after this design grill has settled enough acceptance
-criteria for future Agents to execute the stories without repeating the same
-scope questions.
+Child issues carry enough acceptance criteria for future Agents to execute the
+stories without repeating the same scope questions.
 
 The story order is a dependency chain with limited parallel research. Some
 source research may happen while the migration core is implemented, but
 schema/profile changes wait until the migration substrate exists.
 
-After the initial batch of child-story acceptance criteria is drafted and
-before issue projection, run a comprehensive Ralph Review of the batch. The
-review considers the Armory and Forge vision, core requirements, current
-status, this bundle's specs and ADRs, the design decisions from the grill, and
-downstream issues that will depend on the batch outcomes.
+Issue #49 verifies the child-story acceptance criteria, issue projection, and
+delivered artifacts through Ralph Review. The review considers the Armory and
+Forge vision, core requirements, current status, this bundle's specs and ADRs,
+the design decisions from the grill, and downstream issues that depend on the
+profile outcomes.
 
-Before issue projection, run a Forge Domain Model Review. The review should
-inventory core concepts and domains, verify the split between Forge Canon,
-Forge Core, Forge Equipment Core, and Armory Equipment Core, identify Seed-era
-names still carrying live responsibilities, and decide any required renames,
-reparenting, validator splits, or follow-up tasks.
+The Forge Domain Model Review inventories core concepts and domains, verifies
+the split between Forge Canon, Forge Core, Forge Equipment Core, and Armory
+Equipment Core, identifies Seed-era names still carrying live responsibilities,
+and records required renames, reparenting, validator splits, or follow-up
+tasks.
 
-The broader Agentic Engineering Operating Model Review is a separate
-high-priority follow-up. This epic carries one checkpoint for it: before the
-Manual Refresh Manager is considered feature-complete, either the Agentic
-Engineering Operating Model Review has completed or this epic records a local
-certification that its manual-refresh workflow has sufficient authority,
-escalation, evidence-durability, mutation, and closeout rules to proceed.
+The Agentic Engineering Operating Model Review is a separate cross-cutting
+review. This epic uses it as the operating-model checkpoint for the manual
+refresh workflow's authority, escalation, evidence-durability, mutation, and
+closeout rules.
 
-## Prerequisite implementation story
+## Prerequisite validation-boundary story
 
-The first implementation story refactors the live validation boundary before
-the Harness Capability Profile Manager integrates with repository validation.
-It is TDD-scoped around classifying and renaming the validation surface:
+The validation-boundary story refactors the live validation boundary before the
+Harness Capability Profile Manager integrates with repository validation. It is
+scoped around classifying and renaming the validation surface:
 
 - define Armory Integrity Validation as the top-level live repository
   validation umbrella;
@@ -241,7 +232,7 @@ It is TDD-scoped around classifying and renaming the validation surface:
 
 ## Manager Core implementation story
 
-The next implementation story is TDD-scoped around deterministic migration
+The Manager Core implementation story is scoped around deterministic migration
 and validation before research enrichment:
 
 - implement `tools/harness_capability_profiles.py` as a standard-library
@@ -584,8 +575,8 @@ The story is accepted when:
   research lanes that do not mutate canonical profiles before their blockers
   complete;
 - the issue projection records that periodic refresh integration is deferred
-  until Periodic Actions exists, and that manual refresh remains blocking
-  before returning to Agent Equipment Config;
+  until Agent Equipment Config and Periodic Actions exist, and that manual
+  refresh completion unblocks returning to Agent Equipment Config;
 - active docs and specs agree on Equipment Design Bundle, Capability Surface,
   Capability Profile, Vanilla and Effective Harness Capability Profile,
   Harness Capability Profile Manager, Armory Integrity Validation, Forge

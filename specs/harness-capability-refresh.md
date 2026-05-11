@@ -14,7 +14,7 @@ Core and its agent-guided workflow. This recurring-refresh blueprint should
 invoke that staged scout, analyze, plan, diff, apply, and audit surface later;
 it should not introduce a separate profile mutation path.
 
-This spec describes desired behavior for future Agent Equipment. It does not implement Agent Equipment, create a live scheduler, or assert that current harness facts are already refreshed.
+This spec describes desired behavior for future Agent Equipment. It does not implement Agent Equipment, create a live scheduler, or keep current harness facts refreshed by itself. Until this recurring equipment exists, current profile state is maintained through the Harness Capability Profile Manager Core and manual refresh workflow.
 
 ## Purpose
 
@@ -116,7 +116,9 @@ Each projection must state:
 
 ## Non-goals
 
-- Harness Capability Refresh does not replace the canonical harness capability catalog.
+- Harness Capability Refresh does not replace Vanilla Harness Capability
+  Profiles, the Harness Capability Catalog front door, or the Harness
+  Capability Profile Manager Core.
 - Harness Capability Refresh does not accept unsourced claims as refreshed facts.
 - Harness Capability Refresh does not require GitHub write access when the issue-candidate fallback can preserve the signal.
 - Harness Capability Refresh does not guarantee that every harness publishes machine-readable version or capability metadata.

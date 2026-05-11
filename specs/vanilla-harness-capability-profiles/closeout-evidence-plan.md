@@ -68,7 +68,9 @@ projection.
 
 ## Issue projection
 
-After the design grill settles acceptance criteria, project the epic and child
-stories into GitHub Issues. The projected issues should preserve blocking
-status relative to Agent Equipment Config and distinguish the deferred periodic
-refresh integration dependency on Periodic Actions.
+Issue projection is maintained in GitHub issue #4 and child issues #42 through
+#49. The issue #49 closeout reconciliation records that the pre-Config manual
+profile surface is complete, Agent Equipment Config can resume against current
+profiles, and periodic refresh integration remains deferred until Agent
+Equipment Config and Periodic Actions provide the required configuration and
+scheduled-action surfaces.

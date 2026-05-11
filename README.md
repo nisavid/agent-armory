@@ -66,7 +66,8 @@ Start with the [Forge Tour](docs/forge-tour.md), or use the
 
 ## What you can use now
 
-The current value is the manufacturing setup plus the first reusable Config
+The current value is the manufacturing setup, source-backed Vanilla Harness
+Capability Profiles with manual refresh tooling, and the first reusable Config
 runtime slice.
 
 The Forge already gives your agents a way to see how equipment is supposed to
@@ -137,7 +138,8 @@ The current roadmap includes these equipment lines:
   local approval and auditable state.
 - [Vanilla Harness Capability Profiles](specs/vanilla-harness-capability-profiles/),
   for source-backed descriptions of supported harness integration surfaces.
-  The recurring refresh path remains future work.
+  Manual profile validation and refresh tooling is available; recurring
+  refresh remains future work.
 - [Reflection and cognition equipment](https://github.com/nisavid/agent-armory/issues/25),
   planned as Head Gear, for turning recent agent experience into durable
   insight, routed follow-up, and harness improvements after enough rudimentary

@@ -44,9 +44,10 @@ judgment inside a deterministic script.
 
 ## Evidence category
 
-Implementation inference and accepted design decision. The first-slice profile
-facts remain sourced to the current Harness Capability Catalog until research
-and manual refresh enrich them.
+Implementation inference and accepted design decision. Profile facts are
+authored in per-harness Vanilla Harness Capability Profiles, summarized through
+the Harness Capability Catalog, and maintained through Manager Core validation
+and manual refresh.
 
 ## Harness-specific projection
 
