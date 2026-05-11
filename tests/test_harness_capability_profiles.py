@@ -587,6 +587,60 @@ evidence_class = "local_observation"
                 index = claim_index(codex_profile, claim_id_value)
                 self.assertIn(f"profile:codex:claim:{index}:{nested_table}", failures)
 
+    def test_validate_rejects_source_backed_claim_without_evidence_refs(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_migration_root(root)
+            self.migrate_and_summarize(root)
+            codex_profile = root / "docs/harness-capabilities/vanilla/codex.toml"
+            text = codex_profile.read_text(encoding="utf-8")
+            with codex_profile.open("rb") as handle:
+                skill_evidence_id = tomllib.load(handle)["evidence"][0]["id"]
+            text = refresh_claim_with_triage(text, "claim-codex-skills", triage="unknown")
+            text = replace_in_claim_block(text, "claim-codex-skills", 'status = "supported"', 'status = "unknown"')
+            text = replace_in_claim_block(text, "claim-codex-skills", f'evidence_ids = ["{skill_evidence_id}"]', "evidence_ids = []")
+            text = insert_claim_block_detail(
+                text,
+                "claim-codex-skills",
+                """
+[[claim.detail]]
+component = "skills"
+load_attachment_point = "configured skill roots"
+activation = "explicit or implicit"
+mutability = "filesystem-backed and plugin-provided"
+scope = ["project", "user", "plugin"]
+evidence_ids = []
+evidence_class = "local_observation"
+""",
+            )
+            codex_profile.write_text(text, encoding="utf-8")
+
+            completed = self.run_manager(root, "validate", "--json")
+
+            self.assertNotEqual(completed.returncode, 0)
+            failures = {result["name"] for result in json.loads(completed.stdout)["results"] if not result["ok"]}
+            skills_index = claim_index(codex_profile, "claim-codex-skills")
+            self.assertIn(f"profile:codex:claim:{skills_index}:evidence_refs", failures)
+
+    def test_validate_rejects_unknown_schema_pressure_ids(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_migration_root(root)
+            self.migrate_and_summarize(root)
+            codex_profile = root / "docs/harness-capabilities/vanilla/codex.toml"
+            text = codex_profile.read_text(encoding="utf-8")
+            with codex_profile.open("rb") as handle:
+                skill_evidence_id = tomllib.load(handle)["evidence"][0]["id"]
+            text = append_enriched_codex_records(text, skill_evidence_id)
+            text = text.replace('schema_pressure_ids = ["SP-003"]', 'schema_pressure_ids = ["SP-999"]', 1)
+            codex_profile.write_text(text, encoding="utf-8")
+
+            completed = self.run_manager(root, "validate", "--json")
+
+            self.assertNotEqual(completed.returncode, 0)
+            failures = {result["name"] for result in json.loads(completed.stdout)["results"] if not result["ok"]}
+            self.assertIn("profile:codex:harness_extension:0:schema_pressure_ids:SP-999", failures)
+
     def test_validate_rejects_malformed_enrichment_extension_records(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

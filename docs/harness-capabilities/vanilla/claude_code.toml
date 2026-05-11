@@ -633,6 +633,7 @@ evidence_ids = [
     "ev-claude_code-harness-overview-64da5f1b3a",
     "ev-claude_code-desktop-scheduled-task-support-cdb4a71f50",
     "ev-claude_code-cloud-routine-support-e1ecd195c7",
+    "ev-claude_code-plugin-support-and-limits-a8ac63cee1",
     "ev-claude_code-mcp-support-528ca09f3f",
 ]
 applicability_scope = "vanilla harness after default installation and onboarding"

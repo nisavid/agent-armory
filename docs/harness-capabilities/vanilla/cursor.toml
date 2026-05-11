@@ -402,13 +402,15 @@ id = "claim-cursor-memory_context_retrieval"
 family = "memory_context_retrieval"
 status = "unknown"
 statement = "Cursor subagents have isolated context windows, but persistent shared memory, retrieval freshness, write authority, and privacy boundaries are not proven."
-evidence_ids = []
+evidence_ids = [
+    "ev-cursor-subagent-support-4f10afb95e",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
 migration_status = "refreshed_from_migrated_claim"
-evidence_basis = "explicit_unknown"
+evidence_basis = "current_first_party_source"
 claim_triage = "unknown"
-triage_rationale = "The refresh keeps memory-like behavior explicit without claiming a stable memory API."
+triage_rationale = "The refresh records source-backed subagent context isolation without claiming a stable memory API."
 install_activation = "No stable memory activation was proven beyond context isolation."
 configuration_surface = "Subagent settings affect context isolation, but persistent memory settings were not proven."
 reload_update_behavior = "Freshness and write authority remain unknown."
@@ -425,8 +427,10 @@ scope = [
     "workspace",
     "cloud agent",
 ]
-evidence_ids = []
-evidence_class = "unknown"
+evidence_ids = [
+    "ev-cursor-subagent-support-4f10afb95e",
+]
+evidence_class = "source_backed"
 
 [[claim.memory_like_surface]]
 persistence_scope = "subagent context window"
@@ -436,8 +440,10 @@ freshness = "unknown"
 privacy_boundary = "workspace, subagent, Cloud Agent, and team boundaries"
 write_authority = "unknown"
 api_stability = "unknown"
-evidence_ids = []
-evidence_class = "unknown"
+evidence_ids = [
+    "ev-cursor-subagent-support-4f10afb95e",
+]
+evidence_class = "source_backed"
 unknowns = "Persistent shared memory, freshness, and write authority are not proven."
 
 [[claim]]

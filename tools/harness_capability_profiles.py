@@ -102,6 +102,7 @@ CLAIM_EVIDENCE_BASES = {
     "explicit_unsupported",
     "not-applicable",
 }
+SOURCE_BACKED_CLAIM_EVIDENCE_BASES = {"current_first_party_source", "fallback_source"}
 CLAIM_TRIAGE_VALUES = {"retained", "changed", "new", "unsupported", "unknown", "not-applicable", "retired"}
 ENRICHMENT_EVIDENCE_CLASSES = {
     "source_backed",
@@ -581,6 +582,7 @@ def validate_harness_extensions(
     profile: dict[str, Any],
     harness_id: str,
     evidence_ids: set[str],
+    schema_pressure_ids: set[str] | None,
     relative_path: Path,
 ) -> list[CheckResult]:
     records = profile.get("harness_extension", [])
@@ -603,8 +605,20 @@ def validate_harness_extensions(
             results.append(CheckResult(prefix, False, "harness_extension entry must be a table", path))
             continue
         results.extend(validate_string_fields(record, ["id", "name", "scope", "description"], prefix, path))
-        if not string_list(record.get("schema_pressure_ids")):
+        extension_schema_pressure_ids = record.get("schema_pressure_ids")
+        if not string_list(extension_schema_pressure_ids):
             results.append(CheckResult(f"{prefix}:schema_pressure_ids", False, "schema_pressure_ids must be a list of strings", path))
+        elif schema_pressure_ids is not None:
+            for schema_pressure_id in extension_schema_pressure_ids:
+                if schema_pressure_id not in schema_pressure_ids:
+                    results.append(
+                        CheckResult(
+                            f"{prefix}:schema_pressure_ids:{schema_pressure_id}",
+                            False,
+                            "schema_pressure_id not found in report rows",
+                            path,
+                        )
+                    )
         results.extend(validate_evidence_class(record, prefix, path))
         results.extend(validate_record_evidence_refs(record, evidence_ids, prefix, path))
     return results
@@ -698,7 +712,13 @@ def validate_claim_detail_records(
     return results
 
 
-def validate_profile_data(profile: dict[str, Any], harness_id: str, relative_path: Path) -> list[CheckResult]:
+def validate_profile_data(
+    profile: dict[str, Any],
+    harness_id: str,
+    relative_path: Path,
+    *,
+    schema_pressure_ids: set[str] | None = None,
+) -> list[CheckResult]:
     results: list[CheckResult] = []
 
     required_scalars = {
@@ -780,7 +800,7 @@ def validate_profile_data(profile: dict[str, Any], harness_id: str, relative_pat
                     )
 
     results.extend(validate_version_observations(profile, harness_id, relative_path))
-    results.extend(validate_harness_extensions(profile, harness_id, evidence_ids, relative_path))
+    results.extend(validate_harness_extensions(profile, harness_id, evidence_ids, schema_pressure_ids, relative_path))
 
     claims = profile.get("claim")
     claim_ids: set[str] = set()
@@ -823,8 +843,6 @@ def validate_profile_data(profile: dict[str, Any], harness_id: str, relative_pat
                         relative_path.as_posix(),
                     )
                 )
-            if status == "supported" and not refs:
-                results.append(CheckResult(f"profile:{harness_id}:claim:{index}:evidence_refs", False, "supported claim needs evidence", relative_path.as_posix()))
             expected_claim_values = {
                 "applicability_scope": CLAIM_APPLICABILITY_SCOPE,
                 "capability_origin": CLAIM_CAPABILITY_ORIGIN,
@@ -840,6 +858,10 @@ def validate_profile_data(profile: dict[str, Any], harness_id: str, relative_pat
                 results.append(CheckResult(f"profile:{harness_id}:claim:{index}:migration_status", False, "invalid migration status", relative_path.as_posix()))
             if not valid_evidence_basis:
                 results.append(CheckResult(f"profile:{harness_id}:claim:{index}:evidence_basis", False, "invalid evidence basis", relative_path.as_posix()))
+            if valid_evidence_basis and evidence_basis in SOURCE_BACKED_CLAIM_EVIDENCE_BASES and not refs:
+                results.append(CheckResult(f"profile:{harness_id}:claim:{index}:evidence_refs", False, "source-backed claim needs evidence", relative_path.as_posix()))
+            elif status == "supported" and not refs:
+                results.append(CheckResult(f"profile:{harness_id}:claim:{index}:evidence_refs", False, "supported claim needs evidence", relative_path.as_posix()))
             if valid_migration_status and valid_evidence_basis:
                 migrated_status = migration_status == CLAIM_MIGRATION_STATUS
                 aggregate_basis = evidence_basis == CLAIM_EVIDENCE_BASIS
@@ -891,7 +913,19 @@ def validate_profile_data(profile: dict[str, Any], harness_id: str, relative_pat
     return results
 
 
-def validate_profile(root: Path, harness_id: str) -> list[CheckResult]:
+def load_schema_pressure_report_ids(root: Path) -> set[str]:
+    path = repo_path(root, SCHEMA_PRESSURE_REPORT_PATH)
+    if not path.is_file():
+        return set()
+    row_ids: set[str] = set()
+    for line in path.read_text(encoding="utf-8").splitlines():
+        match = re.match(r"^\|\s*(SP-\d+)\s*\|", line)
+        if match:
+            row_ids.add(match.group(1))
+    return row_ids
+
+
+def validate_profile(root: Path, harness_id: str, schema_pressure_ids: set[str] | None = None) -> list[CheckResult]:
     relative_path = profile_path(harness_id)
     ok, detail, path = path_status(root, relative_path, expected_kind="file")
     if not ok:
@@ -900,7 +934,7 @@ def validate_profile(root: Path, harness_id: str) -> list[CheckResult]:
         profile = load_toml(path)
     except tomllib.TOMLDecodeError as error:
         return [CheckResult(f"profile:{harness_id}:toml", False, f"TOML invalid: {error.msg}", relative_path.as_posix())]
-    return validate_profile_data(profile, harness_id, relative_path)
+    return validate_profile_data(profile, harness_id, relative_path, schema_pressure_ids=schema_pressure_ids)
 
 
 def markdown_table_rows(markdown: str, heading: str) -> list[dict[str, str]]:
@@ -1156,8 +1190,9 @@ def validate(root: Path) -> list[CheckResult]:
     results: list[CheckResult] = []
     if repo_path(root, AGGREGATE_CATALOG_PATH).exists():
         results.append(CheckResult("aggregate_catalog:retired", False, "aggregate catalog must not remain authored truth", AGGREGATE_CATALOG_PATH.as_posix()))
+    schema_pressure_ids = load_schema_pressure_report_ids(root)
     for harness_id in sorted(REQUIRED_HARNESSES):
-        results.extend(validate_profile(root, harness_id))
+        results.extend(validate_profile(root, harness_id, schema_pressure_ids))
     results.extend(validate_summary(root))
     results.extend(validate_research_outputs(root))
     return results
