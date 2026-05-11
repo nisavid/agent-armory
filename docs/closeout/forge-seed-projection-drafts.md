@@ -2,7 +2,8 @@
 
 Status: Review Draft
 
-Projection state: PR published; issue projection pending.
+Projection state: PR published; follow-up issues projected; Published PRD Issue
+draft retained.
 
 These drafts are review surfaces for Story Closeout. The pull request surface
 has been published as <https://github.com/nisavid/agent-armory/pull/1>. The
@@ -180,7 +181,7 @@ handoff surfaces are:
 - `docs/plans/2026-05-03-forge-seed.md`,
 - `docs/closeout/forge-seed-documentation.md`,
 - `docs/security/forge-seed-closeout.md`,
-- `docs/follow-ups/portable-agentic-engineering-workflow-equipment.md`,
+- `docs/closeout/forge-seed-follow-up-projection.md`,
 - `docs/closeout/forge-seed-workflow-lessons.md`,
 - `docs/closeout/forge-seed-engineering-workflow-generalization.md`.
 

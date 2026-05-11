@@ -100,10 +100,10 @@ operator-directed decision and durable follow-up target.
 | H050 | SRC012 | adequately_captured | unchallenged | false | false | kept_current |  | docs/forgewright-runbook.md | Preserve accepted corrections from the handoff gap analysis. |
 | H051 | SRC012 | adequately_captured | unchallenged | false | false | kept_current |  | docs/agent-equipment-forge.md | Preserve unresolved uncertainties without overstating Seed precedent. |
 | H054 | SRC015 | adequately_captured | unchallenged | false | false | kept_current |  | docs/harness-capabilities/vanilla/codex.toml | Project the structured Codex harness seed into the refreshed catalog. |
-| F001 | SRC017 | intentionally_deferred | resolved | true | true | deferred | Operator requested post-Seed follow-up capture. | docs/follow-ups/portable-agentic-engineering-workflow-equipment.md | Portable workflow equipment reflections and post-Seed capture window. |
+| F001 | SRC017 | intentionally_deferred | resolved | true | true | deferred | Operator requested post-Seed follow-up capture. | docs/closeout/forge-seed-follow-up-projection.md | Portable workflow equipment follow-up projected to active GitHub Issues. |
 | F002 | SRC018 | intentionally_deferred | resolved | true | true | deferred | Operator requested post-Seed follow-up capture. | docs/closeout/forge-seed-workflow-lessons.md | Forge Seed closeout lessons remain captured through PR and merge lifecycle. |
-| F003 | SRC019 | intentionally_deferred | resolved | true | true | deferred | Operator requested post-Seed follow-up capture. | docs/follow-ups/ephemeral-workflow-opportunity-capture.md | Ephemeral workflow opportunities need a durable capture path. |
-| F004 | SRC018 | intentionally_deferred | resolved | true | true | deferred | Operator requested post-Seed follow-up capture. | docs/follow-ups/side-thread-hand-back-workflow.md | Side-thread hand-back workflow is deferred to post-Seed design. |
+| F003 | SRC019 | intentionally_deferred | resolved | true | true | deferred | Operator requested post-Seed follow-up capture. | docs/closeout/forge-seed-follow-up-projection.md | Ephemeral workflow opportunity capture projected to active GitHub Issues. |
+| F004 | SRC018 | intentionally_deferred | resolved | true | true | deferred | Operator requested post-Seed follow-up capture. | docs/closeout/forge-seed-follow-up-projection.md | Side-thread hand-back workflow projected to active GitHub Issues. |
 
 ## Challenge Lineage
 
@@ -114,7 +114,7 @@ No unresolved challenge enters source retirement. Rows marked `resolved` carry o
 source_bearing_snapshot_tree_id: 589bf626ffc5e9cdfffc7ee5983022adc1f7a1e2
 source_bearing_stamp_id: source-bearing-2026-05-04
 source_manifest_digest: 7ebb526ad69baa2254052deccf3ad9f236b3c785124842329d6d4e2a000cfbb5
-source_disposition_digest: 19cbfaddab824282d2e5fed0e40ada3a06f2ab82c9fb9aad806d2a35be9c1b9a
+source_disposition_digest: 6bea7c84f7066b0cb572cc8445f52b58a389dc2dd3069db579afecc764f65c4c
 source_bearing_result: passed
 
 ## Final Source-Retired Stamp
