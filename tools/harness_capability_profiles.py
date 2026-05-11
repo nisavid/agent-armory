@@ -2121,6 +2121,13 @@ def normalized_refresh_records(payload: dict[str, Any], key: str) -> list[dict[s
         summary = record.get("summary")
         if not non_empty_string(summary):
             raise ManagerError(f"{key}[{index}].summary must be a non-empty string")
+        if "claim_refs" in record:
+            claim_refs = record.get("claim_refs")
+            if not isinstance(claim_refs, list):
+                raise ManagerError(f"{key}[{index}].claim_refs must be a list")
+            for claim_index, claim_ref in enumerate(claim_refs):
+                if not non_empty_string(claim_ref):
+                    raise ManagerError(f"{key}[{index}].claim_refs[{claim_index}] must be a non-empty string")
         normalized.append(record)
     return normalized
 
@@ -2477,6 +2484,7 @@ def refresh_plan(
         raise ManagerError("analysis report harness_id must name a supported harness")
     mutations: list[dict[str, Any]] = []
     schema_pressure_ids = load_schema_pressure_report_ids(root)
+    seen_targets: set[str] = set()
     for replacement_arg in profile_replacements:
         harness_id, replacement_path_raw = parse_replacement_arg(replacement_arg)
         if harness_id != analysis_harness_id:
@@ -2496,6 +2504,10 @@ def refresh_plan(
         target_relative = profile_path(harness_id)
         if not allowed_mutation_path(target_relative.as_posix()):
             raise ManagerError(f"{target_relative.as_posix()}: mutation path not allowed")
+        target_key = target_relative.as_posix()
+        if target_key in seen_targets:
+            raise ManagerError(f"duplicate mutation for path: {target_key}")
+        seen_targets.add(target_key)
         current_path = checked_read_file(root, target_relative)
         current_content = current_path.read_text(encoding="utf-8")
         planned_content = replacement_path.read_text(encoding="utf-8")
@@ -2684,7 +2696,7 @@ def refresh_audit(
         applied_writes = raw_writes
     elif planned_paths:
         raise ManagerError("refresh audit requires apply result for mutation plans")
-    if planned_paths and sorted(applied_writes) != sorted(planned_paths):
+    if apply_result_path is not None and sorted(applied_writes) != sorted(planned_paths):
         raise ManagerError("refresh audit apply result writes must match plan mutations")
     validation_summaries: list[dict[str, Any]] = []
     for raw_validation_path in validation_result_paths:

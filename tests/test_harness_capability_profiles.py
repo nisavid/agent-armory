@@ -677,6 +677,27 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             self.assertNotEqual(empty_effects.returncode, 0)
             self.assertIn("effects must be explicit", json.loads(empty_effects.stdout)["error"])
 
+    def test_manual_refresh_scout_rejects_malformed_claim_refs(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            scout_input = self.write_refresh_scout_input(root)
+            payload = json.loads(scout_input.read_text(encoding="utf-8"))
+            payload["sources"][0]["claim_refs"] = "claim-codex-lifecycle_reload_update"
+            scout_input.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+            blocked = self.run_manager(root, "scout", "--input", str(scout_input), "--json")
+
+            self.assertNotEqual(blocked.returncode, 0)
+            self.assertIn("sources[0].claim_refs must be a list", json.loads(blocked.stdout)["error"])
+
+            payload["sources"][0]["claim_refs"] = ["claim-codex-lifecycle_reload_update", ""]
+            scout_input.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            blank_ref = self.run_manager(root, "scout", "--input", str(scout_input), "--json")
+
+            self.assertNotEqual(blank_ref.returncode, 0)
+            self.assertIn("sources[0].claim_refs[1] must be a non-empty string", json.loads(blank_ref.stdout)["error"])
+
     def test_manual_refresh_analyze_compares_version_tokens_without_prefix_substrings(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -812,6 +833,27 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
 
             self.assertNotEqual(mismatch.returncode, 0)
             self.assertIn("must match analysis report harness_id", json.loads(mismatch.stdout)["error"])
+
+    def test_manual_refresh_plan_rejects_duplicate_profile_replacements(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            _scout_input, _scout_report, analysis_report, _plan_path, replacement = self.prepare_refresh_artifacts(root)
+
+            duplicate = self.run_manager(
+                root,
+                "plan",
+                "--analysis-report",
+                str(analysis_report),
+                "--profile-replacement",
+                f"codex:{replacement}",
+                "--profile-replacement",
+                f"codex:{replacement}",
+                "--json",
+            )
+
+            self.assertNotEqual(duplicate.returncode, 0)
+            self.assertIn("duplicate mutation for path", json.loads(duplicate.stdout)["error"])
 
     def test_manual_refresh_audit_rejects_cross_report_harness_mismatch(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -976,6 +1018,50 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             )
             self.assertNotEqual(integrity_only_audit.returncode, 0)
             self.assertIn("requires Manager Core validation result", json.loads(integrity_only_audit.stdout)["error"])
+
+    def test_manual_refresh_audit_rejects_apply_writes_for_no_mutation_plan(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            _scout_input, scout_report, analysis_report, plan_path, _replacement = self.prepare_refresh_artifacts(root)
+            plan = json.loads(plan_path.read_text(encoding="utf-8"))
+            plan["mutations"] = []
+            plan["effect_requirements"] = []
+            plan_path.write_text(json.dumps(plan, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            apply_result = root / "scratch/apply-result.json"
+            apply_result.write_text(
+                json.dumps(
+                    {
+                        "schema": "harness_capability_profiles.refresh_apply.v1",
+                        "result": "applied",
+                        "dry_run": False,
+                        "plan_path": "scratch/update-plan.json",
+                        "effects": [],
+                        "writes": ["docs/harness-capabilities/vanilla/codex.toml"],
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            audit = self.run_manager(
+                root,
+                "audit",
+                "--scout-report",
+                str(scout_report),
+                "--analysis-report",
+                str(analysis_report),
+                "--plan",
+                str(plan_path),
+                "--apply-result",
+                str(apply_result),
+                "--json",
+            )
+
+            self.assertNotEqual(audit.returncode, 0)
+            self.assertIn("apply result writes must match plan mutations", json.loads(audit.stdout)["error"])
 
     def test_manual_refresh_plan_rejects_duplicate_mutation_paths(self):
         with tempfile.TemporaryDirectory() as tmpdir:

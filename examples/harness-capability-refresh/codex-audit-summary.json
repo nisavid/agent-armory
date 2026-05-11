@@ -12,13 +12,195 @@
   "claim_triage_summary": [
     {
       "claim_id": "claim-codex-instructions_context",
-      "reason": "Source-backed claim remains supported by checked Codex skills, plugin, subagent, automation, and noninteractive docs.",
+      "current_status": "supported",
+      "family": "instructions_context",
+      "prior_evidence_basis": "current_first_party_source",
+      "rationale": "Existing claim is well-grounded and no direct delta was reported.",
+      "similar_claims": [
+        "claude_code:claim-claude_code-instructions_context",
+        "cursor:claim-cursor-instructions_context",
+        "opencode:claim-opencode-instructions_context"
+      ],
       "triage": "accept_reuse"
     },
     {
-      "claim_id": "unknown-codex-memory-write-authority",
-      "reason": "Checked sources do not prove durable memory write authority in the vanilla harness.",
-      "triage": "unknown"
+      "claim_id": "claim-codex-skills",
+      "current_status": "supported",
+      "family": "skills",
+      "prior_evidence_basis": "current_first_party_source",
+      "rationale": "Existing claim is well-grounded and no direct delta was reported.",
+      "similar_claims": [
+        "claude_code:claim-claude_code-skills",
+        "cursor:claim-cursor-skills",
+        "hermes_agent:claim-hermes_agent-skills"
+      ],
+      "triage": "accept_reuse"
+    },
+    {
+      "claim_id": "claim-codex-mcp_tools",
+      "current_status": "supported",
+      "family": "mcp_tools",
+      "prior_evidence_basis": "current_first_party_source",
+      "rationale": "Existing claim is well-grounded and no direct delta was reported.",
+      "similar_claims": [
+        "claude_code:claim-claude_code-mcp_tools",
+        "cursor:claim-cursor-mcp_tools",
+        "hermes_agent:claim-hermes_agent-mcp_tools"
+      ],
+      "triage": "accept_reuse"
+    },
+    {
+      "claim_id": "claim-codex-hooks_events",
+      "current_status": "supported",
+      "family": "hooks_events",
+      "prior_evidence_basis": "current_first_party_source",
+      "rationale": "Refresh evidence indicates a version or source delta for this claim.",
+      "similar_claims": [
+        "claude_code:claim-claude_code-hooks_events",
+        "cursor:claim-cursor-hooks_events",
+        "hermes_agent:claim-hermes_agent-hooks_events"
+      ],
+      "triage": "deeper_review"
+    },
+    {
+      "claim_id": "claim-codex-plugins_bundles",
+      "current_status": "supported",
+      "family": "plugins_bundles",
+      "prior_evidence_basis": "current_first_party_source",
+      "rationale": "Existing claim is well-grounded and no direct delta was reported.",
+      "similar_claims": [
+        "claude_code:claim-claude_code-plugins_bundles",
+        "cursor:claim-cursor-plugins_bundles",
+        "hermes_agent:claim-hermes_agent-plugins_bundles"
+      ],
+      "triage": "accept_reuse"
+    },
+    {
+      "claim_id": "claim-codex-agent_profiles_subagents",
+      "current_status": "supported",
+      "family": "agent_profiles_subagents",
+      "prior_evidence_basis": "current_first_party_source",
+      "rationale": "Existing claim is well-grounded and no direct delta was reported.",
+      "similar_claims": [
+        "claude_code:claim-claude_code-agent_profiles_subagents",
+        "cursor:claim-cursor-agent_profiles_subagents",
+        "hermes_agent:claim-hermes_agent-agent_profiles_subagents"
+      ],
+      "triage": "accept_reuse"
+    },
+    {
+      "claim_id": "claim-codex-memory_context_retrieval",
+      "current_status": "unknown",
+      "family": "memory_context_retrieval",
+      "prior_evidence_basis": "explicit_unknown",
+      "rationale": "Claim remains uncertain or has explicit unknown refresh evidence.",
+      "similar_claims": [
+        "hermes_agent:claim-hermes_agent-memory_context_retrieval",
+        "openclaw:claim-openclaw-memory_context_retrieval"
+      ],
+      "triage": "keep_visible"
+    },
+    {
+      "claim_id": "claim-codex-config_settings",
+      "current_status": "supported",
+      "family": "config_settings",
+      "prior_evidence_basis": "current_first_party_source",
+      "rationale": "Existing claim is well-grounded and no direct delta was reported.",
+      "similar_claims": [
+        "claude_code:claim-claude_code-config_settings",
+        "cursor:claim-cursor-config_settings",
+        "hermes_agent:claim-hermes_agent-config_settings"
+      ],
+      "triage": "accept_reuse"
+    },
+    {
+      "claim_id": "claim-codex-permissions_approvals_sandboxing",
+      "current_status": "supported",
+      "family": "permissions_approvals_sandboxing",
+      "prior_evidence_basis": "current_first_party_source",
+      "rationale": "Version delta affects a material integration surface.",
+      "similar_claims": [
+        "claude_code:claim-claude_code-permissions_approvals_sandboxing",
+        "cursor:claim-cursor-permissions_approvals_sandboxing",
+        "hermes_agent:claim-hermes_agent-permissions_approvals_sandboxing"
+      ],
+      "triage": "deeper_review"
+    },
+    {
+      "claim_id": "claim-codex-scheduling_automation",
+      "current_status": "supported",
+      "family": "scheduling_automation",
+      "prior_evidence_basis": "current_first_party_source",
+      "rationale": "Existing claim is well-grounded and no direct delta was reported.",
+      "similar_claims": [
+        "claude_code:claim-claude_code-scheduling_automation",
+        "cursor:claim-cursor-scheduling_automation",
+        "hermes_agent:claim-hermes_agent-scheduling_automation"
+      ],
+      "triage": "accept_reuse"
+    },
+    {
+      "claim_id": "claim-codex-commands_shortcuts",
+      "current_status": "unknown",
+      "family": "commands_shortcuts",
+      "prior_evidence_basis": "explicit_unknown",
+      "rationale": "Claim remains uncertain or has explicit unknown refresh evidence.",
+      "similar_claims": [
+        "claude_code:claim-claude_code-commands_shortcuts",
+        "cursor:claim-cursor-commands_shortcuts",
+        "hermes_agent:claim-hermes_agent-commands_shortcuts"
+      ],
+      "triage": "keep_visible"
+    },
+    {
+      "claim_id": "claim-codex-providers_connectors",
+      "current_status": "supported",
+      "family": "providers_connectors",
+      "prior_evidence_basis": "current_first_party_source",
+      "rationale": "Existing claim is well-grounded and no direct delta was reported.",
+      "similar_claims": [
+        "claude_code:claim-claude_code-providers_connectors",
+        "cursor:claim-cursor-providers_connectors",
+        "hermes_agent:claim-hermes_agent-providers_connectors"
+      ],
+      "triage": "accept_reuse"
+    },
+    {
+      "claim_id": "claim-codex-runtime_modes",
+      "current_status": "supported",
+      "family": "runtime_modes",
+      "prior_evidence_basis": "current_first_party_source",
+      "rationale": "Version delta affects a material integration surface.",
+      "similar_claims": [
+        "claude_code:claim-claude_code-runtime_modes",
+        "cursor:claim-cursor-runtime_modes",
+        "hermes_agent:claim-hermes_agent-runtime_modes"
+      ],
+      "triage": "deeper_review"
+    },
+    {
+      "claim_id": "claim-codex-cross_harness_import_compatibility",
+      "current_status": "unknown",
+      "family": "cross_harness_import_compatibility",
+      "prior_evidence_basis": "explicit_unknown",
+      "rationale": "Claim remains uncertain or has explicit unknown refresh evidence.",
+      "similar_claims": [
+        "openclaw:claim-openclaw-cross_harness_import_compatibility"
+      ],
+      "triage": "keep_visible"
+    },
+    {
+      "claim_id": "claim-codex-lifecycle_reload_update",
+      "current_status": "supported",
+      "family": "lifecycle_reload_update",
+      "prior_evidence_basis": "current_first_party_source",
+      "rationale": "Refresh evidence indicates a version or source delta for this claim.",
+      "similar_claims": [
+        "claude_code:claim-claude_code-lifecycle_reload_update",
+        "hermes_agent:claim-hermes_agent-lifecycle_reload_update",
+        "openclaw:claim-openclaw-lifecycle_reload_update"
+      ],
+      "triage": "deeper_review"
     }
   ],
   "apply_result_path": "scratch/apply-result.json",
@@ -43,6 +225,42 @@
     {
       "disposition": "known",
       "id": "SP-001"
+    },
+    {
+      "disposition": "known",
+      "id": "SP-002"
+    },
+    {
+      "disposition": "known",
+      "id": "SP-003"
+    },
+    {
+      "disposition": "known",
+      "id": "SP-004"
+    },
+    {
+      "disposition": "known",
+      "id": "SP-005"
+    },
+    {
+      "disposition": "known",
+      "id": "SP-006"
+    },
+    {
+      "disposition": "known",
+      "id": "SP-007"
+    },
+    {
+      "disposition": "known",
+      "id": "SP-008"
+    },
+    {
+      "disposition": "known",
+      "id": "SP-009"
+    },
+    {
+      "disposition": "known",
+      "id": "SP-010"
     }
   ],
   "scout_report_path": "scratch/scout-report.json",
