@@ -2,35 +2,49 @@ schema_version = "vanilla-harness-capability-profile.v1alpha1"
 profile_kind = "vanilla_harness_capability_profile"
 harness_id = "hermes_agent"
 display_name = "Hermes Agent"
-checked_at = "2026-05-03T09:25:05-04:00"
-checked_version = "0.12.0 (v2026.4.30)"
-version_basis = "GitHub latest release v2026.4.30 and tag-pinned first-party docs."
+checked_at = "2026-05-10T19:13:40-04:00"
+checked_version = "0.13.0 (v2026.5.7)"
+version_basis = "GitHub release v2026.5.7, named Hermes Agent v0.13.0, plus first-party Hermes docs carried by the migrated profile."
 evidence_category = "source-supported"
-summary_scheduling = "Cron jobs, gateway cron ticker, curator schedule, hooks, and terminal background processes."
-scheduling = "Hermes supports cron jobs through a cron tool and CLI, a gateway cron ticker, curator scheduling, hooks, and terminal background processes."
-limitations = "Profiles are separate state directories, not hard isolation boundaries. Cron jobs cannot recursively create cron jobs. Some workdir jobs are sequential because process cwd is global. Delegated subagents are synchronous and not durable if the parent is interrupted. Project plugins require explicit enablement."
-uncertainty = "The GitHub release name and pyproject version are the version anchors. The repository package.json is not a public package version source for this catalog."
-refresh_notes = "Refresh from GitHub latest release, pyproject.toml at the release tag, and tag-pinned docs. Do not use unrelated package metadata as the version basis."
-components = ["AgentSkills-compatible skills", "agent-managed skills", "external read-only skill directories", "Skills Hub installs", "MCP servers", "MCP client toolsets", "Hermes MCP server", "gateway hooks", "plugin hooks", "shell hooks", "opt-in plugins", "memory provider plugins", "context provider plugins", "toolsets", "custom toolsets", "profiles", "subagents", "delegation", "terminal backends", "messaging gateways"]
-local_observations = ["No local Hermes Agent binary, HERMES_HOME, gateway, cron store, or plugin configuration was inspected for this seed refresh."]
+summary_scheduling = "Hermes supports cron, no_agent cron mode, curator/background processes, Kanban workers, gateway ticks, and heartbeat-like multi-agent worker flows."
+scheduling = "Hermes supports cron scheduling, background curator processes, gateway cron ticks, no_agent cron mode, and Kanban worker flows with restart behavior described in release notes."
+limitations = "Some detailed docs remain tag-pinned to the migrated version basis, while v2026.5.7 release notes supply current feature and lifecycle evidence. Cross-harness import fidelity remains unproven."
+uncertainty = "AgentSkills-compatible language does not prove native import of another harness bundle. Provider and hook taxonomies remain Hermes-specific until normalized by later schema work."
+refresh_notes = "Refresh from GitHub releases and Hermes first-party docs. Preserve current-release memory, Kanban, provider-plugin, security, and lifecycle facts as Hermes-specific extensions."
+components = [
+    "AgentSkills-compatible skills",
+    "MCP client/server surfaces",
+    "gateway hooks",
+    "plugin hooks",
+    "shell hooks",
+    "provider plugins",
+    "platform plugins",
+    "profiles",
+    "subagents",
+    "delegation",
+    "Kanban boards",
+    "cron",
+    "curator",
+    "dashboard",
+    "API server",
+    "checkpoints",
+    "session keys",
+    "commands",
+]
+local_observations = [
+    "No local Hermes binary, gateway, profile directory, plugin state, cron table, API server, or dashboard state was inspected for this refresh.",
+]
 
 [scope]
 surface = "vanilla_harness_capability_surface"
 applicability = "Default settings and default equipment immediately after installation and onboarding."
 
 [[evidence]]
-id = "ev-hermes_agent-release-version-date-and-release-eb71619a5f"
+id = "ev-hermes_agent-current-release-version-date-and-88f373c946"
 category = "source-supported"
 source_kind = "first_party"
-url = "https://github.com/NousResearch/hermes-agent/releases/tag/v2026.4.30"
-claim_scope = "release version, date, and release notes"
-
-[[evidence]]
-id = "ev-hermes_agent-package-version-987079778b"
-category = "source-supported"
-source_kind = "first_party"
-url = "https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/pyproject.toml"
-claim_scope = "package version"
+url = "https://github.com/NousResearch/hermes-agent/releases/tag/v2026.5.7"
+claim_scope = "current release version, date, and release notes"
 
 [[evidence]]
 id = "ev-hermes_agent-documentation-index-16ac22bc0f"
@@ -109,197 +123,663 @@ source_kind = "first_party"
 url = "https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/website/docs/user-guide/features/curator.md"
 claim_scope = "curator background agent support"
 
+[[evidence]]
+id = "ev-hermes_agent-package-version-987079778b"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://github.com/NousResearch/hermes-agent/blob/v2026.4.30/pyproject.toml"
+claim_scope = "package version"
+
+[[version_observation]]
+id = "vo-hermes-agent-v2026-5-7"
+observed_version = "v2026.5.7 / Hermes Agent v0.13.0"
+checked_at = "2026-05-10T19:13:40-04:00"
+source_url = "https://github.com/NousResearch/hermes-agent/releases/tag/v2026.5.7"
+source_kind = "first_party"
+canonical_profile_change = true
+evidence_class = "source_backed"
+
+[[harness_extension]]
+id = "ext-hermes-kanban-worker-lifecycle"
+name = "Kanban worker lifecycle"
+scope = "multi-agent runtime"
+description = "Hermes v0.13.0 adds durable Kanban boards, worker lifecycle controls, and restart behavior that should stay Hermes-specific."
+evidence_ids = [
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
+evidence_class = "source_backed"
+schema_pressure_ids = [
+    "SP-003",
+    "SP-006",
+]
+
+[[harness_extension]]
+id = "ext-hermes-session-key-memory"
+name = "Session-key memory scoping"
+scope = "memory-like context"
+description = "Hermes v0.13.0 adds X-Hermes-Session-Key and long-term memory scoping, motivating memory-like profile fields."
+evidence_ids = [
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
+evidence_class = "source_backed"
+schema_pressure_ids = [
+    "SP-005",
+]
+
+[[harness_extension]]
+id = "ext-hermes-provider-plugin-system"
+name = "Provider plugin system"
+scope = "providers and connectors"
+description = "Hermes v0.13.0 adds provider plugins and connector surfaces that remain provider taxonomy pressure under SP-009."
+evidence_ids = [
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
+evidence_class = "source_backed"
+schema_pressure_ids = [
+    "SP-009",
+]
+
 [[claim]]
 id = "claim-hermes_agent-instructions_context"
 family = "instructions_context"
 status = "unknown"
-statement = "Source-backed evidence does not prove instructions context support."
+statement = "Hermes skills, delegation, and current /goal support carry instruction-like material, but explicit instruction load paths are not yet fully source-shaped for this profile family."
 evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The GitHub release name and pyproject version are the version anchors. The repository package.json is not a public package version source for this catalog."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "explicit_unknown"
+claim_triage = "unknown"
+triage_rationale = "The refresh keeps instruction/context support as needs-more-evidence rather than inferring from component presence."
+install_activation = "No canonical instruction/context activation path was proven beyond adjacent skills, delegation, and /goal surfaces."
+configuration_surface = "Profiles, skills, and gateway configuration likely shape context but need source-shaped fields before support."
+reload_update_behavior = "Instruction reload behavior is not proven as a unified surface."
+limitations = "No checked first-party source proves this surface strongly enough for a supported canonical claim."
+uncertainty = "Hermes skills, delegation, and current /goal support carry instruction-like material, but explicit instruction load paths are not yet fully source-shaped for this profile family."
+
+[[claim.detail]]
+component = "instruction-like context surface"
+load_attachment_point = "skills, delegation, and /goal surfaces without a proven canonical instruction load path"
+activation = "unknown"
+mutability = "unknown"
+scope = [
+    "skills",
+    "delegation",
+    "goal",
+]
+evidence_ids = []
+evidence_class = "unknown"
 
 [[claim]]
 id = "claim-hermes_agent-skills"
 family = "skills"
 status = "supported"
-statement = "Source-backed evidence records skills support."
-evidence_ids = ["ev-hermes_agent-skill-support-90fff712d9"]
+statement = "Hermes supports AgentSkills-compatible skills, managed skills, external skill directories, Skills Hub installation, and skill cache rescans."
+evidence_ids = [
+    "ev-hermes_agent-skill-support-90fff712d9",
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Profiles are separate state directories, not hard isolation boundaries. Cron jobs cannot recursively create cron jobs. Some workdir jobs are sequential because process cwd is global. Delegated subagents are synchronous and not durable if the parent is interrupted. Project plugins require explicit enablement."
-uncertainty = "The GitHub release name and pyproject version are the version anchors. The repository package.json is not a public package version source for this catalog."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "The skills claim remains supported and records current cache-rescan behavior."
+install_activation = "Skills load through managed skills, external skill directories, and Skills Hub installation."
+configuration_surface = "Skill directories, managed skill config, and Skills Hub state shape availability."
+reload_update_behavior = "Current release notes include skill cache rescans."
+limitations = "Some detailed docs remain tag-pinned to the migrated version basis, while v2026.5.7 release notes supply current feature and lifecycle evidence. Cross-harness import fidelity remains unproven."
+uncertainty = "AgentSkills-compatible language does not prove native import of another harness bundle. Provider and hook taxonomies remain Hermes-specific until normalized by later schema work."
+
+[[claim.detail]]
+component = "skills"
+load_attachment_point = "Skills load through managed skills, external skill directories, and Skills Hub installation."
+activation = "Skills load through managed skills, external skill directories, and Skills Hub installation."
+mutability = "Skill directories, managed skill config, and Skills Hub state shape availability."
+scope = [
+    "managed",
+    "external-directory",
+    "skills-hub",
+]
+evidence_ids = [
+    "ev-hermes_agent-skill-support-90fff712d9",
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-hermes_agent-mcp_tools"
 family = "mcp_tools"
 status = "supported"
-statement = "Source-backed evidence records mcp tools support."
-evidence_ids = ["ev-hermes_agent-mcp-support-b52f33a0c0", "ev-hermes_agent-tool-support-14054b5888", "ev-hermes_agent-toolset-support-ddc5a67d09"]
+statement = "Hermes supports MCP servers, MCP client toolsets, a Hermes MCP server, SSE transport, OAuth forwarding, retries, media tags, and keepalive behavior."
+evidence_ids = [
+    "ev-hermes_agent-mcp-support-b52f33a0c0",
+    "ev-hermes_agent-tool-support-14054b5888",
+    "ev-hermes_agent-toolset-support-ddc5a67d09",
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Profiles are separate state directories, not hard isolation boundaries. Cron jobs cannot recursively create cron jobs. Some workdir jobs are sequential because process cwd is global. Delegated subagents are synchronous and not durable if the parent is interrupted. Project plugins require explicit enablement."
-uncertainty = "The GitHub release name and pyproject version are the version anchors. The repository package.json is not a public package version source for this catalog."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "The MCP/tools claim remains supported and records current transport/runtime additions."
+install_activation = "MCP and tools attach through MCP servers, client toolsets, and Hermes gateway/API surfaces."
+configuration_surface = "MCP server definitions, toolsets, and provider config shape tool availability."
+reload_update_behavior = "MCP lifecycle includes retries and keepalive behavior in current release notes."
+limitations = "Some detailed docs remain tag-pinned to the migrated version basis, while v2026.5.7 release notes supply current feature and lifecycle evidence. Cross-harness import fidelity remains unproven."
+uncertainty = "AgentSkills-compatible language does not prove native import of another harness bundle. Provider and hook taxonomies remain Hermes-specific until normalized by later schema work."
+
+[[claim.detail]]
+component = "MCP and tool surfaces"
+load_attachment_point = "MCP and tools attach through MCP servers, client toolsets, and Hermes gateway/API surfaces."
+activation = "MCP and tools attach through MCP servers, client toolsets, and Hermes gateway/API surfaces."
+mutability = "MCP server definitions, toolsets, and provider config shape tool availability."
+scope = [
+    "gateway",
+    "api-server",
+    "mcp-server",
+    "toolset",
+]
+evidence_ids = [
+    "ev-hermes_agent-mcp-support-b52f33a0c0",
+    "ev-hermes_agent-tool-support-14054b5888",
+    "ev-hermes_agent-toolset-support-ddc5a67d09",
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-hermes_agent-hooks_events"
 family = "hooks_events"
 status = "supported"
-statement = "Source-backed evidence records hooks events support."
-evidence_ids = ["ev-hermes_agent-hook-support-3b702706ad"]
+statement = "Hermes supports gateway, plugin, shell, platform-plugin, and transform-output hooks."
+evidence_ids = [
+    "ev-hermes_agent-hook-support-3b702706ad",
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Profiles are separate state directories, not hard isolation boundaries. Cron jobs cannot recursively create cron jobs. Some workdir jobs are sequential because process cwd is global. Delegated subagents are synchronous and not durable if the parent is interrupted. Project plugins require explicit enablement."
-uncertainty = "The GitHub release name and pyproject version are the version anchors. The repository package.json is not a public package version source for this catalog."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "Hook support remains source-backed while SP-008 keeps event taxonomy unresolved."
+install_activation = "Hooks attach through gateway, plugin, shell, platform-plugin, and transform-output surfaces."
+configuration_surface = "Gateway and plugin configuration determine hook activation."
+reload_update_behavior = "Hook reload/update behavior is component-specific."
+limitations = "Some detailed docs remain tag-pinned to the migrated version basis, while v2026.5.7 release notes supply current feature and lifecycle evidence. Cross-harness import fidelity remains unproven."
+uncertainty = "AgentSkills-compatible language does not prove native import of another harness bundle. Provider and hook taxonomies remain Hermes-specific until normalized by later schema work."
+
+[[claim.detail]]
+component = "hooks and event surfaces"
+load_attachment_point = "Hooks attach through gateway, plugin, shell, platform-plugin, and transform-output surfaces."
+activation = "Hooks attach through gateway, plugin, shell, platform-plugin, and transform-output surfaces."
+mutability = "Gateway and plugin configuration determine hook activation."
+scope = [
+    "gateway",
+    "plugin",
+    "shell",
+    "platform-plugin",
+]
+evidence_ids = [
+    "ev-hermes_agent-hook-support-3b702706ad",
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-hermes_agent-plugins_bundles"
 family = "plugins_bundles"
 status = "supported"
-statement = "Source-backed evidence records plugins bundles support."
-evidence_ids = ["ev-hermes_agent-plugin-support-6586fb68ef"]
+statement = "Hermes supports opt-in plugins plus provider, platform, memory-provider, context-provider, and dashboard plugin management surfaces."
+evidence_ids = [
+    "ev-hermes_agent-plugin-support-6586fb68ef",
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Profiles are separate state directories, not hard isolation boundaries. Cron jobs cannot recursively create cron jobs. Some workdir jobs are sequential because process cwd is global. Delegated subagents are synchronous and not durable if the parent is interrupted. Project plugins require explicit enablement."
-uncertainty = "The GitHub release name and pyproject version are the version anchors. The repository package.json is not a public package version source for this catalog."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "Plugin support remains source-backed and now records provider/platform plugin extensions."
+install_activation = "Plugins attach through opt-in plugin config and dashboard/plugin management surfaces."
+configuration_surface = "Plugin config, dashboard state, and provider/plugin type shape availability."
+reload_update_behavior = "Plugin reload/update behavior includes restart and dashboard management paths."
+limitations = "Some detailed docs remain tag-pinned to the migrated version basis, while v2026.5.7 release notes supply current feature and lifecycle evidence. Cross-harness import fidelity remains unproven."
+uncertainty = "AgentSkills-compatible language does not prove native import of another harness bundle. Provider and hook taxonomies remain Hermes-specific until normalized by later schema work."
+
+[[claim.detail]]
+component = "plugins and bundles"
+load_attachment_point = "Plugins attach through opt-in plugin config and dashboard/plugin management surfaces."
+activation = "Plugins attach through opt-in plugin config and dashboard/plugin management surfaces."
+mutability = "Plugin config, dashboard state, and provider/plugin type shape availability."
+scope = [
+    "gateway",
+    "dashboard",
+    "provider-plugin",
+    "platform-plugin",
+]
+evidence_ids = [
+    "ev-hermes_agent-plugin-support-6586fb68ef",
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-hermes_agent-agent_profiles_subagents"
 family = "agent_profiles_subagents"
 status = "supported"
-statement = "Source-backed evidence records agent profiles subagents support."
-evidence_ids = ["ev-hermes_agent-profile-support-266ae87e48", "ev-hermes_agent-subagent-and-delegation-support-b423f1fc5e", "ev-hermes_agent-curator-background-agent-support-88ec4600bd"]
+statement = "Hermes supports profiles, subagents, delegation, curator/background agents, and durable Kanban workers."
+evidence_ids = [
+    "ev-hermes_agent-profile-support-266ae87e48",
+    "ev-hermes_agent-subagent-and-delegation-support-b423f1fc5e",
+    "ev-hermes_agent-curator-background-agent-support-88ec4600bd",
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Profiles are separate state directories, not hard isolation boundaries. Cron jobs cannot recursively create cron jobs. Some workdir jobs are sequential because process cwd is global. Delegated subagents are synchronous and not durable if the parent is interrupted. Project plugins require explicit enablement."
-uncertainty = "The GitHub release name and pyproject version are the version anchors. The repository package.json is not a public package version source for this catalog."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "Agent profile/subagent support remains source-backed and now includes Kanban worker lifecycle."
+install_activation = "Profiles, delegation, curator, and Kanban workers attach through Hermes runtime and gateway surfaces."
+configuration_surface = "Profiles, delegation configuration, and Kanban board state shape behavior."
+reload_update_behavior = "Current release notes include worker lifecycle and restart behavior."
+limitations = "Some detailed docs remain tag-pinned to the migrated version basis, while v2026.5.7 release notes supply current feature and lifecycle evidence. Cross-harness import fidelity remains unproven."
+uncertainty = "AgentSkills-compatible language does not prove native import of another harness bundle. Provider and hook taxonomies remain Hermes-specific until normalized by later schema work."
+
+[[claim.detail]]
+component = "agent profiles and subagents"
+load_attachment_point = "Profiles, delegation, curator, and Kanban workers attach through Hermes runtime and gateway surfaces."
+activation = "Profiles, delegation, curator, and Kanban workers attach through Hermes runtime and gateway surfaces."
+mutability = "Profiles, delegation configuration, and Kanban board state shape behavior."
+scope = [
+    "profile",
+    "subagent",
+    "curator",
+    "kanban",
+]
+evidence_ids = [
+    "ev-hermes_agent-profile-support-266ae87e48",
+    "ev-hermes_agent-subagent-and-delegation-support-b423f1fc5e",
+    "ev-hermes_agent-curator-background-agent-support-88ec4600bd",
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-hermes_agent-memory_context_retrieval"
 family = "memory_context_retrieval"
-status = "unknown"
-statement = "Source-backed evidence does not prove memory context retrieval support."
-evidence_ids = []
+status = "supported"
+statement = "Hermes v0.13.0 supports memory-like surfaces including /goal, checkpoints v2, session durability, memory provider plugins, and X-Hermes-Session-Key scoping."
+evidence_ids = [
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The GitHub release name and pyproject version are the version anchors. The repository package.json is not a public package version source for this catalog."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "changed"
+triage_rationale = "Memory-like behavior is promoted to supported with structured fields rather than a shared-memory assumption."
+install_activation = "Memory-like surfaces activate through /goal, checkpoints, session keys, memory-provider plugins, and API/gateway context."
+configuration_surface = "Session keys, checkpoint state, provider plugins, and gateway/API configuration shape memory behavior."
+reload_update_behavior = "Current release notes include restart and durability behavior, but privacy/freshness details remain component-specific."
+limitations = "Some detailed docs remain tag-pinned to the migrated version basis, while v2026.5.7 release notes supply current feature and lifecycle evidence. Cross-harness import fidelity remains unproven."
+uncertainty = "AgentSkills-compatible language does not prove native import of another harness bundle. Provider and hook taxonomies remain Hermes-specific until normalized by later schema work."
+
+[[claim.detail]]
+component = "memory-like context surfaces"
+load_attachment_point = "Memory-like surfaces activate through /goal, checkpoints, session keys, memory-provider plugins, and API/gateway context."
+activation = "Memory-like surfaces activate through /goal, checkpoints, session keys, memory-provider plugins, and API/gateway context."
+mutability = "Session keys, checkpoint state, provider plugins, and gateway/API configuration shape memory behavior."
+scope = [
+    "session",
+    "gateway",
+    "api-server",
+    "plugin",
+]
+evidence_ids = [
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
+evidence_class = "source_backed"
+
+[[claim.memory_like_surface]]
+persistence_scope = "session, checkpoint, goal, and provider-plugin scopes"
+retrieval_trigger = "/goal, checkpoint restore, session key, or provider plugin retrieval"
+mutability = "session/checkpoint state and provider plugins are mutable through runtime and API surfaces"
+freshness = "release-backed but component-specific"
+privacy_boundary = "session key, gateway/API, provider plugin, and workspace boundaries"
+write_authority = "agent, API caller, provider plugin, or runtime component depending on surface"
+api_stability = "release-level API behavior; detailed API stability remains component-specific"
+evidence_ids = [
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
+evidence_class = "source_backed"
+unknowns = "Privacy and freshness behavior remain component-specific despite source-backed memory-like support."
 
 [[claim]]
 id = "claim-hermes_agent-config_settings"
 family = "config_settings"
-status = "unknown"
-statement = "Source-backed evidence does not prove config settings support."
-evidence_ids = []
+status = "supported"
+statement = "Hermes profiles and gateway configuration are source-backed, and current release notes add allowlists, provider plugins, shared OAuth token stores, and config safety fixes."
+evidence_ids = [
+    "ev-hermes_agent-profile-support-266ae87e48",
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The GitHub release name and pyproject version are the version anchors. The repository package.json is not a public package version source for this catalog."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "changed"
+triage_rationale = "Configuration support is now source-backed in the canonical profile."
+install_activation = "Configuration activates through profiles, gateway config, provider plugins, OAuth token stores, and allowlists."
+configuration_surface = "Profiles, gateway config, plugin config, and provider settings shape active behavior."
+reload_update_behavior = "Release notes include source-file reloads and restart-safe gateway behavior."
+limitations = "Some detailed docs remain tag-pinned to the migrated version basis, while v2026.5.7 release notes supply current feature and lifecycle evidence. Cross-harness import fidelity remains unproven."
+uncertainty = "AgentSkills-compatible language does not prove native import of another harness bundle. Provider and hook taxonomies remain Hermes-specific until normalized by later schema work."
+
+[[claim.detail]]
+component = "configuration settings"
+load_attachment_point = "Configuration activates through profiles, gateway config, provider plugins, OAuth token stores, and allowlists."
+activation = "Configuration activates through profiles, gateway config, provider plugins, OAuth token stores, and allowlists."
+mutability = "Profiles, gateway config, plugin config, and provider settings shape active behavior."
+scope = [
+    "profile",
+    "gateway",
+    "plugin",
+    "provider",
+]
+evidence_ids = [
+    "ev-hermes_agent-profile-support-266ae87e48",
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-hermes_agent-permissions_approvals_sandboxing"
 family = "permissions_approvals_sandboxing"
-status = "unknown"
-statement = "Source-backed evidence does not prove permissions approvals sandboxing support."
-evidence_ids = []
+status = "supported"
+statement = "Hermes release notes include redaction defaults, allowlists, stranger rejection, prompt-injection scanning, and credential TOCTOU fixes."
+evidence_ids = [
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The GitHub release name and pyproject version are the version anchors. The repository package.json is not a public package version source for this catalog."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "changed"
+triage_rationale = "Security/control posture is now source-backed through current release evidence."
+install_activation = "Controls activate through gateway/API security settings, allowlists, redaction defaults, and plugin/provider flows."
+configuration_surface = "Gateway config, API server config, provider settings, and security defaults shape controls."
+reload_update_behavior = "Security fixes are release-scoped; exact policy fields need component-specific follow-up."
+limitations = "Some detailed docs remain tag-pinned to the migrated version basis, while v2026.5.7 release notes supply current feature and lifecycle evidence. Cross-harness import fidelity remains unproven."
+uncertainty = "AgentSkills-compatible language does not prove native import of another harness bundle. Provider and hook taxonomies remain Hermes-specific until normalized by later schema work."
+
+[[claim.detail]]
+component = "permissions, approvals, and sandboxing"
+load_attachment_point = "Controls activate through gateway/API security settings, allowlists, redaction defaults, and plugin/provider flows."
+activation = "Controls activate through gateway/API security settings, allowlists, redaction defaults, and plugin/provider flows."
+mutability = "Gateway config, API server config, provider settings, and security defaults shape controls."
+scope = [
+    "gateway",
+    "api-server",
+    "plugin",
+    "provider",
+]
+evidence_ids = [
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-hermes_agent-scheduling_automation"
 family = "scheduling_automation"
 status = "supported"
-statement = "Source-backed evidence records scheduling automation support."
-evidence_ids = ["ev-hermes_agent-cron-scheduling-support-b37399a421"]
+statement = "Hermes supports cron, gateway cron ticker, curator scheduling, background processes, no_agent cron mode, Kanban workers, and heartbeats."
+evidence_ids = [
+    "ev-hermes_agent-cron-scheduling-support-b37399a421",
+    "ev-hermes_agent-curator-background-agent-support-88ec4600bd",
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Profiles are separate state directories, not hard isolation boundaries. Cron jobs cannot recursively create cron jobs. Some workdir jobs are sequential because process cwd is global. Delegated subagents are synchronous and not durable if the parent is interrupted. Project plugins require explicit enablement."
-uncertainty = "The GitHub release name and pyproject version are the version anchors. The repository package.json is not a public package version source for this catalog."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "Automation support remains valid and now records current no_agent and Kanban surfaces."
+install_activation = "Automation activates through cron config, gateway cron ticker, curator/background processes, no_agent mode, and Kanban workers."
+configuration_surface = "Cron entries, gateway config, curator config, and Kanban board state shape runners."
+reload_update_behavior = "Current release notes include restart/resume behavior, but missed-run semantics remain runner-specific."
+limitations = "Some detailed docs remain tag-pinned to the migrated version basis, while v2026.5.7 release notes supply current feature and lifecycle evidence. Cross-harness import fidelity remains unproven."
+uncertainty = "AgentSkills-compatible language does not prove native import of another harness bundle. Provider and hook taxonomies remain Hermes-specific until normalized by later schema work."
+
+[[claim.detail]]
+component = "scheduling and automation"
+load_attachment_point = "Automation activates through cron config, gateway cron ticker, curator/background processes, no_agent mode, and Kanban workers."
+activation = "Automation activates through cron config, gateway cron ticker, curator/background processes, no_agent mode, and Kanban workers."
+mutability = "Cron entries, gateway config, curator config, and Kanban board state shape runners."
+scope = [
+    "cron",
+    "gateway",
+    "curator",
+    "kanban",
+]
+evidence_ids = [
+    "ev-hermes_agent-cron-scheduling-support-b37399a421",
+    "ev-hermes_agent-curator-background-agent-support-88ec4600bd",
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
+evidence_class = "source_backed"
+
+[[claim.automation_surface]]
+trigger_class = "cron, no_agent cron, curator, Kanban, and heartbeat-like worker triggers"
+runner_locus = "Hermes gateway, curator/background worker, or Kanban worker"
+recurrence_shape = "cron cadence, no_agent cron mode, background process cadence, and Kanban worker lifecycle"
+permission_sandbox_context = "gateway/runtime security controls and release-backed allowlists/redaction defaults"
+missed_run_behavior = "restart/resume behavior is release-backed; exact missed-run catch-up is runner-specific"
+output_delivery = "gateway, dashboard, TUI, API, or worker output"
+evidence_ids = [
+    "ev-hermes_agent-cron-scheduling-support-b37399a421",
+    "ev-hermes_agent-curator-background-agent-support-88ec4600bd",
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-hermes_agent-commands_shortcuts"
 family = "commands_shortcuts"
-status = "unknown"
-statement = "Source-backed evidence does not prove commands shortcuts support."
-evidence_ids = []
+status = "supported"
+statement = "Hermes release notes and docs identify slash commands including /goal, /kanban, /model, /steer, /queue, and curator subcommands."
+evidence_ids = [
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The GitHub release name and pyproject version are the version anchors. The repository package.json is not a public package version source for this catalog."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "changed"
+triage_rationale = "Commands are now source-backed in the profile while taxonomy remains Hermes-specific."
+install_activation = "Commands activate through TUI, gateway, dashboard, or curator command surfaces."
+configuration_surface = "Runtime mode and command registration shape availability."
+reload_update_behavior = "Command reload/update behavior is runtime-specific."
+limitations = "Some detailed docs remain tag-pinned to the migrated version basis, while v2026.5.7 release notes supply current feature and lifecycle evidence. Cross-harness import fidelity remains unproven."
+uncertainty = "AgentSkills-compatible language does not prove native import of another harness bundle. Provider and hook taxonomies remain Hermes-specific until normalized by later schema work."
+
+[[claim.detail]]
+component = "commands and shortcuts"
+load_attachment_point = "Commands activate through TUI, gateway, dashboard, or curator command surfaces."
+activation = "Commands activate through TUI, gateway, dashboard, or curator command surfaces."
+mutability = "Runtime mode and command registration shape availability."
+scope = [
+    "tui",
+    "gateway",
+    "dashboard",
+    "curator",
+]
+evidence_ids = [
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-hermes_agent-providers_connectors"
 family = "providers_connectors"
-status = "unknown"
-statement = "Source-backed evidence does not prove providers connectors support."
-evidence_ids = []
+status = "supported"
+statement = "Hermes v0.13.0 adds provider plugins, Google Chat, API server memory keys, xAI Custom Voices, SearXNG, OpenRouter cache control, and model provider changes."
+evidence_ids = [
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The GitHub release name and pyproject version are the version anchors. The repository package.json is not a public package version source for this catalog."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "changed"
+triage_rationale = "Provider/connector support is now canonical while SP-009 keeps taxonomy open."
+install_activation = "Connectors attach through provider plugins, messaging platforms, API server integrations, search/media providers, and model provider settings."
+configuration_surface = "Provider plugin config, gateway/API config, and platform settings shape availability."
+reload_update_behavior = "Provider and connector taxonomy remains schema pressure."
+limitations = "Some detailed docs remain tag-pinned to the migrated version basis, while v2026.5.7 release notes supply current feature and lifecycle evidence. Cross-harness import fidelity remains unproven."
+uncertainty = "AgentSkills-compatible language does not prove native import of another harness bundle. Provider and hook taxonomies remain Hermes-specific until normalized by later schema work."
+
+[[claim.detail]]
+component = "providers and connectors"
+load_attachment_point = "Connectors attach through provider plugins, messaging platforms, API server integrations, search/media providers, and model provider settings."
+activation = "Connectors attach through provider plugins, messaging platforms, API server integrations, search/media providers, and model provider settings."
+mutability = "Provider plugin config, gateway/API config, and platform settings shape availability."
+scope = [
+    "provider-plugin",
+    "gateway",
+    "api-server",
+    "messaging",
+    "search",
+    "media",
+]
+evidence_ids = [
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-hermes_agent-runtime_modes"
 family = "runtime_modes"
-status = "unknown"
-statement = "Source-backed evidence does not prove runtime modes support."
-evidence_ids = []
+status = "supported"
+statement = "Hermes spans TUI, gateway, dashboard, API server, Docker, ACP adapter, messaging platforms, cron jobs, and Kanban workers."
+evidence_ids = [
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+    "ev-hermes_agent-documentation-index-16ac22bc0f",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The GitHub release name and pyproject version are the version anchors. The repository package.json is not a public package version source for this catalog."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "changed"
+triage_rationale = "Runtime modes are now source-backed in the profile."
+install_activation = "Runtime mode activates through TUI, gateway, dashboard, API server, Docker, ACP adapter, messaging, cron, or Kanban entrypoints."
+configuration_surface = "Runtime config and invocation surface shape behavior."
+reload_update_behavior = "Runtime lifecycle includes restart/resume behavior from release notes."
+limitations = "Some detailed docs remain tag-pinned to the migrated version basis, while v2026.5.7 release notes supply current feature and lifecycle evidence. Cross-harness import fidelity remains unproven."
+uncertainty = "AgentSkills-compatible language does not prove native import of another harness bundle. Provider and hook taxonomies remain Hermes-specific until normalized by later schema work."
+
+[[claim.detail]]
+component = "runtime modes"
+load_attachment_point = "Runtime mode activates through TUI, gateway, dashboard, API server, Docker, ACP adapter, messaging, cron, or Kanban entrypoints."
+activation = "Runtime mode activates through TUI, gateway, dashboard, API server, Docker, ACP adapter, messaging, cron, or Kanban entrypoints."
+mutability = "Runtime config and invocation surface shape behavior."
+scope = [
+    "tui",
+    "gateway",
+    "dashboard",
+    "api-server",
+    "docker",
+    "acp",
+    "messaging",
+    "cron",
+]
+evidence_ids = [
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+    "ev-hermes_agent-documentation-index-16ac22bc0f",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-hermes_agent-cross_harness_import_compatibility"
 family = "cross_harness_import_compatibility"
 status = "unknown"
-statement = "Source-backed evidence does not prove cross harness import compatibility support."
+statement = "Hermes uses AgentSkills-compatible language, but no checked source proves native import fidelity for Codex, Claude Code, Cursor, OpenCode, or OpenClaw bundles."
 evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The GitHub release name and pyproject version are the version anchors. The repository package.json is not a public package version source for this catalog."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "explicit_unknown"
+claim_triage = "unknown"
+triage_rationale = "Compatibility remains explicit unknown despite AgentSkills compatibility language."
+install_activation = "No full cross-harness import activation was proven."
+configuration_surface = "Skills compatibility language does not prove bundle import configuration."
+reload_update_behavior = "Import fidelity remains unknown until source-backed bridge fields exist."
+limitations = "No checked first-party source proves this surface strongly enough for a supported canonical claim."
+uncertainty = "Hermes uses AgentSkills-compatible language, but no checked source proves native import fidelity for Codex, Claude Code, Cursor, OpenCode, or OpenClaw bundles."
+
+[[claim.detail]]
+component = "AgentSkills-compatible compatibility signal"
+load_attachment_point = "skill installation surfaces, without proven full bundle import fidelity"
+activation = "skill installation surfaces only"
+mutability = "unknown for imported non-skill bundle components"
+scope = [
+    "skills",
+    "cross-harness equipment bundles",
+]
+evidence_ids = [
+    "ev-hermes_agent-skill-support-90fff712d9",
+]
+evidence_class = "source_backed"
+
+[[claim.compatibility_bridge]]
+imported_from = "AgentSkills-compatible signal"
+imported_convention = "AgentSkills-compatible skills; full harness bundle import not proven"
+surviving_components = [
+    "skills",
+]
+activation = "skill installation surfaces only"
+disable_behavior = "not proven for full bundles"
+precedence = "native Hermes skill behavior takes precedence over inferred compatibility"
+fidelity_limits = "AgentSkills-compatible language does not prove native import fidelity for other harness bundles."
+evidence_ids = [
+    "ev-hermes_agent-skill-support-90fff712d9",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-hermes_agent-lifecycle_reload_update"
 family = "lifecycle_reload_update"
-status = "unknown"
-statement = "Source-backed evidence does not prove lifecycle reload update support."
-evidence_ids = []
+status = "supported"
+statement = "Hermes release notes include auto-resume after restart, source-file reloads, /update restart handling, skill cache rescans, and restart-safe gateway behavior."
+evidence_ids = [
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The GitHub release name and pyproject version are the version anchors. The repository package.json is not a public package version source for this catalog."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "changed"
+triage_rationale = "Lifecycle support is added with current release evidence."
+install_activation = "Lifecycle behavior attaches to gateway, source files, /update, skills, Kanban workers, and restart paths."
+configuration_surface = "Runtime config, source files, skill cache, and gateway state shape reload/update behavior."
+reload_update_behavior = "Lifecycle behavior is component-scoped and not a universal live-reload guarantee."
+limitations = "Some detailed docs remain tag-pinned to the migrated version basis, while v2026.5.7 release notes supply current feature and lifecycle evidence. Cross-harness import fidelity remains unproven."
+uncertainty = "AgentSkills-compatible language does not prove native import of another harness bundle. Provider and hook taxonomies remain Hermes-specific until normalized by later schema work."
+
+[[claim.detail]]
+component = "lifecycle, reload, and update behavior"
+load_attachment_point = "Lifecycle behavior attaches to gateway, source files, /update, skills, Kanban workers, and restart paths."
+activation = "Lifecycle behavior attaches to gateway, source files, /update, skills, Kanban workers, and restart paths."
+mutability = "Runtime config, source files, skill cache, and gateway state shape reload/update behavior."
+scope = [
+    "gateway",
+    "skills",
+    "kanban",
+    "source-files",
+]
+evidence_ids = [
+    "ev-hermes_agent-current-release-version-date-and-88f373c946",
+]
+evidence_class = "source_backed"

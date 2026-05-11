@@ -2,35 +2,45 @@ schema_version = "vanilla-harness-capability-profile.v1alpha1"
 profile_kind = "vanilla_harness_capability_profile"
 harness_id = "claude_code"
 display_name = "Claude Code"
-checked_at = "2026-05-03T09:25:05-04:00"
-checked_version = "2.1.126"
-version_basis = "Official Claude Code changelog entry dated 2026-05-01, with first-party documentation for capabilities."
+checked_at = "2026-05-10T19:13:40-04:00"
+checked_version = "2.1.138"
+version_basis = "GitHub release v2.1.138 for anthropics/claude-code, plus first-party Claude Code docs for integration surfaces."
 evidence_category = "documentation-supported"
-summary_scheduling = "Routines, Desktop scheduled tasks, and session-scoped scheduled tasks."
-scheduling = "Claude Code supports cloud Routines with scheduled, API, and GitHub triggers; Desktop scheduled tasks; and session-scoped scheduled tasks including loop-style execution."
-limitations = "Session-scoped scheduled tasks require a supporting Claude Code version and expire after a bounded period. Routines are preview-like cloud infrastructure. Desktop scheduled tasks require the Desktop app and an awake machine. Plugin-loaded agents can have restrictions on hooks, MCP servers, and permission modes."
-uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
-refresh_notes = "Refresh from the official Claude Code changelog and docs. Treat third-party package metadata as fallback only if official version evidence is unavailable."
-components = ["skills", "custom commands", "MCP servers and tools", "hooks", "subagents", "plugins", "settings", "slash commands", "LSP servers", "plugin monitors", "output styles", "themes"]
-local_observations = ["No local Claude Code binary, Desktop app state, or plugin install was inspected for this seed refresh."]
+summary_scheduling = "Claude Code supports cloud routines, desktop scheduled tasks, and session scheduled tasks with distinct runner loci and permission contexts."
+scheduling = "Cloud routines support scheduled, API, and GitHub triggers. Desktop scheduled tasks run locally while the app is open, and session-scoped scheduled tasks remain separate."
+limitations = "The latest release notes are internal-fix scoped, so surface claims rely on first-party docs. Routines, desktop tasks, and session tasks must remain distinct automation surfaces."
+uncertainty = "No checked source proves a stable shared memory API or native import fidelity for other harness conventions."
+refresh_notes = "Refresh the GitHub release anchor first, then first-party Claude Code docs for skills, MCP, hooks, plugins, routines, and scheduled tasks."
+components = [
+    "skills",
+    "plugins",
+    "MCP servers",
+    "hooks",
+    "subagents",
+    "agents",
+    "settings",
+    "permission modes",
+    "cloud routines",
+    "desktop scheduled tasks",
+    "session scheduled tasks",
+    "slash commands",
+    "MCP resources",
+    "monitors",
+]
+local_observations = [
+    "No local Claude Code binary, Desktop app, plugin state, MCP configuration, or routine state was inspected for this refresh.",
+]
 
 [scope]
 surface = "vanilla_harness_capability_surface"
 applicability = "Default settings and default equipment immediately after installation and onboarding."
 
 [[evidence]]
-id = "ev-claude_code-latest-claude-code-version-and-r-63163f5f90"
+id = "ev-claude_code-latest-claude-code-release-versi-b4aad797c8"
 category = "documentation-supported"
 source_kind = "first_party"
-url = "https://code.claude.com/docs/en/changelog"
-claim_scope = "latest Claude Code version and release date"
-
-[[evidence]]
-id = "ev-claude_code-first-party-changelog-mirror-55aa23da24"
-category = "documentation-supported"
-source_kind = "first_party"
-url = "https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md"
-claim_scope = "first-party changelog mirror"
+url = "https://github.com/anthropics/claude-code/releases/tag/v2.1.138"
+claim_scope = "latest Claude Code release version and release date"
 
 [[evidence]]
 id = "ev-claude_code-skill-support-09108d5779"
@@ -75,13 +85,6 @@ url = "https://code.claude.com/docs/en/settings"
 claim_scope = "settings and permissions"
 
 [[evidence]]
-id = "ev-claude_code-harness-overview-64da5f1b3a"
-category = "documentation-supported"
-source_kind = "first_party"
-url = "https://code.claude.com/docs/en/overview"
-claim_scope = "harness overview"
-
-[[evidence]]
 id = "ev-claude_code-cloud-routine-support-e1ecd195c7"
 category = "documentation-supported"
 source_kind = "first_party"
@@ -102,197 +105,641 @@ source_kind = "first_party"
 url = "https://code.claude.com/docs/en/scheduled-tasks"
 claim_scope = "session scheduled task support"
 
+[[evidence]]
+id = "ev-claude_code-harness-overview-64da5f1b3a"
+category = "documentation-supported"
+source_kind = "first_party"
+url = "https://code.claude.com/docs/en/overview"
+claim_scope = "harness overview"
+
+[[version_observation]]
+id = "vo-claude-code-v2-1-138"
+observed_version = "v2.1.138"
+checked_at = "2026-05-10T19:13:40-04:00"
+source_url = "https://github.com/anthropics/claude-code/releases/tag/v2.1.138"
+source_kind = "first_party"
+canonical_profile_change = true
+evidence_class = "source_backed"
+
+[[harness_extension]]
+id = "ext-claude-code-plugin-component-bundles"
+name = "Plugin component bundles"
+scope = "plugins"
+description = "Claude Code plugins can carry skills, agents, hooks, MCP servers, LSP servers, monitors, themes, and manifest metadata."
+evidence_ids = [
+    "ev-claude_code-plugin-support-and-limits-a8ac63cee1",
+]
+evidence_class = "source_backed"
+schema_pressure_ids = [
+    "SP-003",
+]
+
+[[harness_extension]]
+id = "ext-claude-code-routine-runner-loci"
+name = "Routine and scheduled-task runner loci"
+scope = "automation"
+description = "Cloud routines, desktop scheduled tasks, and session scheduled tasks have different runners and availability constraints."
+evidence_ids = [
+    "ev-claude_code-cloud-routine-support-e1ecd195c7",
+    "ev-claude_code-desktop-scheduled-task-support-cdb4a71f50",
+    "ev-claude_code-session-scheduled-task-support-64a936afca",
+]
+evidence_class = "source_backed"
+schema_pressure_ids = [
+    "SP-006",
+]
+
 [[claim]]
 id = "claim-claude_code-instructions_context"
 family = "instructions_context"
-status = "unknown"
-statement = "Source-backed evidence does not prove instructions context support."
-evidence_ids = []
+status = "supported"
+statement = "Claude Code skills, subagents, routines, and scheduled tasks carry prompt or instruction material, including dynamic skill context."
+evidence_ids = [
+    "ev-claude_code-skill-support-09108d5779",
+    "ev-claude_code-subagent-support-f4514ded0d",
+    "ev-claude_code-cloud-routine-support-e1ecd195c7",
+    "ev-claude_code-desktop-scheduled-task-support-cdb4a71f50",
+    "ev-claude_code-session-scheduled-task-support-64a936afca",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "changed"
+triage_rationale = "Issue #45 promotes source-backed instruction/context surfaces into the profile."
+install_activation = "Instruction material loads through skills, subagents, routine prompts, and scheduled-task prompts."
+configuration_surface = "Enterprise, personal, project, plugin, routine, desktop, and session scopes shape instruction availability."
+reload_update_behavior = "Skills support live change detection; task/routine reload behavior remains runner-specific."
+limitations = "The latest release notes are internal-fix scoped, so surface claims rely on first-party docs. Routines, desktop tasks, and session tasks must remain distinct automation surfaces."
+uncertainty = "No checked source proves a stable shared memory API or native import fidelity for other harness conventions."
+
+[[claim.detail]]
+component = "instruction and context loaders"
+load_attachment_point = "Instruction material loads through skills, subagents, routine prompts, and scheduled-task prompts."
+activation = "Instruction material loads through skills, subagents, routine prompts, and scheduled-task prompts."
+mutability = "Enterprise, personal, project, plugin, routine, desktop, and session scopes shape instruction availability."
+scope = [
+    "enterprise",
+    "personal",
+    "project",
+    "plugin",
+    "cloud",
+    "desktop",
+    "session",
+]
+evidence_ids = [
+    "ev-claude_code-skill-support-09108d5779",
+    "ev-claude_code-subagent-support-f4514ded0d",
+    "ev-claude_code-cloud-routine-support-e1ecd195c7",
+    "ev-claude_code-desktop-scheduled-task-support-cdb4a71f50",
+    "ev-claude_code-session-scheduled-task-support-64a936afca",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-claude_code-skills"
 family = "skills"
 status = "supported"
-statement = "Source-backed evidence records skills support."
-evidence_ids = ["ev-claude_code-skill-support-09108d5779"]
+statement = "Claude Code supports skills at enterprise, personal, project, and plugin scopes with structured frontmatter and optional subagent context."
+evidence_ids = [
+    "ev-claude_code-skill-support-09108d5779",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Session-scoped scheduled tasks require a supporting Claude Code version and expire after a bounded period. Routines are preview-like cloud infrastructure. Desktop scheduled tasks require the Desktop app and an awake machine. Plugin-loaded agents can have restrictions on hooks, MCP servers, and permission modes."
-uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "The supported skills claim remains valid and now records scope and context behavior."
+install_activation = "Skills load from enterprise, personal, project, and plugin locations and may activate in subagent context."
+configuration_surface = "Skill frontmatter and scope define availability and behavior."
+reload_update_behavior = "Skill live change detection is source-backed."
+limitations = "The latest release notes are internal-fix scoped, so surface claims rely on first-party docs. Routines, desktop tasks, and session tasks must remain distinct automation surfaces."
+uncertainty = "No checked source proves a stable shared memory API or native import fidelity for other harness conventions."
+
+[[claim.detail]]
+component = "skills"
+load_attachment_point = "Skills load from enterprise, personal, project, and plugin locations and may activate in subagent context."
+activation = "Skills load from enterprise, personal, project, and plugin locations and may activate in subagent context."
+mutability = "Skill frontmatter and scope define availability and behavior."
+scope = [
+    "enterprise",
+    "personal",
+    "project",
+    "plugin",
+]
+evidence_ids = [
+    "ev-claude_code-skill-support-09108d5779",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-claude_code-mcp_tools"
 family = "mcp_tools"
 status = "supported"
-statement = "Source-backed evidence records mcp tools support."
-evidence_ids = ["ev-claude_code-mcp-support-528ca09f3f"]
+statement = "Claude Code MCP supports remote HTTP, remote SSE, local stdio, dynamic tool updates, push channels, OAuth, resources, and managed configuration."
+evidence_ids = [
+    "ev-claude_code-mcp-support-528ca09f3f",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Session-scoped scheduled tasks require a supporting Claude Code version and expire after a bounded period. Routines are preview-like cloud infrastructure. Desktop scheduled tasks require the Desktop app and an awake machine. Plugin-loaded agents can have restrictions on hooks, MCP servers, and permission modes."
-uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "The MCP claim remains supported and records transports plus dynamic update behavior."
+install_activation = "MCP attaches through managed configuration and remote or local server definitions."
+configuration_surface = "Managed MCP config selects servers, transports, resources, and auth."
+reload_update_behavior = "MCP list_changed notifications support dynamic tools, prompts, and resources."
+limitations = "The latest release notes are internal-fix scoped, so surface claims rely on first-party docs. Routines, desktop tasks, and session tasks must remain distinct automation surfaces."
+uncertainty = "No checked source proves a stable shared memory API or native import fidelity for other harness conventions."
+
+[[claim.detail]]
+component = "MCP and tool surfaces"
+load_attachment_point = "MCP attaches through managed configuration and remote or local server definitions."
+activation = "MCP attaches through managed configuration and remote or local server definitions."
+mutability = "Managed MCP config selects servers, transports, resources, and auth."
+scope = [
+    "managed",
+    "user",
+    "project",
+    "remote",
+    "local",
+]
+evidence_ids = [
+    "ev-claude_code-mcp-support-528ca09f3f",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-claude_code-hooks_events"
 family = "hooks_events"
 status = "supported"
-statement = "Source-backed evidence records hooks events support."
-evidence_ids = ["ev-claude_code-hook-support-003598c023"]
+statement = "Claude Code exposes hook surfaces through settings and plugins, including allow controls."
+evidence_ids = [
+    "ev-claude_code-hook-support-003598c023",
+    "ev-claude_code-plugin-support-and-limits-a8ac63cee1",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Session-scoped scheduled tasks require a supporting Claude Code version and expire after a bounded period. Routines are preview-like cloud infrastructure. Desktop scheduled tasks require the Desktop app and an awake machine. Plugin-loaded agents can have restrictions on hooks, MCP servers, and permission modes."
-uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "The hook claim remains supported while event taxonomy stays harness-specific."
+install_activation = "Hooks attach through settings and plugin manifests."
+configuration_surface = "Settings and plugin configuration control hook allow behavior."
+reload_update_behavior = "Hook reload behavior depends on settings/plugin update semantics."
+limitations = "The latest release notes are internal-fix scoped, so surface claims rely on first-party docs. Routines, desktop tasks, and session tasks must remain distinct automation surfaces."
+uncertainty = "No checked source proves a stable shared memory API or native import fidelity for other harness conventions."
+
+[[claim.detail]]
+component = "hooks and event surfaces"
+load_attachment_point = "Hooks attach through settings and plugin manifests."
+activation = "Hooks attach through settings and plugin manifests."
+mutability = "Settings and plugin configuration control hook allow behavior."
+scope = [
+    "settings",
+    "plugin",
+]
+evidence_ids = [
+    "ev-claude_code-hook-support-003598c023",
+    "ev-claude_code-plugin-support-and-limits-a8ac63cee1",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-claude_code-plugins_bundles"
 family = "plugins_bundles"
 status = "supported"
-statement = "Source-backed evidence records plugins bundles support."
-evidence_ids = ["ev-claude_code-plugin-support-and-limits-a8ac63cee1"]
+statement = "Claude Code plugins can package skills, agents, hooks, MCP servers, LSP servers, monitors, themes, and manifest metadata."
+evidence_ids = [
+    "ev-claude_code-plugin-support-and-limits-a8ac63cee1",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Session-scoped scheduled tasks require a supporting Claude Code version and expire after a bounded period. Routines are preview-like cloud infrastructure. Desktop scheduled tasks require the Desktop app and an awake machine. Plugin-loaded agents can have restrictions on hooks, MCP servers, and permission modes."
-uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "The plugin claim remains supported and records bundle component breadth."
+install_activation = "Plugins install into Claude Code plugin surfaces and expose manifest-declared components."
+configuration_surface = "Plugin manifests and install scope define available components."
+reload_update_behavior = "Plugin component reload varies by component type."
+limitations = "The latest release notes are internal-fix scoped, so surface claims rely on first-party docs. Routines, desktop tasks, and session tasks must remain distinct automation surfaces."
+uncertainty = "No checked source proves a stable shared memory API or native import fidelity for other harness conventions."
+
+[[claim.detail]]
+component = "plugins and bundles"
+load_attachment_point = "Plugins install into Claude Code plugin surfaces and expose manifest-declared components."
+activation = "Plugins install into Claude Code plugin surfaces and expose manifest-declared components."
+mutability = "Plugin manifests and install scope define available components."
+scope = [
+    "plugin",
+    "user",
+    "project",
+]
+evidence_ids = [
+    "ev-claude_code-plugin-support-and-limits-a8ac63cee1",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-claude_code-agent_profiles_subagents"
 family = "agent_profiles_subagents"
 status = "supported"
-statement = "Source-backed evidence records agent profiles subagents support."
-evidence_ids = ["ev-claude_code-subagent-support-f4514ded0d"]
+statement = "Claude Code supports subagents and plugin agents that can be invoked automatically when appropriate."
+evidence_ids = [
+    "ev-claude_code-subagent-support-f4514ded0d",
+    "ev-claude_code-plugin-support-and-limits-a8ac63cee1",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Session-scoped scheduled tasks require a supporting Claude Code version and expire after a bounded period. Routines are preview-like cloud infrastructure. Desktop scheduled tasks require the Desktop app and an awake machine. Plugin-loaded agents can have restrictions on hooks, MCP servers, and permission modes."
-uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "Subagent support remains valid and now includes plugin-provided agents."
+install_activation = "Subagents and plugin agents attach through subagent definitions and plugin manifests."
+configuration_surface = "Agent definitions, plugin manifests, and settings shape invocation behavior."
+reload_update_behavior = "Agent updates follow definition/plugin reload behavior."
+limitations = "The latest release notes are internal-fix scoped, so surface claims rely on first-party docs. Routines, desktop tasks, and session tasks must remain distinct automation surfaces."
+uncertainty = "No checked source proves a stable shared memory API or native import fidelity for other harness conventions."
+
+[[claim.detail]]
+component = "agent profiles and subagents"
+load_attachment_point = "Subagents and plugin agents attach through subagent definitions and plugin manifests."
+activation = "Subagents and plugin agents attach through subagent definitions and plugin manifests."
+mutability = "Agent definitions, plugin manifests, and settings shape invocation behavior."
+scope = [
+    "project",
+    "user",
+    "plugin",
+]
+evidence_ids = [
+    "ev-claude_code-subagent-support-f4514ded0d",
+    "ev-claude_code-plugin-support-and-limits-a8ac63cee1",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-claude_code-memory_context_retrieval"
 family = "memory_context_retrieval"
 status = "unknown"
-statement = "Source-backed evidence does not prove memory context retrieval support."
+statement = "Claude Code routines and scheduled tasks reuse prompt/config state, and MCP resources can be referenced, but no stable shared memory API is proven."
 evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "explicit_unknown"
+claim_triage = "unknown"
+triage_rationale = "The refresh records memory-like signals without claiming a stable memory API."
+install_activation = "No native memory activation was proven beyond prompt/config reuse and MCP resource access."
+configuration_surface = "Routines, scheduled tasks, and MCP resources can carry context, but stable memory settings were not proven."
+reload_update_behavior = "Freshness, write authority, and privacy boundaries remain explicit unknowns."
+limitations = "No checked first-party source proves this surface strongly enough for a supported canonical claim."
+uncertainty = "Claude Code routines and scheduled tasks reuse prompt/config state, and MCP resources can be referenced, but no stable shared memory API is proven."
+
+[[claim.detail]]
+component = "memory-like context surface"
+load_attachment_point = "routine prompt/config state and MCP resource references, without a proven stable shared memory API"
+activation = "unknown beyond routine, scheduled task, and MCP resource references"
+mutability = "unknown"
+scope = [
+    "routine",
+    "scheduled task",
+    "MCP resource",
+]
+evidence_ids = []
+evidence_class = "unknown"
+
+[[claim.memory_like_surface]]
+persistence_scope = "routine prompt/config state and MCP resources"
+retrieval_trigger = "runner or MCP-resource reference"
+mutability = "unknown"
+freshness = "unknown"
+privacy_boundary = "workspace, cloud routine, desktop task, session task, and MCP server boundaries"
+write_authority = "unknown"
+api_stability = "unknown"
+evidence_ids = []
+evidence_class = "unknown"
+unknowns = "Checked sources do not prove a stable shared memory API."
 
 [[claim]]
 id = "claim-claude_code-config_settings"
 family = "config_settings"
 status = "supported"
-statement = "Source-backed evidence records config settings support."
-evidence_ids = ["ev-claude_code-settings-and-permissions-7776274324"]
+statement = "Claude Code settings use managed, user, project, local, and command-line precedence scopes."
+evidence_ids = [
+    "ev-claude_code-settings-and-permissions-7776274324",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Session-scoped scheduled tasks require a supporting Claude Code version and expire after a bounded period. Routines are preview-like cloud infrastructure. Desktop scheduled tasks require the Desktop app and an awake machine. Plugin-loaded agents can have restrictions on hooks, MCP servers, and permission modes."
-uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "The configuration claim remains supported with precedence recorded."
+install_activation = "Settings attach through managed, user, project, local, and CLI surfaces."
+configuration_surface = "Precedence scopes determine active values."
+reload_update_behavior = "Setting changes can affect permission and hook behavior; exact live reload depends on surface."
+limitations = "The latest release notes are internal-fix scoped, so surface claims rely on first-party docs. Routines, desktop tasks, and session tasks must remain distinct automation surfaces."
+uncertainty = "No checked source proves a stable shared memory API or native import fidelity for other harness conventions."
+
+[[claim.detail]]
+component = "configuration settings"
+load_attachment_point = "Settings attach through managed, user, project, local, and CLI surfaces."
+activation = "Settings attach through managed, user, project, local, and CLI surfaces."
+mutability = "Precedence scopes determine active values."
+scope = [
+    "managed",
+    "user",
+    "project",
+    "local",
+    "cli",
+]
+evidence_ids = [
+    "ev-claude_code-settings-and-permissions-7776274324",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-claude_code-permissions_approvals_sandboxing"
 family = "permissions_approvals_sandboxing"
 status = "supported"
-statement = "Source-backed evidence records permissions approvals sandboxing support."
-evidence_ids = ["ev-claude_code-settings-and-permissions-7776274324"]
+statement = "Claude Code settings include permission rules, sandbox settings, hook allow controls, and per-task permission modes."
+evidence_ids = [
+    "ev-claude_code-settings-and-permissions-7776274324",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Session-scoped scheduled tasks require a supporting Claude Code version and expire after a bounded period. Routines are preview-like cloud infrastructure. Desktop scheduled tasks require the Desktop app and an awake machine. Plugin-loaded agents can have restrictions on hooks, MCP servers, and permission modes."
-uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "The permissions claim remains supported and tied to runner-specific tasks."
+install_activation = "Permissions activate through settings and task-specific permission modes."
+configuration_surface = "Managed/user/project/local settings and task configuration shape permission behavior."
+reload_update_behavior = "Permission changes are settings-bound and runner-specific."
+limitations = "The latest release notes are internal-fix scoped, so surface claims rely on first-party docs. Routines, desktop tasks, and session tasks must remain distinct automation surfaces."
+uncertainty = "No checked source proves a stable shared memory API or native import fidelity for other harness conventions."
+
+[[claim.detail]]
+component = "permissions, approvals, and sandboxing"
+load_attachment_point = "Permissions activate through settings and task-specific permission modes."
+activation = "Permissions activate through settings and task-specific permission modes."
+mutability = "Managed/user/project/local settings and task configuration shape permission behavior."
+scope = [
+    "managed",
+    "user",
+    "project",
+    "local",
+    "task",
+]
+evidence_ids = [
+    "ev-claude_code-settings-and-permissions-7776274324",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-claude_code-scheduling_automation"
 family = "scheduling_automation"
 status = "supported"
-statement = "Source-backed evidence records scheduling automation support."
-evidence_ids = ["ev-claude_code-cloud-routine-support-e1ecd195c7", "ev-claude_code-desktop-scheduled-task-support-cdb4a71f50", "ev-claude_code-session-scheduled-task-support-64a936afca"]
+statement = "Claude Code supports cloud routines, desktop scheduled tasks, and session scheduled tasks with distinct triggers and runners."
+evidence_ids = [
+    "ev-claude_code-cloud-routine-support-e1ecd195c7",
+    "ev-claude_code-desktop-scheduled-task-support-cdb4a71f50",
+    "ev-claude_code-session-scheduled-task-support-64a936afca",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Session-scoped scheduled tasks require a supporting Claude Code version and expire after a bounded period. Routines are preview-like cloud infrastructure. Desktop scheduled tasks require the Desktop app and an awake machine. Plugin-loaded agents can have restrictions on hooks, MCP servers, and permission modes."
-uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "The automation claim remains supported and now separates runner loci."
+install_activation = "Cloud routines activate from schedules, APIs, and GitHub triggers; desktop tasks run while the app is open; session tasks are session-scoped."
+configuration_surface = "Routine, desktop-task, and session-task setup define triggers, permissions, and runner context."
+reload_update_behavior = "Desktop tasks depend on local app availability; missed-run behavior must be read per runner."
+limitations = "The latest release notes are internal-fix scoped, so surface claims rely on first-party docs. Routines, desktop tasks, and session tasks must remain distinct automation surfaces."
+uncertainty = "No checked source proves a stable shared memory API or native import fidelity for other harness conventions."
+
+[[claim.detail]]
+component = "scheduling and automation"
+load_attachment_point = "Cloud routines activate from schedules, APIs, and GitHub triggers; desktop tasks run while the app is open; session tasks are session-scoped."
+activation = "Cloud routines activate from schedules, APIs, and GitHub triggers; desktop tasks run while the app is open; session tasks are session-scoped."
+mutability = "Routine, desktop-task, and session-task setup define triggers, permissions, and runner context."
+scope = [
+    "cloud",
+    "desktop",
+    "session",
+]
+evidence_ids = [
+    "ev-claude_code-cloud-routine-support-e1ecd195c7",
+    "ev-claude_code-desktop-scheduled-task-support-cdb4a71f50",
+    "ev-claude_code-session-scheduled-task-support-64a936afca",
+]
+evidence_class = "source_backed"
+
+[[claim.automation_surface]]
+trigger_class = "schedule, API, GitHub, desktop, and session triggers"
+runner_locus = "cloud routine, local desktop app, or session runner"
+recurrence_shape = "scheduled, API-triggered, GitHub-triggered, local desktop, and session-scoped cadences"
+permission_sandbox_context = "uses task-specific permission modes and settings scopes"
+missed_run_behavior = "desktop tasks depend on app availability; other missed-run behavior remains runner-specific"
+output_delivery = "routine/task output in the configured runner context"
+evidence_ids = [
+    "ev-claude_code-cloud-routine-support-e1ecd195c7",
+    "ev-claude_code-desktop-scheduled-task-support-cdb4a71f50",
+    "ev-claude_code-session-scheduled-task-support-64a936afca",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-claude_code-commands_shortcuts"
 family = "commands_shortcuts"
-status = "unknown"
-statement = "Source-backed evidence does not prove commands shortcuts support."
-evidence_ids = []
+status = "supported"
+statement = "Claude Code exposes command surfaces through skills, plugins, and routine management commands such as schedule management."
+evidence_ids = [
+    "ev-claude_code-skill-support-09108d5779",
+    "ev-claude_code-plugin-support-and-limits-a8ac63cee1",
+    "ev-claude_code-cloud-routine-support-e1ecd195c7",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "changed"
+triage_rationale = "Commands are now source-backed but remain schema-pressure until a shared taxonomy exists."
+install_activation = "Commands activate through slash-command surfaces, skills, plugins, and routine management."
+configuration_surface = "Skill/plugin metadata and routine configuration shape command availability."
+reload_update_behavior = "Command taxonomy is not normalized across harnesses."
+limitations = "The latest release notes are internal-fix scoped, so surface claims rely on first-party docs. Routines, desktop tasks, and session tasks must remain distinct automation surfaces."
+uncertainty = "No checked source proves a stable shared memory API or native import fidelity for other harness conventions."
+
+[[claim.detail]]
+component = "commands and shortcuts"
+load_attachment_point = "Commands activate through slash-command surfaces, skills, plugins, and routine management."
+activation = "Commands activate through slash-command surfaces, skills, plugins, and routine management."
+mutability = "Skill/plugin metadata and routine configuration shape command availability."
+scope = [
+    "cli",
+    "plugin",
+    "routine",
+]
+evidence_ids = [
+    "ev-claude_code-skill-support-09108d5779",
+    "ev-claude_code-plugin-support-and-limits-a8ac63cee1",
+    "ev-claude_code-cloud-routine-support-e1ecd195c7",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-claude_code-providers_connectors"
 family = "providers_connectors"
-status = "unknown"
-statement = "Source-backed evidence does not prove providers connectors support."
-evidence_ids = []
+status = "supported"
+statement = "Claude Code can connect through MCP to external tools and data sources, and routines can use connected MCP connectors."
+evidence_ids = [
+    "ev-claude_code-mcp-support-528ca09f3f",
+    "ev-claude_code-cloud-routine-support-e1ecd195c7",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "changed"
+triage_rationale = "Provider/connector support is now recorded while SP-009 remains open for taxonomy."
+install_activation = "Connectors attach through MCP server definitions and routine configuration."
+configuration_surface = "MCP and routine settings define connector availability."
+reload_update_behavior = "Provider, connector, and channel terms remain schema pressure."
+limitations = "The latest release notes are internal-fix scoped, so surface claims rely on first-party docs. Routines, desktop tasks, and session tasks must remain distinct automation surfaces."
+uncertainty = "No checked source proves a stable shared memory API or native import fidelity for other harness conventions."
+
+[[claim.detail]]
+component = "providers and connectors"
+load_attachment_point = "Connectors attach through MCP server definitions and routine configuration."
+activation = "Connectors attach through MCP server definitions and routine configuration."
+mutability = "MCP and routine settings define connector availability."
+scope = [
+    "mcp",
+    "routine",
+    "remote",
+    "local",
+]
+evidence_ids = [
+    "ev-claude_code-mcp-support-528ca09f3f",
+    "ev-claude_code-cloud-routine-support-e1ecd195c7",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-claude_code-runtime_modes"
 family = "runtime_modes"
 status = "supported"
-statement = "Source-backed evidence records runtime modes support."
-evidence_ids = ["ev-claude_code-desktop-scheduled-task-support-cdb4a71f50"]
+statement = "Claude Code spans CLI sessions, Desktop scheduled tasks, cloud routines, plugin monitors, and remote MCP connections."
+evidence_ids = [
+    "ev-claude_code-harness-overview-64da5f1b3a",
+    "ev-claude_code-desktop-scheduled-task-support-cdb4a71f50",
+    "ev-claude_code-cloud-routine-support-e1ecd195c7",
+    "ev-claude_code-plugin-support-and-limits-a8ac63cee1",
+    "ev-claude_code-mcp-support-528ca09f3f",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Session-scoped scheduled tasks require a supporting Claude Code version and expire after a bounded period. Routines are preview-like cloud infrastructure. Desktop scheduled tasks require the Desktop app and an awake machine. Plugin-loaded agents can have restrictions on hooks, MCP servers, and permission modes."
-uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "Runtime support remains valid and is described by mode rather than one binary surface."
+install_activation = "Runtime mode activates through CLI, Desktop, cloud routine, plugin monitor, or MCP connection."
+configuration_surface = "Invocation surface and settings select runtime behavior."
+reload_update_behavior = "Runtime reload/update behavior is mode-specific."
+limitations = "The latest release notes are internal-fix scoped, so surface claims rely on first-party docs. Routines, desktop tasks, and session tasks must remain distinct automation surfaces."
+uncertainty = "No checked source proves a stable shared memory API or native import fidelity for other harness conventions."
+
+[[claim.detail]]
+component = "runtime modes"
+load_attachment_point = "Runtime mode activates through CLI, Desktop, cloud routine, plugin monitor, or MCP connection."
+activation = "Runtime mode activates through CLI, Desktop, cloud routine, plugin monitor, or MCP connection."
+mutability = "Invocation surface and settings select runtime behavior."
+scope = [
+    "cli",
+    "desktop",
+    "cloud",
+    "plugin",
+    "mcp",
+]
+evidence_ids = [
+    "ev-claude_code-harness-overview-64da5f1b3a",
+    "ev-claude_code-desktop-scheduled-task-support-cdb4a71f50",
+    "ev-claude_code-cloud-routine-support-e1ecd195c7",
+    "ev-claude_code-mcp-support-528ca09f3f",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-claude_code-cross_harness_import_compatibility"
 family = "cross_harness_import_compatibility"
-status = "supported"
-statement = "Source-backed evidence records cross harness import compatibility support."
-evidence_ids = ["ev-claude_code-latest-claude-code-version-and-r-63163f5f90"]
+status = "unknown"
+statement = "No checked first-party Claude Code source proves native import of Codex, Cursor, OpenCode, Hermes, or OpenClaw equipment."
+evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Session-scoped scheduled tasks require a supporting Claude Code version and expire after a bounded period. Routines are preview-like cloud infrastructure. Desktop scheduled tasks require the Desktop app and an awake machine. Plugin-loaded agents can have restrictions on hooks, MCP servers, and permission modes."
-uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "explicit_unknown"
+claim_triage = "changed"
+triage_rationale = "The migrated compatibility claim is narrowed because plugin/skill support is not proof of cross-harness import."
+install_activation = "No cross-harness import activation was proven."
+configuration_surface = "No cross-harness compatibility configuration surface was proven."
+reload_update_behavior = "Compatibility remains unknown until a source names bridge fidelity."
+limitations = "No checked first-party source proves this surface strongly enough for a supported canonical claim."
+uncertainty = "No checked first-party Claude Code source proves native import of Codex, Cursor, OpenCode, Hermes, or OpenClaw equipment."
+
+[[claim.detail]]
+component = "cross-harness import surface"
+load_attachment_point = "no native import path proven by checked first-party sources"
+activation = "not applicable until native import support is proven"
+mutability = "not applicable"
+scope = [
+    "cross-harness equipment bundles",
+]
+evidence_ids = []
+evidence_class = "unknown"
+
+[[claim.compatibility_bridge]]
+imported_from = "none-proven"
+imported_convention = "no native import convention proven by checked first-party sources"
+surviving_components = []
+activation = "not applicable"
+disable_behavior = "not applicable"
+precedence = "not applicable"
+fidelity_limits = "Skills and plugins are native Claude Code surfaces, but checked sources do not prove import of another harness bundle."
+evidence_ids = []
+evidence_class = "unknown"
 
 [[claim]]
 id = "claim-claude_code-lifecycle_reload_update"
 family = "lifecycle_reload_update"
-status = "unknown"
-statement = "Source-backed evidence does not prove lifecycle reload update support."
-evidence_ids = []
+status = "supported"
+statement = "Claude Code supports lifecycle update signals including skill live change detection and MCP list_changed notifications."
+evidence_ids = [
+    "ev-claude_code-skill-support-09108d5779",
+    "ev-claude_code-mcp-support-528ca09f3f",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "Official docs are primary. Local installed binary behavior and plugin-provided agent limitations need local verification before depending on a specific deployment."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "changed"
+triage_rationale = "Lifecycle support is added with component-specific evidence."
+install_activation = "Lifecycle behavior attaches to skills and MCP resources/tools/prompts."
+configuration_surface = "Skill files and MCP server state shape update behavior."
+reload_update_behavior = "Lifecycle reload/update behavior is source-backed for skills and MCP, not every component."
+limitations = "The latest release notes are internal-fix scoped, so surface claims rely on first-party docs. Routines, desktop tasks, and session tasks must remain distinct automation surfaces."
+uncertainty = "No checked source proves a stable shared memory API or native import fidelity for other harness conventions."
+
+[[claim.detail]]
+component = "lifecycle, reload, and update behavior"
+load_attachment_point = "Lifecycle behavior attaches to skills and MCP resources/tools/prompts."
+activation = "Lifecycle behavior attaches to skills and MCP resources/tools/prompts."
+mutability = "Skill files and MCP server state shape update behavior."
+scope = [
+    "skill",
+    "mcp",
+]
+evidence_ids = [
+    "ev-claude_code-skill-support-09108d5779",
+    "ev-claude_code-mcp-support-528ca09f3f",
+]
+evidence_class = "source_backed"

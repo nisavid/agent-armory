@@ -2,42 +2,52 @@ schema_version = "vanilla-harness-capability-profile.v1alpha1"
 profile_kind = "vanilla_harness_capability_profile"
 harness_id = "cursor"
 display_name = "Cursor"
-checked_at = "2026-05-03T09:25:05-04:00"
-checked_version = "3.2 numbered release; changelog state checked through 2026-05-01"
-version_basis = "Official Cursor changelog and first-party docs."
+checked_at = "2026-05-10T19:13:40-04:00"
+checked_version = "3.3 changelog state through 2026-05-07"
+version_basis = "Official Cursor changelog through the 2026-05-07 Cursor 3.3 entry, plus first-party Cursor docs for integration surfaces."
 evidence_category = "documentation-supported"
-summary_scheduling = "Cloud Agent Automations with schedule and event triggers."
-scheduling = "Cursor Automations run Cloud Agents from schedule and event triggers, including cron-style schedules, GitHub, Slack, Sentry, and webhooks."
-limitations = "Cloud Agent execution and some hooks are plan- or environment-dependent. Slack triggers can be limited by channel type. Parallel subagents increase token and cost pressure. Marketplace plugins should be reviewed as third-party code before trusted use."
-uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
-refresh_notes = "Refresh from Cursor changelog and docs before relying on version-sensitive behavior. Record local binary version separately when local behavior matters."
-components = ["rules", "AGENTS.md", "Agent Skills", "MCP servers and tools", "hooks", "subagents", "plugins", "CLI configuration", "Cloud Agents", "Automations", "SDK agents"]
-local_observations = ["No local Cursor desktop, CLI, Cloud Agent, or workspace configuration was inspected for this seed refresh."]
+summary_scheduling = "Cursor Cloud Agent automations support schedule and event triggers; plan parallelism, PR review, and multitask surfaces are current changelog-backed runtime surfaces."
+scheduling = "Cursor Cloud Agent automations support schedule and event triggers. Current changelog entries also describe parallel plan execution, PR review, and multitask workflows."
+limitations = "Cursor version evidence is changelog-based rather than a GitHub release tag. Team marketplace, admin model controls, plan gates, and Cloud Agent availability remain environment-scoped."
+uncertainty = "Persistent memory and cross-harness import fidelity are not proven. Hook events, provider controls, and lifecycle reload behavior need more source-specific taxonomy before shared schema values are adopted."
+refresh_notes = "Refresh from the official Cursor changelog and first-party docs. Keep local IDE, CLI, Cloud Agent, SDK, and subagent surfaces separate."
+components = [
+    "rules",
+    "AGENTS.md",
+    "Agent Skills",
+    "MCP",
+    "hooks",
+    "subagents",
+    "plugins",
+    "commands",
+    "Cloud Agent automations",
+    "CLI agent",
+    "SDK agents",
+    "PR review",
+    "team marketplace",
+    "provider controls",
+]
+local_observations = [
+    "No local Cursor desktop app, CLI, settings, Cloud Agent, plugin install, or marketplace state was inspected for this refresh.",
+]
 
 [scope]
 surface = "vanilla_harness_capability_surface"
 applicability = "Default settings and default equipment immediately after installation and onboarding."
 
 [[evidence]]
-id = "ev-cursor-latest-official-changelog-state-d401c4da40"
+id = "ev-cursor-latest-official-changelog-state-2be66e9ec7"
 category = "documentation-supported"
 source_kind = "first_party"
 url = "https://cursor.com/changelog"
-claim_scope = "latest official changelog state"
+claim_scope = "latest official changelog state through Cursor 3.3"
 
 [[evidence]]
-id = "ev-cursor-cursor-3-2-numbered-release-5e96715e4f"
+id = "ev-cursor-cursor-3-3-changelog-entry-from-b155671dca"
 category = "documentation-supported"
 source_kind = "first_party"
-url = "https://cursor.com/changelog/04-24-26"
-claim_scope = "Cursor 3.2 numbered release"
-
-[[evidence]]
-id = "ev-cursor-latest-observed-unnumbered-chang-54d6ff05a4"
-category = "documentation-supported"
-source_kind = "first_party"
-url = "https://cursor.com/changelog/05-01-26"
-claim_scope = "latest observed unnumbered changelog entry"
+url = "https://cursor.com/changelog/05-07-26"
+claim_scope = "Cursor 3.3 changelog entry from 2026-05-07"
 
 [[evidence]]
 id = "ev-cursor-rules-and-agents-md-support-7246f7302d"
@@ -109,197 +119,658 @@ source_kind = "first_party"
 url = "https://cursor.com/docs/cloud-agent/automations"
 claim_scope = "Cloud Agent automation support"
 
+[[evidence]]
+id = "ev-cursor-cursor-3-2-numbered-release-5e96715e4f"
+category = "documentation-supported"
+source_kind = "first_party"
+url = "https://cursor.com/changelog/04-24-26"
+claim_scope = "Cursor 3.2 numbered release"
+
+[[version_observation]]
+id = "vo-cursor-3-3-2026-05-07"
+observed_version = "Cursor 3.3 changelog state through 2026-05-07"
+checked_at = "2026-05-10T19:13:40-04:00"
+source_url = "https://cursor.com/changelog/05-07-26"
+source_kind = "first_party"
+canonical_profile_change = true
+evidence_class = "source_backed"
+
+[[harness_extension]]
+id = "ext-cursor-open-standard-agent-skills"
+name = "Open-standard Agent Skills"
+scope = "skills and compatibility"
+description = "Cursor frames Agent Skills as an open standard while native import fidelity for full harness bundles remains unproven."
+evidence_ids = [
+    "ev-cursor-agent-skills-support-daa3804e4b",
+]
+evidence_class = "source_backed"
+schema_pressure_ids = [
+    "SP-004",
+]
+
+[[harness_extension]]
+id = "ext-cursor-parallel-cloud-agent-plan-workflows"
+name = "Parallel Cloud Agent plan workflows"
+scope = "runtime and automation"
+description = "Cursor 3.3 adds plan-to-parallel-subagent and PR review workflows that should stay runtime/automation facts rather than downstream Forge guidance."
+evidence_ids = [
+    "ev-cursor-cursor-3-3-changelog-entry-from-b155671dca",
+    "ev-cursor-cloud-agent-automation-support-6088527c59",
+]
+evidence_class = "source_backed"
+schema_pressure_ids = [
+    "SP-003",
+    "SP-006",
+]
+
 [[claim]]
 id = "claim-cursor-instructions_context"
 family = "instructions_context"
 status = "supported"
-statement = "Source-backed evidence records instructions context support."
-evidence_ids = ["ev-cursor-rules-and-agents-md-support-7246f7302d"]
+statement = "Cursor supports rules, AGENTS.md, Agent Skills, subagents, and plan-based execution surfaces that carry instruction and context material."
+evidence_ids = [
+    "ev-cursor-rules-and-agents-md-support-7246f7302d",
+    "ev-cursor-agent-skills-support-daa3804e4b",
+    "ev-cursor-subagent-support-4f10afb95e",
+    "ev-cursor-cursor-3-3-changelog-entry-from-b155671dca",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Cloud Agent execution and some hooks are plan- or environment-dependent. Slack triggers can be limited by channel type. Parallel subagents increase token and cost pressure. Marketplace plugins should be reviewed as third-party code before trusted use."
-uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "The instructions/context claim remains supported and now records load paths."
+install_activation = "Instructions load through rules, AGENTS.md, skills, subagent definitions, and plan workflows."
+configuration_surface = "Project/user rules, skill directories, subagent settings, and Cloud Agent setup shape active context."
+reload_update_behavior = "Reload behavior for rules, skills, and plugins needs source-specific treatment."
+limitations = "Cursor version evidence is changelog-based rather than a GitHub release tag. Team marketplace, admin model controls, plan gates, and Cloud Agent availability remain environment-scoped."
+uncertainty = "Persistent memory and cross-harness import fidelity are not proven. Hook events, provider controls, and lifecycle reload behavior need more source-specific taxonomy before shared schema values are adopted."
+
+[[claim.detail]]
+component = "instruction and context loaders"
+load_attachment_point = "Instructions load through rules, AGENTS.md, skills, subagent definitions, and plan workflows."
+activation = "Instructions load through rules, AGENTS.md, skills, subagent definitions, and plan workflows."
+mutability = "Project/user rules, skill directories, subagent settings, and Cloud Agent setup shape active context."
+scope = [
+    "project",
+    "user",
+    "ide",
+    "cloud",
+]
+evidence_ids = [
+    "ev-cursor-rules-and-agents-md-support-7246f7302d",
+    "ev-cursor-agent-skills-support-daa3804e4b",
+    "ev-cursor-subagent-support-4f10afb95e",
+    "ev-cursor-cursor-3-3-changelog-entry-from-b155671dca",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-cursor-skills"
 family = "skills"
 status = "supported"
-statement = "Source-backed evidence records skills support."
-evidence_ids = ["ev-cursor-agent-skills-support-daa3804e4b"]
+statement = "Cursor supports Agent Skills as an open standard loaded from project and user skill directories, with migration from rules and commands to skills."
+evidence_ids = [
+    "ev-cursor-agent-skills-support-daa3804e4b",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Cloud Agent execution and some hooks are plan- or environment-dependent. Slack triggers can be limited by channel type. Parallel subagents increase token and cost pressure. Marketplace plugins should be reviewed as third-party code before trusted use."
-uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "The skills claim remains supported and now records open-standard pressure."
+install_activation = "Skills load from project and user skill directories and can be pinned as quick actions."
+configuration_surface = "Skill directories and quick-action pinning shape availability."
+reload_update_behavior = "Skill reload/update behavior needs source-specific verification."
+limitations = "Cursor version evidence is changelog-based rather than a GitHub release tag. Team marketplace, admin model controls, plan gates, and Cloud Agent availability remain environment-scoped."
+uncertainty = "Persistent memory and cross-harness import fidelity are not proven. Hook events, provider controls, and lifecycle reload behavior need more source-specific taxonomy before shared schema values are adopted."
+
+[[claim.detail]]
+component = "skills"
+load_attachment_point = "Skills load from project and user skill directories and can be pinned as quick actions."
+activation = "Skills load from project and user skill directories and can be pinned as quick actions."
+mutability = "Skill directories and quick-action pinning shape availability."
+scope = [
+    "project",
+    "user",
+]
+evidence_ids = [
+    "ev-cursor-agent-skills-support-daa3804e4b",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-cursor-mcp_tools"
 family = "mcp_tools"
 status = "supported"
-statement = "Source-backed evidence records mcp tools support."
-evidence_ids = ["ev-cursor-mcp-support-58ed04e700"]
+statement = "Cursor MCP supports stdio, SSE, and Streamable HTTP transports plus tools, prompts, resources, roots, elicitation, and MCP Apps."
+evidence_ids = [
+    "ev-cursor-mcp-support-58ed04e700",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Cloud Agent execution and some hooks are plan- or environment-dependent. Slack triggers can be limited by channel type. Parallel subagents increase token and cost pressure. Marketplace plugins should be reviewed as third-party code before trusted use."
-uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "The MCP claim remains supported with transport and object-shape detail."
+install_activation = "MCP attaches through configured servers and MCP Apps."
+configuration_surface = "MCP configuration selects transports, tools, prompts, resources, roots, and elicitation behavior."
+reload_update_behavior = "MCP auth fixes appear in the current changelog; reload details remain surface-specific."
+limitations = "Cursor version evidence is changelog-based rather than a GitHub release tag. Team marketplace, admin model controls, plan gates, and Cloud Agent availability remain environment-scoped."
+uncertainty = "Persistent memory and cross-harness import fidelity are not proven. Hook events, provider controls, and lifecycle reload behavior need more source-specific taxonomy before shared schema values are adopted."
+
+[[claim.detail]]
+component = "MCP and tool surfaces"
+load_attachment_point = "MCP attaches through configured servers and MCP Apps."
+activation = "MCP attaches through configured servers and MCP Apps."
+mutability = "MCP configuration selects transports, tools, prompts, resources, roots, and elicitation behavior."
+scope = [
+    "project",
+    "user",
+    "team",
+    "remote",
+    "local",
+]
+evidence_ids = [
+    "ev-cursor-mcp-support-58ed04e700",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-cursor-hooks_events"
 family = "hooks_events"
 status = "supported"
-statement = "Source-backed evidence records hooks events support."
-evidence_ids = ["ev-cursor-hook-support-6ea3ffebaf"]
+statement = "Cursor documents hooks as a harness surface, but event names are not normalized against other harnesses."
+evidence_ids = [
+    "ev-cursor-hook-support-6ea3ffebaf",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Cloud Agent execution and some hooks are plan- or environment-dependent. Slack triggers can be limited by channel type. Parallel subagents increase token and cost pressure. Marketplace plugins should be reviewed as third-party code before trusted use."
-uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "Hook support remains source-backed while SP-008 remains unresolved."
+install_activation = "Hooks attach through Cursor hook configuration."
+configuration_surface = "Hook configuration determines event binding."
+reload_update_behavior = "Event taxonomy and enforcement authority remain schema pressure."
+limitations = "Cursor version evidence is changelog-based rather than a GitHub release tag. Team marketplace, admin model controls, plan gates, and Cloud Agent availability remain environment-scoped."
+uncertainty = "Persistent memory and cross-harness import fidelity are not proven. Hook events, provider controls, and lifecycle reload behavior need more source-specific taxonomy before shared schema values are adopted."
+
+[[claim.detail]]
+component = "hooks and event surfaces"
+load_attachment_point = "Hooks attach through Cursor hook configuration."
+activation = "Hooks attach through Cursor hook configuration."
+mutability = "Hook configuration determines event binding."
+scope = [
+    "project",
+    "user",
+]
+evidence_ids = [
+    "ev-cursor-hook-support-6ea3ffebaf",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-cursor-plugins_bundles"
 family = "plugins_bundles"
 status = "supported"
-statement = "Source-backed evidence records plugins bundles support."
-evidence_ids = ["ev-cursor-plugin-support-efeb52665c"]
+statement = "Cursor plugins can package rules, skills, agents, commands, MCP servers, and hooks, with marketplace and team marketplace surfaces."
+evidence_ids = [
+    "ev-cursor-plugin-support-efeb52665c",
+    "ev-cursor-cursor-3-3-changelog-entry-from-b155671dca",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Cloud Agent execution and some hooks are plan- or environment-dependent. Slack triggers can be limited by channel type. Parallel subagents increase token and cost pressure. Marketplace plugins should be reviewed as third-party code before trusted use."
-uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "Plugin support remains valid and now records packaged component breadth."
+install_activation = "Plugins install locally or through marketplace/team marketplace surfaces."
+configuration_surface = "Plugin manifests and marketplace/admin controls shape availability."
+reload_update_behavior = "Local plugin and marketplace update behavior needs source-specific treatment."
+limitations = "Cursor version evidence is changelog-based rather than a GitHub release tag. Team marketplace, admin model controls, plan gates, and Cloud Agent availability remain environment-scoped."
+uncertainty = "Persistent memory and cross-harness import fidelity are not proven. Hook events, provider controls, and lifecycle reload behavior need more source-specific taxonomy before shared schema values are adopted."
+
+[[claim.detail]]
+component = "plugins and bundles"
+load_attachment_point = "Plugins install locally or through marketplace/team marketplace surfaces."
+activation = "Plugins install locally or through marketplace/team marketplace surfaces."
+mutability = "Plugin manifests and marketplace/admin controls shape availability."
+scope = [
+    "local",
+    "marketplace",
+    "team",
+]
+evidence_ids = [
+    "ev-cursor-plugin-support-efeb52665c",
+    "ev-cursor-cursor-3-3-changelog-entry-from-b155671dca",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-cursor-agent_profiles_subagents"
 family = "agent_profiles_subagents"
 status = "supported"
-statement = "Source-backed evidence records agent profiles subagents support."
-evidence_ids = ["ev-cursor-rules-and-agents-md-support-7246f7302d", "ev-cursor-agent-skills-support-daa3804e4b", "ev-cursor-subagent-support-4f10afb95e", "ev-cursor-cli-agent-support-4223f48fd5", "ev-cursor-cloud-agent-support-2231f7722d", "ev-cursor-sdk-agent-support-ea84a35dfa", "ev-cursor-cloud-agent-automation-support-6088527c59"]
+statement = "Cursor supports subagents with isolated context windows, foreground/background modes, resumability, built-in agents, SDK agents, and Cloud Agent workflows."
+evidence_ids = [
+    "ev-cursor-rules-and-agents-md-support-7246f7302d",
+    "ev-cursor-agent-skills-support-daa3804e4b",
+    "ev-cursor-subagent-support-4f10afb95e",
+    "ev-cursor-cli-agent-support-4223f48fd5",
+    "ev-cursor-cloud-agent-support-2231f7722d",
+    "ev-cursor-sdk-agent-support-ea84a35dfa",
+    "ev-cursor-cloud-agent-automation-support-6088527c59",
+    "ev-cursor-cursor-3-3-changelog-entry-from-b155671dca",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Cloud Agent execution and some hooks are plan- or environment-dependent. Slack triggers can be limited by channel type. Parallel subagents increase token and cost pressure. Marketplace plugins should be reviewed as third-party code before trusted use."
-uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "The broad agent-profile/subagent claim remains supported and now records runtime separation."
+install_activation = "Subagents attach through IDE, CLI, Cloud Agent, SDK, and plan workflows."
+configuration_surface = "Subagent behavior settings, rules, skills, and Cloud Agent setup shape invocation."
+reload_update_behavior = "Subagent resume and parallel execution behavior is runtime-specific."
+limitations = "Cursor version evidence is changelog-based rather than a GitHub release tag. Team marketplace, admin model controls, plan gates, and Cloud Agent availability remain environment-scoped."
+uncertainty = "Persistent memory and cross-harness import fidelity are not proven. Hook events, provider controls, and lifecycle reload behavior need more source-specific taxonomy before shared schema values are adopted."
+
+[[claim.detail]]
+component = "agent profiles and subagents"
+load_attachment_point = "Subagents attach through IDE, CLI, Cloud Agent, SDK, and plan workflows."
+activation = "Subagents attach through IDE, CLI, Cloud Agent, SDK, and plan workflows."
+mutability = "Subagent behavior settings, rules, skills, and Cloud Agent setup shape invocation."
+scope = [
+    "ide",
+    "cli",
+    "cloud",
+    "sdk",
+]
+evidence_ids = [
+    "ev-cursor-rules-and-agents-md-support-7246f7302d",
+    "ev-cursor-agent-skills-support-daa3804e4b",
+    "ev-cursor-subagent-support-4f10afb95e",
+    "ev-cursor-cli-agent-support-4223f48fd5",
+    "ev-cursor-cloud-agent-support-2231f7722d",
+    "ev-cursor-sdk-agent-support-ea84a35dfa",
+    "ev-cursor-cloud-agent-automation-support-6088527c59",
+    "ev-cursor-cursor-3-3-changelog-entry-from-b155671dca",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-cursor-memory_context_retrieval"
 family = "memory_context_retrieval"
 status = "unknown"
-statement = "Source-backed evidence does not prove memory context retrieval support."
-evidence_ids = []
+statement = "Cursor subagents have isolated context windows, but persistent shared memory, retrieval freshness, write authority, and privacy boundaries are not proven."
+evidence_ids = [
+    "ev-cursor-subagent-support-4f10afb95e",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "unknown"
+triage_rationale = "The refresh records source-backed subagent context isolation without claiming a stable memory API."
+install_activation = "No stable memory activation was proven beyond context isolation."
+configuration_surface = "Subagent settings affect context isolation, but persistent memory settings were not proven."
+reload_update_behavior = "Freshness and write authority remain unknown."
+limitations = "No checked first-party source proves this surface strongly enough for a supported canonical claim."
+uncertainty = "Cursor subagents have isolated context windows, but persistent shared memory, retrieval freshness, write authority, and privacy boundaries are not proven."
+
+[[claim.detail]]
+component = "subagent context window"
+load_attachment_point = "isolated subagent context windows, without proven persistent shared memory"
+activation = "subagent invocation and resume behavior"
+mutability = "context windows are isolated; persistent memory mutability unknown"
+scope = [
+    "subagent",
+    "workspace",
+    "cloud agent",
+]
+evidence_ids = [
+    "ev-cursor-subagent-support-4f10afb95e",
+]
+evidence_class = "source_backed"
+
+[[claim.memory_like_surface]]
+persistence_scope = "subagent context window"
+retrieval_trigger = "subagent invocation and resume behavior"
+mutability = "context windows are isolated; persistent memory mutability unknown"
+freshness = "unknown"
+privacy_boundary = "workspace, subagent, Cloud Agent, and team boundaries"
+write_authority = "unknown"
+api_stability = "unknown"
+evidence_ids = [
+    "ev-cursor-subagent-support-4f10afb95e",
+]
+evidence_class = "source_backed"
+unknowns = "Persistent shared memory, freshness, and write authority are not proven."
 
 [[claim]]
 id = "claim-cursor-config_settings"
 family = "config_settings"
-status = "unknown"
-statement = "Source-backed evidence does not prove config settings support."
-evidence_ids = []
+status = "supported"
+statement = "Cursor exposes CLI/product settings, subagent behavior settings, and team/admin marketplace and provider controls."
+evidence_ids = [
+    "ev-cursor-cli-agent-support-4223f48fd5",
+    "ev-cursor-cursor-3-3-changelog-entry-from-b155671dca",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "changed"
+triage_rationale = "Configuration support is now source-backed through CLI, subagent, marketplace, and admin control evidence."
+install_activation = "Settings attach through IDE/product settings, CLI use, subagent settings, and team/admin controls."
+configuration_surface = "Workspace, user, and team/admin settings shape active behavior."
+reload_update_behavior = "Reload behavior depends on local app, plugin, MCP, and Cloud Agent surfaces."
+limitations = "Cursor version evidence is changelog-based rather than a GitHub release tag. Team marketplace, admin model controls, plan gates, and Cloud Agent availability remain environment-scoped."
+uncertainty = "Persistent memory and cross-harness import fidelity are not proven. Hook events, provider controls, and lifecycle reload behavior need more source-specific taxonomy before shared schema values are adopted."
+
+[[claim.detail]]
+component = "configuration settings"
+load_attachment_point = "Settings attach through IDE/product settings, CLI use, subagent settings, and team/admin controls."
+activation = "Settings attach through IDE/product settings, CLI use, subagent settings, and team/admin controls."
+mutability = "Workspace, user, and team/admin settings shape active behavior."
+scope = [
+    "workspace",
+    "user",
+    "team",
+    "admin",
+    "cli",
+]
+evidence_ids = [
+    "ev-cursor-cli-agent-support-4223f48fd5",
+    "ev-cursor-cursor-3-3-changelog-entry-from-b155671dca",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-cursor-permissions_approvals_sandboxing"
 family = "permissions_approvals_sandboxing"
-status = "unknown"
-statement = "Source-backed evidence does not prove permissions approvals sandboxing support."
-evidence_ids = []
+status = "supported"
+statement = "Cursor includes MCP security guidance, admin model/provider controls, and plan/workspace/team constraints that shape effect boundaries."
+evidence_ids = [
+    "ev-cursor-mcp-support-58ed04e700",
+    "ev-cursor-cursor-3-3-changelog-entry-from-b155671dca",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "changed"
+triage_rationale = "Permissions and controls are now recorded as supported while retaining schema pressure for uniform fields."
+install_activation = "Permissions and constraints activate through MCP security settings, plan/workspace state, and team/admin controls."
+configuration_surface = "MCP settings, model/provider allowlists, and workspace/team policy shape allowed effects."
+reload_update_behavior = "Plan, workspace, and team-admin constraints remain schema pressure for uniform representation."
+limitations = "Cursor version evidence is changelog-based rather than a GitHub release tag. Team marketplace, admin model controls, plan gates, and Cloud Agent availability remain environment-scoped."
+uncertainty = "Persistent memory and cross-harness import fidelity are not proven. Hook events, provider controls, and lifecycle reload behavior need more source-specific taxonomy before shared schema values are adopted."
+
+[[claim.detail]]
+component = "permissions, approvals, and sandboxing"
+load_attachment_point = "Permissions and constraints activate through MCP security settings, plan/workspace state, and team/admin controls."
+activation = "Permissions and constraints activate through MCP security settings, plan/workspace state, and team/admin controls."
+mutability = "MCP settings, model/provider allowlists, and workspace/team policy shape allowed effects."
+scope = [
+    "workspace",
+    "team",
+    "admin",
+    "mcp",
+]
+evidence_ids = [
+    "ev-cursor-mcp-support-58ed04e700",
+    "ev-cursor-cursor-3-3-changelog-entry-from-b155671dca",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-cursor-scheduling_automation"
 family = "scheduling_automation"
 status = "supported"
-statement = "Source-backed evidence records scheduling automation support."
-evidence_ids = ["ev-cursor-cloud-agent-automation-support-6088527c59"]
+statement = "Cursor Cloud Agent automations support schedule and event triggers, with current changelog evidence for parallel and PR workflows."
+evidence_ids = [
+    "ev-cursor-cloud-agent-automation-support-6088527c59",
+    "ev-cursor-cursor-3-3-changelog-entry-from-b155671dca",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Cloud Agent execution and some hooks are plan- or environment-dependent. Slack triggers can be limited by channel type. Parallel subagents increase token and cost pressure. Marketplace plugins should be reviewed as third-party code before trusted use."
-uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "The automation claim remains supported and now records runner and trigger shape."
+install_activation = "Automations activate through Cloud Agent schedules or event triggers."
+configuration_surface = "Cloud Agent setup and workspace/team policy define runner context."
+reload_update_behavior = "Missed-run behavior is not proven in checked sources."
+limitations = "Cursor version evidence is changelog-based rather than a GitHub release tag. Team marketplace, admin model controls, plan gates, and Cloud Agent availability remain environment-scoped."
+uncertainty = "Persistent memory and cross-harness import fidelity are not proven. Hook events, provider controls, and lifecycle reload behavior need more source-specific taxonomy before shared schema values are adopted."
+
+[[claim.detail]]
+component = "scheduling and automation"
+load_attachment_point = "Automations activate through Cloud Agent schedules or event triggers."
+activation = "Automations activate through Cloud Agent schedules or event triggers."
+mutability = "Cloud Agent setup and workspace/team policy define runner context."
+scope = [
+    "cloud",
+    "workspace",
+    "team",
+]
+evidence_ids = [
+    "ev-cursor-cloud-agent-automation-support-6088527c59",
+    "ev-cursor-cursor-3-3-changelog-entry-from-b155671dca",
+]
+evidence_class = "source_backed"
+
+[[claim.automation_surface]]
+trigger_class = "schedule and event triggers"
+runner_locus = "Cursor Cloud Agent"
+recurrence_shape = "scheduled and event-triggered automations"
+permission_sandbox_context = "workspace and team policy plus Cloud Agent controls"
+missed_run_behavior = "unknown"
+output_delivery = "Cloud Agent task output, PR workflow output, or configured integration output"
+evidence_ids = [
+    "ev-cursor-cloud-agent-automation-support-6088527c59",
+    "ev-cursor-cursor-3-3-changelog-entry-from-b155671dca",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-cursor-commands_shortcuts"
 family = "commands_shortcuts"
-status = "unknown"
-statement = "Source-backed evidence does not prove commands shortcuts support."
-evidence_ids = []
+status = "supported"
+statement = "Cursor commands can be packaged in plugins, skills can be pinned as quick actions, and rules or commands can migrate to skills."
+evidence_ids = [
+    "ev-cursor-plugin-support-efeb52665c",
+    "ev-cursor-agent-skills-support-daa3804e4b",
+    "ev-cursor-cursor-3-3-changelog-entry-from-b155671dca",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "changed"
+triage_rationale = "Commands become a supported claim while command taxonomy remains harness-specific."
+install_activation = "Commands activate through plugin command components, quick actions, and migrated rules/commands."
+configuration_surface = "Plugin manifests and skill pinning shape command availability."
+reload_update_behavior = "Command reload/update behavior follows plugin and skill lifecycle."
+limitations = "Cursor version evidence is changelog-based rather than a GitHub release tag. Team marketplace, admin model controls, plan gates, and Cloud Agent availability remain environment-scoped."
+uncertainty = "Persistent memory and cross-harness import fidelity are not proven. Hook events, provider controls, and lifecycle reload behavior need more source-specific taxonomy before shared schema values are adopted."
+
+[[claim.detail]]
+component = "commands and shortcuts"
+load_attachment_point = "Commands activate through plugin command components, quick actions, and migrated rules/commands."
+activation = "Commands activate through plugin command components, quick actions, and migrated rules/commands."
+mutability = "Plugin manifests and skill pinning shape command availability."
+scope = [
+    "project",
+    "user",
+    "plugin",
+    "quick-action",
+]
+evidence_ids = [
+    "ev-cursor-plugin-support-efeb52665c",
+    "ev-cursor-agent-skills-support-daa3804e4b",
+    "ev-cursor-cursor-3-3-changelog-entry-from-b155671dca",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-cursor-providers_connectors"
 family = "providers_connectors"
-status = "unknown"
-statement = "Source-backed evidence does not prove providers connectors support."
-evidence_ids = []
+status = "supported"
+statement = "Cursor provider and connector surfaces include MCP, GitHub, Slack, Sentry, webhooks, Cloud Agent integrations, and admin model/provider controls."
+evidence_ids = [
+    "ev-cursor-mcp-support-58ed04e700",
+    "ev-cursor-cloud-agent-support-2231f7722d",
+    "ev-cursor-cursor-3-3-changelog-entry-from-b155671dca",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "changed"
+triage_rationale = "Provider/connector support is now recorded while SP-009 remains open for taxonomy."
+install_activation = "Connectors attach through MCP, Cloud Agent integrations, webhooks, and admin provider settings."
+configuration_surface = "MCP configuration, Cloud Agent setup, and admin controls define available connectors/providers."
+reload_update_behavior = "Provider and connector taxonomy remains schema pressure under SP-009."
+limitations = "Cursor version evidence is changelog-based rather than a GitHub release tag. Team marketplace, admin model controls, plan gates, and Cloud Agent availability remain environment-scoped."
+uncertainty = "Persistent memory and cross-harness import fidelity are not proven. Hook events, provider controls, and lifecycle reload behavior need more source-specific taxonomy before shared schema values are adopted."
+
+[[claim.detail]]
+component = "providers and connectors"
+load_attachment_point = "Connectors attach through MCP, Cloud Agent integrations, webhooks, and admin provider settings."
+activation = "Connectors attach through MCP, Cloud Agent integrations, webhooks, and admin provider settings."
+mutability = "MCP configuration, Cloud Agent setup, and admin controls define available connectors/providers."
+scope = [
+    "mcp",
+    "cloud",
+    "team",
+    "admin",
+    "webhook",
+]
+evidence_ids = [
+    "ev-cursor-mcp-support-58ed04e700",
+    "ev-cursor-cloud-agent-support-2231f7722d",
+    "ev-cursor-cursor-3-3-changelog-entry-from-b155671dca",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-cursor-runtime_modes"
 family = "runtime_modes"
-status = "unknown"
-statement = "Source-backed evidence does not prove runtime modes support."
-evidence_ids = []
+status = "supported"
+statement = "Cursor spans IDE, CLI, Cloud Agent, automations, SDK agents, foreground/background subagents, PR review, and multitask workflows."
+evidence_ids = [
+    "ev-cursor-cli-agent-support-4223f48fd5",
+    "ev-cursor-cloud-agent-support-2231f7722d",
+    "ev-cursor-sdk-agent-support-ea84a35dfa",
+    "ev-cursor-cursor-3-3-changelog-entry-from-b155671dca",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "changed"
+triage_rationale = "Runtime modes are now source-backed in the profile."
+install_activation = "Runtime mode activates through IDE, CLI, Cloud Agent, SDK, PR review, or multitask entrypoints."
+configuration_surface = "Invocation surface and workspace/team settings shape runtime behavior."
+reload_update_behavior = "Runtime reload/update behavior is mode-specific."
+limitations = "Cursor version evidence is changelog-based rather than a GitHub release tag. Team marketplace, admin model controls, plan gates, and Cloud Agent availability remain environment-scoped."
+uncertainty = "Persistent memory and cross-harness import fidelity are not proven. Hook events, provider controls, and lifecycle reload behavior need more source-specific taxonomy before shared schema values are adopted."
+
+[[claim.detail]]
+component = "runtime modes"
+load_attachment_point = "Runtime mode activates through IDE, CLI, Cloud Agent, SDK, PR review, or multitask entrypoints."
+activation = "Runtime mode activates through IDE, CLI, Cloud Agent, SDK, PR review, or multitask entrypoints."
+mutability = "Invocation surface and workspace/team settings shape runtime behavior."
+scope = [
+    "ide",
+    "cli",
+    "cloud",
+    "sdk",
+    "pr-review",
+]
+evidence_ids = [
+    "ev-cursor-cli-agent-support-4223f48fd5",
+    "ev-cursor-cloud-agent-support-2231f7722d",
+    "ev-cursor-sdk-agent-support-ea84a35dfa",
+    "ev-cursor-cursor-3-3-changelog-entry-from-b155671dca",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-cursor-cross_harness_import_compatibility"
 family = "cross_harness_import_compatibility"
-status = "supported"
-statement = "Source-backed evidence records cross harness import compatibility support."
-evidence_ids = ["ev-cursor-cursor-3-2-numbered-release-5e96715e4f"]
+status = "unknown"
+statement = "Cursor describes Agent Skills as an open standard, but native import fidelity for another harness equipment bundle is not proven."
+evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Cloud Agent execution and some hooks are plan- or environment-dependent. Slack triggers can be limited by channel type. Parallel subagents increase token and cost pressure. Marketplace plugins should be reviewed as third-party code before trusted use."
-uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "explicit_unknown"
+claim_triage = "changed"
+triage_rationale = "The prior compatibility support is narrowed to an open-standard signal with unresolved import fidelity."
+install_activation = "No full cross-harness bundle import activation was proven."
+configuration_surface = "Skill directories provide an open-standard signal, but plugin/command/MCP bridge configuration was not proven."
+reload_update_behavior = "Compatibility remains needs-more-evidence until a source names imported convention and fidelity limits."
+limitations = "No checked first-party source proves this surface strongly enough for a supported canonical claim."
+uncertainty = "Cursor describes Agent Skills as an open standard, but native import fidelity for another harness equipment bundle is not proven."
+
+[[claim.detail]]
+component = "Agent Skills open-standard compatibility signal"
+load_attachment_point = "skill directories, without proven full bundle import fidelity"
+activation = "skills load from project or user skill directories"
+mutability = "unknown for imported non-skill bundle components"
+scope = [
+    "skills",
+    "cross-harness equipment bundles",
+]
+evidence_ids = [
+    "ev-cursor-agent-skills-support-daa3804e4b",
+]
+evidence_class = "source_backed"
+
+[[claim.compatibility_bridge]]
+imported_from = "Agent Skills open-standard signal"
+imported_convention = "Cursor Agent Skills convention; full bundle import not proven"
+surviving_components = [
+    "skills",
+]
+activation = "skills load from project or user skill directories"
+disable_behavior = "not proven for other bundle components"
+precedence = "native Cursor skill handling takes precedence over any inferred compatibility"
+fidelity_limits = "Open-standard skill language does not prove native import fidelity for plugin, command, MCP, or hook bundles."
+evidence_ids = [
+    "ev-cursor-agent-skills-support-daa3804e4b",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-cursor-lifecycle_reload_update"
 family = "lifecycle_reload_update"
 status = "unknown"
-statement = "Source-backed evidence does not prove lifecycle reload update support."
+statement = "Cursor can toggle MCP servers and load plugins, but checked sources do not prove a durable lifecycle reload model across profile surfaces."
 evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The latest numbered release and the latest changelog entry are distinct. Exact local desktop or CLI binary version should be recorded as a local observation when Cursor-specific equipment is built."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "explicit_unknown"
+claim_triage = "unknown"
+triage_rationale = "The refresh records lifecycle schema pressure without flattening scattered signals into support."
+install_activation = "No universal lifecycle activation was proven."
+configuration_surface = "MCP and plugin settings may affect lifecycle, but durable reload behavior was not proven."
+reload_update_behavior = "Lifecycle reload/update remains explicit schema pressure."
+limitations = "No checked first-party source proves this surface strongly enough for a supported canonical claim."
+uncertainty = "Cursor can toggle MCP servers and load plugins, but checked sources do not prove a durable lifecycle reload model across profile surfaces."
+
+[[claim.detail]]
+component = "lifecycle reload and update surface"
+load_attachment_point = "MCP and plugin settings, without a proven unified lifecycle reload model"
+activation = "unknown"
+mutability = "unknown"
+scope = [
+    "MCP",
+    "plugins",
+    "settings",
+]
+evidence_ids = []
+evidence_class = "unknown"

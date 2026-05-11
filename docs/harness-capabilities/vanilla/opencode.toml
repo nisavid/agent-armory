@@ -2,35 +2,48 @@ schema_version = "vanilla-harness-capability-profile.v1alpha1"
 profile_kind = "vanilla_harness_capability_profile"
 harness_id = "opencode"
 display_name = "OpenCode"
-checked_at = "2026-05-03T09:25:05-04:00"
-checked_version = "1.14.33"
-version_basis = "GitHub latest release for anomalyco/opencode and first-party OpenCode docs."
+checked_at = "2026-05-10T19:13:40-04:00"
+checked_version = "1.14.46"
+version_basis = "GitHub release v1.14.46 for anomalyco/opencode, plus first-party OpenCode docs for integration surfaces."
 evidence_category = "source-supported"
-summary_scheduling = "GitHub Actions cron or external schedulers around opencode run; no verified native durable scheduler."
-scheduling = "OpenCode has first-party GitHub Action integration that can be scheduled through GitHub Actions cron. opencode run can be scripted by external schedulers. No first-party native durable scheduler was verified."
-limitations = "Default permission posture can be broad unless configured. Legacy tools permission is deprecated in favor of permission. MCP servers can create context pressure. npm plugins auto-install with Bun and can define tools and hooks; review plugins as executable third-party code."
-uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
-refresh_notes = "Refresh from anomalyco/opencode releases and opencode.ai docs. Use ecosystem scheduler entries only as third-party fallback and label them as such."
-components = ["skills", "plugins", "plugin hooks", "custom tools", "MCP servers", "primary agents", "subagents", "command templates", "permissions", "LSP integration", "formatters", "instruction files", "snapshots", "TUI", "desktop mode", "web mode", "server mode", "noninteractive opencode run", "GitHub Action integration", "ACP server"]
-local_observations = ["No local OpenCode binary, opencode.json, plugin directory, or GitHub workflow was inspected for this seed refresh."]
+summary_scheduling = "OpenCode has source-backed external scheduling through GitHub Action integration; no native durable scheduler is proven by checked sources."
+scheduling = "OpenCode can run from GitHub Action workflows and other external runners. Checked first-party sources do not prove a native durable scheduler."
+limitations = "The current release includes security and compatibility fixes, including a Plan Mode security bypass fix. Native scheduling and lifecycle reload semantics remain unresolved."
+uncertainty = "Memory-like persistence, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
+refresh_notes = "Refresh from GitHub releases and OpenCode docs. Keep external runner support distinct from native scheduler support."
+components = [
+    "CLI",
+    "TUI",
+    "desktop",
+    "IDE extension",
+    "server",
+    "noninteractive run",
+    "skills",
+    "plugins",
+    "hooks",
+    "agents",
+    "subagents",
+    "MCP servers",
+    "permissions",
+    "commands",
+    "GitHub Action integration",
+    "custom providers",
+    "ACP server",
+]
+local_observations = [
+    "No local OpenCode binary, desktop process, config, plugin directory, MCP server state, or GitHub workflow was inspected for this refresh.",
+]
 
 [scope]
 surface = "vanilla_harness_capability_surface"
 applicability = "Default settings and default equipment immediately after installation and onboarding."
 
 [[evidence]]
-id = "ev-opencode-release-version-date-and-release-bb8762dcd6"
+id = "ev-opencode-current-release-version-date-and-c685154a81"
 category = "source-supported"
 source_kind = "first_party"
-url = "https://github.com/anomalyco/opencode/releases/tag/v1.14.33"
-claim_scope = "release version, date, and release notes"
-
-[[evidence]]
-id = "ev-opencode-active-repository-identity-4210b1dce8"
-category = "source-supported"
-source_kind = "first_party"
-url = "https://github.com/anomalyco/opencode"
-claim_scope = "active repository identity"
+url = "https://github.com/anomalyco/opencode/releases/tag/v1.14.46"
+claim_scope = "current release version, date, and release notes"
 
 [[evidence]]
 id = "ev-opencode-documentation-index-aeffba9ba3"
@@ -109,197 +122,613 @@ source_kind = "first_party"
 url = "https://opencode.ai/docs/ecosystem/"
 claim_scope = "ecosystem and third-party integrations index"
 
+[[evidence]]
+id = "ev-opencode-active-repository-identity-4210b1dce8"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://github.com/anomalyco/opencode"
+claim_scope = "active repository identity"
+
+[[version_observation]]
+id = "vo-opencode-v1-14-46"
+observed_version = "v1.14.46"
+checked_at = "2026-05-10T19:13:40-04:00"
+source_url = "https://github.com/anomalyco/opencode/releases/tag/v1.14.46"
+source_kind = "first_party"
+canonical_profile_change = true
+evidence_class = "source_backed"
+
+[[harness_extension]]
+id = "ext-opencode-external-runner-automation"
+name = "External runner automation"
+scope = "automation"
+description = "OpenCode supports GitHub Action/external runner automation without proving a native durable scheduler."
+evidence_ids = [
+    "ev-opencode-github-action-integration-183856d336",
+]
+evidence_class = "source_backed"
+schema_pressure_ids = [
+    "SP-006",
+]
+
+[[harness_extension]]
+id = "ext-opencode-plan-mode-security-fix"
+name = "Plan Mode security bypass fix"
+scope = "permissions and runtime modes"
+description = "OpenCode v1.14.46 includes a Plan Mode security bypass fix, so runtime/permission claims record current security posture without expanding downstream guidance."
+evidence_ids = [
+    "ev-opencode-current-release-version-date-and-c685154a81",
+]
+evidence_class = "source_backed"
+schema_pressure_ids = [
+    "SP-002",
+]
+
 [[claim]]
 id = "claim-opencode-instructions_context"
 family = "instructions_context"
-status = "unknown"
-statement = "Source-backed evidence does not prove instructions context support."
-evidence_ids = []
+status = "supported"
+statement = "OpenCode skills, agents, command templates, and instruction/config files carry authored instruction material."
+evidence_ids = [
+    "ev-opencode-skill-support-a300b4a984",
+    "ev-opencode-agent-and-subagent-support-efedd2d467",
+    "ev-opencode-command-template-support-8c25f46c65",
+    "ev-opencode-configuration-support-228e5b9b41",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "changed"
+triage_rationale = "Instruction/context support is now source-backed in the profile."
+install_activation = "Instructions load through skills, agents, command templates, and instruction/config files."
+configuration_surface = "Config files, skill files, agent definitions, and command templates shape context."
+reload_update_behavior = "Reload behavior for instruction files is not proven as a universal lifecycle contract."
+limitations = "The current release includes security and compatibility fixes, including a Plan Mode security bypass fix. Native scheduling and lifecycle reload semantics remain unresolved."
+uncertainty = "Memory-like persistence, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
+
+[[claim.detail]]
+component = "instruction and context loaders"
+load_attachment_point = "Instructions load through skills, agents, command templates, and instruction/config files."
+activation = "Instructions load through skills, agents, command templates, and instruction/config files."
+mutability = "Config files, skill files, agent definitions, and command templates shape context."
+scope = [
+    "project",
+    "user",
+    "config",
+    "command",
+]
+evidence_ids = [
+    "ev-opencode-skill-support-a300b4a984",
+    "ev-opencode-agent-and-subagent-support-efedd2d467",
+    "ev-opencode-command-template-support-8c25f46c65",
+    "ev-opencode-configuration-support-228e5b9b41",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-opencode-skills"
 family = "skills"
 status = "supported"
-statement = "Source-backed evidence records skills support."
-evidence_ids = ["ev-opencode-skill-support-a300b4a984"]
+statement = "OpenCode supports first-party skills, including current built-in customize-opencode skill support."
+evidence_ids = [
+    "ev-opencode-skill-support-a300b4a984",
+    "ev-opencode-current-release-version-date-and-c685154a81",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Default permission posture can be broad unless configured. Legacy tools permission is deprecated in favor of permission. MCP servers can create context pressure. npm plugins auto-install with Bun and can define tools and hooks; review plugins as executable third-party code."
-uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "Skills support remains valid and records current built-in skill release evidence."
+install_activation = "Skills load through OpenCode skill files and built-in skill surfaces."
+configuration_surface = "Skill files and built-in release contents shape availability."
+reload_update_behavior = "Skill reload/update behavior needs source-specific lifecycle evidence."
+limitations = "The current release includes security and compatibility fixes, including a Plan Mode security bypass fix. Native scheduling and lifecycle reload semantics remain unresolved."
+uncertainty = "Memory-like persistence, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
+
+[[claim.detail]]
+component = "skills"
+load_attachment_point = "Skills load through OpenCode skill files and built-in skill surfaces."
+activation = "Skills load through OpenCode skill files and built-in skill surfaces."
+mutability = "Skill files and built-in release contents shape availability."
+scope = [
+    "project",
+    "user",
+    "built-in",
+]
+evidence_ids = [
+    "ev-opencode-skill-support-a300b4a984",
+    "ev-opencode-current-release-version-date-and-c685154a81",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-opencode-mcp_tools"
 family = "mcp_tools"
 status = "supported"
-statement = "Source-backed evidence records mcp tools support."
-evidence_ids = ["ev-opencode-mcp-support-7f57fcc8d3"]
+statement = "OpenCode documents MCP server integration and current release notes include MCP outputSchema tolerance fixes."
+evidence_ids = [
+    "ev-opencode-mcp-support-7f57fcc8d3",
+    "ev-opencode-current-release-version-date-and-c685154a81",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Default permission posture can be broad unless configured. Legacy tools permission is deprecated in favor of permission. MCP servers can create context pressure. npm plugins auto-install with Bun and can define tools and hooks; review plugins as executable third-party code."
-uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "MCP support remains valid with current compatibility evidence."
+install_activation = "MCP attaches through configured MCP servers."
+configuration_surface = "MCP server configuration shapes available tools/resources."
+reload_update_behavior = "MCP compatibility behavior can change by release."
+limitations = "The current release includes security and compatibility fixes, including a Plan Mode security bypass fix. Native scheduling and lifecycle reload semantics remain unresolved."
+uncertainty = "Memory-like persistence, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
+
+[[claim.detail]]
+component = "MCP and tool surfaces"
+load_attachment_point = "MCP attaches through configured MCP servers."
+activation = "MCP attaches through configured MCP servers."
+mutability = "MCP server configuration shapes available tools/resources."
+scope = [
+    "project",
+    "user",
+    "server",
+]
+evidence_ids = [
+    "ev-opencode-mcp-support-7f57fcc8d3",
+    "ev-opencode-current-release-version-date-and-c685154a81",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-opencode-hooks_events"
 family = "hooks_events"
 status = "supported"
-statement = "Source-backed evidence records hooks events support."
-evidence_ids = ["ev-opencode-plugin-and-hook-support-373d03f48e"]
+statement = "OpenCode plugin docs identify plugin hooks; exact event vocabulary remains schema pressure."
+evidence_ids = [
+    "ev-opencode-plugin-and-hook-support-373d03f48e",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Default permission posture can be broad unless configured. Legacy tools permission is deprecated in favor of permission. MCP servers can create context pressure. npm plugins auto-install with Bun and can define tools and hooks; review plugins as executable third-party code."
-uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "Hook support remains source-backed while SP-008 remains unresolved."
+install_activation = "Hooks attach through plugin hook definitions."
+configuration_surface = "Plugin configuration determines hook availability."
+reload_update_behavior = "Hook reload/update behavior follows plugin lifecycle, which remains underspecified."
+limitations = "The current release includes security and compatibility fixes, including a Plan Mode security bypass fix. Native scheduling and lifecycle reload semantics remain unresolved."
+uncertainty = "Memory-like persistence, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
+
+[[claim.detail]]
+component = "hooks and event surfaces"
+load_attachment_point = "Hooks attach through plugin hook definitions."
+activation = "Hooks attach through plugin hook definitions."
+mutability = "Plugin configuration determines hook availability."
+scope = [
+    "plugin",
+]
+evidence_ids = [
+    "ev-opencode-plugin-and-hook-support-373d03f48e",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-opencode-plugins_bundles"
 family = "plugins_bundles"
 status = "supported"
-statement = "Source-backed evidence records plugins bundles support."
-evidence_ids = ["ev-opencode-plugin-and-hook-support-373d03f48e"]
+statement = "OpenCode plugins are first-party extension components that can define tools and hooks."
+evidence_ids = [
+    "ev-opencode-plugin-and-hook-support-373d03f48e",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Default permission posture can be broad unless configured. Legacy tools permission is deprecated in favor of permission. MCP servers can create context pressure. npm plugins auto-install with Bun and can define tools and hooks; review plugins as executable third-party code."
-uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "Plugin support remains source-backed and records component shape."
+install_activation = "Plugins attach through OpenCode plugin configuration."
+configuration_surface = "Plugin files/configuration shape available tools and hooks."
+reload_update_behavior = "Plugin reload/update behavior needs more evidence."
+limitations = "The current release includes security and compatibility fixes, including a Plan Mode security bypass fix. Native scheduling and lifecycle reload semantics remain unresolved."
+uncertainty = "Memory-like persistence, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
+
+[[claim.detail]]
+component = "plugins and bundles"
+load_attachment_point = "Plugins attach through OpenCode plugin configuration."
+activation = "Plugins attach through OpenCode plugin configuration."
+mutability = "Plugin files/configuration shape available tools and hooks."
+scope = [
+    "project",
+    "user",
+    "plugin",
+]
+evidence_ids = [
+    "ev-opencode-plugin-and-hook-support-373d03f48e",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-opencode-agent_profiles_subagents"
 family = "agent_profiles_subagents"
 status = "supported"
-statement = "Source-backed evidence records agent profiles subagents support."
-evidence_ids = ["ev-opencode-agent-and-subagent-support-efedd2d467"]
+statement = "OpenCode documents primary agents and subagents."
+evidence_ids = [
+    "ev-opencode-agent-and-subagent-support-efedd2d467",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Default permission posture can be broad unless configured. Legacy tools permission is deprecated in favor of permission. MCP servers can create context pressure. npm plugins auto-install with Bun and can define tools and hooks; review plugins as executable third-party code."
-uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "Agent/subagent support remains valid."
+install_activation = "Agents and subagents attach through OpenCode agent definitions."
+configuration_surface = "Agent configuration shapes routing and behavior."
+reload_update_behavior = "Agent reload/update behavior needs more evidence."
+limitations = "The current release includes security and compatibility fixes, including a Plan Mode security bypass fix. Native scheduling and lifecycle reload semantics remain unresolved."
+uncertainty = "Memory-like persistence, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
+
+[[claim.detail]]
+component = "agent profiles and subagents"
+load_attachment_point = "Agents and subagents attach through OpenCode agent definitions."
+activation = "Agents and subagents attach through OpenCode agent definitions."
+mutability = "Agent configuration shapes routing and behavior."
+scope = [
+    "project",
+    "user",
+]
+evidence_ids = [
+    "ev-opencode-agent-and-subagent-support-efedd2d467",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-opencode-memory_context_retrieval"
 family = "memory_context_retrieval"
 status = "unknown"
-statement = "Source-backed evidence does not prove memory context retrieval support."
+statement = "Checked OpenCode sources do not prove a stable memory/context retrieval surface."
 evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "explicit_unknown"
+claim_triage = "unknown"
+triage_rationale = "The refresh records memory-like schema pressure without claiming a memory API."
+install_activation = "No stable memory activation was proven."
+configuration_surface = "No stable memory configuration surface was proven."
+reload_update_behavior = "Freshness, write authority, and privacy boundaries remain unknown."
+limitations = "No checked first-party source proves this surface strongly enough for a supported canonical claim."
+uncertainty = "No checked first-party source proves stable memory persistence, retrieval, write authority, or API shape."
+
+[[claim.detail]]
+component = "memory-like context retrieval surface"
+load_attachment_point = "not proven by checked first-party sources"
+activation = "unknown"
+mutability = "unknown"
+scope = [
+    "unknown",
+]
+evidence_ids = []
+evidence_class = "unknown"
+
+[[claim.memory_like_surface]]
+persistence_scope = "not proven by checked sources"
+retrieval_trigger = "not proven by checked sources"
+mutability = "unknown"
+freshness = "unknown"
+privacy_boundary = "unknown"
+write_authority = "unknown"
+api_stability = "unknown"
+evidence_ids = []
+evidence_class = "unknown"
+unknowns = "No checked first-party source proves a stable OpenCode memory surface."
 
 [[claim]]
 id = "claim-opencode-config_settings"
 family = "config_settings"
 status = "supported"
-statement = "Source-backed evidence records config settings support."
-evidence_ids = ["ev-opencode-configuration-support-228e5b9b41", "ev-opencode-permissions-support-08983d1515"]
+statement = "OpenCode documents configuration and permission settings."
+evidence_ids = [
+    "ev-opencode-configuration-support-228e5b9b41",
+    "ev-opencode-permissions-support-08983d1515",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Default permission posture can be broad unless configured. Legacy tools permission is deprecated in favor of permission. MCP servers can create context pressure. npm plugins auto-install with Bun and can define tools and hooks; review plugins as executable third-party code."
-uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "Configuration support remains source-backed."
+install_activation = "Configuration activates through OpenCode config files and permission settings."
+configuration_surface = "Config and permission files shape behavior."
+reload_update_behavior = "Reload/update behavior for config remains underspecified."
+limitations = "The current release includes security and compatibility fixes, including a Plan Mode security bypass fix. Native scheduling and lifecycle reload semantics remain unresolved."
+uncertainty = "Memory-like persistence, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
+
+[[claim.detail]]
+component = "configuration settings"
+load_attachment_point = "Configuration activates through OpenCode config files and permission settings."
+activation = "Configuration activates through OpenCode config files and permission settings."
+mutability = "Config and permission files shape behavior."
+scope = [
+    "project",
+    "user",
+    "config",
+]
+evidence_ids = [
+    "ev-opencode-configuration-support-228e5b9b41",
+    "ev-opencode-permissions-support-08983d1515",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-opencode-permissions_approvals_sandboxing"
 family = "permissions_approvals_sandboxing"
 status = "supported"
-statement = "Source-backed evidence records permissions approvals sandboxing support."
-evidence_ids = ["ev-opencode-permissions-support-08983d1515"]
+statement = "OpenCode documents permissions, and v1.14.46 fixes a Plan Mode security bypass."
+evidence_ids = [
+    "ev-opencode-permissions-support-08983d1515",
+    "ev-opencode-current-release-version-date-and-c685154a81",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Default permission posture can be broad unless configured. Legacy tools permission is deprecated in favor of permission. MCP servers can create context pressure. npm plugins auto-install with Bun and can define tools and hooks; review plugins as executable third-party code."
-uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "Permission support remains source-backed with current release security context."
+install_activation = "Permissions activate through configured permission settings and runtime modes."
+configuration_surface = "Permission config and Plan Mode/runtime behavior shape effects."
+reload_update_behavior = "Default posture and Plan Mode behavior should be interpreted against current release fixes."
+limitations = "The current release includes security and compatibility fixes, including a Plan Mode security bypass fix. Native scheduling and lifecycle reload semantics remain unresolved."
+uncertainty = "Memory-like persistence, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
+
+[[claim.detail]]
+component = "permissions, approvals, and sandboxing"
+load_attachment_point = "Permissions activate through configured permission settings and runtime modes."
+activation = "Permissions activate through configured permission settings and runtime modes."
+mutability = "Permission config and Plan Mode/runtime behavior shape effects."
+scope = [
+    "project",
+    "user",
+    "runtime",
+]
+evidence_ids = [
+    "ev-opencode-permissions-support-08983d1515",
+    "ev-opencode-current-release-version-date-and-c685154a81",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-opencode-scheduling_automation"
 family = "scheduling_automation"
-status = "unknown"
-statement = "Source-backed evidence does not prove scheduling automation support."
-evidence_ids = []
+status = "supported"
+statement = "OpenCode supports external scheduling through GitHub Action integration, while no native durable scheduler was verified."
+evidence_ids = [
+    "ev-opencode-github-action-integration-183856d336",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "changed"
+triage_rationale = "Scheduling is source-backed as external runner support only."
+install_activation = "Automation activates through GitHub Action or another external runner invoking OpenCode."
+configuration_surface = "Workflow configuration and OpenCode CLI/run settings shape execution."
+reload_update_behavior = "Missed-run behavior belongs to the external scheduler, not a proven OpenCode native scheduler."
+limitations = "The current release includes security and compatibility fixes, including a Plan Mode security bypass fix. Native scheduling and lifecycle reload semantics remain unresolved."
+uncertainty = "Memory-like persistence, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
+
+[[claim.detail]]
+component = "scheduling and automation"
+load_attachment_point = "Automation activates through GitHub Action or another external runner invoking OpenCode."
+activation = "Automation activates through GitHub Action or another external runner invoking OpenCode."
+mutability = "Workflow configuration and OpenCode CLI/run settings shape execution."
+scope = [
+    "ci",
+    "external-runner",
+]
+evidence_ids = [
+    "ev-opencode-github-action-integration-183856d336",
+]
+evidence_class = "source_backed"
+
+[[claim.automation_surface]]
+trigger_class = "external scheduler or GitHub Action trigger"
+runner_locus = "external runner or GitHub Action"
+recurrence_shape = "external scheduler cadence controlled outside OpenCode"
+permission_sandbox_context = "external runner plus OpenCode permissions/config"
+missed_run_behavior = "owned by external scheduler"
+output_delivery = "CI logs, command output, or configured integration output"
+evidence_ids = [
+    "ev-opencode-github-action-integration-183856d336",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-opencode-commands_shortcuts"
 family = "commands_shortcuts"
 status = "supported"
-statement = "Source-backed evidence records commands shortcuts support."
-evidence_ids = ["ev-opencode-command-template-support-8c25f46c65"]
+statement = "OpenCode supports commands defined in markdown files or config."
+evidence_ids = [
+    "ev-opencode-command-template-support-8c25f46c65",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Default permission posture can be broad unless configured. Legacy tools permission is deprecated in favor of permission. MCP servers can create context pressure. npm plugins auto-install with Bun and can define tools and hooks; review plugins as executable third-party code."
-uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "Commands support remains source-backed and records definition surfaces."
+install_activation = "Commands activate from markdown command files or config-defined commands."
+configuration_surface = "Command files and config shape availability."
+reload_update_behavior = "Command reload/update behavior needs lifecycle evidence."
+limitations = "The current release includes security and compatibility fixes, including a Plan Mode security bypass fix. Native scheduling and lifecycle reload semantics remain unresolved."
+uncertainty = "Memory-like persistence, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
+
+[[claim.detail]]
+component = "commands and shortcuts"
+load_attachment_point = "Commands activate from markdown command files or config-defined commands."
+activation = "Commands activate from markdown command files or config-defined commands."
+mutability = "Command files and config shape availability."
+scope = [
+    "project",
+    "user",
+    "config",
+]
+evidence_ids = [
+    "ev-opencode-command-template-support-8c25f46c65",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-opencode-providers_connectors"
 family = "providers_connectors"
-status = "unknown"
-statement = "Source-backed evidence does not prove providers connectors support."
-evidence_ids = []
+status = "supported"
+statement = "OpenCode docs and release notes identify custom providers, GitHub integration, ecosystem integrations, and provider setup surfaces."
+evidence_ids = [
+    "ev-opencode-github-action-integration-183856d336",
+    "ev-opencode-ecosystem-and-third-party-integr-e4f52324be",
+    "ev-opencode-current-release-version-date-and-c685154a81",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "changed"
+triage_rationale = "Provider/connector support is now source-backed while SP-009 remains open."
+install_activation = "Connectors attach through custom provider config, GitHub integration, and ecosystem integrations."
+configuration_surface = "Provider setup, config files, and integration setup shape availability."
+reload_update_behavior = "Provider/connector taxonomy remains schema pressure."
+limitations = "The current release includes security and compatibility fixes, including a Plan Mode security bypass fix. Native scheduling and lifecycle reload semantics remain unresolved."
+uncertainty = "Memory-like persistence, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
+
+[[claim.detail]]
+component = "providers and connectors"
+load_attachment_point = "Connectors attach through custom provider config, GitHub integration, and ecosystem integrations."
+activation = "Connectors attach through custom provider config, GitHub integration, and ecosystem integrations."
+mutability = "Provider setup, config files, and integration setup shape availability."
+scope = [
+    "provider",
+    "github",
+    "ecosystem",
+    "config",
+]
+evidence_ids = [
+    "ev-opencode-github-action-integration-183856d336",
+    "ev-opencode-ecosystem-and-third-party-integr-e4f52324be",
+    "ev-opencode-current-release-version-date-and-c685154a81",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-opencode-runtime_modes"
 family = "runtime_modes"
 status = "supported"
-statement = "Source-backed evidence records runtime modes support."
-evidence_ids = ["ev-opencode-cli-and-run-support-aabaf0f3a7"]
+statement = "OpenCode supports terminal/TUI, desktop, IDE extension, server, noninteractive run, GitHub Action integration, and ACP server modes."
+evidence_ids = [
+    "ev-opencode-cli-and-run-support-aabaf0f3a7",
+    "ev-opencode-github-action-integration-183856d336",
+    "ev-opencode-current-release-version-date-and-c685154a81",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Default permission posture can be broad unless configured. Legacy tools permission is deprecated in favor of permission. MCP servers can create context pressure. npm plugins auto-install with Bun and can define tools and hooks; review plugins as executable third-party code."
-uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "Runtime mode support remains source-backed and records current compatibility fixes."
+install_activation = "Runtime mode activates through CLI/TUI, desktop, IDE, server, run, GitHub Action, or ACP entrypoints."
+configuration_surface = "Invocation surface and config select runtime behavior."
+reload_update_behavior = "Runtime behavior can change by release; v1.14.46 includes legacy session and Plan Mode fixes."
+limitations = "The current release includes security and compatibility fixes, including a Plan Mode security bypass fix. Native scheduling and lifecycle reload semantics remain unresolved."
+uncertainty = "Memory-like persistence, retrieval, write authority, and stable API shape are not proven. Cross-harness import is not proven."
+
+[[claim.detail]]
+component = "runtime modes"
+load_attachment_point = "Runtime mode activates through CLI/TUI, desktop, IDE, server, run, GitHub Action, or ACP entrypoints."
+activation = "Runtime mode activates through CLI/TUI, desktop, IDE, server, run, GitHub Action, or ACP entrypoints."
+mutability = "Invocation surface and config select runtime behavior."
+scope = [
+    "cli",
+    "tui",
+    "desktop",
+    "ide",
+    "server",
+    "ci",
+    "acp",
+]
+evidence_ids = [
+    "ev-opencode-cli-and-run-support-aabaf0f3a7",
+    "ev-opencode-github-action-integration-183856d336",
+    "ev-opencode-current-release-version-date-and-c685154a81",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-opencode-cross_harness_import_compatibility"
 family = "cross_harness_import_compatibility"
-status = "supported"
-statement = "Source-backed evidence records cross harness import compatibility support."
-evidence_ids = ["ev-opencode-ecosystem-and-third-party-integr-e4f52324be"]
+status = "unknown"
+statement = "OpenCode GitHub and ACP surfaces are connectors, not proof of native import for other harness equipment conventions."
+evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Default permission posture can be broad unless configured. Legacy tools permission is deprecated in favor of permission. MCP servers can create context pressure. npm plugins auto-install with Bun and can define tools and hooks; review plugins as executable third-party code."
-uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "explicit_unknown"
+claim_triage = "changed"
+triage_rationale = "The migrated compatibility claim is narrowed to unknown because ecosystem integration is not bundle import fidelity."
+install_activation = "No cross-harness import activation was proven."
+configuration_surface = "No cross-harness compatibility configuration surface was proven."
+reload_update_behavior = "Compatibility remains unknown until a first-party source names a bridge."
+limitations = "No checked first-party source proves this surface strongly enough for a supported canonical claim."
+uncertainty = "OpenCode GitHub and ACP surfaces are connectors, not proof of native import for other harness equipment conventions."
+
+[[claim.detail]]
+component = "cross-harness import surface"
+load_attachment_point = "GitHub, ACP, and ecosystem integrations, without proven harness bundle import"
+activation = "not applicable until native import support is proven"
+mutability = "not applicable"
+scope = [
+    "connectors",
+    "cross-harness equipment bundles",
+]
+evidence_ids = []
+evidence_class = "unknown"
+
+[[claim.compatibility_bridge]]
+imported_from = "none-proven"
+imported_convention = "no native import convention proven by checked first-party sources"
+surviving_components = []
+activation = "not applicable"
+disable_behavior = "not applicable"
+precedence = "not applicable"
+fidelity_limits = "GitHub, ACP, and ecosystem integrations are connectors, not proof of harness bundle import."
+evidence_ids = []
+evidence_class = "unknown"
 
 [[claim]]
 id = "claim-opencode-lifecycle_reload_update"
 family = "lifecycle_reload_update"
 status = "unknown"
-statement = "Source-backed evidence does not prove lifecycle reload update support."
+statement = "OpenCode release notes mention session and process fixes, but checked sources do not prove a stable lifecycle reload model for config, skills, or plugins."
 evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The active repository is anomalyco/opencode. Older opencode-ai repository references should not be used as current source anchors without verification."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "explicit_unknown"
+claim_triage = "unknown"
+triage_rationale = "Lifecycle remains explicit schema pressure instead of being inferred from scattered release fixes."
+install_activation = "No durable lifecycle activation was proven."
+configuration_surface = "Config/plugin/runtime surfaces exist but need sourced reload/update behavior."
+reload_update_behavior = "Lifecycle reload/update remains needs-more-evidence."
+limitations = "No checked first-party source proves this surface strongly enough for a supported canonical claim."
+uncertainty = "OpenCode release notes mention session and process fixes, but checked sources do not prove a stable lifecycle reload model for config, skills, or plugins."
+
+[[claim.detail]]
+component = "lifecycle reload and update surface"
+load_attachment_point = "config, plugin, and runtime surfaces without a proven stable lifecycle reload model"
+activation = "unknown"
+mutability = "unknown"
+scope = [
+    "config",
+    "plugins",
+    "runtime",
+]
+evidence_ids = []
+evidence_class = "unknown"

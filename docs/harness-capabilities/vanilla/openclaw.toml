@@ -2,42 +2,49 @@ schema_version = "vanilla-harness-capability-profile.v1alpha1"
 profile_kind = "vanilla_harness_capability_profile"
 harness_id = "openclaw"
 display_name = "OpenClaw"
-checked_at = "2026-05-03T09:25:05-04:00"
-checked_version = "2026.5.2"
-version_basis = "GitHub latest non-prerelease v2026.5.2 and tag-pinned source/docs."
+checked_at = "2026-05-10T19:13:40-04:00"
+checked_version = "2026.5.7"
+version_basis = "GitHub release v2026.5.7 for openclaw/openclaw, plus tag-pinned first-party docs carried by the migrated profile."
 evidence_category = "source-supported"
-summary_scheduling = "Cron jobs, heartbeat turns, hooks, webhooks, and plugin background services."
-scheduling = "OpenClaw supports cron jobs with at, every, cron expressions, and time zones; heartbeat-driven periodic turns; hook and webhook triggers; and plugin background services."
-limitations = "Compatible Codex, Claude, and Cursor bundles are partial bridges, not full harness equivalence. MCP bridge behavior has limits around route metadata, live event queues, push/edit/react support, and approval visibility. Multi-agent workspaces are not hard OS sandboxes unless sandboxing is configured. Some plugin changes require Gateway restart."
-uncertainty = "The stable release is v2026.5.2. The nearby beta is context only and should not be treated as current stable behavior unless prerelease tracking is intentional."
-refresh_notes = "Refresh from GitHub latest release and tag-pinned docs or source. Avoid main-branch docs for canonical version claims."
-components = ["skills", "plugin-shipped skills", "native plugins", "compatible Codex bundles", "compatible Claude bundles", "compatible Cursor bundles", "MCP client surfaces", "MCP server surfaces", "tools", "hooks", "webhooks", "channels", "model providers", "media providers", "search providers", "multi-agent configs", "per-agent skill allowlists", "CLI commands", "plugin commands", "configuration"]
-local_observations = ["No local OpenClaw gateway, config, channels, plugin state, or service status was inspected for this seed refresh."]
+summary_scheduling = "OpenClaw supports cron, heartbeat turns, hooks, webhooks, background services, and release-backed cron JSON status surfaces."
+scheduling = "OpenClaw supports cron jobs, heartbeat turns, hooks, webhooks, plugin background services, and current release cron JSON status reporting."
+limitations = "Several detailed docs remain tag-pinned to v2026.5.2 while v2026.5.7 release notes add current security, memory, scheduling, and lifecycle evidence. Compatible-bundle support must not be treated as native support for every imported component."
+uncertainty = "Instruction/context load paths need more evidence. Provider and hook taxonomies remain OpenClaw-specific until normalized by later schema work."
+refresh_notes = "Refresh from GitHub releases and OpenClaw first-party docs. Preserve compatible-bundle, Active Memory, authorization, SecretRef, cron, and lifecycle facts as harness-specific extensions."
+components = [
+    "skills",
+    "native plugins",
+    "plugin manifests",
+    "compatible bundles",
+    "MCP client/server",
+    "multi-agent configs",
+    "subagents",
+    "cron jobs",
+    "heartbeat",
+    "hooks",
+    "webhooks",
+    "Active Memory",
+    "channels",
+    "model providers",
+    "media providers",
+    "search providers",
+    "SecretRef",
+    "approval modes",
+]
+local_observations = [
+    "No local OpenClaw gateway, config, channel, plugin, cron, desktop, or Active Memory state was inspected for this refresh.",
+]
 
 [scope]
 surface = "vanilla_harness_capability_surface"
 applicability = "Default settings and default equipment immediately after installation and onboarding."
 
 [[evidence]]
-id = "ev-openclaw-release-version-date-and-release-7fe6f650de"
+id = "ev-openclaw-current-release-version-date-and-f518a69d0b"
 category = "source-supported"
 source_kind = "first_party"
-url = "https://github.com/openclaw/openclaw/releases/tag/v2026.5.2"
-claim_scope = "release version, date, and release notes"
-
-[[evidence]]
-id = "ev-openclaw-package-version-9ed46e443c"
-category = "source-supported"
-source_kind = "first_party"
-url = "https://github.com/openclaw/openclaw/blob/v2026.5.2/package.json"
-claim_scope = "package version"
-
-[[evidence]]
-id = "ev-openclaw-adjacent-prerelease-context-b407097be9"
-category = "source-supported"
-source_kind = "first_party"
-url = "https://github.com/openclaw/openclaw/releases/tag/v2026.5.2-beta.3"
-claim_scope = "adjacent prerelease context"
+url = "https://github.com/openclaw/openclaw/releases/tag/v2026.5.7"
+claim_scope = "current release version, date, and release notes"
 
 [[evidence]]
 id = "ev-openclaw-feature-overview-f329c4e4a4"
@@ -109,197 +116,680 @@ source_kind = "first_party"
 url = "https://github.com/openclaw/openclaw/blob/v2026.5.2/docs/automation/hooks.md"
 claim_scope = "hook and webhook support"
 
+[[evidence]]
+id = "ev-openclaw-package-version-9ed46e443c"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://github.com/openclaw/openclaw/blob/v2026.5.2/package.json"
+claim_scope = "package version"
+
+[[evidence]]
+id = "ev-openclaw-adjacent-prerelease-context-b407097be9"
+category = "source-supported"
+source_kind = "first_party"
+url = "https://github.com/openclaw/openclaw/releases/tag/v2026.5.2-beta.3"
+claim_scope = "adjacent prerelease context"
+
+[[version_observation]]
+id = "vo-openclaw-v2026-5-7"
+observed_version = "v2026.5.7"
+checked_at = "2026-05-10T19:13:40-04:00"
+source_url = "https://github.com/openclaw/openclaw/releases/tag/v2026.5.7"
+source_kind = "first_party"
+canonical_profile_change = true
+evidence_class = "source_backed"
+
+[[harness_extension]]
+id = "ext-openclaw-compatible-bundle-bridge"
+name = "Compatible bundle bridge"
+scope = "cross-harness compatibility"
+description = "OpenClaw docs name compatible Codex, Claude, and Cursor bundles; profile claims keep this as bridge compatibility rather than native support."
+evidence_ids = [
+    "ev-openclaw-compatible-bundle-support-1f08a5929d",
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
+evidence_class = "source_backed"
+schema_pressure_ids = [
+    "SP-004",
+]
+
+[[harness_extension]]
+id = "ext-openclaw-active-memory-admin-controls"
+name = "Active Memory admin controls"
+scope = "memory-like context"
+description = "OpenClaw v2026.5.7 adds admin-scope Active Memory toggles and cached assembled-context invalidation."
+evidence_ids = [
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
+evidence_class = "source_backed"
+schema_pressure_ids = [
+    "SP-005",
+]
+
+[[harness_extension]]
+id = "ext-openclaw-tool-authorization-secretref"
+name = "Tool authorization and SecretRef controls"
+scope = "permissions and connectors"
+description = "OpenClaw v2026.5.7 adds before-tool-call authorization, owner enforcement, SecretRef handling, and approval-route behavior."
+evidence_ids = [
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
+evidence_class = "source_backed"
+schema_pressure_ids = [
+    "SP-002",
+    "SP-009",
+]
+
 [[claim]]
 id = "claim-openclaw-instructions_context"
 family = "instructions_context"
 status = "unknown"
-statement = "Source-backed evidence does not prove instructions context support."
+statement = "OpenClaw compatible bundles, skills, commands, and multi-agent configs carry instructions, but source-shaped instruction load paths are not proven enough for canonical support."
 evidence_ids = []
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The stable release is v2026.5.2. The nearby beta is context only and should not be treated as current stable behavior unless prerelease tracking is intentional."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "explicit_unknown"
+claim_triage = "unknown"
+triage_rationale = "Instruction/context support remains needs-more-evidence rather than inferred from component presence."
+install_activation = "No canonical instruction/context activation path was proven beyond adjacent skills, commands, bundles, and multi-agent configs."
+configuration_surface = "Compatible bundles, skills, commands, and multi-agent configs shape context, but fields need more source evidence."
+reload_update_behavior = "Instruction/context reload behavior is not proven as a unified surface."
+limitations = "No checked first-party source proves this surface strongly enough for a supported canonical claim."
+uncertainty = "OpenClaw compatible bundles, skills, commands, and multi-agent configs carry instructions, but source-shaped instruction load paths are not proven enough for canonical support."
+
+[[claim.detail]]
+component = "instruction-like context surface"
+load_attachment_point = "compatible bundles, skills, commands, and multi-agent configs without a proven canonical instruction load path"
+activation = "unknown"
+mutability = "unknown"
+scope = [
+    "compatible bundles",
+    "skills",
+    "commands",
+    "multi-agent config",
+]
+evidence_ids = []
+evidence_class = "unknown"
 
 [[claim]]
 id = "claim-openclaw-skills"
 family = "skills"
 status = "supported"
-statement = "Source-backed evidence records skills support."
-evidence_ids = ["ev-openclaw-skill-support-dba9c143e9"]
+statement = "OpenClaw supports skills, plugin-shipped skills, per-agent allowlists, and skill snapshot invalidation."
+evidence_ids = [
+    "ev-openclaw-skill-support-dba9c143e9",
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Compatible Codex, Claude, and Cursor bundles are partial bridges, not full harness equivalence. MCP bridge behavior has limits around route metadata, live event queues, push/edit/react support, and approval visibility. Multi-agent workspaces are not hard OS sandboxes unless sandboxing is configured. Some plugin changes require Gateway restart."
-uncertainty = "The stable release is v2026.5.2. The nearby beta is context only and should not be treated as current stable behavior unless prerelease tracking is intentional."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "Skill support remains source-backed and records current snapshot invalidation."
+install_activation = "Skills load through skill docs, plugin-shipped skills, and per-agent allowlists."
+configuration_surface = "Skill config, plugin manifests, and per-agent allowlists shape availability."
+reload_update_behavior = "Current release notes include skill snapshot clearing/invalidation behavior."
+limitations = "Several detailed docs remain tag-pinned to v2026.5.2 while v2026.5.7 release notes add current security, memory, scheduling, and lifecycle evidence. Compatible-bundle support must not be treated as native support for every imported component."
+uncertainty = "Instruction/context load paths need more evidence. Provider and hook taxonomies remain OpenClaw-specific until normalized by later schema work."
+
+[[claim.detail]]
+component = "skills"
+load_attachment_point = "Skills load through skill docs, plugin-shipped skills, and per-agent allowlists."
+activation = "Skills load through skill docs, plugin-shipped skills, and per-agent allowlists."
+mutability = "Skill config, plugin manifests, and per-agent allowlists shape availability."
+scope = [
+    "skill",
+    "plugin",
+    "agent",
+]
+evidence_ids = [
+    "ev-openclaw-skill-support-dba9c143e9",
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-openclaw-mcp_tools"
 family = "mcp_tools"
 status = "supported"
-statement = "Source-backed evidence records mcp tools support."
-evidence_ids = ["ev-openclaw-mcp-support-aa362a288c"]
+statement = "OpenClaw supports MCP client/server surfaces and current release notes include Codex OAuth route preservation and Tavily SecretRef resolution."
+evidence_ids = [
+    "ev-openclaw-mcp-support-aa362a288c",
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Compatible Codex, Claude, and Cursor bundles are partial bridges, not full harness equivalence. MCP bridge behavior has limits around route metadata, live event queues, push/edit/react support, and approval visibility. Multi-agent workspaces are not hard OS sandboxes unless sandboxing is configured. Some plugin changes require Gateway restart."
-uncertainty = "The stable release is v2026.5.2. The nearby beta is context only and should not be treated as current stable behavior unless prerelease tracking is intentional."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "MCP support remains source-backed and records connector/security additions."
+install_activation = "MCP attaches through OpenClaw CLI/gateway configuration and connector routes."
+configuration_surface = "MCP config, OAuth routes, and SecretRef settings shape availability."
+reload_update_behavior = "MCP lifecycle and authorization behavior is component-specific."
+limitations = "Several detailed docs remain tag-pinned to v2026.5.2 while v2026.5.7 release notes add current security, memory, scheduling, and lifecycle evidence. Compatible-bundle support must not be treated as native support for every imported component."
+uncertainty = "Instruction/context load paths need more evidence. Provider and hook taxonomies remain OpenClaw-specific until normalized by later schema work."
+
+[[claim.detail]]
+component = "MCP and tool surfaces"
+load_attachment_point = "MCP attaches through OpenClaw CLI/gateway configuration and connector routes."
+activation = "MCP attaches through OpenClaw CLI/gateway configuration and connector routes."
+mutability = "MCP config, OAuth routes, and SecretRef settings shape availability."
+scope = [
+    "cli",
+    "gateway",
+    "connector",
+]
+evidence_ids = [
+    "ev-openclaw-mcp-support-aa362a288c",
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-openclaw-hooks_events"
 family = "hooks_events"
 status = "supported"
-statement = "Source-backed evidence records hooks events support."
-evidence_ids = ["ev-openclaw-hook-and-webhook-support-43dc990b55"]
+statement = "OpenClaw supports hooks and webhooks, with release notes adding authorization gates around inline skill tool dispatch."
+evidence_ids = [
+    "ev-openclaw-hook-and-webhook-support-43dc990b55",
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Compatible Codex, Claude, and Cursor bundles are partial bridges, not full harness equivalence. MCP bridge behavior has limits around route metadata, live event queues, push/edit/react support, and approval visibility. Multi-agent workspaces are not hard OS sandboxes unless sandboxing is configured. Some plugin changes require Gateway restart."
-uncertainty = "The stable release is v2026.5.2. The nearby beta is context only and should not be treated as current stable behavior unless prerelease tracking is intentional."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "Hook support remains source-backed while SP-008 keeps shared taxonomy unresolved."
+install_activation = "Hooks and webhooks attach through automation configuration and authorization gates."
+configuration_surface = "Hook config and before-tool-call authorization shape behavior."
+reload_update_behavior = "Hook reload/update behavior is component-specific."
+limitations = "Several detailed docs remain tag-pinned to v2026.5.2 while v2026.5.7 release notes add current security, memory, scheduling, and lifecycle evidence. Compatible-bundle support must not be treated as native support for every imported component."
+uncertainty = "Instruction/context load paths need more evidence. Provider and hook taxonomies remain OpenClaw-specific until normalized by later schema work."
+
+[[claim.detail]]
+component = "hooks and event surfaces"
+load_attachment_point = "Hooks and webhooks attach through automation configuration and authorization gates."
+activation = "Hooks and webhooks attach through automation configuration and authorization gates."
+mutability = "Hook config and before-tool-call authorization shape behavior."
+scope = [
+    "automation",
+    "gateway",
+    "authorization",
+]
+evidence_ids = [
+    "ev-openclaw-hook-and-webhook-support-43dc990b55",
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-openclaw-plugins_bundles"
 family = "plugins_bundles"
 status = "supported"
-statement = "Source-backed evidence records plugins bundles support."
-evidence_ids = ["ev-openclaw-plugin-support-8ec1811234", "ev-openclaw-plugin-manifest-support-207f1f0f67", "ev-openclaw-compatible-bundle-support-1f08a5929d"]
+statement = "OpenClaw supports native plugins, plugin manifests, plugin commands, managed plugin install/rollback/repair, and compatible bundle surfaces."
+evidence_ids = [
+    "ev-openclaw-plugin-support-8ec1811234",
+    "ev-openclaw-plugin-manifest-support-207f1f0f67",
+    "ev-openclaw-compatible-bundle-support-1f08a5929d",
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Compatible Codex, Claude, and Cursor bundles are partial bridges, not full harness equivalence. MCP bridge behavior has limits around route metadata, live event queues, push/edit/react support, and approval visibility. Multi-agent workspaces are not hard OS sandboxes unless sandboxing is configured. Some plugin changes require Gateway restart."
-uncertainty = "The stable release is v2026.5.2. The nearby beta is context only and should not be treated as current stable behavior unless prerelease tracking is intentional."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "Plugin support remains source-backed and now records lifecycle/compatibility extensions."
+install_activation = "Plugins and bundles attach through native plugin configuration, manifests, commands, and compatible-bundle loaders."
+configuration_surface = "Plugin manifests, install state, and compatible-bundle config shape availability."
+reload_update_behavior = "Release notes include managed plugin rollback/repair and doctor repair behavior."
+limitations = "Several detailed docs remain tag-pinned to v2026.5.2 while v2026.5.7 release notes add current security, memory, scheduling, and lifecycle evidence. Compatible-bundle support must not be treated as native support for every imported component."
+uncertainty = "Instruction/context load paths need more evidence. Provider and hook taxonomies remain OpenClaw-specific until normalized by later schema work."
+
+[[claim.detail]]
+component = "plugins and bundles"
+load_attachment_point = "Plugins and bundles attach through native plugin configuration, manifests, commands, and compatible-bundle loaders."
+activation = "Plugins and bundles attach through native plugin configuration, manifests, commands, and compatible-bundle loaders."
+mutability = "Plugin manifests, install state, and compatible-bundle config shape availability."
+scope = [
+    "plugin",
+    "manifest",
+    "compatible-bundle",
+]
+evidence_ids = [
+    "ev-openclaw-plugin-support-8ec1811234",
+    "ev-openclaw-plugin-manifest-support-207f1f0f67",
+    "ev-openclaw-compatible-bundle-support-1f08a5929d",
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-openclaw-agent_profiles_subagents"
 family = "agent_profiles_subagents"
 status = "supported"
-statement = "Source-backed evidence records agent profiles subagents support."
-evidence_ids = ["ev-openclaw-multi-agent-and-profile-like-sup-4b1d4ae131"]
+statement = "OpenClaw supports multi-agent configs, per-agent skill allowlists, and subagent registry behavior."
+evidence_ids = [
+    "ev-openclaw-multi-agent-and-profile-like-sup-4b1d4ae131",
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Compatible Codex, Claude, and Cursor bundles are partial bridges, not full harness equivalence. MCP bridge behavior has limits around route metadata, live event queues, push/edit/react support, and approval visibility. Multi-agent workspaces are not hard OS sandboxes unless sandboxing is configured. Some plugin changes require Gateway restart."
-uncertainty = "The stable release is v2026.5.2. The nearby beta is context only and should not be treated as current stable behavior unless prerelease tracking is intentional."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "Agent/subagent support remains source-backed and records per-agent controls."
+install_activation = "Agents/subagents attach through multi-agent configs and subagent registry behavior."
+configuration_surface = "Multi-agent config, per-agent allowlists, and runtime snapshots shape behavior."
+reload_update_behavior = "Runtime config snapshots and subagent registry behavior are lifecycle-sensitive."
+limitations = "Several detailed docs remain tag-pinned to v2026.5.2 while v2026.5.7 release notes add current security, memory, scheduling, and lifecycle evidence. Compatible-bundle support must not be treated as native support for every imported component."
+uncertainty = "Instruction/context load paths need more evidence. Provider and hook taxonomies remain OpenClaw-specific until normalized by later schema work."
+
+[[claim.detail]]
+component = "agent profiles and subagents"
+load_attachment_point = "Agents/subagents attach through multi-agent configs and subagent registry behavior."
+activation = "Agents/subagents attach through multi-agent configs and subagent registry behavior."
+mutability = "Multi-agent config, per-agent allowlists, and runtime snapshots shape behavior."
+scope = [
+    "workspace",
+    "agent",
+    "subagent",
+]
+evidence_ids = [
+    "ev-openclaw-multi-agent-and-profile-like-sup-4b1d4ae131",
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-openclaw-memory_context_retrieval"
 family = "memory_context_retrieval"
-status = "unknown"
-statement = "Source-backed evidence does not prove memory context retrieval support."
-evidence_ids = []
+status = "supported"
+statement = "OpenClaw v2026.5.7 supports Active Memory admin toggles and cached assembled-context invalidation."
+evidence_ids = [
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The stable release is v2026.5.2. The nearby beta is context only and should not be treated as current stable behavior unless prerelease tracking is intentional."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "changed"
+triage_rationale = "Memory-like support is now source-backed with structured fields instead of a generic memory claim."
+install_activation = "Active Memory activates through admin-scope toggles and assembled-context retrieval."
+configuration_surface = "Admin toggles, cached assembled context, and runtime configuration shape memory behavior."
+reload_update_behavior = "Current release notes identify invalidation, but detailed freshness/privacy semantics remain component-specific."
+limitations = "Several detailed docs remain tag-pinned to v2026.5.2 while v2026.5.7 release notes add current security, memory, scheduling, and lifecycle evidence. Compatible-bundle support must not be treated as native support for every imported component."
+uncertainty = "Instruction/context load paths need more evidence. Provider and hook taxonomies remain OpenClaw-specific until normalized by later schema work."
+
+[[claim.detail]]
+component = "memory-like context surfaces"
+load_attachment_point = "Active Memory activates through admin-scope toggles and assembled-context retrieval."
+activation = "Active Memory activates through admin-scope toggles and assembled-context retrieval."
+mutability = "Admin toggles, cached assembled context, and runtime configuration shape memory behavior."
+scope = [
+    "admin",
+    "runtime",
+    "context-cache",
+]
+evidence_ids = [
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
+evidence_class = "source_backed"
+
+[[claim.memory_like_surface]]
+persistence_scope = "Active Memory and assembled context cache"
+retrieval_trigger = "admin-scope Active Memory toggle and assembled-context retrieval"
+mutability = "admin toggles and cached context are mutable through runtime/admin surfaces"
+freshness = "release-backed invalidation; detailed freshness remains component-specific"
+privacy_boundary = "admin, runtime, workspace, and connector boundaries"
+write_authority = "admin/runtime controls depending on surface"
+api_stability = "release-level behavior; detailed API stability remains component-specific"
+evidence_ids = [
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
+evidence_class = "source_backed"
+unknowns = "Detailed privacy and freshness semantics need more source-specific fields."
 
 [[claim]]
 id = "claim-openclaw-config_settings"
 family = "config_settings"
-status = "unknown"
-statement = "Source-backed evidence does not prove config settings support."
-evidence_ids = []
+status = "supported"
+statement = "OpenClaw config, channels, models, providers, plugin lifecycle, and runtime snapshots are source-backed surfaces."
+evidence_ids = [
+    "ev-openclaw-feature-overview-f329c4e4a4",
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The stable release is v2026.5.2. The nearby beta is context only and should not be treated as current stable behavior unless prerelease tracking is intentional."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "changed"
+triage_rationale = "Configuration support is now source-backed in the profile."
+install_activation = "Configuration activates through gateway/CLI config, channels, models, providers, plugin lifecycle, and runtime snapshots."
+configuration_surface = "Config files, channels, provider settings, and runtime snapshots shape behavior."
+reload_update_behavior = "Release notes include runtime config snapshots and channel hot-reload deferrals."
+limitations = "Several detailed docs remain tag-pinned to v2026.5.2 while v2026.5.7 release notes add current security, memory, scheduling, and lifecycle evidence. Compatible-bundle support must not be treated as native support for every imported component."
+uncertainty = "Instruction/context load paths need more evidence. Provider and hook taxonomies remain OpenClaw-specific until normalized by later schema work."
+
+[[claim.detail]]
+component = "configuration settings"
+load_attachment_point = "Configuration activates through gateway/CLI config, channels, models, providers, plugin lifecycle, and runtime snapshots."
+activation = "Configuration activates through gateway/CLI config, channels, models, providers, plugin lifecycle, and runtime snapshots."
+mutability = "Config files, channels, provider settings, and runtime snapshots shape behavior."
+scope = [
+    "gateway",
+    "cli",
+    "channel",
+    "provider",
+    "plugin",
+]
+evidence_ids = [
+    "ev-openclaw-feature-overview-f329c4e4a4",
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-openclaw-permissions_approvals_sandboxing"
 family = "permissions_approvals_sandboxing"
-status = "unknown"
-statement = "Source-backed evidence does not prove permissions approvals sandboxing support."
-evidence_ids = []
+status = "supported"
+statement = "OpenClaw v2026.5.7 includes Codex approval modes, admin-scope memory toggles, before-tool-call authorization hooks, owner enforcement, allowlists, and SecretRef handling."
+evidence_ids = [
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The stable release is v2026.5.2. The nearby beta is context only and should not be treated as current stable behavior unless prerelease tracking is intentional."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "changed"
+triage_rationale = "Security/control posture is now source-backed through current release evidence."
+install_activation = "Controls activate through approval modes, admin toggles, before-tool-call hooks, owner checks, allowlists, and SecretRef handling."
+configuration_surface = "Runtime config, admin policy, plugin routes, and connector secrets shape controls."
+reload_update_behavior = "Control behavior is release-specific and must be refreshed with current release notes."
+limitations = "Several detailed docs remain tag-pinned to v2026.5.2 while v2026.5.7 release notes add current security, memory, scheduling, and lifecycle evidence. Compatible-bundle support must not be treated as native support for every imported component."
+uncertainty = "Instruction/context load paths need more evidence. Provider and hook taxonomies remain OpenClaw-specific until normalized by later schema work."
+
+[[claim.detail]]
+component = "permissions, approvals, and sandboxing"
+load_attachment_point = "Controls activate through approval modes, admin toggles, before-tool-call hooks, owner checks, allowlists, and SecretRef handling."
+activation = "Controls activate through approval modes, admin toggles, before-tool-call hooks, owner checks, allowlists, and SecretRef handling."
+mutability = "Runtime config, admin policy, plugin routes, and connector secrets shape controls."
+scope = [
+    "admin",
+    "runtime",
+    "plugin",
+    "connector",
+]
+evidence_ids = [
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-openclaw-scheduling_automation"
 family = "scheduling_automation"
 status = "supported"
-statement = "Source-backed evidence records scheduling automation support."
-evidence_ids = ["ev-openclaw-cron-scheduling-support-afe92e1663", "ev-openclaw-heartbeat-scheduling-support-06bf078912"]
+statement = "OpenClaw supports cron, heartbeat turns, hooks, webhooks, background services, and cron status JSON."
+evidence_ids = [
+    "ev-openclaw-cron-scheduling-support-afe92e1663",
+    "ev-openclaw-heartbeat-scheduling-support-06bf078912",
+    "ev-openclaw-hook-and-webhook-support-43dc990b55",
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Compatible Codex, Claude, and Cursor bundles are partial bridges, not full harness equivalence. MCP bridge behavior has limits around route metadata, live event queues, push/edit/react support, and approval visibility. Multi-agent workspaces are not hard OS sandboxes unless sandboxing is configured. Some plugin changes require Gateway restart."
-uncertainty = "The stable release is v2026.5.2. The nearby beta is context only and should not be treated as current stable behavior unless prerelease tracking is intentional."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "Scheduling support remains source-backed and records current cron status behavior."
+install_activation = "Automation activates through cron jobs, heartbeat turns, hooks, webhooks, and background services."
+configuration_surface = "Cron config, heartbeat config, hook/webhook config, and service state shape automation."
+reload_update_behavior = "Current release notes include cron JSON status; missed-run behavior remains runner-specific."
+limitations = "Several detailed docs remain tag-pinned to v2026.5.2 while v2026.5.7 release notes add current security, memory, scheduling, and lifecycle evidence. Compatible-bundle support must not be treated as native support for every imported component."
+uncertainty = "Instruction/context load paths need more evidence. Provider and hook taxonomies remain OpenClaw-specific until normalized by later schema work."
+
+[[claim.detail]]
+component = "scheduling and automation"
+load_attachment_point = "Automation activates through cron jobs, heartbeat turns, hooks, webhooks, and background services."
+activation = "Automation activates through cron jobs, heartbeat turns, hooks, webhooks, and background services."
+mutability = "Cron config, heartbeat config, hook/webhook config, and service state shape automation."
+scope = [
+    "cron",
+    "heartbeat",
+    "hook",
+    "webhook",
+    "service",
+]
+evidence_ids = [
+    "ev-openclaw-cron-scheduling-support-afe92e1663",
+    "ev-openclaw-heartbeat-scheduling-support-06bf078912",
+    "ev-openclaw-hook-and-webhook-support-43dc990b55",
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
+evidence_class = "source_backed"
+
+[[claim.automation_surface]]
+trigger_class = "cron, heartbeat, hook, webhook, and service triggers"
+runner_locus = "OpenClaw gateway/runtime services"
+recurrence_shape = "cron cadence, heartbeat turns, hooks, webhooks, and background service triggers"
+permission_sandbox_context = "approval modes, before-tool-call authorization, owner enforcement, allowlists, and SecretRef controls"
+missed_run_behavior = "cron JSON status is source-backed; exact missed-run catch-up remains runner-specific"
+output_delivery = "cron status JSON, gateway/service output, hook/webhook output, or channel output"
+evidence_ids = [
+    "ev-openclaw-cron-scheduling-support-afe92e1663",
+    "ev-openclaw-heartbeat-scheduling-support-06bf078912",
+    "ev-openclaw-hook-and-webhook-support-43dc990b55",
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-openclaw-commands_shortcuts"
 family = "commands_shortcuts"
-status = "unknown"
-statement = "Source-backed evidence does not prove commands shortcuts support."
-evidence_ids = []
+status = "supported"
+statement = "OpenClaw supports CLI commands, plugin commands, native command handlers, channels CLI, cron CLI, and model auth/list commands."
+evidence_ids = [
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+    "ev-openclaw-plugin-manifest-support-207f1f0f67",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The stable release is v2026.5.2. The nearby beta is context only and should not be treated as current stable behavior unless prerelease tracking is intentional."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "changed"
+triage_rationale = "Commands are now source-backed in the profile while taxonomy remains harness-specific."
+install_activation = "Commands activate through CLI, plugin commands, native command handlers, channel CLI, cron CLI, and model auth/list commands."
+configuration_surface = "Plugin manifests and CLI/runtime config shape command availability."
+reload_update_behavior = "Command lifecycle depends on plugin and runtime updates."
+limitations = "Several detailed docs remain tag-pinned to v2026.5.2 while v2026.5.7 release notes add current security, memory, scheduling, and lifecycle evidence. Compatible-bundle support must not be treated as native support for every imported component."
+uncertainty = "Instruction/context load paths need more evidence. Provider and hook taxonomies remain OpenClaw-specific until normalized by later schema work."
+
+[[claim.detail]]
+component = "commands and shortcuts"
+load_attachment_point = "Commands activate through CLI, plugin commands, native command handlers, channel CLI, cron CLI, and model auth/list commands."
+activation = "Commands activate through CLI, plugin commands, native command handlers, channel CLI, cron CLI, and model auth/list commands."
+mutability = "Plugin manifests and CLI/runtime config shape command availability."
+scope = [
+    "cli",
+    "plugin",
+    "channel",
+    "cron",
+    "model-provider",
+]
+evidence_ids = [
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+    "ev-openclaw-plugin-manifest-support-207f1f0f67",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-openclaw-providers_connectors"
 family = "providers_connectors"
-status = "unknown"
-statement = "Source-backed evidence does not prove providers connectors support."
-evidence_ids = []
+status = "supported"
+statement = "OpenClaw supports model providers, media providers, search providers, channels, Discord, Telegram, WhatsApp, Tavily, OpenAI, and Codex OAuth connectors."
+evidence_ids = [
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The stable release is v2026.5.2. The nearby beta is context only and should not be treated as current stable behavior unless prerelease tracking is intentional."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "changed"
+triage_rationale = "Provider/connector support is now source-backed while SP-009 remains open for taxonomy."
+install_activation = "Connectors attach through provider settings, media/search provider config, channels, OAuth routes, and SecretRef-backed integrations."
+configuration_surface = "Provider config, channel config, OAuth, and SecretRef settings shape availability."
+reload_update_behavior = "Provider/connector taxonomy remains schema pressure."
+limitations = "Several detailed docs remain tag-pinned to v2026.5.2 while v2026.5.7 release notes add current security, memory, scheduling, and lifecycle evidence. Compatible-bundle support must not be treated as native support for every imported component."
+uncertainty = "Instruction/context load paths need more evidence. Provider and hook taxonomies remain OpenClaw-specific until normalized by later schema work."
+
+[[claim.detail]]
+component = "providers and connectors"
+load_attachment_point = "Connectors attach through provider settings, media/search provider config, channels, OAuth routes, and SecretRef-backed integrations."
+activation = "Connectors attach through provider settings, media/search provider config, channels, OAuth routes, and SecretRef-backed integrations."
+mutability = "Provider config, channel config, OAuth, and SecretRef settings shape availability."
+scope = [
+    "provider",
+    "media",
+    "search",
+    "channel",
+    "oauth",
+    "secretref",
+]
+evidence_ids = [
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-openclaw-runtime_modes"
 family = "runtime_modes"
-status = "unknown"
-statement = "Source-backed evidence does not prove runtime modes support."
-evidence_ids = []
+status = "supported"
+statement = "OpenClaw spans Gateway, CLI, multi-agent workspaces, channels, plugin background services, cron, and native desktop release artifacts."
+evidence_ids = [
+    "ev-openclaw-feature-overview-f329c4e4a4",
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The stable release is v2026.5.2. The nearby beta is context only and should not be treated as current stable behavior unless prerelease tracking is intentional."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "changed"
+triage_rationale = "Runtime modes are now source-backed in the profile."
+install_activation = "Runtime mode activates through Gateway, CLI, workspace, channel, plugin service, cron, or desktop entrypoints."
+configuration_surface = "Invocation surface, runtime config snapshots, channels, and plugin state shape runtime behavior."
+reload_update_behavior = "Runtime config snapshots and channel hot-reload deferrals are source-backed release details."
+limitations = "Several detailed docs remain tag-pinned to v2026.5.2 while v2026.5.7 release notes add current security, memory, scheduling, and lifecycle evidence. Compatible-bundle support must not be treated as native support for every imported component."
+uncertainty = "Instruction/context load paths need more evidence. Provider and hook taxonomies remain OpenClaw-specific until normalized by later schema work."
+
+[[claim.detail]]
+component = "runtime modes"
+load_attachment_point = "Runtime mode activates through Gateway, CLI, workspace, channel, plugin service, cron, or desktop entrypoints."
+activation = "Runtime mode activates through Gateway, CLI, workspace, channel, plugin service, cron, or desktop entrypoints."
+mutability = "Invocation surface, runtime config snapshots, channels, and plugin state shape runtime behavior."
+scope = [
+    "gateway",
+    "cli",
+    "workspace",
+    "channel",
+    "plugin-service",
+    "cron",
+    "desktop",
+]
+evidence_ids = [
+    "ev-openclaw-feature-overview-f329c4e4a4",
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-openclaw-cross_harness_import_compatibility"
 family = "cross_harness_import_compatibility"
 status = "supported"
-statement = "Source-backed evidence records cross harness import compatibility support."
-evidence_ids = ["ev-openclaw-compatible-bundle-support-1f08a5929d"]
+statement = "OpenClaw source-backed compatible bundle support names Codex, Claude, and Cursor conventions, with current release notes preserving Codex approval-route behavior."
+evidence_ids = [
+    "ev-openclaw-compatible-bundle-support-1f08a5929d",
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "Compatible Codex, Claude, and Cursor bundles are partial bridges, not full harness equivalence. MCP bridge behavior has limits around route metadata, live event queues, push/edit/react support, and approval visibility. Multi-agent workspaces are not hard OS sandboxes unless sandboxing is configured. Some plugin changes require Gateway restart."
-uncertainty = "The stable release is v2026.5.2. The nearby beta is context only and should not be treated as current stable behavior unless prerelease tracking is intentional."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "retained"
+triage_rationale = "Compatibility remains supported but is recorded as bridge compatibility, not native support for every imported component."
+install_activation = "Compatible bundles activate through OpenClaw compatible-bundle surfaces."
+configuration_surface = "Compatible-bundle docs and runtime approval-route behavior shape bridge fidelity."
+reload_update_behavior = "Bridge fidelity is partial and must not be flattened into native support for all imported surfaces."
+limitations = "Several detailed docs remain tag-pinned to v2026.5.2 while v2026.5.7 release notes add current security, memory, scheduling, and lifecycle evidence. Compatible-bundle support must not be treated as native support for every imported component."
+uncertainty = "Instruction/context load paths need more evidence. Provider and hook taxonomies remain OpenClaw-specific until normalized by later schema work."
+
+[[claim.detail]]
+component = "cross-harness compatibility bridge"
+load_attachment_point = "Compatible bundles activate through OpenClaw compatible-bundle surfaces."
+activation = "Compatible bundles activate through OpenClaw compatible-bundle surfaces."
+mutability = "Compatible-bundle docs and runtime approval-route behavior shape bridge fidelity."
+scope = [
+    "compatible-bundle",
+    "codex",
+    "claude-code",
+    "cursor",
+]
+evidence_ids = [
+    "ev-openclaw-compatible-bundle-support-1f08a5929d",
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
+evidence_class = "source_backed"
+
+[[claim.compatibility_bridge]]
+imported_from = "Codex, Claude, and Cursor bundle conventions"
+imported_convention = "OpenClaw compatible bundle convention"
+surviving_components = [
+    "skills",
+    "commands",
+    "plugin-declared compatible bundle components",
+]
+activation = "compatible-bundle activation through OpenClaw plugin/bundle surfaces"
+disable_behavior = "bundle disable/rollback behavior follows OpenClaw plugin lifecycle where applicable"
+precedence = "native OpenClaw plugin/skill behavior and approval routes remain authoritative"
+fidelity_limits = "Compatibility is a bridge with fidelity limits; it is not native support for every imported harness surface."
+evidence_ids = [
+    "ev-openclaw-compatible-bundle-support-1f08a5929d",
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
+evidence_class = "source_backed"
 
 [[claim]]
 id = "claim-openclaw-lifecycle_reload_update"
 family = "lifecycle_reload_update"
-status = "unknown"
-statement = "Source-backed evidence does not prove lifecycle reload update support."
-evidence_ids = []
+status = "supported"
+statement = "OpenClaw release notes include plugin install rollback/repair, skill snapshot invalidation, runtime config snapshots, channel hot-reload deferrals, and doctor repair behavior."
+evidence_ids = [
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
-migration_status = "migrated_from_aggregate"
-evidence_basis = "aggregate_catalog_migration"
-limitations = "No migrated aggregate row proves this surface family."
-uncertainty = "The stable release is v2026.5.2. The nearby beta is context only and should not be treated as current stable behavior unless prerelease tracking is intentional."
+migration_status = "refreshed_from_migrated_claim"
+evidence_basis = "current_first_party_source"
+claim_triage = "changed"
+triage_rationale = "Lifecycle support is added with current release evidence."
+install_activation = "Lifecycle behavior attaches to plugin install/repair, skill snapshots, runtime config snapshots, channels, and doctor repair."
+configuration_surface = "Plugin state, skill snapshots, runtime config, channel config, and doctor repair state shape lifecycle behavior."
+reload_update_behavior = "Lifecycle behavior is component-specific and not a universal live-reload guarantee."
+limitations = "Several detailed docs remain tag-pinned to v2026.5.2 while v2026.5.7 release notes add current security, memory, scheduling, and lifecycle evidence. Compatible-bundle support must not be treated as native support for every imported component."
+uncertainty = "Instruction/context load paths need more evidence. Provider and hook taxonomies remain OpenClaw-specific until normalized by later schema work."
+
+[[claim.detail]]
+component = "lifecycle, reload, and update behavior"
+load_attachment_point = "Lifecycle behavior attaches to plugin install/repair, skill snapshots, runtime config snapshots, channels, and doctor repair."
+activation = "Lifecycle behavior attaches to plugin install/repair, skill snapshots, runtime config snapshots, channels, and doctor repair."
+mutability = "Plugin state, skill snapshots, runtime config, channel config, and doctor repair state shape lifecycle behavior."
+scope = [
+    "plugin",
+    "skill",
+    "runtime-config",
+    "channel",
+    "doctor",
+]
+evidence_ids = [
+    "ev-openclaw-current-release-version-date-and-f518a69d0b",
+]
+evidence_class = "source_backed"
