@@ -602,6 +602,68 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             self.assertNotEqual(blocked_apply.returncode, 0)
             self.assertIn("profile_mutation", json.loads(blocked_apply.stdout)["error"])
 
+    def test_manual_refresh_effect_refs_treat_null_as_unapproved(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            scout_input = self.write_refresh_scout_input(root, effect="external_network_access")
+            payload = json.loads(scout_input.read_text(encoding="utf-8"))
+            payload["effects"][0]["classification_ref"] = None
+            payload["effects"][0]["approval_ref"] = None
+            scout_input.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+            blocked = self.run_manager(root, "scout", "--input", str(scout_input), "--json")
+
+            self.assertNotEqual(blocked.returncode, 0)
+            self.assertIn("approval required for effects", json.loads(blocked.stdout)["error"])
+
+    def test_manual_refresh_analyze_compares_version_tokens_without_prefix_substrings(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            scout_input = self.write_refresh_scout_input(root)
+            payload = json.loads(scout_input.read_text(encoding="utf-8"))
+            profile_path = root / "docs/harness-capabilities/vanilla/codex.toml"
+            profile_path.write_text(
+                profile_path.read_text(encoding="utf-8").replace(
+                    'checked_version = "0.128.0 stable"',
+                    'checked_version = "0.130.0 (rust-v0.130.0)"',
+                    1,
+                ),
+                encoding="utf-8",
+            )
+            scout_report = root / "scratch/scout-report.json"
+            analysis_report = root / "scratch/analysis-report.json"
+
+            payload["sources"][0]["observed_version"] = "rust-v0.130.0"
+            scout_input.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            scout = self.run_manager(root, "scout", "--input", str(scout_input), "--write-output", str(scout_report), "--json")
+            self.assertEqual(scout.returncode, 0, scout.stderr)
+            analyze = self.run_manager(root, "analyze", "--scout-report", str(scout_report), "--write-output", str(analysis_report), "--json")
+            self.assertEqual(analyze.returncode, 0, analyze.stderr)
+            self.assertEqual(json.loads(analysis_report.read_text(encoding="utf-8"))["version_delta"]["disposition"], "unchanged")
+
+            payload["sources"][0]["observed_version"] = "0.13.0"
+            scout_input.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            scout = self.run_manager(root, "scout", "--input", str(scout_input), "--write-output", str(scout_report), "--json")
+            self.assertEqual(scout.returncode, 0, scout.stderr)
+            analyze = self.run_manager(root, "analyze", "--scout-report", str(scout_report), "--write-output", str(analysis_report), "--json")
+            self.assertEqual(analyze.returncode, 0, analyze.stderr)
+            self.assertEqual(json.loads(analysis_report.read_text(encoding="utf-8"))["version_delta"]["disposition"], "changed")
+
+    def test_manual_refresh_absolute_paths_preserve_symlink_detection(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            scout_input = self.write_refresh_scout_input(root)
+            link = root / "scratch-link"
+            link.symlink_to(root / "scratch", target_is_directory=True)
+
+            blocked = self.run_manager(root, "scout", "--input", str(link / scout_input.name), "--json")
+
+            self.assertNotEqual(blocked.returncode, 0)
+            self.assertIn("path contains symlink", json.loads(blocked.stdout)["error"])
+
     def test_manual_refresh_write_outputs_cannot_overwrite_canonical_profiles(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -623,6 +685,28 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             self.assertNotEqual(blocked.returncode, 0)
             self.assertIn("refresh output may not overwrite canonical profile or schema paths", json.loads(blocked.stdout)["error"])
             self.assertEqual(target.read_text(encoding="utf-8"), before)
+
+    def test_manual_refresh_write_output_guard_does_not_create_blocked_parent_directories(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            scout_input = self.write_refresh_scout_input(root)
+            blocked_parent = root / "docs/harness-capabilities/vanilla/newsubdir"
+            target = blocked_parent / "report.json"
+
+            blocked = self.run_manager(
+                root,
+                "scout",
+                "--input",
+                str(scout_input),
+                "--write-output",
+                str(target),
+                "--json",
+            )
+
+            self.assertNotEqual(blocked.returncode, 0)
+            self.assertIn("refresh output may not overwrite canonical profile or schema paths", json.loads(blocked.stdout)["error"])
+            self.assertFalse(blocked_parent.exists())
 
     def test_manual_refresh_write_outputs_must_be_json_artifacts(self):
         with tempfile.TemporaryDirectory() as tmpdir:

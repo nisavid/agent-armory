@@ -323,17 +323,14 @@ def user_path(root: Path, raw_path: str, *, expected_kind: str | None = None, fo
             root_resolved = root.resolve(strict=True)
         except OSError as error:
             raise ManagerError("repository root missing") from error
-        base = candidate.parent if for_write else candidate
         try:
-            base.resolve(strict=not for_write).relative_to(root_resolved)
-        except (OSError, ValueError) as error:
+            relative = candidate.relative_to(root_resolved)
+        except ValueError as error:
             raise ManagerError(f"{raw_path}: path escapes repository root") from error
-        relative = candidate.resolve(strict=False).relative_to(root_resolved)
     else:
         relative = candidate
     if for_write:
         path = checked_write_file(root, relative)
-        path.parent.mkdir(parents=True, exist_ok=True)
         return path, relative
     ok, detail, path = path_status(root, relative, expected_kind=expected_kind)
     if not ok:
@@ -363,6 +360,7 @@ def write_json_file(root: Path, raw_path: str | None, payload: dict[str, Any]) -
     if relative.suffix != ".json":
         raise ManagerError("refresh output path must end in .json")
     content = json.dumps(payload, indent=2, sort_keys=True) + "\n"
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
     return {"path": relative.as_posix(), "sha256": hashlib.sha256(content.encode("utf-8")).hexdigest()}
 
@@ -2053,11 +2051,21 @@ def refresh_effect_records(payload: dict[str, Any], default_effect: str = "passi
         effect = effect_record.get("effect")
         if effect not in CAPABILITY_PROTOCOL_EFFECTS:
             raise ManagerError(f"effects[{index}]: invalid effect")
+        classification_ref = effect_record.get("classification_ref", "")
+        approval_ref = effect_record.get("approval_ref", "")
+        if classification_ref is None:
+            classification_ref = ""
+        if approval_ref is None:
+            approval_ref = ""
+        if not isinstance(classification_ref, str):
+            raise ManagerError(f"effects[{index}].classification_ref must be a string")
+        if not isinstance(approval_ref, str):
+            raise ManagerError(f"effects[{index}].approval_ref must be a string")
         records.append(
             {
                 "effect": str(effect),
-                "classification_ref": str(effect_record.get("classification_ref", "")),
-                "approval_ref": str(effect_record.get("approval_ref", "")),
+                "classification_ref": classification_ref,
+                "approval_ref": approval_ref,
             }
         )
     return records
@@ -2198,6 +2206,21 @@ def claim_refs_from(records: list[dict[str, Any]]) -> set[str]:
     return refs
 
 
+VERSION_TOKEN_PATTERN = re.compile(r"(?<!\d)(?:[A-Za-z]+-v|v)?(?P<version>\d+(?:\.\d+)+(?:[-+][0-9A-Za-z.-]+)?)")
+
+
+def version_tokens(value: str) -> set[str]:
+    return {match.group("version") for match in VERSION_TOKEN_PATTERN.finditer(value)}
+
+
+def observed_version_changed(observed_version: str, checked_version: str) -> bool:
+    observed_tokens = version_tokens(observed_version)
+    checked_tokens = version_tokens(checked_version)
+    if observed_tokens and checked_tokens:
+        return observed_tokens.isdisjoint(checked_tokens)
+    return observed_version.strip() != checked_version.strip()
+
+
 def refresh_analyze(root: Path, *, scout_report_path: str, output_path: str | None) -> dict[str, Any]:
     scout, _path, scout_relative = load_json_file(root, scout_report_path, expected_schema=REFRESH_SCOUT_REPORT_SCHEMA)
     harness_id = scout.get("harness_id")
@@ -2210,7 +2233,7 @@ def refresh_analyze(root: Path, *, scout_report_path: str, output_path: str | No
         for source in scout.get("sources", [])
         if isinstance(source, dict) and non_empty_string(source.get("observed_version"))
     ]
-    changed_versions = [version for version in observed_versions if version and version not in checked_version]
+    changed_versions = [version for version in observed_versions if observed_version_changed(version, checked_version)]
     version_delta = {
         "current_profile_version": checked_version,
         "observed_versions": observed_versions,
