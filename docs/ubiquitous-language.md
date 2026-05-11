@@ -175,6 +175,24 @@ capability claim needs based on prior evidence, version deltas, claim
 criticality, similar capabilities, applicability scope changes, and current
 intended use.
 
+**Study Target Declaration** is the machine-readable declaration of the
+Capability Surface target, scope, state or Capability State Graph, claims under
+study, required evidence, available controls, operator preferences, permitted
+effects, and selected rigor for a Capability Profiling Protocol study.
+
+**Study Plan** is a pre-execution Capability Profiling Protocol artifact that
+records the study target, Capability State Graph, Capability Analysis Angles,
+rigor controls, permitted effects, approvals, observation points, and
+sufficiency criteria.
+
+**Study Report** is a post-execution Capability Profiling Protocol artifact
+that records observed results, claim confidence, test sufficiency,
+limitations, failed controls, artifact disposition, and profile impact.
+
+**Jig Adequacy Report** is a Capability Profiling Protocol report for a
+clean-room profiling jig that classifies controls as claimed, verified,
+unsupported, or unknown and records how those controls affect selected rigor.
+
 **Standard Clean-Room Profiling Jig** is the ideal preferred baseline study
 environment and Capability Surface for official Vanilla Harness Capability Profiles, designed to
 maximize control over harness state, equipment, configuration, isolation,
@@ -287,6 +305,9 @@ induced candidate for future work.
   through deterministic manager-core tooling, agent-guided workflows, and
   optional evidence adapters; Harness Capability Refresh is future recurring
   Agent Equipment that can invoke it.
+- The Capability Profiling Protocol produces Study Plans before execution and
+  Study Reports after execution; Jig Adequacy Reports use the same protocol
+  vocabulary because clean-room jigs are Capability Surfaces.
 - An Agent Profile configures a reusable kind of Agent but is not the running Agent.
 - A Source Handoff can inform Forge Canon, but it is not itself the live Forge surface.
 - Forge Examples teach the decision method; they are not automatically Agent Equipment.
@@ -333,6 +354,10 @@ induced candidate for future work.
 - Use **Harness Fact Refresh** for source-backed profile updates and **Harness
   Capability Refresh** for the downstream recurring equipment that invokes the
   profile manager over time.
+- Use **Study Plan** for intended protocol shape before execution and **Study
+  Report** for observed outcomes after execution.
+- Use **Jig Adequacy Report** when the target under study is the control
+  adequacy of a clean-room profiling jig.
 - Use **Issue Tracker Ops** for broad issue lifecycle equipment; use
   **Issue Projection** only for post-review PRD publication into the issue
   tracker.

@@ -19,6 +19,7 @@ Smiths consume profile facts when crafting Agent Equipment.
 - [Closeout evidence plan](closeout-evidence-plan.md)
 - [Forge Domain Model Review](forge-domain-model-review.md)
 - [Schema pressure report](schema-pressure-report.md)
+- [Capability Profiling Protocol](../capability-profiling-protocol/)
 - Research notes:
   - [Codex](research-notes/codex.md)
   - [Claude Code](research-notes/claude_code.md)
@@ -399,6 +400,12 @@ planning and reporting studies of Capability Surfaces. The slice supports
 Vanilla and Effective study targets with shared nomenclature, while the
 official profile work continues to require only Vanilla Harness Capability
 Profiles.
+
+The durable protocol specification lives under
+`specs/capability-profiling-protocol/`. Representative validated examples live
+under `examples/capability-profiling-protocol/`. Manager Core validation checks
+the machine-readable study-plan, study-report, and jig-adequacy shapes without
+executing studies or certifying inference-heavy conclusions.
 
 The story is accepted when:
 

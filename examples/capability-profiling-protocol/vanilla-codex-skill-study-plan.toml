@@ -1,0 +1,100 @@
+schema_version = "capability-profiling-protocol.v1alpha1"
+artifact_kind = "study_plan"
+id = "study-plan-vanilla-codex-skills"
+title = "Vanilla Codex skill loading study plan"
+status = "example"
+protocol_version = "v1alpha1"
+
+[target]
+type = "vanilla_harness_surface"
+surface = "Vanilla Harness Capability Surface"
+scope = "Codex after default installation and onboarding."
+state_ref = "state-default-onboarded"
+claims_under_study = ["claim-codex-skills"]
+required_evidence = ["first_party_source", "local_observation"]
+operator_preferences = ["avoid mutating the investigator harness"]
+selected_rigor = "passive_source_review"
+
+[rigor]
+advised_rigor = "standard_clean_room"
+selected_rigor = "passive_source_review"
+isolation = "source-only with fixture-local notes"
+reproducibility = "source URLs and checked-at timestamp"
+harness_state_control = "no live harness mutation"
+equipment_state_control = "no additional equipment"
+config_control = "default configuration assumption"
+version_pinning = "release tag or changelog timestamp"
+provider_randomness_control = "not applicable"
+subject_operator_separation = "same agent may inspect public sources only"
+network_access = "public source reads only"
+mutation_allowance = "none"
+observation_quality = "source-backed plus planned fixture observation"
+
+[effects]
+allowed = ["passive_scanning"]
+blocked = ["local_mutation", "profile_mutation", "external_disclosure", "process_execution", "harness_runtime_state_change"]
+
+[controls]
+available = ["source URL capture", "checked-at timestamp", "scratch artifact disposition"]
+missing = ["isolated live Codex fixture"]
+operator_preferences = ["prefer passive evidence until a jig is available"]
+
+[approval]
+security_classification_ref = ""
+operator_approval_ref = ""
+approval_status = "not_required_for_passive_study"
+
+[[state]]
+id = "state-before-install"
+kind = "harness"
+description = "No Codex harness state has been inspected."
+expected_controls = ["source URL capture"]
+
+[[state]]
+id = "state-default-onboarded"
+kind = "harness"
+description = "Codex default installation and onboarding state under study."
+expected_controls = ["checked-at timestamp"]
+
+[[transition]]
+id = "transition-default-onboarding"
+from = "state-before-install"
+to = "state-default-onboarded"
+description = "Default installation and onboarding path."
+
+[[claim]]
+id = "claim-codex-skills"
+statement = "Codex supports skills in the vanilla harness surface."
+required_evidence = ["first_party_source", "local_observation"]
+profile_claim_ref = "docs/harness-capabilities/vanilla/codex.toml#claim-codex-skills"
+
+[[observation_point]]
+id = "observe-default-skill-source"
+state_id = "state-default-onboarded"
+claim_refs = ["claim-codex-skills"]
+expected_evidence = ["first_party_source"]
+evidence_class = "source_backed"
+
+[[analysis_angle]]
+id = "source-doc-angle"
+claim_refs = ["claim-codex-skills"]
+observation_point_refs = ["observe-default-skill-source"]
+cost = "low"
+control = "medium"
+observation_strength = "medium"
+contamination_risk = "low"
+expected_confidence = "medium"
+selected = true
+rationale = "Public source evidence can verify the descriptive claim without local mutation."
+
+[[analysis_angle]]
+id = "fixture-live-angle"
+claim_refs = ["claim-codex-skills"]
+observation_point_refs = ["observe-default-skill-source"]
+cost = "medium"
+control = "high"
+observation_strength = "high"
+contamination_risk = "medium"
+expected_confidence = "high"
+selected = false
+rationale = "A future clean-room fixture would strengthen local observation."

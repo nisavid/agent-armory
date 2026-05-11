@@ -3760,6 +3760,15 @@ class HarnessCatalogTests(unittest.TestCase):
             repo_root / "specs/vanilla-harness-capability-profiles",
             root / "specs/vanilla-harness-capability-profiles",
         )
+        shutil.copytree(
+            repo_root / "specs/capability-profiling-protocol",
+            root / "specs/capability-profiling-protocol",
+        )
+        (root / "examples").mkdir(parents=True, exist_ok=True)
+        shutil.copytree(
+            repo_root / "examples/capability-profiling-protocol",
+            root / "examples/capability-profiling-protocol",
+        )
 
     def test_validate_harness_catalog_delegates_to_manager_core_profiles(self):
         with tempfile.TemporaryDirectory() as tmpdir:

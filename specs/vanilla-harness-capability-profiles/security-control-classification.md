@@ -64,6 +64,17 @@ output.
   effects, Capability State Graph, observation points, study plan, and study
   report.
 
+### Protocol artifact validation
+
+- Behavior: local repository reads of protocol specs and machine-readable study
+  examples.
+- Risk: treating a structurally valid study as proven, allowing effectful
+  studies without an approval path, or promoting scratch observations as
+  durable profile evidence.
+- Controls: Manager Core structural validation, required effect approval
+  references, explicit artifact disposition, and a boundary that keeps claim
+  interpretation in agent-guided review rather than deterministic validation.
+
 ## Mutation gates
 
 The Manager Core defaults to non-mutating commands. Canonical profile writes
@@ -71,6 +82,11 @@ require explicit apply behavior. Network scouting and local probing do not
 write canonical profile files. Privileged operations, externally visible
 mutations, or user-harness modifications require operator approval and a study
 plan that names the permitted effects.
+
+Study plans that allow active non-mutating use, local mutation, profile
+mutation, external network access, external disclosure, process execution, or
+harness runtime-state changes require both a security/control classification
+reference and an operator approval reference.
 
 ## Evidence durability
 

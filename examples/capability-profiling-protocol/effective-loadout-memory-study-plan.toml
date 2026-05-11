@@ -1,0 +1,112 @@
+schema_version = "capability-profiling-protocol.v1alpha1"
+artifact_kind = "study_plan"
+id = "study-plan-effective-memory-loadout"
+title = "Effective harness memory loadout study plan"
+status = "example"
+protocol_version = "v1alpha1"
+
+[target]
+type = "effective_harness_surface"
+surface = "Effective Harness Capability Surface"
+scope = "A hypothetical harness state after memory-oriented equipment is equipped."
+state_ref = "state-equipped-memory"
+claims_under_study = ["claim-effective-memory-retrieval"]
+required_evidence = ["fixture_observation", "curated_study_report"]
+operator_preferences = ["use fixture-local home and no external disclosure"]
+selected_rigor = "controlled_fixture"
+
+[rigor]
+advised_rigor = "per_harness_clean_room"
+selected_rigor = "controlled_fixture"
+isolation = "fixture home directory"
+reproducibility = "fixture script and pinned equipment revision"
+harness_state_control = "fresh fixture harness state"
+equipment_state_control = "pinned equipment revision"
+config_control = "fixture-local config root"
+version_pinning = "harness and equipment revisions recorded"
+provider_randomness_control = "provider seed unavailable"
+subject_operator_separation = "operator approves plan before subject agent run"
+network_access = "disabled"
+mutation_allowance = "fixture-local only"
+observation_quality = "fixture logs summarized into durable report"
+
+[effects]
+allowed = ["active_non_mutating_use", "process_execution"]
+blocked = ["profile_mutation", "external_network_access", "external_disclosure", "harness_runtime_state_change"]
+
+[controls]
+available = ["fixture home directory", "pinned equipment revision", "scratch artifact disposition"]
+missing = ["provider seed control"]
+operator_preferences = ["do not mutate canonical profiles during study"]
+
+[approval]
+security_classification_ref = "specs/vanilla-harness-capability-profiles/security-control-classification.md#local-probing"
+operator_approval_ref = "issue-46-example-approval"
+approval_status = "example_control_path_present"
+
+[[state]]
+id = "state-clean-fixture"
+kind = "harness"
+description = "Fresh fixture harness before equipment is equipped."
+expected_controls = ["fixture home directory"]
+
+[[state]]
+id = "state-equipped-memory"
+kind = "equipment"
+description = "Fixture harness with memory-oriented equipment equipped."
+expected_controls = ["pinned equipment revision"]
+
+[[state]]
+id = "state-after-agent-run"
+kind = "harness"
+description = "Fixture after subject agent invocation."
+expected_controls = ["scratch artifact disposition"]
+
+[[transition]]
+id = "transition-equip-memory"
+from = "state-clean-fixture"
+to = "state-equipped-memory"
+description = "Equip memory-oriented loadout."
+
+[[transition]]
+id = "transition-run-subject"
+from = "state-equipped-memory"
+to = "state-after-agent-run"
+description = "Run subject agent against fixture task."
+
+[[claim]]
+id = "claim-effective-memory-retrieval"
+statement = "The equipped harness retrieves memory context during a subject run."
+required_evidence = ["fixture_observation", "curated_study_report"]
+profile_claim_ref = "future-effective-profile#claim-effective-memory-retrieval"
+
+[[observation_point]]
+id = "observe-agent-run-context"
+state_id = "state-after-agent-run"
+claim_refs = ["claim-effective-memory-retrieval"]
+expected_evidence = ["fixture_log_summary", "study_report"]
+evidence_class = "local_observation"
+
+[[analysis_angle]]
+id = "fixture-run-angle"
+claim_refs = ["claim-effective-memory-retrieval"]
+observation_point_refs = ["observe-agent-run-context"]
+cost = "medium"
+control = "medium"
+observation_strength = "high"
+contamination_risk = "medium"
+expected_confidence = "medium"
+selected = true
+rationale = "Fixture execution can observe retrieval without canonical profile mutation."
+
+[[analysis_angle]]
+id = "source-only-angle"
+claim_refs = ["claim-effective-memory-retrieval"]
+observation_point_refs = ["observe-agent-run-context"]
+cost = "low"
+control = "low"
+observation_strength = "low"
+contamination_risk = "low"
+expected_confidence = "low"
+selected = false
+rationale = "Source-only review cannot observe the composed effective surface."

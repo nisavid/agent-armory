@@ -134,6 +134,26 @@ without requiring active probes in this slice.
 5. Validate that mutating or externally disclosing studies require explicit
    security/control classification and approval references.
 
+The implemented Manager Core validation checks:
+
+- required protocol spec and schema-reference files under
+  `specs/capability-profiling-protocol/`;
+- representative examples under `examples/capability-profiling-protocol/`;
+- study target declarations for target type, scope, target state, claims under
+  study, required evidence, operator preferences, and selected rigor;
+- provisional rigor axes and allowed or blocked study effects;
+- security/control and operator-approval references for effectful studies;
+- Capability State Graph state and transition references, including acyclic
+  graph shape;
+- claim, observation-point, and Capability Analysis Angle references;
+- study report evidence, observed-result, claim-assessment, artifact
+  disposition, failed-control, sufficiency, and profile-impact structure;
+- jig adequacy control rows for claimed, verified, unsupported, and unknown
+  controls.
+
+The deterministic checks prove structure and safety gates. They do not execute
+studies or certify inference-heavy conclusions.
+
 ## Manual refresh and study execution validation
 
 Later stories validate:

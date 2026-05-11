@@ -1,0 +1,60 @@
+schema_version = "capability-profiling-protocol.v1alpha1"
+artifact_kind = "jig_adequacy_report"
+id = "jig-adequacy-standard-clean-room"
+title = "Standard Clean-Room Profiling Jig adequacy report"
+status = "example"
+protocol_version = "v1alpha1"
+
+[target]
+type = "clean_room_jig_surface"
+surface = "Standard Clean-Room Profiling Jig"
+scope = "Ideal preferred baseline for official Vanilla Harness Capability Profiles."
+state_ref = "state-jig-baseline"
+claims_under_study = ["claim-jig-control-coverage"]
+required_evidence = ["control_inventory"]
+operator_preferences = ["record unsupported and unknown controls explicitly"]
+selected_rigor = "jig_adequacy_review"
+
+[[state]]
+id = "state-jig-baseline"
+kind = "jig"
+description = "Baseline clean-room profiling jig surface."
+expected_controls = ["control inventory"]
+
+[[claim]]
+id = "claim-jig-control-coverage"
+statement = "The jig records which controls are claimed, verified, unsupported, or unknown."
+required_evidence = ["control_inventory"]
+profile_claim_ref = "specs/capability-profiling-protocol/schema-v1alpha1.md#jig-adequacy-report"
+
+[[control]]
+id = "control-fixture-home"
+name = "Fixture home directory"
+category = "isolation"
+disposition = "verified"
+evidence_refs = ["control inventory"]
+selected_rigor_impact = "Supports fixture-local selected rigor."
+
+[[control]]
+id = "control-provider-seed"
+name = "Provider seed control"
+category = "provider_randomness_control"
+disposition = "unsupported"
+evidence_refs = ["control inventory"]
+selected_rigor_impact = "Requires selected-rigor deviation for provider nondeterminism."
+
+[[control]]
+id = "control-plugin-isolation"
+name = "Plugin isolation"
+category = "equipment_state_control"
+disposition = "claimed"
+evidence_refs = ["control inventory"]
+selected_rigor_impact = "Must be verified per harness before high-confidence claims."
+
+[[control]]
+id = "control-cloud-runner-reset"
+name = "Cloud runner reset behavior"
+category = "harness_state_control"
+disposition = "unknown"
+evidence_refs = ["control inventory"]
+selected_rigor_impact = "Limits sufficiency for cloud-runner claims."
