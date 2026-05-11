@@ -42,9 +42,9 @@ Smiths consume profile facts when crafting Agent Equipment.
 - [#48 Implement manual Harness Capability Profile refresh](https://github.com/nisavid/agent-armory/issues/48)
 - [#49 Close out Harness Capability Profiles issue projection](https://github.com/nisavid/agent-armory/issues/49)
 
-The projected issues are native sub-issues of #4 in story order. Issues #42,
-#43, #44, #45, #46, #47, and #48 have delivered the pre-Config manual profile
-surface. Issue #49 owns final projection and closeout reconciliation. After
+The projected issues are native sub-issues of #4 in story order. Issues #42
+through #48 have delivered the pre-Config manual profile surface. Issue #49
+owns final projection and closeout reconciliation. After
 that closeout lands, Agent Equipment Config can resume against the current
 Vanilla Harness Capability Profiles. Periodic refresh remains deferred until
 [#23 Agent Equipment Config](https://github.com/nisavid/agent-armory/issues/23)
