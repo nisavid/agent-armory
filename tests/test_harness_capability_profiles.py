@@ -554,6 +554,19 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             self.assertEqual(validate.returncode, 0, validate.stderr)
             validation_result = root / "scratch/manager-validation.json"
             validation_result.write_text(validate.stdout, encoding="utf-8")
+            integrity_validation_result = root / "scratch/integrity-validation.json"
+            integrity_validation_result.write_text(
+                json.dumps(
+                    {
+                        "schema": "armory_integrity.validation_result.v1",
+                        "results": [{"name": "fixture", "ok": True, "detail": "passed", "path": "."}],
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
             audit = self.run_manager(
                 root,
                 "audit",
@@ -567,6 +580,8 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
                 str(apply_result),
                 "--validation-result",
                 str(validation_result),
+                "--validation-result",
+                str(integrity_validation_result),
                 "--json",
             )
             self.assertEqual(audit.returncode, 0, audit.stderr)
@@ -589,6 +604,8 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             )
             self.assertTrue(audit_payload["claim_triage_summary"])
             self.assertEqual(audit_payload["validation_results"][0]["result"], "passed")
+            self.assertEqual(audit_payload["validation_results"][1]["schema"], "armory_integrity.validation_result.v1")
+            self.assertEqual(audit_payload["validation_results"][1]["result"], "passed")
             self.assertEqual(audit_payload["scratch_evidence_disposition"], scout_payload["scratch_disposition"])
             self.assertTrue(audit_payload["selected_rigor_deviations"])
 

@@ -80,6 +80,7 @@ FAMILY_KEYWORDS = {
 MIGRATION_RESULT_SCHEMA = "harness_capability_profiles.migrate_result.v1"
 SUMMARY_RESULT_SCHEMA = "harness_capability_profiles.summary_result.v1"
 VALIDATION_RESULT_SCHEMA = "harness_capability_profiles.validation_result.v1"
+ARMORY_INTEGRITY_VALIDATION_SCHEMA = "armory_integrity.validation_result.v1"
 REFRESH_SCOUT_INPUT_SCHEMA = "harness_capability_profiles.refresh_scout_input.v1"
 REFRESH_SCOUT_REPORT_SCHEMA = "harness_capability_profiles.refresh_scout_report.v1"
 REFRESH_ANALYSIS_REPORT_SCHEMA = "harness_capability_profiles.refresh_analysis_report.v1"
@@ -87,7 +88,7 @@ REFRESH_UPDATE_PLAN_SCHEMA = "harness_capability_profiles.refresh_update_plan.v1
 REFRESH_DIFF_SCHEMA = "harness_capability_profiles.refresh_diff.v1"
 REFRESH_APPLY_SCHEMA = "harness_capability_profiles.refresh_apply.v1"
 REFRESH_AUDIT_SCHEMA = "harness_capability_profiles.refresh_audit.v1"
-SUPPORTED_REFRESH_VALIDATION_SCHEMAS = {VALIDATION_RESULT_SCHEMA, "armory_integrity.validation_result.v1"}
+SUPPORTED_REFRESH_VALIDATION_SCHEMAS = {VALIDATION_RESULT_SCHEMA, ARMORY_INTEGRITY_VALIDATION_SCHEMA}
 VALIDATION_NAME = "Vanilla Harness Capability Profile Manager Core"
 SUMMARY_SOURCE_LIMIT = 6
 CLAIM_STATUSES = {"supported", "unsupported", "unknown", "not-applicable"}
@@ -2384,13 +2385,15 @@ def report_harness_id(payload: dict[str, Any], artifact_name: str) -> str:
 
 
 def validation_result_passed(payload: dict[str, Any]) -> bool:
-    if payload.get("schema") not in SUPPORTED_REFRESH_VALIDATION_SCHEMAS:
-        return False
-    if payload.get("result") != "passed":
-        return False
+    schema = payload.get("schema")
     results = payload.get("results")
-    if isinstance(results, list):
-        return bool(results) and all(isinstance(result, dict) and result.get("ok") is True for result in results)
+    results_ok = isinstance(results, list) and bool(results) and all(
+        isinstance(result, dict) and result.get("ok") is True for result in results
+    )
+    if schema == VALIDATION_RESULT_SCHEMA:
+        return payload.get("result") == "passed" and results_ok
+    if schema == ARMORY_INTEGRITY_VALIDATION_SCHEMA:
+        return payload.get("result") in {None, "passed"} and results_ok
     return False
 
 

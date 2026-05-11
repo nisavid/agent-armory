@@ -471,8 +471,8 @@ Manual refresh uses staged commands with dry-run defaults:
    validation commands, effect requirements, evidence promotions, and follow-up
    issue candidates. The command validates replacement profiles but does not
    infer profile rewrites.
-4. `diff` compares the Manual Refresh Update Plan against the current profile,
-   schema, and durable evidence files before apply.
+4. `diff` compares the Manual Refresh Update Plan against current canonical
+   profile or schema mutation targets before apply.
 5. `apply` requires an explicit plan reference, verifies current profile state
    still matches plan preconditions, refuses stale plans, requires an approved
    `profile_mutation` effect, and writes only planned canonical profile or schema
@@ -511,8 +511,8 @@ The manual refresh manager story is accepted when:
   migrations if any, evidence promotions, claim triage rationale, security or
   control requirements, expected validation commands, and follow-up issue
   candidates;
-- `diff` compares the update plan to current profile, schema, and durable
-  evidence files so reviewers can inspect intended mutations before apply;
+- `diff` compares the update plan to current canonical profile or schema
+  mutation targets so reviewers can inspect intended mutations before apply;
 - `apply` requires an explicit plan reference, verifies the current profile
   state still matches the plan preconditions, refuses stale plans, and writes
   only the planned canonical profile or schema changes;
