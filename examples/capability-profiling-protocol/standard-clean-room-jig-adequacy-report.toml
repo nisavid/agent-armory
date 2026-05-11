@@ -19,7 +19,7 @@ selected_rigor = "jig_adequacy_review"
 id = "state-jig-baseline"
 kind = "jig"
 description = "Baseline clean-room profiling jig surface."
-expected_controls = ["control inventory"]
+expected_controls = ["control_inventory"]
 
 [[claim]]
 id = "claim-jig-control-coverage"
@@ -32,7 +32,7 @@ id = "control-fixture-home"
 name = "Fixture home directory"
 category = "isolation"
 disposition = "verified"
-evidence_refs = ["control inventory"]
+evidence_refs = ["control_inventory"]
 selected_rigor_impact = "Supports fixture-local selected rigor."
 
 [[control]]
@@ -40,7 +40,7 @@ id = "control-provider-seed"
 name = "Provider seed control"
 category = "provider_randomness_control"
 disposition = "unsupported"
-evidence_refs = ["control inventory"]
+evidence_refs = ["control_inventory"]
 selected_rigor_impact = "Requires selected-rigor deviation for provider nondeterminism."
 
 [[control]]
@@ -48,7 +48,7 @@ id = "control-plugin-isolation"
 name = "Plugin isolation"
 category = "equipment_state_control"
 disposition = "claimed"
-evidence_refs = ["control inventory"]
+evidence_refs = ["control_inventory"]
 selected_rigor_impact = "Must be verified per harness before high-confidence claims."
 
 [[control]]
@@ -56,5 +56,5 @@ id = "control-cloud-runner-reset"
 name = "Cloud runner reset behavior"
 category = "harness_state_control"
 disposition = "unknown"
-evidence_refs = ["control inventory"]
+evidence_refs = ["control_inventory"]
 selected_rigor_impact = "Limits sufficiency for cloud-runner claims."

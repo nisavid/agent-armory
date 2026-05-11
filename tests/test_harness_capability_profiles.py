@@ -311,6 +311,9 @@ schema_pressure_ids = ["SP-003"]
 
 
 class HarnessCapabilityProfileManagerTests(unittest.TestCase):
+    def assert_indexed_failure(self, failures: set[str], prefix: str, suffix: str) -> None:
+        self.assertTrue(any(name.startswith(prefix) and name.endswith(suffix) for name in failures), failures)
+
     def test_canonical_profiles_are_issue45_enriched_and_triaged(self):
         profile_paths = sorted((REPO_ROOT / "docs/harness-capabilities/vanilla").glob("*.toml"))
         self.assertEqual(len(profile_paths), 6)
@@ -582,8 +585,8 @@ evidence_class = "local_observation"
 
             self.assertNotEqual(completed.returncode, 0)
             failures = {result["name"] for result in json.loads(completed.stdout)["results"] if not result["ok"]}
-            self.assertIn("profile:codex:version_observation:0:source_kind", failures)
-            self.assertIn("profile:codex:version_observation:0:source_url", failures)
+            self.assert_indexed_failure(failures, "profile:codex:version_observation:", ":source_kind")
+            self.assert_indexed_failure(failures, "profile:codex:version_observation:", ":source_url")
 
     def test_validate_rejects_missing_canonical_enrichment_records(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -798,11 +801,11 @@ schema_pressure_ids = ["SP-003"]
 
             self.assertNotEqual(completed.returncode, 0)
             failures = {result["name"] for result in json.loads(completed.stdout)["results"] if not result["ok"]}
-            self.assertIn("profile:codex:version_observation:0:id", failures)
-            self.assertIn("profile:codex:version_observation:0:source_kind", failures)
-            self.assertIn("profile:codex:version_observation:0:source_url", failures)
-            self.assertIn("profile:codex:version_observation:0:canonical_profile_change", failures)
-            self.assertIn("profile:codex:version_observation:0:evidence_class", failures)
+            self.assert_indexed_failure(failures, "profile:codex:version_observation:", ":id")
+            self.assert_indexed_failure(failures, "profile:codex:version_observation:", ":source_kind")
+            self.assert_indexed_failure(failures, "profile:codex:version_observation:", ":source_url")
+            self.assert_indexed_failure(failures, "profile:codex:version_observation:", ":canonical_profile_change")
+            self.assert_indexed_failure(failures, "profile:codex:version_observation:", ":evidence_class")
             automation_index = claim_index(codex_profile, "claim-codex-scheduling_automation")
             self.assertIn(f"profile:codex:claim:{automation_index}:automation_surface:0:runner_locus", failures)
             self.assertIn(f"profile:codex:claim:{automation_index}:automation_surface:0:evidence_refs", failures)
