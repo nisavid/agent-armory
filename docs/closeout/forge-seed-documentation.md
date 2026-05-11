@@ -4,7 +4,9 @@ Status: Completed Closeout
 
 This closeout records the documentation sweep for the Forge Seed after
 security closeout and before Issue Projection. It distinguishes live Forge
-surfaces from archived provenance and leaves post-Seed follow-ups deferred.
+surfaces from archived provenance. It originally left post-Seed follow-ups
+deferred; the post-projection update below records their later issue projection
+and local-capture retirement.
 
 ## Scope of inspected docs
 
@@ -57,7 +59,9 @@ Also inspected the raw Source Handoff before source retirement. The final tree p
 - `docs/security/forge-seed-closeout.md`: added the Forge Seed security closeout with scan scope, artifact durability classification, artifact and report disposition, findings disposition, hardening notes, re-validation status, and deferred-risk tracking.
 - `docs/story-closeout.md`: added the canonical Story Closeout process with gate order, interdependency rules, review gates, Intent Model Refresh, Intent Alignment Check, recursion boundaries, and completion criteria.
 - `docs/closeout/forge-seed-projection-drafts.md`: added reviewable issue, PR, release, and handoff projection drafts for Story Closeout before external publication, using committed security closeout paths for portable external evidence.
-- `docs/follow-ups/portable-agentic-engineering-workflow-equipment.md`: captured the future Portable Agentic Engineering Workflow Equipment story in a neutral follow-up path.
+- `docs/follow-ups/portable-agentic-engineering-workflow-equipment.md`:
+  captured the future Portable Agentic Engineering Workflow Equipment story in
+  a neutral follow-up path before issue projection.
 - `docs/closeout/forge-seed-workflow-lessons.md`: captured workflow lessons from Seed closeout about subagent review availability, closeout-gate ordering, recursive refresh, evidence freshness, process validation, and plan-state hygiene.
 - `docs/closeout/forge-seed-engineering-workflow-generalization.md`: captured
   generalizable workflow patterns, antipatterns, and portable equipment design
@@ -88,6 +92,13 @@ Also inspected the raw Source Handoff before source retirement. The final tree p
 - Remaining `templates/**/*.md` and template payloads: placeholder strings are intentional template fields, not stale project placeholders.
 - `examples/**/*.md`: examples already state Forge Example status, promotion state `example`, trace links, and non-installable boundaries.
 - Source Handoff docs: retired from the final tree after disposition was captured in `docs/closeout/forge-seed-source-disposition.md`.
+
+## Post-projection update
+
+The projected follow-up captures now live in GitHub Issues. The retired local
+capture disposition is recorded in
+`docs/closeout/forge-seed-follow-up-projection.md`, and the Source Disposition
+Ledger points to that durable closeout evidence.
 
 ## Stale-language cleanup result
 
@@ -156,6 +167,9 @@ live reader guidance.
 
 ## Residual documentation risk
 
-- Issue Projection is still pending; external issue state may lag this repo draft until the projection step lands.
+- Follow-up issue projection is complete for the Seed-era follow-up captures.
+  The Published PRD Issue draft remains in
+  `docs/closeout/forge-seed-projection-drafts.md` unless a later story
+  publishes or retires it.
 - Source-disposition and workflow-lesson records intentionally retain normalized references to source-era wording; future agents must continue treating those references as provenance, not live instruction.
 - Further security or documentation edits during PR review may require a narrow refresh of this closeout summary and its review evidence.

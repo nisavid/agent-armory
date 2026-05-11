@@ -50,10 +50,15 @@ Capture:
 - confidence, urgency, and readiness;
 - privacy or disclosure limits before external projection.
 
-## Follow-Up Captures
+## Follow-Up Capture Fallback
 
-`docs/follow-ups/*.md` files are governed local captures for deferred work that
-has not yet been projected into GitHub Issues.
+GitHub Issues are the preferred active tracker for follow-up work. Use a local
+follow-up capture only when a durable repo note is needed before issue
+projection is available or appropriate.
+
+Place fallback captures under `docs/follow-ups/<short-slug>.md`. Recreate that
+directory only for unprojected fallback captures; do not use it as a parallel
+tracker after GitHub Issues carry the active work.
 
 Each follow-up capture should include:
 
@@ -63,6 +68,7 @@ Each follow-up capture should include:
 - a `## GitHub Issue Projection` section that explains why the GitHub issue is
   not created or updated yet.
 
-Keep these captures narrow. They are not a general Inventory; they are the local
-governing surface until Issue Projection validates the corresponding GitHub
-issue.
+Keep these captures narrow. They are not a general inventory, and they must not
+remain as parallel trackers after projection. Once GitHub Issues carry the
+active work, retire or consolidate the local capture and leave only durable
+closeout or source-disposition evidence.

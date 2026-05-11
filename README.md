@@ -144,6 +144,7 @@ The current roadmap includes these equipment lines:
   engineering, operations, and tooling equipment exists.
 
 The active story structure lives in the
-[issue tracker](https://github.com/nisavid/agent-armory/issues). The notes under
-[docs/follow-ups/](docs/follow-ups/) collect additional future equipment ideas
-without presenting them as current inventory.
+[issue tracker](https://github.com/nisavid/agent-armory/issues). The projected
+Forge Seed follow-up captures are retired in
+[Forge Seed Follow-Up Projection](docs/closeout/forge-seed-follow-up-projection.md)
+instead of remaining as parallel local trackers.

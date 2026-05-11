@@ -119,13 +119,13 @@ The current roadmap points to equipment lines that still have future slices:
   future generic cognition enhancement equipment that turns underspecified
   intent and recent agent experience into durable insight, routed follow-up, and
   harness improvements.
-- [Portable workflow equipment](follow-ups/portable-agentic-engineering-workflow-equipment.md):
+- [Portable workflow equipment](https://github.com/nisavid/agent-armory/issues/8):
   future support for portable agent equipment.
-- [Side-thread hand-back](follow-ups/side-thread-hand-back-workflow.md): future
-  support for side conversations around active work.
-- [Ephemeral workflow opportunity capture](follow-ups/ephemeral-workflow-opportunity-capture.md):
+- [Side-thread hand-back](https://github.com/nisavid/agent-armory/issues/7):
+  future support for side conversations around active work.
+- [Ephemeral workflow opportunity capture](https://github.com/nisavid/agent-armory/issues/9):
   future support for capturing useful workflow ideas during active sessions.
 
-The GitHub issue tracker carries active story structure. Local follow-up
-captures remain seed-era source material until Issue Ops projections retain,
-consolidate, or retire them.
+The GitHub issue tracker carries active story structure. The projected Forge
+Seed follow-up captures are retired in
+[Forge Seed Follow-Up Projection](closeout/forge-seed-follow-up-projection.md).
