@@ -11,7 +11,7 @@ surface = "Vanilla Harness Capability Surface"
 scope = "Codex after default installation and onboarding."
 state_ref = "state-default-onboarded"
 claims_under_study = ["claim-codex-skills"]
-required_evidence = ["first_party_source", "local_observation"]
+required_evidence = ["first_party_source"]
 operator_preferences = ["avoid mutating the investigator harness"]
 selected_rigor = "passive_source_review"
 
@@ -66,7 +66,7 @@ description = "Default installation and onboarding path."
 [[claim]]
 id = "claim-codex-skills"
 statement = "Codex supports skills in the vanilla harness surface."
-required_evidence = ["first_party_source", "local_observation"]
+required_evidence = ["first_party_source"]
 profile_claim_ref = "docs/harness-capabilities/vanilla/codex.toml#claim-codex-skills"
 
 [[observation_point]]

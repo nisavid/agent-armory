@@ -49,7 +49,10 @@ Capability State Graph transitions must reference declared states and remain
 acyclic. Observation points must reference declared states and claims. Analysis
 Angles must reference declared claims and observation points. A study plan
 selects one Capability Analysis Angle. It may record multiple angles when the
-claim has meaningful alternative study designs.
+claim has meaningful alternative study designs. `target.selected_rigor` must
+match `[rigor].selected_rigor`. `effects.allowed` and `effects.blocked` are
+both required lists, and each effect token must come from the protocol effect
+taxonomy.
 
 ## Study Report
 
@@ -68,11 +71,15 @@ A `study_report` records:
 Study reports distinguish observed results, claim confidence, test
 sufficiency, limitations, failed controls, artifact disposition, and profile
 impact. Evidence references must point to evidence rows in the same report.
+`plan_ref` must resolve to a `study_plan` artifact, `plan_id` must match the
+referenced plan, and report claim or observation references must point to that
+plan's declared claims and observation points.
 
 ## Jig Adequacy Report
 
 A `jig_adequacy_report` records a clean-room jig Capability Surface as a study
-target plus:
+target. Its target type must be `clean_room_jig_surface`. The artifact also
+records:
 
 - `[[state]]` rows for the jig state under review;
 - `[[claim]]` rows for jig adequacy claims;

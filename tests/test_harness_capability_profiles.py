@@ -506,6 +506,98 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             self.assertIn("capability_profiling_protocol:example:vanilla_plan:effects:blocked", failures)
             self.assertIn("capability_profiling_protocol:example:vanilla_plan:effects:overlap", failures)
 
+    def test_validate_json_rejects_missing_protocol_blocked_effects(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            plan = root / "examples/capability-profiling-protocol/vanilla-codex-skill-study-plan.toml"
+            text = plan.read_text(encoding="utf-8")
+            text = text.replace(
+                'blocked = ["local_mutation", "profile_mutation", "external_disclosure", "process_execution", "harness_runtime_state_change"]\n',
+                "",
+                1,
+            )
+            plan.write_text(text, encoding="utf-8")
+
+            completed = self.run_manager(root, "validate", "--json")
+
+            self.assertNotEqual(completed.returncode, 0)
+            failures = {result["name"] for result in json.loads(completed.stdout)["results"] if not result["ok"]}
+            self.assertIn("capability_profiling_protocol:example:vanilla_plan:effects:blocked", failures)
+
+    def test_validate_json_rejects_protocol_selected_rigor_mismatch(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            plan = root / "examples/capability-profiling-protocol/vanilla-codex-skill-study-plan.toml"
+            text = plan.read_text(encoding="utf-8")
+            text = text.replace('selected_rigor = "passive_source_review"', 'selected_rigor = "controlled_fixture"', 1)
+            plan.write_text(text, encoding="utf-8")
+
+            completed = self.run_manager(root, "validate", "--json")
+
+            self.assertNotEqual(completed.returncode, 0)
+            failures = {result["name"] for result in json.loads(completed.stdout)["results"] if not result["ok"]}
+            self.assertIn("capability_profiling_protocol:example:vanilla_plan:selected_rigor", failures)
+
+    def test_validate_json_rejects_protocol_study_report_orphaned_plan_refs(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            report = root / "examples/capability-profiling-protocol/vanilla-codex-skill-study-report.toml"
+            text = report.read_text(encoding="utf-8")
+            text = text.replace('plan_id = "study-plan-vanilla-codex-skills"', 'plan_id = "study-plan-missing"', 1)
+            text = text.replace('claim_ref = "claim-codex-skills"', 'claim_ref = "claim-codex-missing"', 1)
+            text = text.replace('observation_point_ref = "observe-default-skill-source"', 'observation_point_ref = "observe-missing"', 1)
+            text = text.replace('claim_ref = "claim-codex-skills"', 'claim_ref = "claim-assessment-missing"', 1)
+            report.write_text(text, encoding="utf-8")
+
+            completed = self.run_manager(root, "validate", "--json")
+
+            self.assertNotEqual(completed.returncode, 0)
+            failures = {result["name"] for result in json.loads(completed.stdout)["results"] if not result["ok"]}
+            self.assertIn("capability_profiling_protocol:example:study_report:plan_id", failures)
+            self.assertIn("capability_profiling_protocol:example:study_report:observed_result:result-codex-skills-source:claim_ref", failures)
+            self.assertIn(
+                "capability_profiling_protocol:example:study_report:observed_result:result-codex-skills-source:observation_point_ref",
+                failures,
+            )
+            self.assertIn("capability_profiling_protocol:example:study_report:claim_assessment:claim-assessment-missing:claim_ref", failures)
+
+    def test_validate_json_rejects_protocol_study_report_missing_plan_ref(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            report = root / "examples/capability-profiling-protocol/vanilla-codex-skill-study-report.toml"
+            text = report.read_text(encoding="utf-8")
+            text = text.replace(
+                'plan_ref = "examples/capability-profiling-protocol/vanilla-codex-skill-study-plan.toml"',
+                'plan_ref = "examples/capability-profiling-protocol/missing-study-plan.toml"',
+                1,
+            )
+            report.write_text(text, encoding="utf-8")
+
+            completed = self.run_manager(root, "validate", "--json")
+
+            self.assertNotEqual(completed.returncode, 0)
+            failures = {result["name"] for result in json.loads(completed.stdout)["results"] if not result["ok"]}
+            self.assertIn("capability_profiling_protocol:example:study_report:plan_ref", failures)
+
+    def test_validate_json_rejects_non_jig_target_in_jig_adequacy_report(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            report = root / "examples/capability-profiling-protocol/standard-clean-room-jig-adequacy-report.toml"
+            text = report.read_text(encoding="utf-8")
+            text = text.replace('type = "clean_room_jig_surface"', 'type = "vanilla_harness_surface"', 1)
+            report.write_text(text, encoding="utf-8")
+
+            completed = self.run_manager(root, "validate", "--json")
+
+            self.assertNotEqual(completed.returncode, 0)
+            failures = {result["name"] for result in json.loads(completed.stdout)["results"] if not result["ok"]}
+            self.assertIn("capability_profiling_protocol:example:jig_adequacy:target:type", failures)
+
     def test_validate_json_rejects_jig_adequacy_without_control_dispositions(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

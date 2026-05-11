@@ -188,6 +188,7 @@ CAPABILITY_PROTOCOL_TARGET_TYPES = {
     "clean_room_jig_surface",
     "hypothetical_surface",
 }
+CAPABILITY_PROTOCOL_JIG_TARGET_TYPES = {"clean_room_jig_surface"}
 CAPABILITY_PROTOCOL_RIGOR_FIELDS = [
     "advised_rigor",
     "selected_rigor",
@@ -1341,8 +1342,11 @@ def validate_protocol_rigor_effects_controls(artifact: dict[str, Any], prefix: s
             invalid_effects = [effect for effect in allowed_effects if effect not in CAPABILITY_PROTOCOL_EFFECTS]
             if invalid_effects:
                 results.append(CheckResult(f"{prefix}:effects:allowed", False, f"invalid effects: {', '.join(invalid_effects)}", path))
-        blocked = effects.get("blocked", [])
-        if not isinstance(blocked, list) or not all(isinstance(effect, str) for effect in blocked):
+        blocked = effects.get("blocked")
+        if blocked is None:
+            results.append(CheckResult(f"{prefix}:effects:blocked", False, "blocked effects must be present as a list of strings", path))
+            blocked_effects: list[str] = []
+        elif not isinstance(blocked, list) or not all(isinstance(effect, str) for effect in blocked):
             results.append(CheckResult(f"{prefix}:effects:blocked", False, "blocked effects must be a list of strings", path))
             blocked_effects: list[str] = []
         else:
@@ -1534,12 +1538,72 @@ def validate_protocol_study_plan(artifact: dict[str, Any], prefix: str, path: st
     results.extend(claim_results)
     results.extend(validate_protocol_target(artifact, prefix, path, state_ids, claim_ids))
     results.extend(validate_protocol_rigor_effects_controls(artifact, prefix, path))
+    target = artifact.get("target")
+    rigor = artifact.get("rigor")
+    if isinstance(target, dict) and isinstance(rigor, dict):
+        target_selected_rigor = target.get("selected_rigor")
+        rigor_selected_rigor = rigor.get("selected_rigor")
+        if (
+            non_empty_string(target_selected_rigor)
+            and non_empty_string(rigor_selected_rigor)
+            and target_selected_rigor != rigor_selected_rigor
+        ):
+            results.append(
+                CheckResult(
+                    f"{prefix}:selected_rigor",
+                    False,
+                    "target.selected_rigor must match rigor.selected_rigor",
+                    path,
+                )
+            )
     results.extend(validate_protocol_observations_and_angles(artifact, prefix, path, state_ids, claim_ids))
     return results
 
 
-def validate_protocol_study_report(artifact: dict[str, Any], prefix: str, path: str) -> list[CheckResult]:
+def protocol_record_ids(artifact: dict[str, Any], key: str) -> set[str]:
+    records = artifact.get(key)
+    if not isinstance(records, list):
+        return set()
+    return {
+        str(record["id"])
+        for record in records
+        if isinstance(record, dict) and non_empty_string(record.get("id"))
+    }
+
+
+def load_protocol_plan_ref(
+    root: Path,
+    plan_ref: Any,
+    prefix: str,
+    path: str,
+) -> tuple[dict[str, Any] | None, list[CheckResult]]:
+    if not non_empty_string(plan_ref):
+        return None, []
+    relative_path = Path(str(plan_ref))
+    ok, detail, plan_path = path_status(root, relative_path, expected_kind="file")
+    if not ok:
+        return None, [CheckResult(f"{prefix}:plan_ref", False, f"plan_ref {detail}", path)]
+    try:
+        plan = load_toml(plan_path)
+    except tomllib.TOMLDecodeError as error:
+        return None, [CheckResult(f"{prefix}:plan_ref", False, f"referenced plan TOML invalid: {error.msg}", path)]
+    if plan.get("artifact_kind") != "study_plan":
+        return plan, [CheckResult(f"{prefix}:plan_ref", False, "plan_ref must reference a study_plan artifact", path)]
+    return plan, []
+
+
+def validate_protocol_study_report(root: Path, artifact: dict[str, Any], prefix: str, path: str) -> list[CheckResult]:
     results = validate_string_fields(artifact, ["plan_id", "plan_ref"], prefix, path)
+    referenced_plan, plan_results = load_protocol_plan_ref(root, artifact.get("plan_ref"), prefix, path)
+    results.extend(plan_results)
+    plan_claim_ids: set[str] = set()
+    plan_observation_ids: set[str] = set()
+    if referenced_plan is not None:
+        plan_id = referenced_plan.get("id")
+        if non_empty_string(artifact.get("plan_id")) and non_empty_string(plan_id) and artifact["plan_id"] != plan_id:
+            results.append(CheckResult(f"{prefix}:plan_id", False, "plan_id must match referenced plan id", path))
+        plan_claim_ids = protocol_record_ids(referenced_plan, "claim")
+        plan_observation_ids = protocol_record_ids(referenced_plan, "observation_point")
     execution = artifact.get("execution")
     if not isinstance(execution, dict):
         results.append(CheckResult(f"{prefix}:execution", False, "execution must be a table", path))
@@ -1565,6 +1629,12 @@ def validate_protocol_study_report(artifact: dict[str, Any], prefix: str, path: 
         observed_id = str(observed.get("id", "unknown"))
         observed_prefix = f"{prefix}:observed_result:{observed_id}"
         results.extend(validate_string_fields(observed, ["id", "claim_ref", "observation_point_ref", "outcome", "summary"], observed_prefix, path))
+        claim_ref = observed.get("claim_ref")
+        if referenced_plan is not None and non_empty_string(claim_ref) and claim_ref not in plan_claim_ids:
+            results.append(CheckResult(f"{observed_prefix}:claim_ref", False, "claim_ref must reference the report plan", path))
+        observation_point_ref = observed.get("observation_point_ref")
+        if referenced_plan is not None and non_empty_string(observation_point_ref) and observation_point_ref not in plan_observation_ids:
+            results.append(CheckResult(f"{observed_prefix}:observation_point_ref", False, "observation_point_ref must reference the report plan", path))
         refs = observed.get("evidence_refs")
         if not non_empty_string_list(refs):
             results.append(CheckResult(f"{observed_prefix}:evidence_refs", False, "evidence_refs must be a non-empty list of strings", path))
@@ -1584,6 +1654,9 @@ def validate_protocol_study_report(artifact: dict[str, Any], prefix: str, path: 
                 path,
             )
         )
+        claim_ref = assessment.get("claim_ref")
+        if referenced_plan is not None and non_empty_string(claim_ref) and claim_ref not in plan_claim_ids:
+            results.append(CheckResult(f"{assessment_prefix}:claim_ref", False, "claim_ref must reference the report plan", path))
         for field in ["limitations", "failed_controls"]:
             if not isinstance(assessment.get(field), list) or not all(isinstance(item, str) for item in assessment.get(field, [])):
                 results.append(CheckResult(f"{assessment_prefix}:{field}", False, f"{field} must be a list of strings", path))
@@ -1602,6 +1675,9 @@ def validate_protocol_jig_adequacy_report(artifact: dict[str, Any], prefix: str,
     claim_ids, claim_results = validate_protocol_claims(artifact, prefix, path)
     results.extend(claim_results)
     results.extend(validate_protocol_target(artifact, prefix, path, state_ids, claim_ids))
+    target = artifact.get("target")
+    if isinstance(target, dict) and target.get("type") not in CAPABILITY_PROTOCOL_JIG_TARGET_TYPES:
+        results.append(CheckResult(f"{prefix}:target:type", False, "jig_adequacy_report target.type must be clean_room_jig_surface", path))
     controls, control_results = validate_protocol_record_list(artifact, "control", prefix, path)
     results.extend(control_results)
     dispositions: set[str] = set()
@@ -1648,7 +1724,7 @@ def validate_protocol_artifact(root: Path, label: str, relative_path: Path, expe
     if expected_kind == "study_plan":
         results.extend(validate_protocol_study_plan(artifact, prefix, relative_path.as_posix()))
     elif expected_kind == "study_report":
-        results.extend(validate_protocol_study_report(artifact, prefix, relative_path.as_posix()))
+        results.extend(validate_protocol_study_report(root, artifact, prefix, relative_path.as_posix()))
     elif expected_kind == "jig_adequacy_report":
         results.extend(validate_protocol_jig_adequacy_report(artifact, prefix, relative_path.as_posix()))
     if not any(not result.ok for result in results):
