@@ -31,7 +31,8 @@ A `study_plan` records:
 
 - `[target]` with type, surface, scope, state reference, claims under study,
   required evidence, operator preferences, and selected rigor;
-- `[rigor]` with advised and selected rigor plus the provisional rigor axes;
+- `[rigor]` with advised rigor, selected rigor, selected-rigor rationale, and
+  the provisional rigor axes;
 - `[effects]` with allowed and blocked effects;
 - `[controls]` with available controls, missing controls, and operator
   preferences;

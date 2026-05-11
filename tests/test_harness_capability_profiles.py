@@ -107,6 +107,7 @@ def write_protocol_artifacts_fixture(root: Path) -> None:
     shutil.copytree(REPO_ROOT / "specs/capability-profiling-protocol", protocol_dir)
     shutil.copytree(REPO_ROOT / "examples/capability-profiling-protocol", examples_dir)
 
+
 def write_research_outputs_fixture(root: Path) -> None:
     research_dir = root / "specs/vanilla-harness-capability-profiles/research-notes"
     research_dir.mkdir(parents=True, exist_ok=True)
@@ -466,6 +467,41 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             self.assertNotEqual(completed.returncode, 0)
             failures = {result["name"] for result in json.loads(completed.stdout)["results"] if not result["ok"]}
             self.assertIn("capability_profiling_protocol:example:vanilla_plan:state_graph:cycle", failures)
+
+    def test_validate_json_rejects_multiple_selected_protocol_analysis_angles(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            plan = root / "examples/capability-profiling-protocol/vanilla-codex-skill-study-plan.toml"
+            text = plan.read_text(encoding="utf-8")
+            text = text.replace("selected = false", "selected = true", 1)
+            plan.write_text(text, encoding="utf-8")
+
+            completed = self.run_manager(root, "validate", "--json")
+
+            self.assertNotEqual(completed.returncode, 0)
+            failures = {result["name"] for result in json.loads(completed.stdout)["results"] if not result["ok"]}
+            self.assertIn("capability_profiling_protocol:example:vanilla_plan:analysis_angle:selected", failures)
+
+    def test_validate_json_rejects_invalid_and_overlapping_protocol_effects(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_canonical_validation_root(root)
+            plan = root / "examples/capability-profiling-protocol/vanilla-codex-skill-study-plan.toml"
+            text = plan.read_text(encoding="utf-8")
+            text = text.replace(
+                'blocked = ["local_mutation", "profile_mutation", "external_disclosure", "process_execution", "harness_runtime_state_change"]',
+                'blocked = ["passive_scanning", "unknown_effect"]',
+                1,
+            )
+            plan.write_text(text, encoding="utf-8")
+
+            completed = self.run_manager(root, "validate", "--json")
+
+            self.assertNotEqual(completed.returncode, 0)
+            failures = {result["name"] for result in json.loads(completed.stdout)["results"] if not result["ok"]}
+            self.assertIn("capability_profiling_protocol:example:vanilla_plan:effects:blocked", failures)
+            self.assertIn("capability_profiling_protocol:example:vanilla_plan:effects:overlap", failures)
 
     def test_validate_json_rejects_jig_adequacy_without_control_dispositions(self):
         with tempfile.TemporaryDirectory() as tmpdir:

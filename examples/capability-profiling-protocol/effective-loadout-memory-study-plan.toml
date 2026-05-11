@@ -18,6 +18,7 @@ selected_rigor = "controlled_fixture"
 [rigor]
 advised_rigor = "per_harness_clean_room"
 selected_rigor = "controlled_fixture"
+selected_rigor_rationale = "Controlled fixture rigor balances local observation needs with unavailable provider seed control."
 isolation = "fixture home directory"
 reproducibility = "fixture script and pinned equipment revision"
 harness_state_control = "fresh fixture harness state"

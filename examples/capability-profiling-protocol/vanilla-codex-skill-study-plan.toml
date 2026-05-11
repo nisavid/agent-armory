@@ -18,6 +18,7 @@ selected_rigor = "passive_source_review"
 [rigor]
 advised_rigor = "standard_clean_room"
 selected_rigor = "passive_source_review"
+selected_rigor_rationale = "Passive source review is sufficient for the example claim until a clean-room fixture is available."
 isolation = "source-only with fixture-local notes"
 reproducibility = "source URLs and checked-at timestamp"
 harness_state_control = "no live harness mutation"

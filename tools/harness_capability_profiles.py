@@ -191,6 +191,7 @@ CAPABILITY_PROTOCOL_TARGET_TYPES = {
 CAPABILITY_PROTOCOL_RIGOR_FIELDS = [
     "advised_rigor",
     "selected_rigor",
+    "selected_rigor_rationale",
     "isolation",
     "reproducibility",
     "harness_state_control",
@@ -1257,10 +1258,6 @@ def validate_protocol_document(root: Path, relative_path: Path, name: str, requi
     return [CheckResult(f"capability_profiling_protocol:{name}", True, "present", relative_path.as_posix())]
 
 
-def validate_protocol_string_fields(record: dict[str, Any], fields: list[str], prefix: str, path: str) -> list[CheckResult]:
-    return [CheckResult(f"{prefix}:{field}", False, f"missing {field}", path) for field in fields if not non_empty_string(record.get(field))]
-
-
 def validate_protocol_record_list(
     artifact: dict[str, Any],
     key: str,
@@ -1298,7 +1295,7 @@ def validate_protocol_target(
     target = artifact.get("target")
     if not isinstance(target, dict):
         return [CheckResult(f"{prefix}:target", False, "target must be a table", path)]
-    results = validate_protocol_string_fields(
+    results = validate_string_fields(
         target,
         ["type", "surface", "scope", "state_ref", "selected_rigor"],
         f"{prefix}:target",
@@ -1329,7 +1326,7 @@ def validate_protocol_rigor_effects_controls(artifact: dict[str, Any], prefix: s
     if not isinstance(rigor, dict):
         results.append(CheckResult(f"{prefix}:rigor", False, "rigor must be a table", path))
     else:
-        results.extend(validate_protocol_string_fields(rigor, CAPABILITY_PROTOCOL_RIGOR_FIELDS, f"{prefix}:rigor", path))
+        results.extend(validate_string_fields(rigor, CAPABILITY_PROTOCOL_RIGOR_FIELDS, f"{prefix}:rigor", path))
     effects = artifact.get("effects")
     if not isinstance(effects, dict):
         results.append(CheckResult(f"{prefix}:effects", False, "effects must be a table", path))
@@ -1347,6 +1344,15 @@ def validate_protocol_rigor_effects_controls(artifact: dict[str, Any], prefix: s
         blocked = effects.get("blocked", [])
         if not isinstance(blocked, list) or not all(isinstance(effect, str) for effect in blocked):
             results.append(CheckResult(f"{prefix}:effects:blocked", False, "blocked effects must be a list of strings", path))
+            blocked_effects: list[str] = []
+        else:
+            blocked_effects = list(blocked)
+            invalid_blocked_effects = [effect for effect in blocked_effects if effect not in CAPABILITY_PROTOCOL_EFFECTS]
+            if invalid_blocked_effects:
+                results.append(CheckResult(f"{prefix}:effects:blocked", False, f"invalid effects: {', '.join(invalid_blocked_effects)}", path))
+            overlapping_effects = sorted(set(allowed_effects) & set(blocked_effects))
+            if overlapping_effects:
+                results.append(CheckResult(f"{prefix}:effects:overlap", False, f"effects cannot be both allowed and blocked: {', '.join(overlapping_effects)}", path))
     controls = artifact.get("controls")
     if not isinstance(controls, dict):
         results.append(CheckResult(f"{prefix}:controls", False, "controls must be a table", path))
@@ -1379,7 +1385,7 @@ def validate_protocol_state_graph(artifact: dict[str, Any], prefix: str, path: s
     adjacency: dict[str, list[str]] = {}
     for index, state in enumerate(states):
         state_prefix = f"{prefix}:state:{index}"
-        results.extend(validate_protocol_string_fields(state, ["id", "kind", "description"], state_prefix, path))
+        results.extend(validate_string_fields(state, ["id", "kind", "description"], state_prefix, path))
         state_id = state.get("id")
         if non_empty_string(state_id):
             if state_id in state_ids:
@@ -1392,7 +1398,7 @@ def validate_protocol_state_graph(artifact: dict[str, Any], prefix: str, path: s
     for transition in transitions:
         transition_id = str(transition.get("id", "unknown"))
         transition_prefix = f"{prefix}:transition:{transition_id}"
-        results.extend(validate_protocol_string_fields(transition, ["id", "from", "to", "description"], transition_prefix, path))
+        results.extend(validate_string_fields(transition, ["id", "from", "to", "description"], transition_prefix, path))
         from_state = transition.get("from")
         to_state = transition.get("to")
         if non_empty_string(from_state):
@@ -1432,7 +1438,7 @@ def validate_protocol_claims(artifact: dict[str, Any], prefix: str, path: str) -
     claim_ids: set[str] = set()
     for index, claim in enumerate(claims):
         claim_prefix = f"{prefix}:claim:{index}"
-        results.extend(validate_protocol_string_fields(claim, ["id", "statement", "profile_claim_ref"], claim_prefix, path))
+        results.extend(validate_string_fields(claim, ["id", "statement", "profile_claim_ref"], claim_prefix, path))
         claim_id_value = claim.get("id")
         if non_empty_string(claim_id_value):
             if claim_id_value in claim_ids:
@@ -1457,7 +1463,7 @@ def validate_protocol_observations_and_angles(
     for observation in observations:
         observation_id = str(observation.get("id", "unknown"))
         observation_prefix = f"{prefix}:observation_point:{observation_id}"
-        results.extend(validate_protocol_string_fields(observation, ["id", "state_id", "evidence_class"], observation_prefix, path))
+        results.extend(validate_string_fields(observation, ["id", "state_id", "evidence_class"], observation_prefix, path))
         if non_empty_string(observation.get("id")):
             if observation["id"] in observation_ids:
                 results.append(CheckResult(f"{observation_prefix}:id", False, "duplicate observation point id", path))
@@ -1481,7 +1487,7 @@ def validate_protocol_observations_and_angles(
         angle_id = str(angle.get("id", "unknown"))
         angle_prefix = f"{prefix}:analysis_angle:{angle_id}"
         results.extend(
-            validate_protocol_string_fields(
+            validate_string_fields(
                 angle,
                 ["id", "cost", "control", "observation_strength", "contamination_risk", "expected_confidence", "rationale"],
                 angle_prefix,
@@ -1515,6 +1521,8 @@ def validate_protocol_observations_and_angles(
                 )
     if angles and selected_count == 0:
         results.append(CheckResult(f"{prefix}:analysis_angle:selected", False, "one analysis angle must be selected", path))
+    elif selected_count > 1:
+        results.append(CheckResult(f"{prefix}:analysis_angle:selected", False, "exactly one analysis angle must be selected", path))
     return results
 
 
@@ -1531,12 +1539,12 @@ def validate_protocol_study_plan(artifact: dict[str, Any], prefix: str, path: st
 
 
 def validate_protocol_study_report(artifact: dict[str, Any], prefix: str, path: str) -> list[CheckResult]:
-    results = validate_protocol_string_fields(artifact, ["plan_id", "plan_ref"], prefix, path)
+    results = validate_string_fields(artifact, ["plan_id", "plan_ref"], prefix, path)
     execution = artifact.get("execution")
     if not isinstance(execution, dict):
         results.append(CheckResult(f"{prefix}:execution", False, "execution must be a table", path))
     else:
-        results.extend(validate_protocol_string_fields(execution, ["executed_at"], f"{prefix}:execution", path))
+        results.extend(validate_string_fields(execution, ["executed_at"], f"{prefix}:execution", path))
         for field in ["deviations", "failed_controls", "limitations"]:
             if not isinstance(execution.get(field), list) or not all(isinstance(item, str) for item in execution.get(field, [])):
                 results.append(CheckResult(f"{prefix}:execution:{field}", False, f"{field} must be a list of strings", path))
@@ -1546,7 +1554,7 @@ def validate_protocol_study_report(artifact: dict[str, Any], prefix: str, path: 
     for evidence in evidence_records:
         evidence_id_value = str(evidence.get("id", "unknown"))
         evidence_prefix = f"{prefix}:evidence:{evidence_id_value}"
-        results.extend(validate_protocol_string_fields(evidence, ["id", "kind", "ref", "disposition", "summary"], evidence_prefix, path))
+        results.extend(validate_string_fields(evidence, ["id", "kind", "ref", "disposition", "summary"], evidence_prefix, path))
         if non_empty_string(evidence.get("id")):
             if evidence["id"] in evidence_ids:
                 results.append(CheckResult(f"{evidence_prefix}:id", False, "duplicate evidence id", path))
@@ -1556,7 +1564,7 @@ def validate_protocol_study_report(artifact: dict[str, Any], prefix: str, path: 
     for observed in observed_results:
         observed_id = str(observed.get("id", "unknown"))
         observed_prefix = f"{prefix}:observed_result:{observed_id}"
-        results.extend(validate_protocol_string_fields(observed, ["id", "claim_ref", "observation_point_ref", "outcome", "summary"], observed_prefix, path))
+        results.extend(validate_string_fields(observed, ["id", "claim_ref", "observation_point_ref", "outcome", "summary"], observed_prefix, path))
         refs = observed.get("evidence_refs")
         if not non_empty_string_list(refs):
             results.append(CheckResult(f"{observed_prefix}:evidence_refs", False, "evidence_refs must be a non-empty list of strings", path))
@@ -1569,7 +1577,7 @@ def validate_protocol_study_report(artifact: dict[str, Any], prefix: str, path: 
     for assessment in assessments:
         assessment_prefix = f"{prefix}:claim_assessment:{assessment.get('claim_ref', 'unknown')}"
         results.extend(
-            validate_protocol_string_fields(
+            validate_string_fields(
                 assessment,
                 ["claim_ref", "claim_confidence", "test_sufficiency", "profile_impact"],
                 assessment_prefix,
@@ -1583,7 +1591,7 @@ def validate_protocol_study_report(artifact: dict[str, Any], prefix: str, path: 
     results.extend(artifact_validation)
     for report_artifact in artifacts:
         artifact_prefix = f"{prefix}:artifact:{report_artifact.get('id', 'unknown')}"
-        results.extend(validate_protocol_string_fields(report_artifact, ["id", "disposition", "path_or_ref", "summary"], artifact_prefix, path))
+        results.extend(validate_string_fields(report_artifact, ["id", "disposition", "path_or_ref", "summary"], artifact_prefix, path))
     return results
 
 
@@ -1599,7 +1607,7 @@ def validate_protocol_jig_adequacy_report(artifact: dict[str, Any], prefix: str,
     dispositions: set[str] = set()
     for control in controls:
         control_prefix = f"{prefix}:control:{control.get('id', 'unknown')}"
-        results.extend(validate_protocol_string_fields(control, ["id", "name", "category", "disposition", "selected_rigor_impact"], control_prefix, path))
+        results.extend(validate_string_fields(control, ["id", "name", "category", "disposition", "selected_rigor_impact"], control_prefix, path))
         disposition = control.get("disposition")
         if non_empty_string(disposition):
             if disposition not in JIG_CONTROL_DISPOSITIONS:
@@ -1632,7 +1640,7 @@ def validate_protocol_artifact(root: Path, label: str, relative_path: Path, expe
     except tomllib.TOMLDecodeError as error:
         return [CheckResult(f"{prefix}:toml", False, f"TOML invalid: {error.msg}", relative_path.as_posix())]
     results: list[CheckResult] = []
-    results.extend(validate_protocol_string_fields(artifact, ["schema_version", "artifact_kind", "id", "title", "status", "protocol_version"], prefix, relative_path.as_posix()))
+    results.extend(validate_string_fields(artifact, ["schema_version", "artifact_kind", "id", "title", "status", "protocol_version"], prefix, relative_path.as_posix()))
     if artifact.get("schema_version") != CAPABILITY_PROTOCOL_SCHEMA_VERSION:
         results.append(CheckResult(f"{prefix}:schema_version", False, f"must be {CAPABILITY_PROTOCOL_SCHEMA_VERSION}", relative_path.as_posix()))
     if artifact.get("artifact_kind") != expected_kind:
