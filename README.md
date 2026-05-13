@@ -47,8 +47,13 @@ operational equipment for schedules and harness facts. The longer arc
 culminates in Head Gear: generic cognition equipment meant to turn vibes into
 bounded, evidence-backed outcomes instead of slop.
 
-Read the full [Armory Vision](docs/vision.md) for the user experience and
-engineering north star behind the Armory, the Forge, and Agent Equipment.
+The Armory's guiding doctrine is **Efficient Coherence**:
+
+> _**Honor the underlying intent. Match rigor to unresolved uncertainty.
+> Minimize spend within that quality boundary.**_
+
+Read the full [Armory Vision](docs/vision.md) for more on the Armory's
+foundation and its north star.
 
 ## Agent Equipment Forge
 
