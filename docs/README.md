@@ -34,8 +34,8 @@ and Agent Equipment Config has its first published runtime slice.
 
 ## Start here
 
-- [Armory Vision](vision.md): the intended agent and operator experience behind the
-  Armory, the Forge, and Agent Equipment.
+- [Armory Vision](vision.md): Efficient Coherence and the intended agent and
+  operator experience behind the Armory, the Forge, and Agent Equipment.
 - [Forge Tour](forge-tour.md): human-facing orientation to the Armory, the Forge,
   agent roles, and current construction state.
 - [Forge Canon](agent-equipment-forge.md): core method for the Forge and component
@@ -84,8 +84,9 @@ agent equipment.
 
 ## Explanation
 
-- [Armory Vision](vision.md): the experience, architecture, strategy, design,
-  validation, and maintenance north star for the Armory.
+- [Armory Vision](vision.md): Efficient Coherence and the experience,
+  architecture, strategy, design, validation, and maintenance north star for the
+  Armory.
 - [Forge Canon](agent-equipment-forge.md): the deeper explanation of how the
   Forge turns ideas into trustworthy equipment.
 - [Forgewright runbook](forgewright-runbook.md): give this to an agent when the

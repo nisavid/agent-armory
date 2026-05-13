@@ -6,6 +6,32 @@ Agent Armory is a home for equipment for agents.
 
 Do not narrow that purpose into a specific content model, methodology, directory structure, or toolchain before the repository itself does.
 
+## Guiding Doctrine
+
+Use **Efficient Coherence** as the guiding doctrine for agent work in this repo:
+honor the Underlying Intent, match the rigor to the unresolved uncertainty, and
+minimize spend within that quality boundary. See `docs/vision.md` for the full
+doctrine.
+
+- Intent before specification: treat prompts, issues, specs, plans, acceptance
+  criteria, docs, and prior decisions as evidence of intent, not replacements
+  for it. When literal compliance would miss the purpose, realign by
+  correction, decomposition, clarification, or escalation.
+- Rigor tracks uncertainty and consequence: scale thinking effort, context
+  gathering, decomposition, reflection, review, and validation according to what
+  remains unresolved and what failure would cost.
+- Find the true simple shape: use inherent clarity, acceptable assumptions,
+  separable layers, stable defaults, deterministic checks, reversible steps,
+  bounded representations, and existing policy when they preserve the real
+  problem. Do not flatten hard problems to make them appear simple.
+- Guard against slop: watch for incoherent priors, poorly structured context,
+  compaction loss, missing source evidence, vague prompt pressure, overbroad
+  instructions, and urgency framing for work that needs deliberation. Apply the
+  lightest control that materially reduces the risk.
+- Minimize spend inside the quality boundary: once intent, rigor, simplicity,
+  and slop controls are adequate, prefer lower token cost, time, operator
+  attention, external side effects, and maintenance burden.
+
 ## Documentation Boundary
 
 - Keep `README.md` human-facing and limited to the project's confirmed public shape.

@@ -8,6 +8,10 @@ This document is the canonical vocabulary surface for Smiths and Forgewrights. U
 
 **Agent Armory** is the home for Agent Equipment and the Agent Equipment Forge.
 
+**Efficient Coherence** is the Agent Armory's guiding doctrine: honor the
+Underlying Intent, match the rigor to the unresolved uncertainty, and minimize
+spend within that quality boundary.
+
 **Agent Equipment** is reusable tooling, behavior, workflow, knowledge, or configuration that equips an Agent or agentic system.
 
 **Agentic Engineering** is software engineering performed agentically: code is
@@ -354,6 +358,9 @@ induced candidate for future work.
 - Head Gear is the planned generic Cognition Enhancement Equipment line; it is
   intended to prepare the Agent to clarify, equip, execute, and reflect before
   domain-specific equipment takes over.
+- Efficient Coherence guides Armory strategy: preserve Underlying Intent and
+  quality first, choose rigor according to unresolved uncertainty, then
+  minimize spend within that quality boundary.
 - A Tooling Request moves a Tooling Gap into Tooling Work for a Forgewright.
 - The Source Disposition Ledger replaces raw source-handoff preservation after source retirement.
 
@@ -399,3 +406,6 @@ induced candidate for future work.
   safety classification.
 - Use **Reflection Finding** for durable reflection output, not for private
   reasoning or final equipment design.
+- Use **Efficient Coherence** for quality-bound efficiency: preserve Underlying
+  Intent, match rigor to unresolved uncertainty, and minimize spend only inside
+  that quality boundary.

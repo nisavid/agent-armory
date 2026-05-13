@@ -8,6 +8,13 @@ The Agent Armory defines a shared language for creating, cataloging, and maintai
 A home for Agent Equipment.
 _Avoid_: narrowing this term to one methodology, content model, directory structure, or toolchain
 
+**Efficient Coherence**:
+The Agent Armory's guiding doctrine: honor the Underlying Intent, match the
+rigor to the unresolved uncertainty, and minimize spend within that quality
+boundary.
+_Avoid_: treating economy as prior to intent alignment, or treating rigor as
+ceremony rather than a response to unresolved uncertainty
+
 **Agent Equipment**:
 Reusable tooling, behavior, workflow, knowledge, or configuration that equips an Agent or agentic system.
 _Avoid_: asset, artifact, extension when used as the general term
@@ -619,6 +626,9 @@ _Avoid_: chat-only conclusion, undocumented resume instruction
 - **Head Gear** is the planned generic **Cognition Enhancement Equipment** line;
   it is intended to prepare the Agent to clarify, equip, execute, and reflect
   before domain-specific equipment takes over.
+- **Efficient Coherence** guides Armory strategy: preserve **Underlying Intent**
+  and quality first, choose rigor according to unresolved uncertainty, then
+  minimize spend within that quality boundary.
 - A **Forgewright Runbook** guides Forge maintenance without replacing ADRs, PRDs, implementation plans, or Smith runbooks.
 - A **Target Structure** can guide a PRD, but the **Forge Seed** creates only **Seed Surfaces**.
 - Historical **Seed Validation** used a standard-library tool without

@@ -15,6 +15,51 @@ high-quality outcome.
 
 That is not a better-prompting claim. It is an equipment claim.
 
+## Efficient Coherence
+
+The Armory's guiding doctrine is **Efficient Coherence**:
+
+> Honor the Underlying Intent. Match the rigor to the unresolved uncertainty.
+> Minimize spend within that quality boundary.
+
+Every prompt, issue, spec, plan, acceptance criterion, document, and prior
+decision is evidence of intent, not a replacement for the intent itself. Agent
+work should preserve the direction a stakeholder would want the project to move
+if a mismatch were brought to their attention. When literal compliance would
+satisfy the declaration while missing the purpose, the agent should pause the
+current path and realign by correction, decomposition, clarification, or
+escalation.
+
+Rigor should track both unresolved uncertainty and consequence. Ambiguity,
+novelty, dependency state, security or privacy impact, broad blast radius,
+irreversible effects, and likely intent/spec mismatch all increase the need for
+thinking effort, context gathering, decomposition, reflection, review, and
+validation. A simple matter should not inherit ceremony from a complex one, but
+a complex unresolved matter should not be flattened into a simpler story for
+the sake of speed.
+
+The goal is to find the true simple shape of the work. Simplicity may be
+inherent, may come from an acceptable assumption, may appear only in one
+separable layer, or may become available through a stable default, deterministic
+check, reversible step, bounded representation, or existing policy. Agents
+should use those openings when they preserve the real problem. They should not
+hide hard dependencies, compress incompatible concerns, or force premature
+closure just to make the task look smaller.
+
+Slop is a predictable risk. Incoherent priors, bloated or poorly structured
+context, compaction loss, missing source evidence, vague prompt pressure,
+overbroad instructions, and urgency framing can all make an agent move too
+quickly through a problem that needs deliberation. The remedy is not always
+more process; it is the right control for the risk: a scoped record, a stop
+condition, context reduction, a source check, decomposition, review, or an
+operator question.
+
+Economy matters after the quality boundary is protected. When multiple
+approaches preserve Underlying Intent, apply adequate rigor, use genuine
+simplicity, and control slop risk, choose or revise toward the path with lower
+token cost, time, operator attention, external side effects, and maintenance
+burden.
+
 ## Equipment
 
 The Armory is not a catalog of disconnected skills. Skills matter, but they are
