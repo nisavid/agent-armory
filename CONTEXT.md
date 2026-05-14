@@ -379,6 +379,60 @@ Accepted shorthand for Issue Tracker Ops after the full name is clear in the
 current context.
 _Avoid_: using it as a separate equipment name
 
+**Issue Tracker Baseline**:
+The current GitHub Issues-only baseline for Issue Tracker Ops. Labels represent
+custom predicates, and out-of-band policy imposes structure on those
+predicates until richer tracker or GitHub Projects support is designed,
+implemented, validated, and dogfooded.
+_Avoid_: treating labels as the best long-term UX, or treating GitHub Projects
+custom fields as already adopted policy
+
+**Issue Category Role**:
+The coarse triage classification that distinguishes `bug` from `enhancement`.
+Every triaged issue should carry exactly one Issue Category Role.
+_Avoid_: work kind, readiness state, priority, implementation surface
+
+**Issue State Role**:
+The mutually exclusive triage state that records whether an issue still needs
+triage, needs specific outside information, is ready for an AFK agent, is ready
+for human handling, or should not be actioned.
+_Avoid_: dependency state, triage depth, priority, engagement mode, work kind
+
+**Issue Work Kind**:
+The orthogonal description of what kind of work an issue requires, such as
+research, design, documentation, implementation, epic, cleanup, or Reflection
+Finding.
+_Avoid_: Issue Category Role, triage state
+
+**Triage Depth**:
+The evidence boundary that supports the current issue-triage recommendation,
+from semantic hygiene through deep issue-session analysis.
+_Avoid_: readiness state, work kind, priority
+
+**Issue Engagement Mode**:
+The next expected handling shape for an issue, such as AFK implementation,
+agent-led grill, human decision, linked-context triage, or deep issue session.
+_Avoid_: triage state, category, priority
+
+**Issue Brief Status**:
+The issue-tracker indication of whether the issue has the agent or human brief
+needed for safe delegation.
+_Avoid_: readiness state by itself; brief status supports readiness but does
+not replace it
+
+**Issue Dependency Disposition**:
+The issue-tracker indication of how dependency state affects issue selection:
+unblocked, blocked, unknown, or needing tracker-record repair.
+_Avoid_: native dependency relation by itself; disposition records the current
+selection effect of dependency knowledge
+
+**Issue Triage Record**:
+A concise issue comment that records the evidence boundary, reasoning,
+unresolved factors, applied or recommended labels, and next action behind a
+triage outcome.
+_Avoid_: labels as rationale, rewriting issue bodies for transient reasoning,
+copying large private or instance-scoped evidence into public tracker comments
+
 **Agent Equipment Config**:
 Agent Equipment for shared, layerable, composable, adaptable, and enforceable
 configuration across Agent Equipment.

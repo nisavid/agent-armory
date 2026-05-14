@@ -25,6 +25,69 @@ class RequestSpec:
     paginate: bool = False
 
 
+@dataclass(frozen=True)
+class LabelAxis:
+    name: str
+    labels: tuple[str, ...]
+    cardinality: str
+    description: str
+
+
+LABEL_AXES = (
+    LabelAxis("category", ("bug", "enhancement"), "exactly_one", "coarse issue category role"),
+    LabelAxis(
+        "state",
+        ("needs-triage", "needs-info", "ready-for-agent", "ready-for-human", "wontfix"),
+        "exactly_one",
+        "mutually exclusive triage state role",
+    ),
+    LabelAxis(
+        "depth",
+        ("depth:L0", "depth:L1", "depth:L2", "depth:L3"),
+        "at_most_one",
+        "deepest triage evidence boundary reached",
+    ),
+    LabelAxis(
+        "work_kind",
+        (
+            "kind:research",
+            "kind:design",
+            "kind:documentation",
+            "kind:implementation",
+            "kind:epic",
+            "kind:cleanup",
+            "kind:reflection-finding",
+        ),
+        "prefer_one",
+        "primary kind of work required",
+    ),
+    LabelAxis(
+        "engagement_mode",
+        (
+            "mode:afk-implementation",
+            "mode:agent-led-grill",
+            "mode:human-decision",
+            "mode:linked-context-triage",
+            "mode:deep-session",
+        ),
+        "at_most_one",
+        "next expected handling shape",
+    ),
+    LabelAxis(
+        "brief_status",
+        ("brief:not-needed", "brief:needed", "brief:present", "brief:stale"),
+        "at_most_one",
+        "handoff readiness for delegation",
+    ),
+    LabelAxis(
+        "dependency_disposition",
+        ("dependency:unblocked", "dependency:blocked", "dependency:unknown", "dependency:needs-recording"),
+        "at_most_one",
+        "selection effect of known dependency state",
+    ),
+)
+
+
 class UsageError(Exception):
     pass
 
@@ -223,6 +286,118 @@ def list_dependencies_request(args: argparse.Namespace, relation: str) -> Reques
     )
 
 
+def audit_labels_request(args: argparse.Namespace) -> RequestSpec:
+    return RequestSpec("GET", issue_endpoint(args.repo, f"issues?state={args.issue_state}&per_page=100"), paginate=True)
+
+
+def label_axes_payload() -> dict[str, dict[str, object]]:
+    return {
+        axis.name: {
+            "labels": list(axis.labels),
+            "cardinality": axis.cardinality,
+            "description": axis.description,
+        }
+        for axis in LABEL_AXES
+    }
+
+
+def issue_label_names(issue: dict) -> list[str]:
+    label_names: list[str] = []
+    labels = issue.get("labels", [])
+    if not isinstance(labels, list):
+        return label_names
+    for label in labels:
+        if isinstance(label, dict):
+            name = label.get("name")
+            if isinstance(name, str):
+                label_names.append(name)
+        elif isinstance(label, str):
+            label_names.append(label)
+    return sorted(dict.fromkeys(label_names))
+
+
+def audit_label_findings(label_names: list[str]) -> list[dict[str, str]]:
+    label_set = set(label_names)
+    findings: list[dict[str, str]] = []
+    for axis in LABEL_AXES:
+        matches = [label for label in axis.labels if label in label_set]
+        if axis.cardinality == "exactly_one":
+            if not matches:
+                findings.append(
+                    {
+                        "severity": "error",
+                        "axis": axis.name,
+                        "code": "missing",
+                        "message": f"Expected exactly one {axis.name} label.",
+                    }
+                )
+            elif len(matches) > 1:
+                findings.append(
+                    {
+                        "severity": "error",
+                        "axis": axis.name,
+                        "code": "conflict",
+                        "message": f"Expected exactly one {axis.name} label; found {', '.join(matches)}.",
+                    }
+                )
+        elif axis.cardinality == "at_most_one" and len(matches) > 1:
+            findings.append(
+                {
+                    "severity": "error",
+                    "axis": axis.name,
+                    "code": "conflict",
+                    "message": f"Expected at most one {axis.name} label; found {', '.join(matches)}.",
+                }
+            )
+        elif axis.cardinality == "prefer_one" and len(matches) > 1:
+            findings.append(
+                {
+                    "severity": "warning",
+                    "axis": axis.name,
+                    "code": "multi_primary",
+                    "message": f"Prefer one primary {axis.name} label; found {', '.join(matches)}.",
+                }
+            )
+    return findings
+
+
+def audit_issue_labels(issues: JSONValue) -> dict[str, object]:
+    if not isinstance(issues, list):
+        issues = []
+    checked_issues = 0
+    errors = 0
+    warnings = 0
+    issue_findings: list[dict[str, object]] = []
+    for issue in issues:
+        if not isinstance(issue, dict) or "pull_request" in issue:
+            continue
+        checked_issues += 1
+        label_names = issue_label_names(issue)
+        findings = audit_label_findings(label_names)
+        if not findings:
+            continue
+        errors += sum(1 for finding in findings if finding["severity"] == "error")
+        warnings += sum(1 for finding in findings if finding["severity"] == "warning")
+        issue_findings.append(
+            {
+                "number": issue.get("number"),
+                "html_url": issue.get("html_url"),
+                "title": issue.get("title"),
+                "labels": label_names,
+                "findings": findings,
+            }
+        )
+    return {
+        "summary": {
+            "checked_issues": checked_issues,
+            "issues_with_findings": len(issue_findings),
+            "errors": errors,
+            "warnings": warnings,
+        },
+        "issues": issue_findings,
+    }
+
+
 def dry_run_payload(operation: str, request: RequestSpec, *, resolved: dict | None = None) -> dict:
     payload = {
         "mode": "dry-run",
@@ -236,6 +411,12 @@ def dry_run_payload(operation: str, request: RequestSpec, *, resolved: dict | No
     }
     if resolved is not None:
         payload["resolved"] = resolved
+    return payload
+
+
+def dry_run_audit_labels_payload(args: argparse.Namespace) -> dict:
+    payload = dry_run_payload(args.operation, audit_labels_request(args))
+    payload["label_axes"] = label_axes_payload()
     return payload
 
 
@@ -267,6 +448,45 @@ def dry_run_dependency_payload(args: argparse.Namespace) -> dict:
     payload = dry_run_payload(args.operation, mutation_request)
     payload["steps"] = [compact_request(resolve_request), compact_request(mutation_request)]
     return payload
+
+
+def execute_audit_labels(
+    args: argparse.Namespace,
+    *,
+    gh: Callable[..., subprocess.CompletedProcess[str]],
+    stdout: TextIO,
+    stderr: TextIO,
+) -> int:
+    request = audit_labels_request(args)
+    completed = call_gh(gh, request, api_version=args.api_version)
+    if completed.returncode != 0:
+        write_json(
+            stdout,
+            {
+                "mode": "execute",
+                "operation": args.operation,
+                "request": compact_request(request),
+                "error": {
+                    "returncode": completed.returncode,
+                    "stderr": completed.stderr.strip(),
+                },
+            },
+        )
+        return completed.returncode
+    result = parse_json_output(completed)
+    result = combine_paginated_result(result)
+    write_json(
+        stdout,
+        {
+            "mode": "execute",
+            "operation": args.operation,
+            "request": compact_request(request),
+            "result": audit_issue_labels(result),
+        },
+    )
+    if completed.stderr:
+        stderr.write(completed.stderr)
+    return 0
 
 
 def execute_request(
@@ -428,6 +648,10 @@ def build_parser() -> argparse.ArgumentParser:
     list_blocking.add_argument("--issue-number", required=True, type=positive_int)
     list_blocking.add_argument("--paginate", action="store_true")
 
+    audit_labels = subparsers.add_parser("audit-labels", help="Audit issue labels against baseline axes.")
+    add_common_flags(audit_labels, mutation=False)
+    audit_labels.add_argument("--issue-state", choices=["open", "closed", "all"], default="open")
+
     return parser
 
 
@@ -442,6 +666,8 @@ def build_primary_request(args: argparse.Namespace) -> RequestSpec:
         return list_dependencies_request(args, "blocked_by")
     if args.operation == "list-blocking":
         return list_dependencies_request(args, "blocking")
+    if args.operation == "audit-labels":
+        return audit_labels_request(args)
     raise UsageError(f"{args.operation} requires dependency resolution")
 
 
@@ -480,6 +706,12 @@ def run(
                 stderr=stderr,
                 resolved={"blocking_issue_id": blocking_issue_id},
             )
+
+        if args.operation == "audit-labels":
+            if not args.execute:
+                write_json(stdout, dry_run_audit_labels_payload(args))
+                return 0
+            return execute_audit_labels(args, gh=gh, stdout=stdout, stderr=stderr)
 
         request = build_primary_request(args)
         if not args.execute:

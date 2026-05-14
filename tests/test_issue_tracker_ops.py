@@ -666,6 +666,122 @@ class IssueTrackerOpsTests(unittest.TestCase):
             ],
         )
 
+    def test_audit_labels_dry_run_exposes_axis_policy_without_calling_gh(self):
+        gh = FakeGh()
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "audit-labels",
+                "--repo",
+                "OWNER/REPO",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(gh.calls, [])
+        payload = json.loads(stdout)
+        self.assertEqual(payload["mode"], "dry-run")
+        self.assertEqual(payload["operation"], "audit-labels")
+        self.assertEqual(payload["request"]["method"], "GET")
+        self.assertEqual(payload["request"]["endpoint"], "repos/OWNER/REPO/issues?state=open&per_page=100")
+        self.assertTrue(payload["request"]["paginate"])
+        self.assertEqual(payload["label_axes"]["category"]["cardinality"], "exactly_one")
+        self.assertEqual(payload["label_axes"]["state"]["labels"], ["needs-triage", "needs-info", "ready-for-agent", "ready-for-human", "wontfix"])
+
+    def test_audit_labels_execute_reports_axis_findings_and_skips_prs(self):
+        issues = [
+            {
+                "number": 1,
+                "html_url": "https://github.com/OWNER/REPO/issues/1",
+                "title": "Unlabeled issue",
+                "labels": [],
+            },
+            {
+                "number": 2,
+                "html_url": "https://github.com/OWNER/REPO/issues/2",
+                "title": "Clean issue",
+                "labels": [{"name": "bug"}, {"name": "ready-for-agent"}, {"name": "depth:L1"}],
+            },
+            {
+                "number": 3,
+                "html_url": "https://github.com/OWNER/REPO/issues/3",
+                "title": "Conflicting issue",
+                "labels": [
+                    {"name": "bug"},
+                    {"name": "enhancement"},
+                    {"name": "needs-triage"},
+                    {"name": "ready-for-agent"},
+                    {"name": "depth:L1"},
+                    {"name": "depth:L2"},
+                    {"name": "kind:design"},
+                    {"name": "kind:implementation"},
+                ],
+            },
+            {
+                "number": 4,
+                "html_url": "https://github.com/OWNER/REPO/pull/4",
+                "title": "Pull request",
+                "labels": [],
+                "pull_request": {},
+            },
+        ]
+        gh = FakeGh([subprocess.CompletedProcess(["gh"], 0, stdout=json.dumps([issues]), stderr="")])
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "audit-labels",
+                "--repo",
+                "OWNER/REPO",
+                "--execute",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 0, stderr)
+        args, input_text = gh.calls[0]
+        self.assertIn("--paginate", args)
+        self.assertIsNone(input_text)
+        payload = json.loads(stdout)
+        self.assertEqual(payload["operation"], "audit-labels")
+        self.assertEqual(
+            payload["result"]["summary"],
+            {
+                "checked_issues": 3,
+                "issues_with_findings": 2,
+                "errors": 5,
+                "warnings": 1,
+            },
+        )
+        self.assertEqual([issue["number"] for issue in payload["result"]["issues"]], [1, 3])
+        self.assertEqual(
+            payload["result"]["issues"][0]["findings"],
+            [
+                {
+                    "axis": "category",
+                    "code": "missing",
+                    "message": "Expected exactly one category label.",
+                    "severity": "error",
+                },
+                {
+                    "axis": "state",
+                    "code": "missing",
+                    "message": "Expected exactly one state label.",
+                    "severity": "error",
+                },
+            ],
+        )
+        conflicting_codes = [(finding["axis"], finding["code"], finding["severity"]) for finding in payload["result"]["issues"][1]["findings"]]
+        self.assertEqual(
+            conflicting_codes,
+            [
+                ("category", "conflict", "error"),
+                ("state", "conflict", "error"),
+                ("depth", "conflict", "error"),
+                ("work_kind", "multi_primary", "warning"),
+            ],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

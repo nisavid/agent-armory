@@ -18,6 +18,7 @@ Run dry-run adapter smokes:
 python3.14 tools/issue_tracker_ops.py create-issue --repo nisavid/agent-armory --title "Dry-run issue" --body "Dry-run body" --label ready-for-agent
 python3.14 tools/issue_tracker_ops.py update-issue --repo nisavid/agent-armory --issue-number 11 --body "Dry-run update"
 python3.14 tools/issue_tracker_ops.py comment --repo nisavid/agent-armory --issue-number 11 --body "Dry-run comment"
+python3.14 tools/issue_tracker_ops.py audit-labels --repo nisavid/agent-armory
 python3.14 tools/issue_tracker_ops.py add-blocked-by --repo nisavid/agent-armory --issue-number 10 --blocking-issue-number 11
 ```
 
@@ -26,6 +27,7 @@ allows tracker mutation:
 
 - create or update child issues for the decomposed remaining work;
 - comment on issue #11 with validation evidence;
+- run a read-only label-axis audit and record the summary;
 - add or verify a native dependency relation needed for the bootstrap gate.
 
 Record live validation by issue number, URL, operation type, command shape, and

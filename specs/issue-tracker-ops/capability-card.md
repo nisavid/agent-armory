@@ -110,6 +110,7 @@ keep tracker mutations explicit and governable.
 
 - `python3.14 -m unittest tests.test_issue_tracker_ops`
 - `python3.14 tools/issue_tracker_ops.py <command> ...` dry-run smoke checks.
+- `python3.14 tools/issue_tracker_ops.py audit-labels --repo nisavid/agent-armory --execute`
 - `python3.14 tools/validate_armory_integrity.py`
 - `python3.14 tools/validate_armory_integrity.py --final-closeout` before external
   projection or branch push.
