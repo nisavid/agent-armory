@@ -784,13 +784,35 @@ class IssueTrackerOpsTests(unittest.TestCase):
 
     def test_audit_labels_execute_fails_closed_on_unexpected_response_shape(self):
         cases = [
-            '{"message": "not a list"}',
-            '["not an issue object"]',
+            (
+                '{"message": "not a list"}',
+                "",
+                {"returncode": 1, "stderr": "unexpected GitHub issue list response"},
+                "",
+            ),
+            (
+                '["not an issue object"]',
+                "",
+                {"returncode": 1, "stderr": "unexpected GitHub issue list response"},
+                "",
+            ),
+            (
+                '{"message": "not a list"}',
+                "gh warning\n",
+                {
+                    "returncode": 1,
+                    "stderr": "unexpected GitHub issue list response",
+                    "gh_stderr": "gh warning",
+                },
+                "gh warning\n",
+            ),
         ]
 
-        for gh_stdout in cases:
-            with self.subTest(gh_stdout=gh_stdout):
-                gh = FakeGh([subprocess.CompletedProcess(["gh"], 0, stdout=gh_stdout, stderr="")])
+        for gh_stdout, gh_stderr, expected_error, expected_stderr in cases:
+            with self.subTest(gh_stdout=gh_stdout, gh_stderr=gh_stderr):
+                gh = FakeGh(
+                    [subprocess.CompletedProcess(["gh"], 0, stdout=gh_stdout, stderr=gh_stderr)]
+                )
 
                 exit_code, stdout, stderr = self.run_cli(
                     [
@@ -803,17 +825,11 @@ class IssueTrackerOpsTests(unittest.TestCase):
                 )
 
                 self.assertEqual(exit_code, 1)
-                self.assertEqual(stderr, "")
+                self.assertEqual(stderr, expected_stderr)
                 payload = json.loads(stdout)
                 self.assertEqual(payload["mode"], "execute")
                 self.assertEqual(payload["operation"], "audit-labels")
-                self.assertEqual(
-                    payload["error"],
-                    {
-                        "returncode": 1,
-                        "stderr": "unexpected GitHub issue list response",
-                    },
-                )
+                self.assertEqual(payload["error"], expected_error)
 
 
 if __name__ == "__main__":
