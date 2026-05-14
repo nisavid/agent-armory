@@ -476,18 +476,23 @@ def execute_audit_labels(
     result = parse_json_output(completed)
     result = combine_paginated_result(result)
     if not isinstance(result, list) or not all(isinstance(item, dict) for item in result):
+        error = {
+            "returncode": 1,
+            "stderr": "unexpected GitHub issue list response",
+        }
+        if completed.stderr:
+            error["gh_stderr"] = completed.stderr.strip()
         write_json(
             stdout,
             {
                 "mode": "execute",
                 "operation": args.operation,
                 "request": compact_request(request),
-                "error": {
-                    "returncode": 1,
-                    "stderr": "unexpected GitHub issue list response",
-                },
+                "error": error,
             },
         )
+        if completed.stderr:
+            stderr.write(completed.stderr)
         return 1
     write_json(
         stdout,
@@ -680,8 +685,6 @@ def build_primary_request(args: argparse.Namespace) -> RequestSpec:
         return list_dependencies_request(args, "blocked_by")
     if args.operation == "list-blocking":
         return list_dependencies_request(args, "blocking")
-    if args.operation == "audit-labels":
-        return audit_labels_request(args)
     raise UsageError(f"{args.operation} requires dependency resolution")
 
 
