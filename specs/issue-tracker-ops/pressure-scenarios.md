@@ -39,6 +39,20 @@ Expected evidence:
 - unit test proves comment execution sends JSON stdin to `gh api`;
 - live validation records the issue comment URL or response summary.
 
+### Audit label-axis drift
+
+An agent needs to dogfood the GitHub Issues label baseline before richer tracker
+fields exist. The adapter must read issues, skip pull requests, and report
+missing or conflicting baseline-axis labels without mutating tracker state.
+
+Expected evidence:
+
+- dry-run JSON shows the paginated GitHub read and the axis policy;
+- execute JSON reports checked issues, issues with findings, error count, and
+  warning count;
+- unit tests cover category or state gaps, conflicting exclusive axes, and
+  multiple primary work-kind warnings.
+
 ### Add native dependency relation
 
 An agent must record that one issue is blocked by another. The adapter must

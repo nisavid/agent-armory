@@ -22,9 +22,10 @@ The bootstrap MVP is the GitHub Issues adapter at
 transport and defaults write modes to dry-run output unless `--execute` is
 provided.
 
-The bootstrap scope covers direct issue create, issue update, issue comment, and
-issue dependency operations for GitHub Issues without Projects. Full Issue Ops
-delivery remains tracked in issue #11 and child issues.
+The bootstrap scope covers direct issue create, issue update, issue comment,
+label-axis audit, and issue dependency operations for GitHub Issues without
+Projects. Full Issue Ops delivery remains tracked in issue #11 and child
+issues.
 
 Issue Ops configuration is a progressive enhancement. Durable layered
 configuration belongs to Agent Equipment Config; Issue Ops still needs a plain

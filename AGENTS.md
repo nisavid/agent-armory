@@ -81,7 +81,9 @@ Reflection Findings. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
-Use the default five-label triage vocabulary. See `docs/agents/triage-labels.md`.
+Use the baseline issue label axes, triage comment rules, and triage-record
+rules. See `docs/agents/triage-labels.md` and
+`docs/agents/issue-tracker.md`.
 
 ### Domain docs
 
