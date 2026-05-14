@@ -475,6 +475,20 @@ def execute_audit_labels(
         return completed.returncode
     result = parse_json_output(completed)
     result = combine_paginated_result(result)
+    if not isinstance(result, list) or not all(isinstance(item, dict) for item in result):
+        write_json(
+            stdout,
+            {
+                "mode": "execute",
+                "operation": args.operation,
+                "request": compact_request(request),
+                "error": {
+                    "returncode": 1,
+                    "stderr": "unexpected GitHub issue list response",
+                },
+            },
+        )
+        return 1
     write_json(
         stdout,
         {

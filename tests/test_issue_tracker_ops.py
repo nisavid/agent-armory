@@ -782,6 +782,39 @@ class IssueTrackerOpsTests(unittest.TestCase):
             ],
         )
 
+    def test_audit_labels_execute_fails_closed_on_unexpected_response_shape(self):
+        cases = [
+            '{"message": "not a list"}',
+            '["not an issue object"]',
+        ]
+
+        for gh_stdout in cases:
+            with self.subTest(gh_stdout=gh_stdout):
+                gh = FakeGh([subprocess.CompletedProcess(["gh"], 0, stdout=gh_stdout, stderr="")])
+
+                exit_code, stdout, stderr = self.run_cli(
+                    [
+                        "audit-labels",
+                        "--repo",
+                        "OWNER/REPO",
+                        "--execute",
+                    ],
+                    gh=gh,
+                )
+
+                self.assertEqual(exit_code, 1)
+                self.assertEqual(stderr, "")
+                payload = json.loads(stdout)
+                self.assertEqual(payload["mode"], "execute")
+                self.assertEqual(payload["operation"], "audit-labels")
+                self.assertEqual(
+                    payload["error"],
+                    {
+                        "returncode": 1,
+                        "stderr": "unexpected GitHub issue list response",
+                    },
+                )
+
 
 if __name__ == "__main__":
     unittest.main()
