@@ -15,8 +15,9 @@ Projects extension.
 
 | Operation | Class | Bootstrap control |
 | --- | --- | --- |
-| Dry-run create/update/comment/dependency operation | Advisory | No network call; JSON request preview. |
+| Dry-run adapter operation | Advisory | No network call; JSON request preview. |
 | Dependency list | Read | Requires `--execute`; uses `gh api` with read permission. |
+| Label-axis audit | Read | Requires `--execute`; uses `gh api` with read permission and reports missing or conflicting baseline labels without mutation. |
 | Issue create | Network write | Requires `--execute`; emits JSON audit output. |
 | Issue update | Network write | Requires `--execute`; emits JSON audit output. |
 | Issue comment | Network write and notification | Requires `--execute`; emits JSON audit output. |
