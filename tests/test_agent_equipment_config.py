@@ -1966,7 +1966,7 @@ class AgentEquipmentConfigTests(unittest.TestCase):
             ["external_disclosure"],
         )
         self.assertEqual(payload["diagnostics"][0]["kind"], "schema conflict")
-        self.assertNotIn("effective", payload)
+        self.assertNotIn("effective_config", payload)
 
     def test_cli_config_validate_can_include_effective_config_on_request(self):
         with tempfile.TemporaryDirectory() as tmpdir:
