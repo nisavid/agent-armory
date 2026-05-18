@@ -14,7 +14,7 @@ implement harness controls.
 ## Requirement
 
 Agent Equipment Config needs a shared configuration contract that equipment can
-consume without depending on Agent Ops or any other higher-level equipment. The
+consume without depending on Repo Ops or any other higher-level equipment. The
 current deliverable keeps the v0 contract source-aligned and provides the first
 portable deterministic engine slice for the covered config behaviors.
 
@@ -78,7 +78,7 @@ output.
 
 ## Rationale
 
-Config is lower-level equipment. If its shared machinery lives in Agent Ops,
+Config is lower-level equipment. If its shared machinery lives in Repo Ops,
 Issue Tracker Ops and other primitives would inherit a dependency cycle. If
 every equipment line invents its own config machinery, policy, safety status,
 and audit shapes drift.

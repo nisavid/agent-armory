@@ -17,7 +17,7 @@ As an agent strapped into a harness equipped with Periodic Actions, when a repo 
 
 ### First-session install prompt
 
-As a repo owner with an Agent Ops repo freshly cloned on a new machine, if the repo defines periodic actions, my first agent session shows a first-session install prompt.
+As a repo owner with a Repo Ops repo freshly cloned on a new machine, if the repo defines periodic actions, my first agent session shows a first-session install prompt.
 
 The choice is persisted locally only and must not be committed by default.
 
@@ -69,10 +69,10 @@ The mechanism selection order is:
 3. Suitable hook.
 4. Inference-driven pre/post task check.
 
-Suggested storage lives under `.agent-ops/`:
+Suggested storage lives under `.repo-ops/`:
 
 ```text
-.agent-ops/
+.repo-ops/
   periodic-actions.toml
   local.periodic-actions.toml
   state/
@@ -104,7 +104,7 @@ Each projection must state the chosen engine type, installation surface, uninsta
 ## Non-goals
 
 - Periodic Actions do not guarantee exact wall-clock execution when a harness lacks native scheduling.
-- Periodic Actions do not bypass OS permissions, harness approvals, or Agent Ops policy.
+- Periodic Actions do not bypass OS permissions, harness approvals, or Repo Ops policy.
 - Periodic Actions do not require every harness to support trigger-now or edit-period.
 - Periodic Actions do not store local machine installation choices in committed files by default.
 
@@ -112,4 +112,4 @@ Each projection must state the chosen engine type, installation surface, uninsta
 
 - Should the state log be append-only JSONL, summarized TOML, or both?
 - Should trigger-now require separate approval for actions with network, write, or credential access?
-- Which action fields belong in core Periodic Actions versus Agent Ops extension metadata?
+- Which action fields belong in core Periodic Actions versus Repo Ops extension metadata?

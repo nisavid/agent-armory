@@ -15,7 +15,7 @@ The Forge answers four questions for each equipment idea:
 
 The Forge Seed supplied the first canonical docs, templates, examples, specs,
 and validation checks. It does not implement downstream equipment such as Agent
-Equipment Config, Agent Ops, Periodic Actions, or recurring Harness Capability
+Equipment Config, Repo Ops, Periodic Actions, or recurring Harness Capability
 Refresh. Current Harness Capability Profile work is tracked as its own
 Equipment Design Bundle.
 

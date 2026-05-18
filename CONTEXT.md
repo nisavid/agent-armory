@@ -150,7 +150,7 @@ equipment behavior validation
 
 **Forge Seed**:
 The first coherent version of the Agent Equipment Forge, limited to canonical docs, decision method, evidence discipline, harness catalog, templates, examples, Smith task specs, and Seed Validation.
-_Avoid_: Agent Ops implementation, Periodic Actions implementation
+_Avoid_: Repo Ops implementation, Periodic Actions implementation
 
 **Seed Validation**:
 Historical runnable checks that verified the Forge Seed's own repository shape,
@@ -335,8 +335,21 @@ An annotated demonstration of the Forge's decision method using realistic but no
 _Avoid_: production package, installable equipment unless promoted through the full workflow
 
 **Agent Ops**:
-Future Agent Equipment for operating repositories agentically.
-_Avoid_: treating it as implemented by the Forge Seed
+The generic term for operations work performed agentically.
+_Avoid_: using Agent Ops as the name of the repository-operations equipment line
+
+**Repo Ops**:
+Future Agent Equipment for operating repositories agentically. Repo Ops is
+complete for repositories that are not forks and provides the extension base
+for fork-specific operations.
+_Avoid_: treating it as implemented by the Forge Seed, forcing fork-specific
+behavior into non-fork repos
+
+**Fork Ops**:
+A planned Repo Ops add-on for fork-specific operations, including upstream,
+downstream, divergence, sync, publication, and selective-upstreaming behavior.
+_Avoid_: treating it as a replacement for Repo Ops, treating current
+non-Forge-built Fork Ops source material as published Armory equipment
 
 **Agent-Operated Repository**:
 A repository where agents drive assigned execution after a human operator initiates or continues the work session.
@@ -436,7 +449,7 @@ copying large private or instance-scoped evidence into public tracker comments
 **Agent Equipment Config**:
 Agent Equipment for shared, layerable, composable, adaptable, and enforceable
 configuration across Agent Equipment.
-_Avoid_: treating it as a component of Agent Ops or any other higher-level
+_Avoid_: treating it as a component of Repo Ops or any other higher-level
 equipment
 
 **Layer Precedence**:
@@ -668,7 +681,9 @@ _Avoid_: chat-only conclusion, undocumented resume instruction
   Profiles** as deterministic data and tooling, while **Harness Capability
   Refresh** is the future recurring **Agent Equipment** that can invoke it.
 - A **Forge Example** demonstrates how a **Smith** applies the **Agent Equipment Forge** but is not automatically **Agent Equipment**.
-- **Agent Ops**, **Periodic Actions**, and **Harness Capability Refresh** are downstream **Agent Equipment** specified by the **Forge Seed**.
+- **Repo Ops**, **Periodic Actions**, and **Harness Capability Refresh** are downstream **Agent Equipment** specified by the **Forge Seed**.
+- **Fork Ops** is planned as a **Repo Ops** add-on after Repo Ops and its
+  prerequisites are ready for intake.
 - Portable Agentic Engineering workflow equipment is downstream of repo-local
   **Armory Operating Contracts** until the rules are coherent and
   pressure-tested enough to package.
@@ -725,7 +740,7 @@ _Avoid_: chat-only conclusion, undocumented resume instruction
   engineering the agentic systems that perform or improve engineering work.
 - "Agent" can mean the running causal stream or a reusable harness declaration. Resolution: use **Agent** for the running stream and **Agent Profile** for the reusable declaration.
 - "Handoff docs" can mean accepted source material or current project docs. Resolution: use **Source Handoff** for provenance and **Forge Canon** for the live Forge surface.
-- "Tooling Work" can mean seeding the **Agent Equipment Forge** or implementing downstream equipment. Resolution: use **Forge Seed** for the first pass and name downstream equipment, such as Agent Ops or Periodic Actions, separately.
+- "Tooling Work" can mean seeding the **Agent Equipment Forge** or implementing downstream equipment. Resolution: use **Forge Seed** for the first pass and name downstream equipment, such as Repo Ops or Periodic Actions, separately.
 - "Agent-operated" can mean guided autonomous execution or unsupervised initiative selection. Resolution: **Initiative Authority** remains human, while agents drive assigned work inside active sessions.
 - "Validation" can mean checking live repository or Forge integrity, proving
   historical seed migration, or proving harness-specific behavior. Resolution:

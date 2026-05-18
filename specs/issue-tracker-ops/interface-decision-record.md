@@ -56,7 +56,7 @@ Issue review and orchestration require model judgment, so they belong in skills
 after the operation contract exists. Hard mutation policy belongs in hooks,
 permissions, approvals, and typed config rather than skill prose. Generic
 layering, governance, migration, and effective-config output belong in Agent
-Equipment Config so Issue Ops does not depend on Agent Ops for its instantiated
+Equipment Config so Issue Ops does not depend on Repo Ops for its instantiated
 policy. A future MCP/tool surface is appropriate once the adapter contract can
 expose typed inputs and outputs without relying on CLI command composition.
 

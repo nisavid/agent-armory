@@ -42,8 +42,9 @@ quality failure.
 
 The first major equipment lines are meant to make that possible: Agent
 Equipment Config for layered and enforceable policy, Issue Tracker Ops for
-durable issue-tracked operations, Agent Ops for repository work, and supporting
-operational equipment for schedules and harness facts. The longer arc
+durable issue-tracked operations, Repo Ops for repository work, Fork Ops as a
+fork-specific Repo Ops add-on, and supporting operational equipment for
+schedules and harness facts. The longer arc
 culminates in Head Gear: generic cognition equipment meant to turn vibes into
 bounded, evidence-backed outcomes instead of slop.
 
@@ -137,8 +138,12 @@ The current roadmap includes these equipment lines:
 - [Issue Tracker Ops](specs/issue-tracker-ops/), for direct
   GitHub Issues bootstrap operations and future issue lifecycle equipment.
   Issue Ops is the accepted shorthand.
-- [Agent Ops](specs/agent-ops.md), for repository operations performed by
-  agents.
+- [Repo Ops](specs/repo-ops.md), for repository operations performed by agents.
+  Repo Ops is the complete repository-operations layer for repositories that
+  are not forks.
+- [Fork Ops](https://github.com/nisavid/agent-armory/issues/87), as a planned
+  Repo Ops add-on for fork-specific operations after Fork Ops source material
+  and Repo Ops prerequisites are ready for intake.
 - [Periodic Actions](specs/periodic-actions.md), for recurring agent work with
   local approval and auditable state.
 - [Vanilla Harness Capability Profiles](specs/vanilla-harness-capability-profiles/),

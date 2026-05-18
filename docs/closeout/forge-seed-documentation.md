@@ -146,7 +146,7 @@ live reader guidance.
 - Durable committed docs use neutral project paths unless intrinsically tied to a specific skill, plugin, tool, or workflow.
 - Agent Profiles are described in prose while source paths use the harness/plugin term `agents`.
 - Smiths have a zero-inquiry Tooling Request path for recording a discovered Tooling Gap, preempting unsafe equipment work, selecting a harness-appropriate Forgewright session path, and resuming from a Forgewright hand-back.
-- Agent Ops, Periodic Actions, and Harness Capability Refresh are specified downstream equipment, not implemented Seed equipment.
+- Repo Ops, Periodic Actions, and Harness Capability Refresh are specified downstream equipment, not implemented Seed equipment.
 - Forge Examples and specs must not imply installability, loadability, production readiness, or publication.
 - Security and documentation closeout are required change-set gates before merge-readiness.
 - Story Closeout is the story-level gate. Change Set Security Closeout and Change Set Documentation Closeout are subordinate gates.

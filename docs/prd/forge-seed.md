@@ -54,7 +54,7 @@ Status: Repo Draft PRD
 - `docs/story-closeout.md` defines Story Closeout gate order, subordinate change-set closeout gates, review sequencing, interdependency rerun rules, recursion boundaries, and completion criteria.
 - Seed templates cover capability cards, interface decision records, skill templates, hooks, Agent Profiles, plugins, scripts, MCP/tool definitions, config, security reviews, and context-budget reviews.
 - Forge Examples demonstrate PR review, documentation research, and observability investigation as annotated examples with promotion state `example`; each example traces from capability card to interface decision record to projected components.
-- Equipment Blueprints exist for Agent Ops, Periodic Actions, and Harness Capability Refresh with promotion state `specified`; each Blueprint projects the substantive requirements captured in the Source Disposition Ledger, including required harness projections, management behavior, storage expectations, tracked fields, and change-response rules where applicable.
+- Equipment Blueprints exist for Repo Ops, Periodic Actions, and Harness Capability Refresh with promotion state `specified`; each Blueprint projects the substantive requirements captured in the Source Disposition Ledger, including required harness projections, management behavior, storage expectations, tracked fields, and change-response rules where applicable.
 - Seed Validation provides human-readable output by default and machine-readable output with `--json`.
 - `docs/security/threat-model.md` records an initial Repository Threat Model for the Agent Armory before the Forge Seed is considered merge-ready.
 - `docs/security/forge-seed-closeout.md` records the Seed security closeout scope, commands, scan artifact disposition, report disposition, findings, fixes, suppressions, deferments, and re-validation status.
@@ -69,7 +69,7 @@ Status: Repo Draft PRD
 
 **Non-Goals**:
 
-- Do not implement Agent Ops, Periodic Actions, or Harness Capability Refresh as working Agent Equipment in the Forge Seed.
+- Do not implement Repo Ops, Periodic Actions, or Harness Capability Refresh as working Agent Equipment in the Forge Seed.
 - Do not ship first-class repo-local skills in the Forge Seed.
 - Do not create production-looking stubs that imply examples are installable or validated.
 - Do not use third-party package managers or non-standard-library dependencies for Seed Validation.
@@ -158,7 +158,7 @@ the repository state rather than duplicated here.
 **Phased Rollout**:
 
 - **MVP: Forge Seed**: Preserve Source Handoff, write canonical docs, refresh harness catalog, create templates/examples/specs, implement Seed Validation, complete review-until-clean cycles, complete Change Set Security Closeout, complete Change Set Documentation Closeout, and perform Issue Projection or record projection pending.
-- **v1.1: Downstream equipment planning**: Convert Agent Ops, Periodic Actions, and Harness Capability Refresh specs into implementation plans with TDD and SDD task decomposition.
+- **v1.1: Downstream equipment planning**: Convert Repo Ops, Periodic Actions, and Harness Capability Refresh specs into implementation plans with TDD and SDD task decomposition.
 - **v2.0: Published Agent Equipment**: Promote validated equipment through the Equipment Promotion Path and publish installable or equippable surfaces only after equipment-specific validation.
 
 **Technical Risks**:

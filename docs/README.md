@@ -109,8 +109,11 @@ The current roadmap points to equipment lines that still have future slices:
 - [Issue Tracker Ops](../specs/issue-tracker-ops/): direct GitHub
   Issues bootstrap operations and future issue lifecycle equipment. Issue Ops
   is the accepted shorthand.
-- [Agent Ops](../specs/agent-ops.md): repository framework for agentic
-  operations.
+- [Repo Ops](../specs/repo-ops.md): repository framework for agentic
+  operations. Repo Ops is complete for repositories that are not forks.
+- [Fork Ops](https://github.com/nisavid/agent-armory/issues/87): planned
+  Repo Ops add-on for fork-specific operations after Fork Ops source material
+  and Repo Ops prerequisites are ready for intake.
 - [Periodic Actions](../specs/periodic-actions.md): recurring agent actions
   across harnesses.
 - [Vanilla Harness Capability Profiles](../specs/vanilla-harness-capability-profiles/):

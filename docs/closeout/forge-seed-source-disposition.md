@@ -56,7 +56,7 @@ operator-directed decision and durable follow-up target.
 | H008 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | docs/interface-decision-guide.md | Provide the interface decision method and runbook guidance. |
 | H009 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | docs/harness-capabilities.md | Refresh and publish the canonical harness capability catalog. |
 | H010 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | templates/ | Ship seed templates and annotated Forge Examples. |
-| H011 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | specs/agent-ops.md | Create downstream specs for the initial Smith tasks. |
+| H011 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | specs/repo-ops.md | Create downstream specs for the initial Smith tasks. |
 | H012 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | tools/validate_armory_integrity.py | Validate source disposition, live Forge surfaces, examples, Blueprints, and issue projection. |
 | H052 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | docs/prd/forge-seed.md | Preserve standard-library validation and non-production seed boundaries. |
 | H053 | SRC002 | adequately_captured | unchallenged | false | false | kept_current |  | docs/closeout/forge-seed-documentation.md | Record final implementation, validation, issue projection, and closeout summaries. |
@@ -92,7 +92,7 @@ operator-directed decision and durable follow-up target.
 | H042 | SRC009 | adequately_captured | unchallenged | false | false | kept_current |  | templates/config/README.md | Provide the config template. |
 | H043 | SRC009 | adequately_captured | unchallenged | false | false | kept_current |  | examples/docs-research/capability-card.md | Provide an annotated documentation research Forge Example. |
 | H044 | SRC009 | adequately_captured | unchallenged | false | false | kept_current |  | examples/observability-investigation/capability-card.md | Provide an annotated observability investigation Forge Example. |
-| H045 | SRC010 | adequately_captured | unchallenged | false | false | kept_current |  | specs/agent-ops.md | Specify Agent Ops without implementing it in the Seed. |
+| H045 | SRC010 | adequately_captured | unchallenged | false | false | kept_current |  | specs/repo-ops.md | Specify Repo Ops without implementing it in the Seed. |
 | H046 | SRC010 | adequately_captured | unchallenged | false | false | kept_current |  | specs/periodic-actions.md | Specify Periodic Actions without implementing it in the Seed. |
 | H047 | SRC010 | adequately_captured | unchallenged | false | false | kept_current |  | specs/harness-capability-refresh.md | Specify Harness Capability Refresh without implementing it in the Seed. |
 | H048 | SRC011 | adequately_captured | unchallenged | false | false | kept_current |  | docs/plans/2026-05-03-forge-seed.md | Project the proposed seed structure into the reviewed implementation plan. |
@@ -114,7 +114,7 @@ No unresolved challenge enters source retirement. Rows marked `resolved` carry o
 source_bearing_snapshot_tree_id: 589bf626ffc5e9cdfffc7ee5983022adc1f7a1e2
 source_bearing_stamp_id: source-bearing-2026-05-04
 source_manifest_digest: 7ebb526ad69baa2254052deccf3ad9f236b3c785124842329d6d4e2a000cfbb5
-source_disposition_digest: 6bea7c84f7066b0cb572cc8445f52b58a389dc2dd3069db579afecc764f65c4c
+source_disposition_digest: e59e3bc4e9d11eb0198984bab87098c49c98be348bac38df7fef795d579f767f
 source_bearing_result: passed
 
 ## Final Source-Retired Stamp

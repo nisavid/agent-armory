@@ -63,7 +63,7 @@ Create or modify these files:
 - Create: `examples/observability-investigation/capability-card.md`.
 - Create: `examples/observability-investigation/interface-decision-record.md`.
 - Create: `examples/observability-investigation/projected-components.md`.
-- Create: `specs/agent-ops.md`.
+- Create: `specs/repo-ops.md`.
 - Create: `specs/periodic-actions.md`.
 - Create: `specs/harness-capability-refresh.md`.
 - Create: `tools/validate_forge_seed.py`.
@@ -1716,7 +1716,7 @@ Projection target guidance:
 - Harness fact requirements project to `docs/harness-capabilities.md`, `docs/harness-capabilities.toml`, and `specs/harness-capability-refresh.md`.
 - The archived structured seed `harness-capabilities.seed.toml` must have an explicit projection row into the refreshed TOML catalog.
 - Templates and examples requirements project to `templates/` and `examples/`.
-- Agent Ops, Periodic Actions, and Harness Capability Refresh implementation requirements project to `specs/`.
+- Repo Ops, Periodic Actions, and Harness Capability Refresh implementation requirements project to `specs/`.
 - Remaining uncertainties may be `deferred`, but every deferred row must have a concrete reason and downstream `target_path` for the follow-up surface or tracking note.
 
 - [x] **Step 5: Run tests and validator**
@@ -2402,7 +2402,7 @@ git commit -m "docs(examples): add Forge method examples" -m "Co-authored-by: Co
 ## Task 8: Equipment Blueprints
 
 **Files:**
-- Create: `specs/agent-ops.md`
+- Create: `specs/repo-ops.md`
 - Create: `specs/periodic-actions.md`
 - Create: `specs/harness-capability-refresh.md`
 - Modify: `docs/closeout/forge-seed-source-disposition.md`
@@ -2435,7 +2435,7 @@ Expected: FAIL for missing specs and required sections.
 
 Create specs from `docs/metasmith/handoff/2026-05-02/08-initial-smith-task-specs.md`.
 
-`specs/agent-ops.md` must include:
+`specs/repo-ops.md` must include:
 
 - promotion state `specified`,
 - durable TOML config requirements,
@@ -2451,7 +2451,7 @@ Create specs from `docs/metasmith/handoff/2026-05-02/08-initial-smith-task-specs
 - first-session install prompt,
 - list/view/install/uninstall/trigger-now/edit-period behavior,
 - mechanism selection order,
-- suggested `.agent-ops/` storage,
+- suggested `.repo-ops/` storage,
 - harness-specific starting points.
 
 `specs/harness-capability-refresh.md` must include:
@@ -2936,7 +2936,7 @@ than established project policy.
 
 ### Side-Thread Hand-Back Workflow
 
-After the Forge Seed, specify the Agent Ops workflow for side conversations
+After the Forge Seed, specify the Repo Ops workflow for side conversations
 that inspect, advise, or make narrow operator-requested edits while a main worker
 owns the active change set.
 
@@ -2954,7 +2954,7 @@ into rigorously engineered Agent Equipment.
 
 Begin with handoff ingestion and a `grill-with-docs` loop. The grill loop should
 challenge terminology, scope, portability, ceremony, and placement against the
-then-current `CONTEXT.md`, Forge Canon, existing templates, and Agent Ops
+then-current `CONTEXT.md`, Forge Canon, existing templates, and Repo Ops
 policy before drafting requirements.
 
 If the Post-Seed Skill Migration or Side-Thread Hand-Back Workflow tasks have

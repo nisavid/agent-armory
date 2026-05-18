@@ -8587,7 +8587,7 @@ class SpecValidationTests(unittest.TestCase):
     )
     required_spec_paths = (
         *config_bundle_paths,
-        "specs/agent-ops.md",
+        "specs/repo-ops.md",
         "specs/periodic-actions.md",
         "specs/harness-capability-refresh.md",
     )
@@ -8772,8 +8772,8 @@ class SpecValidationTests(unittest.TestCase):
 
     def write_all_specs(self, root: Path, overrides: dict[str, str] | None = None) -> None:
         specs = {
-            "specs/agent-ops.md": self.valid_spec(
-                "Agent Ops Spec",
+            "specs/repo-ops.md": self.valid_spec(
+                "Repo Ops Spec",
                 """\
                 TOML config stores durable owner and runbook config.
                 The config drives Agent behavior, hook behavior, and other configurable aspects.
@@ -8781,6 +8781,7 @@ class SpecValidationTests(unittest.TestCase):
                 Autonomy levels: off, advisory, assisted, supervised, autonomous, forbidden.
                 Safe defaults require advance approval before automation.
                 Policy enforcement blocks violations when the harness supports blocking and otherwise uses advisory fallback.
+                Fork Ops extends Repo Ops for fork-specific behavior.
                 """,
             ),
             "specs/periodic-actions.md": self.valid_spec(
@@ -8789,7 +8790,7 @@ class SpecValidationTests(unittest.TestCase):
                 First-session install prompt persists the choice locally.
                 List, view, install, uninstall, trigger-now, and edit-period behavior are required.
                 Mechanism selection order: native scheduled agent actions, active loop or heartbeat, suitable hook, inference-driven pre/post task check.
-                Suggested storage: .agent-ops/.
+                Suggested storage: .repo-ops/.
                 """,
             ),
             "specs/harness-capability-refresh.md": self.valid_spec(
@@ -8836,8 +8837,8 @@ class SpecValidationTests(unittest.TestCase):
             self.write_all_specs(
                 root,
                 {
-                    "specs/agent-ops.md": self.valid_spec(
-                        "Agent Ops Spec",
+                    "specs/repo-ops.md": self.valid_spec(
+                        "Repo Ops Spec",
                         "TOML owner runbook autonomy levels safe defaults policy enforcement Codex OpenClaw Hermes Agent Claude Code Cursor OpenCode.",
                     ).replace("Promotion state: specified\n", "")
                 },
@@ -8847,10 +8848,10 @@ class SpecValidationTests(unittest.TestCase):
 
         self.assertIn(
             CheckResult(
-                "spec:promotion:specs/agent-ops.md",
+                "spec:promotion:specs/repo-ops.md",
                 False,
                 "missing Promotion state: specified",
-                "specs/agent-ops.md",
+                "specs/repo-ops.md",
             ),
             results,
         )
@@ -8886,14 +8887,14 @@ class SpecValidationTests(unittest.TestCase):
             results,
         )
 
-    def test_validate_specs_requires_agent_ops_content(self):
+    def test_validate_specs_requires_repo_ops_content(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             self.write_all_specs(
                 root,
                 {
-                    "specs/agent-ops.md": self.valid_spec(
-                        "Agent Ops Spec",
+                    "specs/repo-ops.md": self.valid_spec(
+                        "Repo Ops Spec",
                         "Autonomy levels and safe defaults are required.",
                     )
                 },
@@ -8903,28 +8904,28 @@ class SpecValidationTests(unittest.TestCase):
 
         self.assertIn(
             CheckResult(
-                "spec:text:specs/agent-ops.md:TOML",
+                "spec:text:specs/repo-ops.md:TOML",
                 False,
                 "missing TOML",
-                "specs/agent-ops.md",
+                "specs/repo-ops.md",
             ),
             results,
         )
         self.assertIn(
             CheckResult(
-                "spec:text:specs/agent-ops.md:policy enforcement",
+                "spec:text:specs/repo-ops.md:policy enforcement",
                 False,
                 "missing policy enforcement",
-                "specs/agent-ops.md",
+                "specs/repo-ops.md",
             ),
             results,
         )
         self.assertIn(
             CheckResult(
-                "spec:text:specs/agent-ops.md:hook behavior",
+                "spec:text:specs/repo-ops.md:hook behavior",
                 False,
                 "missing hook behavior",
-                "specs/agent-ops.md",
+                "specs/repo-ops.md",
             ),
             results,
         )
@@ -9016,7 +9017,7 @@ class SpecValidationTests(unittest.TestCase):
                 {
                     "specs/periodic-actions.md": self.valid_spec(
                         "Periodic Actions Spec",
-                        "First-session install prompt and .agent-ops/ storage are required.",
+                        "First-session install prompt and .repo-ops/ storage are required.",
                     )
                 },
             )
@@ -9138,9 +9139,9 @@ class SpecValidationTests(unittest.TestCase):
             self.write_all_specs(
                 root,
                 {
-                    "specs/agent-ops.md": self.valid_spec(
-                        "Agent Ops Spec",
-                        "TOML owner runbook hook behavior sensibly typed values autonomy levels safe defaults policy enforcement Codex OpenClaw Hermes Agent Claude Code Cursor OpenCode.",
+                    "specs/repo-ops.md": self.valid_spec(
+                        "Repo Ops Spec",
+                        "TOML owner runbook hook behavior sensibly typed values autonomy levels safe defaults policy enforcement Fork Ops Codex OpenClaw Hermes Agent Claude Code Cursor OpenCode.",
                     ).replace(
                         "This spec describes desired behavior only. It does not implement Agent Equipment.\n",
                         "This spec describes desired behavior only.\n",
@@ -9152,10 +9153,10 @@ class SpecValidationTests(unittest.TestCase):
 
         self.assertIn(
             CheckResult(
-                "spec:boundary:specs/agent-ops.md",
+                "spec:boundary:specs/repo-ops.md",
                 False,
                 "missing non-implementation boundary",
-                "specs/agent-ops.md",
+                "specs/repo-ops.md",
             ),
             results,
         )
@@ -9173,7 +9174,7 @@ class SpecValidationTests(unittest.TestCase):
                             First-session install prompt persists the choice locally.
                             List, view, install, uninstall, trigger-now, and edit-period behavior are required.
                             Mechanism selection order: native scheduled agent actions, active loop or heartbeat, suitable hook, inference-driven pre/post task check.
-                            Suggested storage: .agent-ops/.
+                            Suggested storage: .repo-ops/.
                             This spec {forbidden_claim}.
                             """,
                         )
@@ -9205,7 +9206,7 @@ class SpecValidationTests(unittest.TestCase):
                         First-session install prompt persists the choice locally.
                         List, view, install, uninstall, trigger-now, and edit-period behavior are required.
                         Mechanism selection order: native scheduled agent actions, active loop or heartbeat, suitable hook, inference-driven pre/post task check.
-                        Suggested storage: .agent-ops/.
+                        Suggested storage: .repo-ops/.
                         """,
                     ).replace("## Harness projections", "## Harness-specific starting points")
                 },
