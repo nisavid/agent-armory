@@ -27,10 +27,12 @@ agent preference.
 
 ## Decision
 
-Use an Equipment Design Bundle, validator gate, and portable standard-library Python
-runtime slice for v0.
+Use a Repo Draft PRD, Equipment Design Bundle, validator gate, and portable
+standard-library Python runtime slice for v0.
 
-The v0 contract defines typed schemas, namespaced schema fragments, explicit
+The PRD owns product requirements, user-facing operation vocabulary, MVP
+blockers, and deferred epic buckets. The v0 contract defines typed schemas,
+namespaced schema fragments, explicit
 load duties, Layer Precedence, Policy Authority, Config Safety Status, secret
 references, migrations, effective-config output, config-diff output, semantic
 validators, conflict diagnostics, and decision/mutation audit boundaries. The
@@ -48,6 +50,12 @@ publication. Mutation-capable behavior fails closed unless effective Config is
 `usable`, required authority and semantic validators pass, and the required
 capability is supported.
 
+The MVP operation surface requires fluent CLI operations with MCP parity:
+`config resolve`, `config validate`, `config diff`, `onboard config`,
+`migrate config preview`, and `migrate config apply`, mirrored as
+`config.resolve`, `config.validate`, `config.diff`, `onboard.config`,
+`migrate.config_preview`, and `migrate.config_apply`.
+
 Use TOML for human-authored config layers and plain equipment-specific config
 handoff records. Use JSON-compatible objects for schemas, effective-config
 output, config-diff output, diagnostics, audit records, and deterministic tool
@@ -55,15 +63,21 @@ output.
 
 ## Chosen surface
 
-- Local docs: this Equipment Design Bundle owns the current v0 behavior and runtime
-  slice boundary.
+- Product requirements: `docs/prd/agent-equipment-config.md` owns the
+  human- and agent-facing Config product shape, including CLI/MCP parity and
+  deferred Config Authoring Surfaces.
+- Local docs: this Equipment Design Bundle owns the current v0 behavior and
+  runtime slice boundary.
 - Validator: `tools/validate_armory_integrity.py` recognizes the bundle and required
   v0 terms.
 - Config: authored TOML layers and source category discovery are input to the
   portable runtime slice.
 - Scripts/tools: `tools/agent_equipment_config.py` computes effective config,
   config diff, validation diagnostics, migration previews, and projection
-  classification for the v0 slice.
+  classification for the v0 slice. A fluent CLI wrapper is required for the MVP
+  product surface.
+- MCP/tools: typed MCP parity is required for the safe CLI/runtime slice before
+  #23 closes.
 - Load contract: callers discover paths, select sources, order same-precedence
   inputs, register schema fragments, and pass explicit layer or handoff paths
   into the runtime; the runtime preserves layer, source category, source path,
@@ -72,8 +86,9 @@ output.
   load effective Config and receive a consumer action decision, or
   `consumer_action_decision` to classify existing effective-config evidence.
 - Hooks/permissions/approvals/sandboxes/tools: future enforcement projections.
-- Skills: future Smith/Wielder procedure around designing, onboarding, and
-  repairing config.
+- Skills: Smith/Wielder procedure around designing, onboarding, and repairing
+  config. Skills route to CLI and MCP surfaces; they are not substitutes for
+  those operation surfaces.
 - Plugins and Agent Profiles: future packaging and specialized execution.
 
 ## Rationale

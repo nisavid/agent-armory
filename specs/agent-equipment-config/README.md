@@ -14,6 +14,9 @@ The runtime guide names the currently published slice.
 
 Issue: [#23](https://github.com/nisavid/agent-armory/issues/23)
 
+Product requirements:
+[docs/prd/agent-equipment-config.md](../../docs/prd/agent-equipment-config.md).
+
 ## Purpose
 
 Agent Equipment Config is the shared configuration primitive for Agent
@@ -225,7 +228,26 @@ The supported edit intents are `propose`, `patch`, `migrate`, `revise`, and
 `apply`. Current runtime source writing is limited to `migration-apply` for
 registered migrations on `committed durable config` and
 `local-only operator config`. General source patching and revision writes remain
-deferred until the operation surface is chosen.
+deferred to the Config Authoring Surfaces bucket.
+
+## Operation surfaces
+
+The Config PRD owns the product vocabulary for agent-facing operations. The MVP
+target is a fluent CLI with MCP parity:
+
+| Operation family | CLI surface | MCP surface |
+| --- | --- | --- |
+| Resolve/read/explain/trace | `config resolve` | `config.resolve` |
+| Validate | `config validate` | `config.validate` |
+| Compare | `config diff` | `config.diff` |
+| Onboard/revise planning | `onboard config` | `onboard.config` |
+| Migration preview | `migrate config preview` | `migrate.config_preview` |
+| Migration apply | `migrate config apply` | `migrate.config_apply` |
+
+The current runtime commands remain the implementation and debug path. Skills
+and docs route agents to CLI or MCP usage; they are not substitutes for those
+surfaces. General authoring operations such as propose, patch, and general
+apply belong to the deferred Config Authoring Surfaces bucket.
 
 ## Harness projections
 

@@ -120,14 +120,14 @@ detail.
 sections to revisit and marks unselected sections for preservation. It does not
 write source config.
 
-`propose` and `patch` are contract intents for later operation surfaces. Until
-issue [#76](https://github.com/nisavid/agent-armory/issues/76) chooses the
-agent-facing surface and a child implementation issue exists, Config-aware
-equipment may emit proposals or diffs but must not perform general source
-patches.
+`propose` and `patch` are contract intents for the deferred Config Authoring
+Surfaces bucket. Until that bucket specifies the source-write contract and a
+child implementation issue exists, Config-aware equipment may emit proposals or
+diffs but must not perform general source patches.
 
 Issue [#78](https://github.com/nisavid/agent-armory/issues/78) owns published
-integration guidance after the edit and operation surfaces are settled.
+integration guidance for the settled MVP operation surface. General source
+authoring guidance follows the deferred Config Authoring Surfaces bucket.
 
 ## Examples
 
