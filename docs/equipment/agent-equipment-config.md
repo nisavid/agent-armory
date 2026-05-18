@@ -31,6 +31,55 @@ explicit authority gate and records audit evidence. Harnesses, skills, hooks,
 scripts, or operators choose which layer paths to pass in and what to do with
 the resulting classification.
 
+## Load contract
+
+Agent Equipment Config has an explicit-load contract. The core runtime never
+walks the filesystem, imports plugins, scans packages, or chooses a default
+config path. A script, hook, harness adapter, repository tool, or operator
+discovers paths, selects the intended sources, orders same-precedence inputs,
+registers schema fragments, and invokes the runtime.
+
+Python callers import `tools.agent_equipment_config` and pass `Path` values plus
+`SchemaFragment` objects to `effective_config`, `config_onboarding_plan`, or
+`migration_apply`. CLI callers pass layer paths with `--layer`, session handoff
+paths with `--plain-handoff`, and supported schema fragments through explicit
+fragment flags. The current CLI exposes `--issue-tracker-ops` as the bundled
+fragment flag; arbitrary schema-fragment CLI registration belongs to a later
+integration surface.
+
+Every authored TOML layer passed through `--layer` must declare `name` and
+`category`:
+
+```toml
+[agent_equipment_config.layer]
+name = "repository policy"
+category = "committed durable config"
+```
+
+`name` selects Layer Precedence. `category` selects the source category.
+`trusted` is optional and defaults to `true`; set `trusted = false` for inputs
+that may be useful for diagnostics but must not authorize mutation. The runtime
+preserves provenance in effective-config fields, diagnostics, discovery
+proposals, migration previews, refusals, and audit records.
+
+| Source category | Input surface | Caller responsibility | Core discovery | Notes |
+| --- | --- | --- | --- | --- |
+| `committed durable config` | `--layer` or Python layer path | Discover, select, order, and pass source paths | None | Eligible for migration apply after authority gates. |
+| `local-only operator config` | `--layer` or Python layer path | Discover, select, order, and pass source paths | None | Eligible for migration apply after authority gates; not project truth. |
+| `checkout-local state` | `--layer` or Python layer path | Discover, select, order, and pass source paths | None | Read-only for migration apply. |
+| `generated cache or state` | `--layer` or Python layer path | Discover, select, order, and pass source paths | None | Read-only for migration apply. |
+| `secret reference source` | `--layer` or Python layer path | Discover, select, order, and pass source paths | None | Carries unresolved secret metadata, not secret values. |
+| `session override` | `--layer`, `--plain-handoff`, or Python paths | Discover, select, order, and pass source paths | None | Plain handoffs are promoted to session overrides with promotion provenance. |
+
+Schema fragments must be available before validation. Equipment owns its
+namespace, schema fields, defaults, semantic validators, and migrations. Shared
+Config composes the fragments it receives; it does not discover fragments from
+equipment packages, hook directories, plugins, or repository files.
+
+The load contract does not resolve secrets, create or mutate config outside
+`migration-apply --apply`, enforce harness controls, define universal filenames,
+or decide whether a caller may proceed after a blocking classification.
+
 ## Smith path
 
 When designing Config-aware equipment:
@@ -101,7 +150,9 @@ instead of hidden preference. The command reports:
 - `handoff_behavior` for plain session handoffs and mutation-capable behavior;
 - `discovery_proposals` for committed durable config, local-only operator
   config, checkout-local state, generated cache or state, secret reference
-  source, and session override categories supplied by the caller;
+  source, and session override categories supplied by the caller, including
+  the explicit load-contract fields `core_discovery`, `caller_responsibility`,
+  `input_surfaces`, `provenance_requirement`, and `secret_resolution`;
 - `revision_plan` for re-onboarding selected sections while preserving
   unrelated policy.
 

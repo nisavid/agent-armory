@@ -36,6 +36,51 @@ SOURCE_CATEGORIES = {
     "secret reference source",
 }
 
+SOURCE_CATEGORY_LOAD_CONTRACT = {
+    "committed durable config": {
+        "core_discovery": "none",
+        "caller_responsibility": "discover, select, order, and pass source paths",
+        "input_surfaces": ["--layer"],
+        "provenance_requirement": "agent_equipment_config.layer metadata",
+        "secret_resolution": "unresolved metadata only when present",
+    },
+    "local-only operator config": {
+        "core_discovery": "none",
+        "caller_responsibility": "discover, select, order, and pass source paths",
+        "input_surfaces": ["--layer"],
+        "provenance_requirement": "agent_equipment_config.layer metadata",
+        "secret_resolution": "unresolved metadata only when present",
+    },
+    "checkout-local state": {
+        "core_discovery": "none",
+        "caller_responsibility": "discover, select, order, and pass source paths",
+        "input_surfaces": ["--layer"],
+        "provenance_requirement": "agent_equipment_config.layer metadata",
+        "secret_resolution": "unresolved metadata only when present",
+    },
+    "generated cache or state": {
+        "core_discovery": "none",
+        "caller_responsibility": "discover, select, order, and pass source paths",
+        "input_surfaces": ["--layer"],
+        "provenance_requirement": "agent_equipment_config.layer metadata",
+        "secret_resolution": "unresolved metadata only when present",
+    },
+    "secret reference source": {
+        "core_discovery": "none",
+        "caller_responsibility": "discover, select, order, and pass source paths",
+        "input_surfaces": ["--layer"],
+        "provenance_requirement": "agent_equipment_config.layer metadata",
+        "secret_resolution": "unresolved metadata only when present",
+    },
+    "session override": {
+        "core_discovery": "none",
+        "caller_responsibility": "discover, select, order, and pass source paths",
+        "input_surfaces": ["--layer", "--plain-handoff"],
+        "provenance_requirement": "agent_equipment_config.layer metadata or plain handoff promotion record",
+        "secret_resolution": "unresolved metadata only when present",
+    },
+}
+
 MIGRATION_APPLY_SOURCE_CATEGORIES = {
     "committed durable config",
     "local-only operator config",
@@ -1073,6 +1118,7 @@ def discovery_proposals(layers: list[Layer]) -> list[dict[str, Any]]:
                     for layer in found_layers
                 ],
                 "path_owner": "harness or equipment projection",
+                **SOURCE_CATEGORY_LOAD_CONTRACT[category],
             }
         )
     return proposals
