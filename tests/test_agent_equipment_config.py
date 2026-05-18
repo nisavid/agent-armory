@@ -2038,7 +2038,10 @@ class AgentEquipmentConfigTests(unittest.TestCase):
     def test_fragment_readiness_ignores_diagnostics_without_kind(self):
         readiness = agent_equipment_config.fragment_readiness_from_effective(
             {
-                "diagnostics": [{"path": "issue_tracker_ops.mode"}],
+                "diagnostics": [
+                    {"path": "issue_tracker_ops.mode"},
+                    {"path": "issue_tracker_ops.external_disclosure", "kind": 7},
+                ],
                 "effective": {
                     "issue_tracker_ops": {
                         "mode": {"value": "dry-run", "layer": "repository policy"},
