@@ -89,7 +89,7 @@ Before #23 closes, validation must cover the PRD's MVP operation map:
 - `config validate` maps to lower-noise diagnostics, safety status, authority
   readiness, fragment readiness, and pass/fail status.
 - `config diff` maps to config-diff behavior.
-- `onboard config` maps to onboarding-plan behavior.
+- `onboard config` maps to onboarding output behavior.
 - `migrate config preview` and `migrate config apply` map to migration-apply
   preview and authorized write behavior.
 - MCP tools mirror those safe operation families with typed inputs and outputs.

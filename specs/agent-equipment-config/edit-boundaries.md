@@ -4,10 +4,11 @@ Status: Equipment Blueprint
 Promotion state: planned
 
 This Equipment Design Bundle document defines deliberate Agent Equipment Config
-edit and mutation boundaries. It does not implement Agent Equipment. The
-current implemented mutation support is `migrate config preview` and
-`migrate config apply`; broader edit surfaces must follow this contract when
-later tools, MCP functions, skills, hooks, or guides expose them.
+edit and mutation boundaries. It does not implement Agent Equipment. The current
+implemented migrate surface is `migrate config preview` as dry-run output and
+`migrate config apply` as the only mutating path. Broader edit surfaces must
+follow this contract when later tools, MCP functions, skills, hooks, or guides
+expose them.
 
 ## Purpose
 
