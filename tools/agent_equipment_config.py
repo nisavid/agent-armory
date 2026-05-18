@@ -1711,10 +1711,10 @@ def config_validation_report(
     return report
 
 
-def add_effective_config_arguments(parser: argparse.ArgumentParser) -> None:
+def add_effective_config_arguments(parser: argparse.ArgumentParser, *, default_requested_behavior: str = "advisory") -> None:
     parser.add_argument("--layer", action="append", default=[])
     parser.add_argument("--plain-handoff", action="append", default=[])
-    parser.add_argument("--requested-behavior", choices=["advisory", "mutation"], default="advisory")
+    parser.add_argument("--requested-behavior", choices=["advisory", "mutation"], default=default_requested_behavior)
     parser.add_argument("--issue-tracker-ops", action="store_true")
 
 
@@ -1764,9 +1764,9 @@ def build_parser() -> argparse.ArgumentParser:
     add_effective_config_arguments(config_resolve)
     config_resolve.set_defaults(operation="config_resolve", display_operation="config resolve")
     config_validate = config_subparsers.add_parser("validate")
-    add_effective_config_arguments(config_validate)
+    add_effective_config_arguments(config_validate, default_requested_behavior="mutation")
     config_validate.add_argument("--include-effective-config", action="store_true")
-    config_validate.set_defaults(operation="config_validate", display_operation="config validate", requested_behavior="mutation")
+    config_validate.set_defaults(operation="config_validate", display_operation="config validate")
     config_diff = config_subparsers.add_parser("diff")
     add_diff_arguments(config_diff)
     config_diff.set_defaults(operation="config_diff", display_operation="config diff")
