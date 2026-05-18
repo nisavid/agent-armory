@@ -75,6 +75,8 @@ comparison.
 - `config validate` is a lower-noise pass/fail surface. It reports diagnostics,
   safety status, authority readiness, fragment readiness, and suitable exit
   status without dumping the full effective config unless an option requests it.
+  It validates mutation readiness by default while allowing explicit advisory
+  checks.
 - `config diff` compares effective Config outputs.
 - `onboard config` owns onboarding, resume, restart, and revise-planning output.
   It does not write source config in the MVP.

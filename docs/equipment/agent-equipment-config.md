@@ -202,8 +202,11 @@ python3 tools/agent_equipment_config.py config resolve \
 
 The output should be `usable` for advisory dry-run behavior. Use
 `config validate` when a script or hook needs the lower-noise pass/fail report
-and exit status. Mutation behavior remains governed by the consuming
-equipment's semantic validators and the selected harness projection.
+and exit status. It checks mutation readiness by default so authority and
+semantic blockers are visible unless the caller explicitly requests advisory
+validation with `--requested-behavior advisory`. Mutation behavior remains
+governed by the consuming equipment's semantic validators and the selected
+harness projection.
 
 ## Onboarding and authoring
 

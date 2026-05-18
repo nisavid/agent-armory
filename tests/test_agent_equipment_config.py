@@ -2023,8 +2023,6 @@ class AgentEquipmentConfigTests(unittest.TestCase):
                     "--layer",
                     str(layer),
                     "--issue-tracker-ops",
-                    "--requested-behavior",
-                    "mutation",
                 ],
                 stdout=stdout,
             )
@@ -2036,6 +2034,23 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(payload["authority_readiness"]["missing_authorities"], ["live_tracker_write"])
         self.assertEqual(payload["fragment_readiness"]["status"], "not_ready")
         self.assertEqual(payload["fragment_readiness"]["fragments"][0]["diagnostic_kinds"], ["missing authority"])
+
+    def test_fragment_readiness_ignores_diagnostics_without_kind(self):
+        readiness = agent_equipment_config.fragment_readiness_from_effective(
+            {
+                "diagnostics": [{"path": "issue_tracker_ops.mode"}],
+                "effective": {
+                    "issue_tracker_ops": {
+                        "mode": {"value": "dry-run", "layer": "repository policy"},
+                        "external_disclosure": {"value": "blocked", "layer": "repository policy"},
+                    }
+                },
+            },
+            [self.issue_ops_fragment()],
+        )
+
+        self.assertEqual(readiness["status"], "ready")
+        self.assertEqual(readiness["fragments"][0]["diagnostic_kinds"], [])
 
     def test_cli_config_validate_marks_blocked_override_fragment_not_ready(self):
         with tempfile.TemporaryDirectory() as tmpdir:
