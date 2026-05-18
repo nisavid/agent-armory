@@ -10,10 +10,20 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Callable, TextIO
 
+try:
+    from . import agent_equipment_config
+except ImportError:
+    import agent_equipment_config  # type: ignore[no-redef]
+
 
 DEFAULT_API_VERSION = "2026-03-10"
 DEFAULT_ACCEPT = "application/vnd.github+json"
 JSONValue = dict | list | str | int | float | bool | None
+MUTATION_OPERATIONS = {"create-issue", "update-issue", "comment", "add-blocked-by", "remove-blocked-by"}
+CONFIG_REFUSAL_STATES = {"blocking", "unsupported"}
+CONFIGURED_EXECUTE_CAPABILITY = "configured_execute_mode"
+TRACKER_READ_CAPABILITY = "tracker_read"
+TRACKER_WRITE_CAPABILITY = "tracker_write"
 
 
 @dataclass(frozen=True)
@@ -398,7 +408,13 @@ def audit_issue_labels(issues: JSONValue) -> dict[str, object]:
     }
 
 
-def dry_run_payload(operation: str, request: RequestSpec, *, resolved: dict | None = None) -> dict:
+def dry_run_payload(
+    operation: str,
+    request: RequestSpec,
+    *,
+    resolved: dict | None = None,
+    config: dict | None = None,
+) -> dict:
     payload = {
         "mode": "dry-run",
         "operation": operation,
@@ -411,23 +427,25 @@ def dry_run_payload(operation: str, request: RequestSpec, *, resolved: dict | No
     }
     if resolved is not None:
         payload["resolved"] = resolved
+    if config is not None:
+        payload["config"] = config
     return payload
 
 
-def dry_run_audit_labels_payload(args: argparse.Namespace) -> dict:
-    payload = dry_run_payload(args.operation, audit_labels_request(args))
+def dry_run_audit_labels_payload(args: argparse.Namespace, *, config: dict | None = None) -> dict:
+    payload = dry_run_payload(args.operation, audit_labels_request(args), config=config)
     payload["label_axes"] = label_axes_payload()
     return payload
 
 
-def dry_run_dependency_payload(args: argparse.Namespace) -> dict:
+def dry_run_dependency_payload(args: argparse.Namespace, *, config: dict | None = None) -> dict:
     if args.blocking_issue_id is not None:
         request = (
             add_blocked_by_request(args, args.blocking_issue_id)
             if args.operation == "add-blocked-by"
             else remove_blocked_by_request(args, args.blocking_issue_id)
         )
-        return dry_run_payload(args.operation, request)
+        return dry_run_payload(args.operation, request, config=config)
 
     resolve_request = blocking_issue_id_request(args)
     if resolve_request is None:
@@ -445,9 +463,104 @@ def dry_run_dependency_payload(args: argparse.Namespace) -> dict:
             issue_endpoint(args.repo, f"issues/{args.issue_number}/dependencies/blocked_by/{placeholder}"),
         )
     )
-    payload = dry_run_payload(args.operation, mutation_request)
+    payload = dry_run_payload(args.operation, mutation_request, config=config)
     payload["steps"] = [compact_request(resolve_request), compact_request(mutation_request)]
     return payload
+
+
+def config_inputs(args: argparse.Namespace) -> tuple[list[Path], list[Path]]:
+    return (
+        [Path(path) for path in getattr(args, "config_layer", [])],
+        [Path(path) for path in getattr(args, "config_plain_handoff", [])],
+    )
+
+
+def requested_config_behavior(args: argparse.Namespace) -> str:
+    if args.operation in MUTATION_OPERATIONS and args.execute:
+        return "mutation"
+    return "advisory"
+
+
+def effective_issue_tracker_ops_value(config_result: dict, field_name: str) -> JSONValue:
+    effective_config = config_result.get("effective_config", {})
+    if not isinstance(effective_config, dict):
+        return None
+    effective = effective_config.get("effective", {})
+    if not isinstance(effective, dict):
+        return None
+    section = effective.get("issue_tracker_ops", {})
+    if not isinstance(section, dict):
+        return None
+    wrapped = section.get(field_name, {})
+    if not isinstance(wrapped, dict):
+        return None
+    return wrapped.get("value")
+
+
+def evaluate_issue_tracker_ops_config(args: argparse.Namespace) -> dict | None:
+    layer_paths, plain_handoff_paths = config_inputs(args)
+    if not layer_paths and not plain_handoff_paths:
+        return None
+    requested_behavior = requested_config_behavior(args)
+    required_capabilities = [TRACKER_WRITE_CAPABILITY] if requested_behavior == "mutation" else []
+    supported_capabilities = [TRACKER_READ_CAPABILITY, TRACKER_WRITE_CAPABILITY]
+    try:
+        config_result = agent_equipment_config.evaluate_consumer_config(
+            layer_paths,
+            [agent_equipment_config.issue_tracker_ops_fragment()],
+            equipment="issue_tracker_ops",
+            requested_behavior=requested_behavior,
+            plain_handoff_paths=plain_handoff_paths,
+            required_capabilities=required_capabilities,
+            supported_capabilities=supported_capabilities,
+        )
+    except (OSError, agent_equipment_config.ConfigError) as exc:
+        raise UsageError(f"could not evaluate Issue Tracker Ops Config: {exc}") from exc
+
+    configured_mode = effective_issue_tracker_ops_value(config_result, "mode")
+    config_result["consumer_semantics"] = {
+        "configured_mode": configured_mode,
+        "execute_requires_mode": "execute",
+        "live_write_capability": TRACKER_WRITE_CAPABILITY,
+    }
+    decision = config_result.get("consumer_action_decision", {})
+    decision_state = decision.get("state") if isinstance(decision, dict) else None
+    if requested_behavior == "mutation" and configured_mode != "execute" and decision_state not in {"blocking"}:
+        config_result["consumer_action_decision"] = agent_equipment_config.consumer_action_decision(
+            config_result["effective_config"],
+            equipment="issue_tracker_ops",
+            requested_behavior=requested_behavior,
+            required_capabilities=[CONFIGURED_EXECUTE_CAPABILITY, TRACKER_WRITE_CAPABILITY],
+            supported_capabilities=[TRACKER_READ_CAPABILITY, TRACKER_WRITE_CAPABILITY],
+        )
+    return agent_equipment_config.redact_for_cli(config_result)
+
+
+def config_refuses_execute(config: dict | None, args: argparse.Namespace) -> bool:
+    if config is None or args.operation not in MUTATION_OPERATIONS or not args.execute:
+        return False
+    decision = config.get("consumer_action_decision", {})
+    if not isinstance(decision, dict):
+        return True
+    return decision.get("state") in CONFIG_REFUSAL_STATES
+
+
+def config_refusal_payload(operation: str, request: RequestSpec | dict, config: dict) -> dict:
+    decision = config.get("consumer_action_decision", {})
+    state = decision.get("state") if isinstance(decision, dict) else "unknown"
+    reason = decision.get("reason") if isinstance(decision, dict) else "malformed consumer action decision"
+    request_payload = compact_request(request) if isinstance(request, RequestSpec) else request
+    return {
+        "mode": "execute",
+        "operation": operation,
+        "request": request_payload,
+        "config": config,
+        "error": {
+            "code": "config_refused",
+            "state": state,
+            "message": f"Issue Tracker Ops Config did not authorize execute: {reason}",
+        },
+    }
 
 
 def execute_audit_labels(
@@ -456,22 +569,23 @@ def execute_audit_labels(
     gh: Callable[..., subprocess.CompletedProcess[str]],
     stdout: TextIO,
     stderr: TextIO,
+    config: dict | None = None,
 ) -> int:
     request = audit_labels_request(args)
     completed = call_gh(gh, request, api_version=args.api_version)
     if completed.returncode != 0:
-        write_json(
-            stdout,
-            {
-                "mode": "execute",
-                "operation": args.operation,
-                "request": compact_request(request),
-                "error": {
-                    "returncode": completed.returncode,
-                    "stderr": completed.stderr.strip(),
-                },
+        payload = {
+            "mode": "execute",
+            "operation": args.operation,
+            "request": compact_request(request),
+            "error": {
+                "returncode": completed.returncode,
+                "stderr": completed.stderr.strip(),
             },
-        )
+        }
+        if config is not None:
+            payload["config"] = config
+        write_json(stdout, payload)
         return completed.returncode
     result = parse_json_output(completed)
     result = combine_paginated_result(result)
@@ -482,27 +596,27 @@ def execute_audit_labels(
         }
         if completed.stderr:
             error["gh_stderr"] = completed.stderr.strip()
-        write_json(
-            stdout,
-            {
-                "mode": "execute",
-                "operation": args.operation,
-                "request": compact_request(request),
-                "error": error,
-            },
-        )
-        if completed.stderr:
-            stderr.write(completed.stderr)
-        return 1
-    write_json(
-        stdout,
-        {
+        payload = {
             "mode": "execute",
             "operation": args.operation,
             "request": compact_request(request),
-            "result": audit_issue_labels(result),
-        },
-    )
+            "error": error,
+        }
+        if config is not None:
+            payload["config"] = config
+        write_json(stdout, payload)
+        if completed.stderr:
+            stderr.write(completed.stderr)
+        return 1
+    payload = {
+        "mode": "execute",
+        "operation": args.operation,
+        "request": compact_request(request),
+        "result": audit_issue_labels(result),
+    }
+    if config is not None:
+        payload["config"] = config
+    write_json(stdout, payload)
     if completed.stderr:
         stderr.write(completed.stderr)
     return 0
@@ -517,6 +631,7 @@ def execute_request(
     stdout: TextIO,
     stderr: TextIO,
     resolved: dict | None = None,
+    config: dict | None = None,
 ) -> int:
     completed = call_gh(gh, request, api_version=args.api_version)
     if completed.returncode != 0:
@@ -531,6 +646,8 @@ def execute_request(
         }
         if resolved is not None:
             payload["resolved"] = resolved
+        if config is not None:
+            payload["config"] = config
         write_json(stdout, payload)
         return completed.returncode
     result = parse_json_output(completed)
@@ -544,6 +661,8 @@ def execute_request(
     }
     if resolved is not None:
         payload["resolved"] = resolved
+    if config is not None:
+        payload["config"] = config
     write_json(stdout, payload)
     if completed.stderr:
         stderr.write(completed.stderr)
@@ -606,6 +725,18 @@ def add_common_flags(parser: argparse.ArgumentParser, *, mutation: bool = True) 
             action="store_true",
             help="Perform the GitHub API read. Without this flag, the command emits a dry run.",
         )
+    parser.add_argument(
+        "--config-layer",
+        action="append",
+        default=[],
+        help="Agent Equipment Config TOML layer to evaluate for this Issue Tracker Ops command.",
+    )
+    parser.add_argument(
+        "--config-plain-handoff",
+        action="append",
+        default=[],
+        help="Plain Issue Tracker Ops handoff TOML file to promote as session Config.",
+    )
 
 
 def add_body_flags(parser: argparse.ArgumentParser, *, required: bool = False) -> None:
@@ -702,10 +833,14 @@ def run(
                 args = parser.parse_args(argv)
         except SystemExit as exc:
             return exc.code if isinstance(exc.code, int) else 1
+        config = evaluate_issue_tracker_ops_config(args)
         if args.operation in {"add-blocked-by", "remove-blocked-by"}:
             if not args.execute:
-                write_json(stdout, dry_run_dependency_payload(args))
+                write_json(stdout, dry_run_dependency_payload(args, config=config))
                 return 0
+            if config_refuses_execute(config, args):
+                write_json(stdout, config_refusal_payload(args.operation, dry_run_dependency_payload(args)["request"], config))
+                return 1
             blocking_issue_id, exit_code = resolve_blocking_issue_id(args, gh=gh, stdout=stdout)
             if exit_code != 0 or blocking_issue_id is None:
                 return exit_code
@@ -722,19 +857,23 @@ def run(
                 stdout=stdout,
                 stderr=stderr,
                 resolved={"blocking_issue_id": blocking_issue_id},
+                config=config,
             )
 
         if args.operation == "audit-labels":
             if not args.execute:
-                write_json(stdout, dry_run_audit_labels_payload(args))
+                write_json(stdout, dry_run_audit_labels_payload(args, config=config))
                 return 0
-            return execute_audit_labels(args, gh=gh, stdout=stdout, stderr=stderr)
+            return execute_audit_labels(args, gh=gh, stdout=stdout, stderr=stderr, config=config)
 
         request = build_primary_request(args)
         if not args.execute:
-            write_json(stdout, dry_run_payload(args.operation, request))
+            write_json(stdout, dry_run_payload(args.operation, request, config=config))
             return 0
-        return execute_request(args.operation, request, args=args, gh=gh, stdout=stdout, stderr=stderr)
+        if config_refuses_execute(config, args):
+            write_json(stdout, config_refusal_payload(args.operation, request, config))
+            return 1
+        return execute_request(args.operation, request, args=args, gh=gh, stdout=stdout, stderr=stderr, config=config)
     except UsageError as exc:
         stderr.write(f"{exc}\n")
         return 2

@@ -7,9 +7,8 @@ Promotion state: implemented for bootstrap MVP; full delivery remains open
 
 This classification covers the bootstrap GitHub Issues adapter and the Issue
 Tracker Ops Equipment Design Bundle for issue #11. It does not certify the
-future tracker-neutral core, onboarding flow, Issue Ops config profile, Agent
-Equipment Config integration, hooks, skills, Agent Profiles, plugins, or GitHub
-Projects extension.
+future tracker-neutral core, onboarding flow, full Issue Ops config profile,
+hooks, skills, Agent Profiles, plugins, or GitHub Projects extension.
 
 ## Operation classes
 
@@ -22,6 +21,7 @@ Projects extension.
 | Issue update | Network write | Requires `--execute`; emits JSON audit output. |
 | Issue comment | Network write and notification | Requires `--execute`; emits JSON audit output. |
 | Dependency add/remove | Network write | Requires `--execute`; resolves issue number to REST `id` when needed and emits JSON audit output. |
+| Config-aware mutation | Policy decision | Uses explicit Config inputs only; blocking or unsupported consumer decisions fail closed before `gh` runs. |
 
 ## Assets
 
@@ -42,8 +42,8 @@ Projects extension.
 - Dry-run terminal output to logs, chat summaries, and review evidence.
 - Repository policy to future organization, project, user, and session
   overrides.
-- Issue Ops plain config to future Agent Equipment Config schema fragments and
-  layered effective config.
+- Issue Ops plain handoffs and Config layers to effective Config evidence and
+  consumer action decisions.
 
 ## Controls
 
@@ -55,13 +55,18 @@ Projects extension.
   explicit.
 - The adapter emits JSON audit output for request shape, result, resolved IDs,
   and failure.
+- When explicit Config inputs are supplied, mutation subcommands evaluate the
+  Issue Ops Config fragment before side effects. Live mutation requires
+  configured `execute` mode and a consumer decision that is not `blocking` or
+  `unsupported`.
 - Missing or uncertain auth, policy, adapter behavior, or tracker state fails
   closed for writes.
 
 ## Known gaps
 
-- No Issue Ops plain config shape or Agent Equipment Config integration yet.
-- No schema-backed layered configuration yet.
+- Config consumption is limited to the Issue Ops fragment, explicit layers,
+  plain handoff promotion, and execute-mode gating.
+- The broader Issue Ops config profile is not implemented yet.
 - No duplicate detection or idempotency key behavior yet.
 - No rollback or compensation beyond recording the failed or successful
   operation.

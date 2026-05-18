@@ -27,6 +27,14 @@ Bootstrap adapter subcommands:
 The adapter defaults network operations to dry-run output; pass `--execute`
 only when the active session allows the GitHub tracker operation.
 
+The adapter can consume explicit Agent Equipment Config inputs with
+`--config-layer <path>` and plain Issue Tracker Ops handoffs with
+`--config-plain-handoff <path>`. It does not discover config paths. When config
+inputs are supplied, dry-run output includes the effective Config evidence and
+consumer action decision. For mutation subcommands, live `--execute` also
+requires the effective `issue_tracker_ops.mode` value to be `execute`; blocking
+or unsupported consumer decisions fail closed before any `gh` call.
+
 Use the `gh` CLI directly when a needed GitHub Issues operation is outside the
 bootstrap adapter's current modes, or when a skill needs a read-only query that
 is simpler through `gh`.
