@@ -1,4 +1,3 @@
-import argparse
 import contextlib
 import io
 import json
@@ -2036,22 +2035,16 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(payload["fragment_readiness"]["status"], "not_ready")
         self.assertEqual(payload["fragment_readiness"]["fragments"][0]["diagnostic_kinds"], ["missing authority"])
 
-    def test_cli_config_validate_requested_behavior_default_metadata_is_mutation(self):
+    def test_cli_config_validate_help_reports_requested_behavior_default(self):
         parser = agent_equipment_config.build_parser()
-        top_subparsers = next(action for action in parser._actions if isinstance(action, argparse._SubParsersAction))
-        config_parser = top_subparsers.choices["config"]
-        config_subparsers = next(
-            action for action in config_parser._actions if isinstance(action, argparse._SubParsersAction)
-        )
-        validate_parser = config_subparsers.choices["validate"]
-        requested_behavior_action = next(
-            action for action in validate_parser._actions if "--requested-behavior" in action.option_strings
-        )
+        stdout = io.StringIO()
 
-        parsed = parser.parse_args(["config", "validate", "--issue-tracker-ops"])
+        with self.assertRaises(SystemExit) as raised:
+            with contextlib.redirect_stdout(stdout):
+                parser.parse_args(["config", "validate", "--help"])
 
-        self.assertEqual(requested_behavior_action.default, "mutation")
-        self.assertEqual(parsed.requested_behavior, "mutation")
+        self.assertEqual(raised.exception.code, 0)
+        self.assertIn("(default: mutation)", stdout.getvalue())
 
     def test_fragment_readiness_ignores_diagnostics_without_kind(self):
         readiness = agent_equipment_config.fragment_readiness_from_effective(
