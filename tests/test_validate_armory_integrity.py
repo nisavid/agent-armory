@@ -8581,6 +8581,7 @@ class SpecValidationTests(unittest.TestCase):
         "specs/agent-equipment-config/capability-card.md",
         "specs/agent-equipment-config/interface-decision-record.md",
         "specs/agent-equipment-config/security-control-classification.md",
+        "specs/agent-equipment-config/edit-boundaries.md",
         "specs/agent-equipment-config/pressure-scenarios.md",
         "specs/agent-equipment-config/validation-plan.md",
         "specs/agent-equipment-config/closeout-evidence-plan.md",
@@ -8731,6 +8732,28 @@ class SpecValidationTests(unittest.TestCase):
                 policy, untrusted config, local-only state, and mutation gates
                 are represented in structured diagnostics. Policy Authority
                 constrains later overrides and lower-authority layers.
+                """,
+            ),
+            "specs/agent-equipment-config/edit-boundaries.md": bundle_doc(
+                "Edit Boundaries: Agent Equipment Config",
+                """\
+                ## Purpose
+
+                Edit boundaries name propose, patch, migrate, revise, and apply
+                intents for Config source changes.
+
+                ## Source ownership
+
+                Committed durable config and local-only operator config are the
+                writable categories for current migration apply. Generated,
+                checkout-local, secret reference, and session sources are
+                read-only for Config source writes.
+
+                ## Refusals
+
+                Refusals name source category, trusted provenance, Policy
+                Authority, Config Safety Status, validation, and secret
+                boundary failures.
                 """,
             ),
             "specs/agent-equipment-config/pressure-scenarios.md": bundle_doc(

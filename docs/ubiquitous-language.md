@@ -251,6 +251,15 @@ non-overridable or requiring a mutation gate.
 classification that states whether a configuration is usable, incomplete,
 unsafe, stale, untrusted, or conflicted for the requested behavior.
 
+**Config Edit Intent** is a deliberate Agent Equipment Config source-change
+purpose such as propose, patch, migrate, revise, or apply. The intent does not
+authorize a write by itself.
+
+**Config Refusal State** is the machine-visible reason a Config edit cannot
+write a source, such as ineligible source category, missing authority, blocking
+safety status, validation failure, secret-boundary violation, ownership-boundary
+violation, or changed source precondition.
+
 **Cognition Enhancement Equipment** is Agent Equipment that shapes how an Agent
 reasons, reflects, remembers, routes insight, right-sizes cognition, or
 improves its future harness behavior.

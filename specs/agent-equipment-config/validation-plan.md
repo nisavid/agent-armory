@@ -6,10 +6,11 @@ Promotion state: planned
 This Equipment Design Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for effective-config, config-diff,
 diagnostics, plain handoff promotion, authority checks, projection
-classification, and reusable consumer action decisions. It does not implement Agent Equipment
-beyond this runtime slice, publish assets, resolve secrets, mutate external
-systems, or implement harness controls. Source mutation is limited to explicit
-migration apply for eligible local TOML sources.
+classification, reusable consumer action decisions, and deliberate edit
+boundaries. It does not implement Agent Equipment beyond this runtime slice,
+publish assets, resolve secrets, mutate external systems, or implement harness
+controls. Source mutation is limited to explicit migration apply for eligible
+local TOML sources.
 
 ## Scope
 
@@ -35,6 +36,7 @@ Armory Integrity Validation must require:
 - `specs/agent-equipment-config/capability-card.md`
 - `specs/agent-equipment-config/interface-decision-record.md`
 - `specs/agent-equipment-config/security-control-classification.md`
+- `specs/agent-equipment-config/edit-boundaries.md`
 - `specs/agent-equipment-config/pressure-scenarios.md`
 - `specs/agent-equipment-config/validation-plan.md`
 - `specs/agent-equipment-config/closeout-evidence-plan.md`
@@ -59,6 +61,10 @@ Runtime coverage tracks these current and follow-on cases:
 - semantic validator diagnostics;
 - read-time schema migration preview;
 - explicit migration apply audit;
+- deliberate edit intents and refusal states;
+- allowed current edit path for eligible migration apply;
+- refused current edit path for read-only, generated, untrusted, unsafe, or
+  authority-blocked sources;
 - committed durable config plus local-only override;
 - checkout-local state;
 - session override;
@@ -81,6 +87,11 @@ Implemented by the v0 engine slice:
 - deprecation diagnostics and migration-preview output with audit-preview shape;
 - migration-apply dry-run, write authority, source eligibility, refusal, and
   audit-record behavior;
+- migration-apply allowed path for eligible TOML sources with operator or
+  configured authority;
+- migration-apply refused path for generated, checkout-local, session,
+  secret-reference, untrusted, unsafe, incomplete, stale-without-migration,
+  missing-authority, and changed-source cases;
 - plain Issue Tracker Ops handoff fallback and promotion;
 - consumer action decision helper for allowed, advisory, warning, blocking, and
   unsupported outcomes;
@@ -107,9 +118,9 @@ and fail closed for live tracker mutation when Config Safety Status is not
 ## Security validation
 
 Each implementation slice that adds executable parsing, migration, mutation,
-secret resolution, hook behavior, tool definitions, network interaction, or
-enforcement projection needs Codex Security review or a documented narrower
-security action.
+secret resolution, hook behavior, tool definitions, network interaction,
+general source patching, revision writes, or enforcement projection needs Codex
+Security review or a documented narrower security action.
 
 ## Residual risk
 

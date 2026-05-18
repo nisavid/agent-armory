@@ -13,10 +13,10 @@ migration apply for eligible local TOML sources.
 
 ## Scope
 
-This classification covers the v0 contract, bundle source shape, and first
-portable parser, merge engine, and migration-apply slice. It does not certify a
-hook, permission gate, sandbox, approval integration, plugin, harness control,
-external write, or secret provider.
+This classification covers the v0 contract, bundle source shape, deliberate
+edit boundaries, and first portable parser, merge engine, and migration-apply
+slice. It does not certify a hook, permission gate, sandbox, approval
+integration, plugin, harness control, external write, or secret provider.
 
 ## Assets
 
@@ -28,6 +28,7 @@ external write, or secret provider.
 - Secret references and their resolution status.
 - Schema fragments, semantic validators, migrations, and diagnostics.
 - Effective-config, config-diff, and audit outputs.
+- Edit plans, diffs, refusals, and mutation audit records.
 - Consumer action decisions derived from effective Config output.
 - Enforcement projections to hooks, permissions, approvals, sandboxes, tools,
   and advisory model-facing guidance.
@@ -51,8 +52,11 @@ external write, or secret provider.
 | Config discovery | Read | Classify source category and provenance. |
 | Effective-config generation | Read or policy decision | Explain value provenance, safety status, and diagnostics. |
 | Config-diff generation | Read | Explain changed values, policy effects, and unresolved conflicts. |
+| Edit proposal | Read | Emit candidate changes and diff evidence without selecting or writing a source target. |
+| Config patch or revise plan | Policy decision | Require selected sections or fields, eligible future surface, validation, authority evidence, and refusal output before any write. |
 | Migration preview | Read | Do not rewrite source config. |
 | Source migration apply | Local write | Require eligible source category, trusted provenance, dry-run-first output, explicit authority, and audit records. |
+| General config apply | Local write | Deferred; future surfaces must satisfy edit intent, source eligibility, diff, authority, precondition, atomic write, and audit controls before implementation. |
 | Consumer action decision | Policy decision | Fail closed for mutation-capable behavior unless effective Config is usable, authority and semantics pass, and the required capability is supported. |
 | Enforcement projection | Advisory or blocking control | Label blocking support versus advisory fallback. |
 | Secret reference resolution | Sensitive read | Report reference and status, never secret value. |
@@ -68,6 +72,15 @@ external write, or secret provider.
 - Read-time migrations do not mutate source config.
 - Migration apply writes only eligible local TOML sources and produces
   decision/mutation audit records.
+- General source edits must identify intent, target, source category,
+  provenance, diff, authority, validation result, final precondition, and audit
+  record before writing.
+- Checkout-local state, generated cache or state, secret reference sources,
+  session overrides, untrusted layers, and externally owned sources are
+  read-only for Config source writes unless a future owner-specific surface
+  establishes its own authority and audit boundary.
+- Secret-reference edits may write metadata pointers only in eligible authored
+  config; they must not write secret values or mutate a provider.
 - Untrusted config cannot authorize mutation-capable behavior.
 - Later or lower-authority layers cannot mint authority for an earlier Policy
   Authority gate.
@@ -111,6 +124,7 @@ to the v0 contract itself.
   tested portable runtime slice.
 - No hook or approval gate consumes these diagnostics yet.
 - No provider-specific secret resolver exists yet.
+- No general source patch or revision writer exists yet.
 - Onboarding output is deterministic JSON; no interactive harness projection
   consumes it yet.
 - No harness projection has been verified against current harness versions for
@@ -120,7 +134,7 @@ to the v0 contract itself.
 
 The current runtime slice is acceptable as a deterministic local parser, merge,
 diff, migration-preview, migration-apply, plain-handoff, authority,
-projection-classification, consumer action decision, and secret-reference
-reporting surface. Later implementation slices that add provider-specific
-secret resolution, external mutation, broader source mutation, or harness
-controls must receive their own security review.
+projection-classification, consumer action decision, edit-boundary reference,
+and secret-reference reporting surface. Later implementation slices that add
+provider-specific secret resolution, external mutation, broader source mutation,
+or harness controls must receive their own security review.

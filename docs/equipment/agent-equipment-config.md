@@ -10,7 +10,9 @@ explaining effective configuration, comparing config outputs, and preserving
 plain equipment-specific handoffs. It also exposes onboarding-plan output for
 first-run, interrupted, resumed, and restarted configuration flows, plus
 reusable consumer action decision output and explicit migration-apply output
-for schema rewrites that pass authority and source-eligibility gates.
+for schema rewrites that pass authority and source-eligibility gates. The
+Config bundle also defines deliberate edit boundaries for future propose,
+patch, migrate, revise, and apply surfaces.
 
 Use this guide when a Smith is making Config-aware equipment or when a Wielder
 needs to provide local or session configuration for equipment that already
@@ -20,6 +22,7 @@ declares a schema fragment.
 
 - Runtime: `tools/agent_equipment_config.py`
 - Blueprint: `specs/agent-equipment-config/`
+- Edit boundaries: `specs/agent-equipment-config/edit-boundaries.md`
 - Example layer: `templates/config/agent-equipment-config-example.toml`
 - Generic config template: `templates/config/example.toml`
 
@@ -30,6 +33,9 @@ systems, or enforce harness controls. The only source mutation surface is
 explicit authority gate and records audit evidence. Harnesses, skills, hooks,
 scripts, or operators choose which layer paths to pass in and what to do with
 the resulting classification.
+
+General proposal, patch, revision, or apply tooling must follow the edit
+boundary contract before it writes any source.
 
 ## Load contract
 
@@ -223,6 +229,36 @@ supply local, checkout, or session values without weakening committed policy
 authority. Re-onboarding should revise the selected section and preserve
 unselected sections unless a policy owner deliberately changes them. Unknown
 section names fail before emitting a plan.
+
+## Edit and mutation boundaries
+
+Use the edit-boundary contract when a Smith designs a Config-aware source edit
+surface or when a Wielder evaluates whether an agent may change config. The
+supported edit intents are:
+
+| Intent | Current boundary |
+| --- | --- |
+| `propose` | Emit a candidate change and diff only; no source write. |
+| `patch` | Deferred until a chosen operation surface implements source selection, validation, authority, diff, and audit. |
+| `migrate` | Supported through `migration-apply` dry-run for registered schema migrations. |
+| `revise` | Supported as onboarding-plan section selection; source writing is deferred. |
+| `apply` | Supported only for registered migrations on eligible TOML sources. |
+
+Only `committed durable config` and `local-only operator config` are eligible
+for the current migration apply write path. `checkout-local state`, `generated
+cache or state`, `secret reference source`, `session override`, untrusted
+layers, and externally owned sources are read-only to Config write surfaces.
+Config may emit proposals or diagnostics for those sources, but the owning
+tool, generator, secret provider, handoff owner, or external system must perform
+any source mutation through its own audited path.
+
+A source write must have explicit intent, selected source target, reviewable
+diff or change set, provenance, applicable authority, schema and semantic
+validation, a clean Config Safety Status for the requested behavior, final
+source precondition checking, and audit records. Refusals must identify the
+source, category, namespace, authority evidence, and reason. A write must stop
+when it would cross source ownership, secret, authority, validation, or
+harness-support boundaries.
 
 ## Migration apply
 

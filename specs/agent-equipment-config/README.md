@@ -7,9 +7,9 @@ This Equipment Design Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for effective-config, config-diff,
 diagnostics, plain handoff promotion, authority checks, projection
 classification, reusable consumer action decisions, onboarding-plan output,
-explicit migration apply, and the published runtime guide. It does not resolve
-secrets, mutate external systems, or implement harness controls. The Blueprint
-itself does not implement Agent Equipment.
+explicit migration apply, deliberate edit boundaries, and the published runtime
+guide. It does not resolve secrets, mutate external systems, or implement
+harness controls. The Blueprint itself does not implement Agent Equipment.
 The runtime guide names the currently published slice.
 
 Issue: [#23](https://github.com/nisavid/agent-armory/issues/23)
@@ -34,6 +34,7 @@ layer inside the shared system.
 - [Capability card](capability-card.md)
 - [Interface decision record](interface-decision-record.md)
 - [Security and control classification](security-control-classification.md)
+- [Edit boundaries](edit-boundaries.md)
 - [Pressure scenarios](pressure-scenarios.md)
 - [Validation plan](validation-plan.md)
 - [Closeout evidence plan](closeout-evidence-plan.md)
@@ -65,8 +66,10 @@ migrations, classifies enforcement projections, exposes reusable consumer action
 decision helpers, and emits onboarding-plan output for missing, partial,
 interrupted, resumed, and restarted configuration flows. It also applies
 registered source migrations to eligible TOML sources after dry-run review and
-an explicit authority gate. It does not resolve secrets, mutate external
-systems, or implement harness controls.
+an explicit authority gate. It defines deliberate `propose`, `patch`,
+`migrate`, `revise`, and `apply` edit boundaries, but the only implemented
+source write remains registered migration apply. It does not resolve secrets,
+mutate external systems, or implement harness controls.
 
 Published usage guidance lives in
 [docs/equipment/agent-equipment-config.md](../../docs/equipment/agent-equipment-config.md).
@@ -209,6 +212,20 @@ universal filename:
 Every harness or equipment projection must state where it discovers each
 category and whether that category is committed, local-only, session-scoped, or
 generated.
+
+## Deliberate edit boundary
+
+Source writes require an explicit edit intent, eligible source category,
+trusted provenance, applicable authority, schema and semantic validation,
+reviewable diff or change set, final source precondition check, and audit
+record. Read-only operations such as inspect, explain, trace, compare, validate,
+and propose do not authorize source mutation.
+
+The supported edit intents are `propose`, `patch`, `migrate`, `revise`, and
+`apply`. Current runtime source writing is limited to `migration-apply` for
+registered migrations on `committed durable config` and
+`local-only operator config`. General source patching and revision writes remain
+deferred until the operation surface is chosen.
 
 ## Harness projections
 
