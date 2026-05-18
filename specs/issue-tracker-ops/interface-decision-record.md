@@ -35,10 +35,12 @@ shape.
 - Agent Profile: deferred issue reviewer or orchestrator profile.
 - Plugin: deferred portable bundle.
 - Script: `tools/issue_tracker_ops.py` for the GitHub Issues-only bootstrap MVP.
-- Config: progressive enhancement through Agent Equipment Config for durable
-  layered policy; Issue Ops owns a plain Issue Ops config shape for
-  session-scoped operation, handoff, and later ingestion; bootstrap uses
-  provisional CLI policy with dry-run default and `--execute` for mutation.
+- Config: Agent Equipment Config supplies explicit layer loading, effective
+  Config evidence, and reusable consumer action decisions. Issue Ops owns the
+  `issue_tracker_ops` fragment, plain handoff ingestion, and adapter semantics:
+  dry-run is the default, live mutation still requires `--execute`, and
+  config-aware live mutation requires the configured mode to be `execute` with
+  a non-blocking consumer decision.
 - Local docs: this Equipment Design Bundle records current design, security,
   validation, and closeout expectations.
 
@@ -69,10 +71,10 @@ expose typed inputs and outputs without relying on CLI command composition.
 
 - Codex: use the script through local shell tools and GitHub MCP for issue
   orientation; mutation remains dry-run by default unless the active session
-  explicitly executes it.
+  explicitly executes it, and explicit Config inputs can fail closed before
+  tracker writes.
 - Other harnesses: defer until the tracker-neutral core, Issue Ops plain config
-  shape, Agent Equipment Config integration, and mutation gates have stable
-  contracts.
+  profile, and mutation gates have stable contracts.
 
 ## Alternatives rejected
 
@@ -96,13 +98,13 @@ expose typed inputs and outputs without relying on CLI command composition.
   refreshed before promotion beyond the bootstrap MVP.
 - The MVP does not yet implement onboarding, layered policy, issue selection,
   duplicate detection, fallback reconciliation, or issue-set orchestration.
-- Durable layered policy depends on future Agent Equipment Config integration,
-  but Issue Ops must still support explicit session-scoped behavior without it.
+- The Config consumer proof covers adapter execute-mode gating; broader Issue
+  Ops policy fields, selection behavior, and issue-set orchestration remain
+  outside this bootstrap surface.
 
 ## Maintenance notes
 
 Review this decision when GitHub changes issue dependency or sub-issue APIs,
 when the GitHub MCP connector exposes equivalent dependency operations, when
-Issue Ops gains its plain config shape or Agent Equipment Config integration, or
-when repeated use shows the CLI contract is too narrow for real tracker
-orchestration.
+Issue Ops gains broader config-profile fields, or when repeated use shows the
+CLI contract is too narrow for real tracker orchestration.

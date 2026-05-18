@@ -27,10 +27,17 @@ label-axis audit, and issue dependency operations for GitHub Issues without
 Projects. Full Issue Ops delivery remains tracked in issue #11 and child
 issues.
 
-Issue Ops configuration is a progressive enhancement. Durable layered
-configuration belongs to Agent Equipment Config; Issue Ops still needs a plain
-session-scoped config shape for operation, handoff, and later ingestion when the
-shared config equipment is unavailable.
+The adapter consumes explicit Agent Equipment Config sources when callers pass
+`--config-layer` or `--config-plain-handoff`. Config-aware dry-runs include the
+effective Config evidence and consumer action decision. Config-aware live
+mutation requires both `--execute` and an Issue Ops consumer decision that
+supports execute mode; blocking or unsupported decisions fail closed before the
+adapter invokes `gh`.
+
+Durable layered configuration belongs to Agent Equipment Config. Issue Ops owns
+the Issue Ops namespace, plain handoff shape, and behavior-specific semantics
+for the adapter. Full Issue Ops profile work remains tracked in issue #13 and
+broader issue #11 child work.
 
 Issue Ops also provides the issue-tracked path for Reflection Findings until
 generic Reflection and cognition equipment can automate more of that capture,

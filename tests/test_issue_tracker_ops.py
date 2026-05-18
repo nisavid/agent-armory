@@ -3,7 +3,9 @@ import io
 import json
 import subprocess
 import tempfile
+import textwrap
 import unittest
+from pathlib import Path
 from unittest import mock
 
 from tools import issue_tracker_ops
@@ -27,6 +29,11 @@ class IssueTrackerOpsTests(unittest.TestCase):
         stderr = io.StringIO()
         exit_code = issue_tracker_ops.run(argv, gh=gh or FakeGh(), stdout=stdout, stderr=stderr)
         return exit_code, stdout.getvalue(), stderr.getvalue()
+
+    def write_config_layer(self, root: Path, name: str, text: str) -> Path:
+        path = root / name
+        path.write_text(textwrap.dedent(text).lstrip(), encoding="utf-8")
+        return path
 
     def test_create_issue_defaults_to_dry_run_without_calling_gh(self):
         gh = FakeGh()
@@ -88,6 +95,166 @@ class IssueTrackerOpsTests(unittest.TestCase):
         self.assertEqual(payload["mode"], "execute")
         self.assertEqual(payload["operation"], "comment")
         self.assertEqual(payload["result"], {"id": 44})
+
+    def test_comment_dry_run_with_config_layer_reports_advisory_config_decision(self):
+        gh = FakeGh()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_config_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+
+            exit_code, stdout, stderr = self.run_cli(
+                [
+                    "comment",
+                    "--repo",
+                    "OWNER/REPO",
+                    "--issue-number",
+                    "11",
+                    "--body",
+                    "Validation note",
+                    "--config-layer",
+                    str(layer),
+                ],
+                gh=gh,
+            )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(gh.calls, [])
+        payload = json.loads(stdout)
+        self.assertEqual(payload["mode"], "dry-run")
+        self.assertEqual(payload["config"]["consumer_action_decision"]["state"], "advisory")
+        self.assertEqual(
+            payload["config"]["effective_config"]["effective"]["issue_tracker_ops"]["mode"]["value"],
+            "dry-run",
+        )
+
+    def test_comment_dry_run_with_plain_config_handoff_reports_promotion(self):
+        gh = FakeGh()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            handoff = self.write_config_layer(root, "handoff.toml", """
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+
+            exit_code, stdout, stderr = self.run_cli(
+                [
+                    "comment",
+                    "--repo",
+                    "OWNER/REPO",
+                    "--issue-number",
+                    "11",
+                    "--body",
+                    "Validation note",
+                    "--config-plain-handoff",
+                    str(handoff),
+                ],
+                gh=gh,
+            )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(gh.calls, [])
+        payload = json.loads(stdout)
+        self.assertEqual(payload["config"]["consumer_action_decision"]["state"], "advisory")
+        self.assertEqual(payload["config"]["effective_config"]["plain_handoffs"][0]["source"], handoff.as_posix())
+        self.assertEqual(
+            payload["config"]["effective_config"]["effective"]["issue_tracker_ops"]["mode"]["layer"],
+            "session overrides",
+        )
+
+    def test_comment_execute_with_configured_execute_mode_reports_config_decision(self):
+        gh = FakeGh([subprocess.CompletedProcess(["gh"], 0, stdout='{"id": 44}', stderr="")])
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_config_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "execute"
+                external_disclosure = "allowed"
+            """)
+
+            exit_code, stdout, stderr = self.run_cli(
+                [
+                    "comment",
+                    "--repo",
+                    "OWNER/REPO",
+                    "--issue-number",
+                    "11",
+                    "--body",
+                    "Validation note",
+                    "--config-layer",
+                    str(layer),
+                    "--execute",
+                ],
+                gh=gh,
+            )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(len(gh.calls), 1)
+        payload = json.loads(stdout)
+        self.assertEqual(payload["mode"], "execute")
+        self.assertEqual(payload["config"]["consumer_action_decision"]["state"], "allowed")
+        self.assertEqual(payload["config"]["consumer_semantics"]["configured_mode"], "execute")
+
+    def test_comment_execute_with_configured_dry_run_refuses_without_calling_gh(self):
+        gh = FakeGh()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_config_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+
+            exit_code, stdout, stderr = self.run_cli(
+                [
+                    "comment",
+                    "--repo",
+                    "OWNER/REPO",
+                    "--issue-number",
+                    "11",
+                    "--body",
+                    "Validation note",
+                    "--config-layer",
+                    str(layer),
+                    "--execute",
+                ],
+                gh=gh,
+            )
+
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(stderr, "")
+        self.assertEqual(gh.calls, [])
+        payload = json.loads(stdout)
+        self.assertEqual(payload["mode"], "execute")
+        self.assertEqual(payload["operation"], "comment")
+        self.assertEqual(payload["error"]["code"], "config_refused")
+        self.assertEqual(payload["config"]["consumer_action_decision"]["state"], "unsupported")
+        self.assertEqual(payload["config"]["consumer_action_decision"]["fallback"], "advisory dry-run")
+        self.assertIn(
+            "configured_execute_mode",
+            payload["config"]["consumer_action_decision"]["evidence"]["unsupported_capabilities"],
+        )
+
+    def test_execute_config_without_consumer_decision_fails_closed(self):
+        args = argparse.Namespace(operation="comment", execute=True)
+
+        self.assertTrue(issue_tracker_ops.config_refuses_execute({"consumer_semantics": {}}, args))
 
     def test_execute_error_omits_resolved_when_no_resolution_occurred(self):
         gh = FakeGh([subprocess.CompletedProcess(["gh"], 1, stdout="", stderr="boom")])
