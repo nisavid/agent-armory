@@ -8749,7 +8749,7 @@ class SpecValidationTests(unittest.TestCase):
                 checkout-local, secret reference, and session sources are
                 read-only for Config source writes.
 
-                ## Refusals
+                ## Refusal states
 
                 Refusals name source category, trusted provenance, Policy
                 Authority, Config Safety Status, validation, and secret
