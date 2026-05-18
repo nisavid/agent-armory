@@ -22,17 +22,17 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         requested_behavior: str,
         supported_capabilities: frozenset[str] = frozenset({"tracker_read", "tracker_write"}),
     ) -> dict[str, str]:
-        if requested_behavior == "mutation" and "tracker_write" not in supported_capabilities:
-            return {
-                "state": "unsupported",
-                "reason": "tracker_write capability is unavailable",
-                "fallback": "advisory dry-run",
-            }
         if result["enforcement_projection"]["classification"] == "blocking":
             return {
                 "state": "blocking",
                 "reason": f"effective Config Safety Status is {result['safety_status']}",
                 "fallback": "advisory dry-run" if requested_behavior == "mutation" else "none",
+            }
+        if requested_behavior == "mutation" and "tracker_write" not in supported_capabilities:
+            return {
+                "state": "unsupported",
+                "reason": "tracker_write capability is unavailable",
+                "fallback": "advisory dry-run",
             }
         non_blocking_warnings = [
             item["kind"]
