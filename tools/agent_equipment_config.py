@@ -1607,7 +1607,7 @@ def diagnostic_evidence_value(diagnostic_item: dict[str, Any], key: str) -> Any:
 
 
 def sorted_present(values: Iterable[Any]) -> list[str]:
-    return sorted_unique(value for value in values if value is not None)
+    return sorted_unique(value for value in values if isinstance(value, str) and value)
 
 
 def authority_readiness_from_effective(effective: dict[str, Any]) -> dict[str, Any]:
