@@ -1855,7 +1855,7 @@ def run(
         return text
     # CLI output is redacted by redact_for_cli before this write boundary.
     output.writelines([text])
-    if getattr(args, "operation", None) == "config_validate" and not payload["passed"]:
+    if operation == "config_validate" and not payload["passed"]:
         return 1
     return 0
 
