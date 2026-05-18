@@ -9,6 +9,7 @@ Run deterministic checks:
 
 ```sh
 python3.14 -m unittest tests.test_issue_tracker_ops
+python3.14 -m unittest tests.test_agent_equipment_config
 python3.14 tools/validate_armory_integrity.py
 ```
 
@@ -20,6 +21,7 @@ python3.14 tools/issue_tracker_ops.py update-issue --repo nisavid/agent-armory -
 python3.14 tools/issue_tracker_ops.py comment --repo nisavid/agent-armory --issue-number 11 --body "Dry-run comment"
 python3.14 tools/issue_tracker_ops.py audit-labels --repo nisavid/agent-armory
 python3.14 tools/issue_tracker_ops.py add-blocked-by --repo nisavid/agent-armory --issue-number 10 --blocking-issue-number 11
+python3.14 tools/issue_tracker_ops.py comment --repo nisavid/agent-armory --issue-number 11 --body "Config-aware dry-run comment" --config-layer templates/config/agent-equipment-config-example.toml
 ```
 
 Run live validation only after dry-run output is inspected and the active session
@@ -41,6 +43,8 @@ paths.
 - Confirm the adapter uses `subprocess.run` with an argument list and JSON stdin.
 - Confirm mutation commands require `--execute`.
 - Confirm dry-run output records the operation without invoking `gh`.
+- Confirm Config-aware mutation refuses blocking or unsupported consumer
+  decisions before invoking `gh`.
 
 ## Documentation validation
 
@@ -54,7 +58,6 @@ paths.
 ## Full-delivery validation
 
 Full closure of issue #11 needs additional validation for onboarding, Issue Ops
-plain config handoff, Agent Equipment Config integration, configuration
-layering, policy conflicts, issue selection, issue repair, fallback
-reconciliation, permission failure, rate limiting, duplicate detection, subtask
-handling, and cross-issue orchestration.
+config profile fields, configuration layering, policy conflicts, issue
+selection, issue repair, fallback reconciliation, permission failure, rate
+limiting, duplicate detection, subtask handling, and cross-issue orchestration.
