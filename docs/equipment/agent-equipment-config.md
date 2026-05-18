@@ -104,7 +104,7 @@ The consumer action decision states are:
 
 | State | Meaning |
 | --- | --- |
-| `allowed` | The requested behavior may run. Effective Config is `usable`, required consumer semantics pass, and the harness or equipment supports the needed capability. |
+| `allowed` | The requested behavior may run. Effective Config is `usable`, required semantic validators pass, and the harness or equipment supports the needed capability. |
 | `advisory` | Read-only, dry-run, explanation, or model-facing guidance may continue, but the decision does not authorize side effects. |
 | `warning` | The requested behavior may run only with visible non-blocking diagnostics, such as deprecation or migration-preview evidence. |
 | `blocking` | The requested behavior must not run. Mutation-capable behavior fails closed when effective Config is missing, incomplete, unsafe, stale, untrusted, conflicted, or missing required Policy Authority. |

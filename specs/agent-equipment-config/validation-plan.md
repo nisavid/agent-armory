@@ -82,8 +82,8 @@ Implemented by the v0 engine slice:
 - migration-apply dry-run, write authority, source eligibility, refusal, and
   audit-record behavior;
 - plain Issue Tracker Ops handoff fallback and promotion;
-- consumer-owned action decision fixture for allowed, warning, blocking, and
-  unsupported outcomes;
+- consumer-owned action decision fixture for allowed, advisory, warning,
+  blocking, and unsupported outcomes;
 - missing-authority diagnostics for mutation-gated settings;
 - enforcement projection classification as `blocking` or `advisory`;
 - onboarding-plan output for missing shared Config, missing config data,
