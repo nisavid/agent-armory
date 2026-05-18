@@ -223,8 +223,8 @@ after their CLI and source-write contracts are specified.
 
 - #23 remains blocked until MVP CLI fluency (#91), MCP parity (#92), and
   integration guide (#78) surfaces are complete.
-- #78 owns the integration-guide slice after this operation split lands and the
-  required MVP follow-up issues exist.
+- #78 owns the integration-guide slice for the MVP operation surface. #91, #92,
+  and #93 track CLI fluency, MCP parity, and deferred authoring follow-up work.
 - **Config Authoring Surfaces** is a non-blocking follow-up epic bucket unless
   a child issue is explicitly promoted into MVP scope. #93 owns that bucket.
 
