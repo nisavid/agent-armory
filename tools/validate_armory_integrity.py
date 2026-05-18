@@ -869,7 +869,7 @@ CONFIG_BUNDLE_FORBIDDEN_TEXT = [
     "lower precedence layers",
 ]
 SPEC_REQUIRED_PATHS = [
-    "specs/agent-ops.md",
+    "specs/repo-ops.md",
     "specs/periodic-actions.md",
     "specs/harness-capability-refresh.md",
 ]
@@ -884,7 +884,7 @@ SPEC_HARNESS_SECTION_ALTERNATIVES = [
     "Harness-specific starting points",
 ]
 SPEC_REQUIRED_TEXT = {
-    "specs/agent-ops.md": [
+    "specs/repo-ops.md": [
         "TOML",
         "hook behavior",
         "sensibly typed values",
@@ -893,6 +893,7 @@ SPEC_REQUIRED_TEXT = {
         "runbook",
         "safe defaults",
         "policy enforcement",
+        "Fork Ops",
         "Codex",
         "OpenClaw",
         "Hermes Agent",
@@ -909,7 +910,7 @@ SPEC_REQUIRED_TEXT = {
         "trigger-now",
         "edit-period",
         "mechanism selection order",
-        ".agent-ops/",
+        ".repo-ops/",
         "Codex",
         "OpenClaw",
         "Hermes",

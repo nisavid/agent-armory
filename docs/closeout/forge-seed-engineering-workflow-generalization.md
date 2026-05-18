@@ -150,7 +150,7 @@ initiative authority.
 
 ## Equipment Needed For Prompt Reduction
 
-To reduce a future prompt to something like "Use this repo's Agent Ops workflow
+To reduce a future prompt to something like "Use this repo's Repo Ops workflow
 to do the requested work," a repo needs equipment that projects the following
 capabilities without relying on the operator's memory.
 
@@ -315,7 +315,7 @@ The post-Seed equipment story should prove the workflow under these scenarios:
 The equipment should make the following prompt sufficient for ordinary work:
 
 ```text
-Use this repo's Agent Ops workflow to handle <task>. Right-size the ceremony,
+Use this repo's Repo Ops workflow to handle <task>. Right-size the ceremony,
 update durable surfaces, validate, review if required, and stop only at a real
 human decision or unavailable control surface.
 ```
@@ -327,7 +327,7 @@ commands, review gates, evidence handling, and closeout shape.
 
 ## Open Design Questions
 
-- Which parts belong in Agent Ops core and which belong in an engineering
+- Which parts belong in Repo Ops core and which belong in an engineering
   workflow extension?
 - What is the smallest always-loaded policy that still reliably routes agents
   to the right triggered equipment?

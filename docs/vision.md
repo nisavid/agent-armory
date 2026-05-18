@@ -183,10 +183,16 @@ work directly in an issue tracker. Reflection Findings, equipment candidates,
 dependencies, and handoffs need this kind of durable routing so they do not
 remain chat-only insights.
 
-Agent Ops builds on lower-level equipment rather than owning it. It gives
-repositories a framework for agentic operations: runbook discovery, autonomy
-policy, owner and operator boundaries, extension points, publication rules, and
-repo-specific operational behavior.
+Agent Ops names operations work performed agentically. Repo Ops is the planned
+repository-operations equipment line. It builds on lower-level equipment rather
+than owning it, and gives repositories a framework for runbook discovery,
+autonomy policy, owner and operator boundaries, extension points, publication
+rules, and repo-specific operational behavior.
+
+Fork Ops extends Repo Ops for forked repositories. Repo Ops is complete without
+Fork Ops for repositories that are not forks; Fork Ops adds upstream,
+downstream, divergence, sync, publication, and selective-upstreaming behavior
+when fork state matters.
 
 Periodic Actions and Harness Capability Refresh add time and drift awareness.
 Recurring work needs local approval and auditable state. Harness facts need
@@ -228,7 +234,7 @@ self-outfitting before the Agent reaches for domain-specific equipment.
 
 Head Gear builds on the earlier equipment lines. It needs Agent Equipment
 Config for policy and adaptation, Issue Ops for durable routing of findings and
-follow-up, Agent Ops for repository-operational context, Harness Capability
+follow-up, Repo Ops for repository-operational context, Harness Capability
 Refresh for current harness facts, and the Forge for manufacturing any missing
 capability it discovers.
 

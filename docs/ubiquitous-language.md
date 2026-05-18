@@ -240,6 +240,18 @@ worked, and orchestrated directly in an issue tracker.
 **Agent Equipment Config** is Agent Equipment for shared, layerable,
 composable, adaptable, and enforceable configuration across Agent Equipment.
 
+**Agent Ops** is the generic term for operations work performed agentically. It
+may later name or shape generic operations equipment if multiple operations
+domains reveal shared reusable behavior.
+
+**Repo Ops** is future Agent Equipment for repository operations performed
+agentically. Repo Ops is the complete repository-operations layer for
+repositories that are not forks.
+
+**Fork Ops** is a planned Repo Ops add-on for fork-specific operations. It
+extends Repo Ops with upstream, downstream, divergence, sync, publication, and
+selective-upstreaming behavior for forked repositories.
+
 **Layer Precedence** is the Agent Equipment Config merge order that decides
 which configuration value would win when no policy lock blocks it.
 
@@ -349,6 +361,10 @@ induced candidate for future work.
   change sets across the Armory rather than a specific Forge function.
 - The Forge Conveyor routes Smiths from preloaded agent instructions into the Forge Canon.
 - The Forge Tour routes human readers into the Forge without exposing agent-only machinery first.
+- Agent Ops names operations work performed agentically.
+- Repo Ops names the repository-operations equipment line.
+- Fork Ops extends Repo Ops for repositories that are forks; it is not required
+  for non-fork repositories.
 - Reflection Findings are source material for future Cognition Enhancement
   Equipment and may also induce Tooling Requests, Equipment Candidates, or
   issue-tracked work in narrower equipment stories.

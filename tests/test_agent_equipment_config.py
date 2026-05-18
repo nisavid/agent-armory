@@ -646,9 +646,9 @@ class AgentEquipmentConfigTests(unittest.TestCase):
             ),
         )
 
-    def renamed_agent_ops_state_fragment(self):
+    def renamed_repo_ops_state_fragment(self):
         return agent_equipment_config.SchemaFragment(
-            namespace="agent_ops",
+            namespace="repo_ops",
             version=2,
             fields={"state": agent_equipment_config.FieldSpec(type="string", enum=["active", "paused"])},
             migrations=(
@@ -1302,28 +1302,28 @@ class AgentEquipmentConfigTests(unittest.TestCase):
 
                 [agent_equipment_config.fragment_versions]
                 issue_tracker_ops = 1
-                agent_ops = 1
+                repo_ops = 1
 
                 [issue_tracker_ops]
                 operation_mode = "dry-run"
 
-                [agent_ops]
+                [repo_ops]
                 run_state = "active"
             """)
 
             result = agent_equipment_config.migration_apply(
                 [layer],
-                [self.renamed_mode_fragment(), self.renamed_agent_ops_state_fragment()],
+                [self.renamed_mode_fragment(), self.renamed_repo_ops_state_fragment()],
                 apply=True,
                 apply_authority="operator",
             )
             rewritten_text = layer.read_text(encoding="utf-8")
 
         self.assertTrue(result["applied"])
-        self.assertEqual([application["namespace"] for application in result["applications"]], ["issue_tracker_ops", "agent_ops"])
+        self.assertEqual([application["namespace"] for application in result["applications"]], ["issue_tracker_ops", "repo_ops"])
         self.assertTrue(all(application["write_performed"] for application in result["applications"]))
         self.assertIn("issue_tracker_ops = 2", rewritten_text)
-        self.assertIn("agent_ops = 2", rewritten_text)
+        self.assertIn("repo_ops = 2", rewritten_text)
         self.assertIn('mode = "dry-run"', rewritten_text)
         self.assertIn('state = "active"', rewritten_text)
         self.assertNotIn("operation_mode", rewritten_text)

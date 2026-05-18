@@ -121,7 +121,7 @@ Deterministic surfaces emit JSON-compatible objects for:
 
 ## Evidence
 
-- Source-supported: this repository's Config template, Agent Ops spec, Issue
+- Source-supported: this repository's Config template, Repo Ops spec, Issue
   Tracker Ops bundle, Forge runbooks, security guidance, and validator.
 - Implementation inference: TOML matches existing human-authored config
   examples; JSON-compatible output matches deterministic tool and agent

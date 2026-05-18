@@ -19,7 +19,7 @@ Issue: [#23](https://github.com/nisavid/agent-armory/issues/23)
 Agent Equipment Config is the shared configuration primitive for Agent
 Equipment. It lets equipment declare typed schemas and namespaced schema
 fragments, compose layered config, explain effective-config results, produce
-config-diff output, and project enforceable policy without making Agent Ops,
+config-diff output, and project enforceable policy without making Repo Ops,
 Issue Tracker Ops, Periodic Actions, Harness Capability Profiles, recurring
 Harness Capability Refresh, or future equipment own the generic config system.
 
@@ -229,7 +229,7 @@ exposed to Agents and humans.
 
 ## Non-goals
 
-- Agent Equipment Config is not Agent Ops.
+- Agent Equipment Config is not Repo Ops.
 - Agent Equipment Config is not Issue Tracker Ops, Periodic Actions, Harness
   Capability Refresh, a scheduler, a harness catalog, or a secret store.
 - Agent Equipment Config does not make unconfigured equipment safe for writes.
