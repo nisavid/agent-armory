@@ -1,3 +1,7 @@
 [issue_tracker_ops]
+# Required string: "dry-run" emits requests without calling GitHub; "execute"
+# permits live writes only when callers also pass --execute and Config allows it.
 mode = "dry-run"
+# Required string: "blocked" prevents tracker-visible disclosure; "allowed" is
+# required before execute-mode mutation can publish externally visible content.
 external_disclosure = "blocked"
