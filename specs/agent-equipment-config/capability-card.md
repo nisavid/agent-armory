@@ -4,11 +4,13 @@ Status: Equipment Blueprint
 Promotion state: planned
 
 This Equipment Design Bundle describes desired behavior and includes the first
-standard-library runtime engine slice for effective-config, config-diff,
-diagnostics, plain handoff promotion, authority checks, and projection
-classification, plus onboarding-plan output for first-run and re-onboarding
-flows and explicit migration apply for eligible local TOML sources. It does not implement Agent Equipment beyond this runtime slice, publish assets, resolve
-secrets, mutate external systems, or implement harness controls.
+standard-library runtime engine slice for fluent CLI operations,
+effective-config, config-diff, diagnostics, plain handoff promotion, authority
+checks, and projection classification, plus onboarding output for first-run and
+re-onboarding flows and explicit migration apply for eligible local TOML
+sources. It does not implement Agent Equipment beyond this runtime slice,
+publish assets, resolve secrets, mutate external systems, or implement harness
+controls.
 
 ## Purpose
 
@@ -57,8 +59,8 @@ policy model without making Config depend on Issue Tracker Ops.
 - Docs: this Equipment Design Bundle and future usage docs.
 - Config: TOML authored layers and plain equipment-specific config handoff
   records.
-- Scripts/tools: the first portable effective-config, config-diff,
-  onboarding-plan, and migration-apply CLI slice, plus future validation
+- Scripts/tools: the portable fluent CLI slice for resolve, validate, diff,
+  onboarding, migration preview, and migration apply, plus implementation
   commands and deliberate edit-boundary reference.
 - Hooks, permissions, approvals, sandboxes, or tool gates: future enforcement
   projections for mutation-capable behavior.

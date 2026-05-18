@@ -44,7 +44,8 @@ For `example.toml`:
 ## Validation expectations
 
 - The TOML parses.
-- The Agent Equipment Config example loads through `tools/agent_equipment_config.py`.
+- The Agent Equipment Config example resolves and validates through
+  `tools/agent_equipment_config.py config resolve` and `config validate`.
 - Disabled-by-default examples stay disabled unless the doc states otherwise.
 - Review and approval settings match the capability card.
 - Harness-specific overrides do not weaken global policy silently.

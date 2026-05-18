@@ -28,9 +28,9 @@ Agent Equipment Config has an explicit-load contract:
 
 The runtime does not discover files, import equipment packages, resolve secret
 values, mutate external systems, or enforce harness controls. Source writes are
-limited to registered `migration-apply --apply` operations on eligible local
-TOML sources. General proposal, patch, revision, and apply workflows belong to
-the Config Authoring Surfaces follow-up bucket.
+limited to registered `migrate config apply` operations on eligible local TOML
+sources. General proposal, patch, revision, and apply workflows belong to the
+Config Authoring Surfaces follow-up bucket.
 
 The product operation vocabulary is:
 
@@ -43,9 +43,9 @@ The product operation vocabulary is:
 | Preview registered source migrations | `migrate config preview` | `migration-apply` without `--apply` |
 | Apply registered source migrations | `migrate config apply` | `migration-apply --apply` |
 
-The current runtime command names are the implementation and debugging path.
-The PRD requires the fluent CLI and MCP parity surfaces before issue
-[#23](https://github.com/nisavid/agent-armory/issues/23) closes.
+The fluent CLI commands are the supported invocation surface. The runtime
+command names remain available for implementation debugging and evidence
+comparison.
 
 ## Smith path
 
@@ -109,10 +109,20 @@ Choose Config sources by ownership and durability:
 Inspect effective Config before relying on it:
 
 ```bash
-python3.14 tools/agent_equipment_config.py effective-config \
+python3.14 tools/agent_equipment_config.py config resolve \
   --layer templates/config/agent-equipment-config-example.toml \
   --issue-tracker-ops \
   --requested-behavior advisory
+```
+
+Use validation output when a script or hook needs a lower-noise pass/fail
+surface:
+
+```bash
+python3.14 tools/agent_equipment_config.py config validate \
+  --layer templates/config/agent-equipment-config-example.toml \
+  --issue-tracker-ops \
+  --requested-behavior mutation
 ```
 
 For the current Issue Tracker Ops consumer, pass Config to the adapter with
@@ -160,9 +170,9 @@ operations. Keep these responsibilities separate:
   approval friction, or a hard block.
 
 Expose the fluent CLI operation names and MCP parity names from the PRD when
-designing new user-facing surfaces. Use current runtime commands for the
-implementation path and debug evidence. Do not turn a skill or prose guide into
-the product operation surface.
+designing user-facing surfaces. Use runtime commands only for implementation
+debug evidence. Do not turn a skill or prose guide into the product operation
+surface.
 
 Before publishing an integration surface, document:
 

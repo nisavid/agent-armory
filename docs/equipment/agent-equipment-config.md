@@ -7,12 +7,11 @@ Agent Equipment Config is the shared configuration primitive for Agent
 Equipment. The published runtime slice provides a local, standard-library
 Python engine for loading authored TOML layers, composing schema fragments,
 explaining effective configuration, comparing config outputs, and preserving
-plain equipment-specific handoffs. It also exposes onboarding-plan output for
-first-run, interrupted, resumed, and restarted configuration flows, plus
-reusable consumer action decision output and explicit migration-apply output
-for schema rewrites that pass authority and source-eligibility gates. The
-Config bundle also defines deliberate edit boundaries for future propose,
-patch, migrate, revise, and apply surfaces.
+plain equipment-specific handoffs. It exposes fluent CLI operations for
+resolve, validate, diff, onboarding, and migration flows, plus reusable
+consumer action decision output for importable consumers. The Config bundle
+also defines deliberate edit boundaries for future propose, patch, revise, and
+general apply surfaces.
 
 Use this guide when a Smith is making Config-aware equipment or when a Wielder
 needs to provide local or session configuration for equipment that already
@@ -38,19 +37,19 @@ and the current runtime.
 The runtime reads local files supplied by the caller and emits JSON to stdout.
 It does not discover files by itself, resolve secret values, mutate external
 systems, or enforce harness controls. The only source mutation surface is
-`migration-apply --apply`, which rewrites eligible local TOML sources after an
-explicit authority gate and records audit evidence. Harnesses, skills, hooks,
-scripts, or operators choose which layer paths to pass in and what to do with
-the resulting classification.
+`migrate config apply`, which rewrites eligible local TOML sources after an
+explicit authority gate and records audit evidence. The implementation command
+`migration-apply --apply` remains available for debugging the same runtime
+path. Harnesses, skills, hooks, scripts, or operators choose which layer paths
+to pass in and what to do with the resulting classification.
 
 General proposal, patch, revision, or apply tooling must follow the edit
 boundary contract before it writes any source.
 
-The product surface targets fluent CLI operations with MCP parity:
+Use the fluent CLI operations as the supported invocation surface:
 `config resolve`, `config validate`, `config diff`, `onboard config`,
-`migrate config preview`, and `migrate config apply`. The current runtime
-command names remain the implementation and debugging path until that fluent
-surface lands.
+`migrate config preview`, and `migrate config apply`. The implementation
+command names remain available as the debugging path.
 
 ## Load contract
 
@@ -101,8 +100,8 @@ Config composes the fragments it receives; it does not discover fragments from
 equipment packages, hook directories, plugins, or repository files.
 
 The load contract does not resolve secrets, create or mutate config outside
-`migration-apply --apply`, enforce harness controls, define universal filenames,
-or decide whether a caller may proceed after a blocking classification.
+`migrate config apply`, enforce harness controls, define universal filenames, or
+decide whether a caller may proceed after a blocking classification.
 
 ## Consumption contract
 
@@ -195,19 +194,20 @@ repository-policy layer. It demonstrates:
 Run it through the current Issue Tracker Ops pressure fragment with:
 
 ```bash
-python3 tools/agent_equipment_config.py effective-config \
+python3 tools/agent_equipment_config.py config resolve \
   --layer templates/config/agent-equipment-config-example.toml \
   --issue-tracker-ops \
   --requested-behavior advisory
 ```
 
-The output should be `usable` for advisory dry-run behavior. Mutation behavior
-remains governed by the consuming equipment's semantic validators and the
-selected harness projection.
+The output should be `usable` for advisory dry-run behavior. Use
+`config validate` when a script or hook needs the lower-noise pass/fail report
+and exit status. Mutation behavior remains governed by the consuming
+equipment's semantic validators and the selected harness projection.
 
 ## Onboarding and authoring
 
-Use `onboarding-plan` when a Smith or Wielder needs machine-visible next steps
+Use `onboard config` when a Smith or Wielder needs machine-visible next steps
 instead of hidden preference. The command reports:
 
 - `onboarding_status` for missing shared Config, missing config data,
@@ -230,7 +230,7 @@ fails instead of returning a plan that ignores supplied inputs.
 Example:
 
 ```bash
-python3 tools/agent_equipment_config.py onboarding-plan \
+python3 tools/agent_equipment_config.py onboard config \
   --layer templates/config/agent-equipment-config-example.toml \
   --issue-tracker-ops \
   --requested-behavior mutation \
@@ -255,8 +255,8 @@ supported edit intents are:
 | --- | --- |
 | `propose` | Emit a candidate change and diff only; no source write. |
 | `patch` | Deferred to Config Authoring Surfaces until source selection, validation, authority, diff, and audit are specified. |
-| `migrate` | Supported through `migration-apply` dry-run for registered schema migrations. |
-| `revise` | Supported as onboarding-plan section selection; source writing is deferred. |
+| `migrate` | Supported through `migrate config preview` and `migrate config apply` for registered schema migrations. |
+| `revise` | Supported as `onboard config` section selection; source writing is deferred. |
 | `apply` | Supported only for registered migrations on eligible TOML sources. |
 
 Only `committed durable config` and `local-only operator config` are eligible
@@ -277,9 +277,9 @@ harness-support boundaries.
 
 ## Migration apply
 
-Use `migration-apply` when stale schema metadata has a registered migration and
-the operator wants a machine-readable dry run before any source rewrite.
-Dry-run mode is the default. It reports:
+Use `migrate config preview` when stale schema metadata has a registered
+migration and the operator wants a machine-readable dry run before any source
+rewrite. Use `migrate config apply` for the authorized write path. It reports:
 
 - exact field rename and fragment-version changes;
 - the source layer, source category, and write target;
@@ -297,13 +297,13 @@ The apply boundary writes only eligible source categories:
 
 `generated cache or state`, `checkout-local state`, `session override`,
 `secret reference source`, and untrusted layers are read-only for migration
-apply. A real write requires `--apply` plus explicit operator authority or a
-trusted configured `config_migration_apply` authority marker.
+apply. A real write requires `migrate config apply` plus explicit operator
+authority or a trusted configured `config_migration_apply` authority marker.
 
 Example dry run:
 
 ```bash
-python3 tools/agent_equipment_config.py migration-apply \
+python3 tools/agent_equipment_config.py migrate config preview \
   --layer templates/config/agent-equipment-config-example.toml \
   --issue-tracker-ops
 ```
@@ -312,10 +312,10 @@ python3 tools/agent_equipment_config.py migration-apply \
 
 Update this guide when:
 
-- a new Config runtime command becomes the supported entry point;
+- a Config CLI operation changes its output shape or exit-code contract;
 - an equipment line consumes Config directly;
 - consumer action decision output changes;
-- onboarding-plan status, handoff, discovery, or revision output changes;
+- onboarding status, handoff, discovery, or revision output changes;
 - a harness projection turns advisory classification into blocking behavior;
 - secret-reference handling changes;
 - migration behavior begins writing source config.

@@ -4,12 +4,12 @@ Status: Equipment Blueprint
 Promotion state: planned
 
 This Equipment Design Bundle describes desired behavior and includes the first
-standard-library runtime engine slice for effective-config, config-diff,
-diagnostics, plain handoff promotion, authority checks, projection
-classification, reusable consumer action decisions, plus onboarding-plan and
-migration-apply output. It does not implement Agent Equipment beyond this
-runtime slice, publish assets, resolve secrets, mutate external systems, or
-implement harness controls.
+standard-library runtime engine slice for fluent CLI operations,
+effective-config, config-diff, diagnostics, plain handoff promotion, authority
+checks, projection classification, reusable consumer action decisions, plus
+onboarding and migration apply output. It does not implement Agent Equipment
+beyond this runtime slice, publish assets, resolve secrets, mutate external
+systems, or implement harness controls.
 
 ## Requirement
 
