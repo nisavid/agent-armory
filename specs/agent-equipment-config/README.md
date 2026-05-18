@@ -134,12 +134,12 @@ The runtime's `enforcement_projection` is evidence for this decision. It is not
 the reusable consumer integration surface. That surface belongs to a separate
 implementation slice.
 
-Fallback is progressive. A consumer uses a plain equipment-specific session
-handoff when shared Config is absent. When effective Config exists but cannot
-authorize the requested behavior, the consumer may continue only with a narrower
-explicit behavior such as dry-run, read-only explanation, advisory guidance, or
-no action. A fallback must not silently turn an unsupported or blocking mutation
-into a write.
+Progressive fallback is required. A consumer uses a plain
+equipment-specific session handoff when shared Config is absent. When effective
+Config exists but cannot authorize the requested behavior, the consumer may
+continue only with a narrower explicit behavior such as dry-run, read-only
+explanation, advisory guidance, or no action. A fallback must not silently turn
+an unsupported or blocking mutation into a write.
 
 Example consumer-owned decision shape for Issue Tracker Ops:
 
