@@ -5,11 +5,11 @@ Promotion state: planned
 
 This Equipment Design Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for effective-config, config-diff,
-diagnostics, plain handoff promotion, authority checks, and projection
-classification. It does not implement Agent Equipment beyond this runtime
-slice, publish assets, resolve secrets, mutate external systems, or implement
-harness controls. Source mutation is limited to explicit migration apply for
-eligible local TOML sources.
+diagnostics, plain handoff promotion, authority checks, projection
+classification, and reusable consumer action decisions. It does not implement Agent Equipment
+beyond this runtime slice, publish assets, resolve secrets, mutate external
+systems, or implement harness controls. Source mutation is limited to explicit
+migration apply for eligible local TOML sources.
 
 ## Scope
 
@@ -91,6 +91,9 @@ Implemented by the v0 engine slice:
   section revision;
 - onboarding-plan discovery proposals that expose the explicit-load contract
   for caller-owned path discovery and schema-fragment registration;
+- importable consumer integration output that preserves effective-config
+  evidence and returns `allowed`, `advisory`, `warning`, `blocking`, and
+  `unsupported` decisions;
 - Issue Tracker Ops pressure scenario for blocked live mutation.
 
 ## Pressure validation

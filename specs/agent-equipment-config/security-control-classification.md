@@ -5,11 +5,11 @@ Promotion state: planned
 
 This Equipment Design Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for effective-config, config-diff,
-diagnostics, plain handoff promotion, authority checks, and projection
-classification. It does not implement Agent Equipment beyond this runtime
-slice, publish assets, resolve secrets, mutate external systems, or implement
-harness controls. Source mutation is limited to explicit migration apply for
-eligible local TOML sources.
+diagnostics, plain handoff promotion, authority checks, projection
+classification, plus reusable consumer action decisions. It does not implement Agent Equipment
+beyond this runtime slice, publish assets, resolve secrets, mutate external
+systems, or implement harness controls. Source mutation is limited to explicit
+migration apply for eligible local TOML sources.
 
 ## Scope
 
@@ -107,7 +107,8 @@ to the v0 contract itself.
 
 ## Known gaps
 
-- The parser and merge behavior are limited to the tested portable CLI slice.
+- The parser, merge behavior, and consumer decision helper are limited to the
+  tested portable runtime slice.
 - No hook or approval gate consumes these diagnostics yet.
 - No provider-specific secret resolver exists yet.
 - Onboarding output is deterministic JSON; no interactive harness projection
@@ -119,7 +120,7 @@ to the v0 contract itself.
 
 The current runtime slice is acceptable as a deterministic local parser, merge,
 diff, migration-preview, migration-apply, plain-handoff, authority,
-projection-classification, and secret-reference reporting surface. Later
-implementation slices that add provider-specific secret resolution, external
-mutation, broader source mutation, or harness controls must receive their own
-security review.
+projection-classification, consumer action decision, and secret-reference
+reporting surface. Later implementation slices that add provider-specific
+secret resolution, external mutation, broader source mutation, or harness
+controls must receive their own security review.
