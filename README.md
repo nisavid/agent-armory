@@ -139,8 +139,8 @@ The current roadmap includes these equipment lines:
   GitHub Issues bootstrap operations and future issue lifecycle equipment.
   Issue Ops is the accepted shorthand.
 - [Repo Ops](specs/repo-ops.md), for repository operations performed by agents.
-  Repo Ops is the complete repository-operations layer for repositories that
-  are not forks.
+  Repo Ops is the planned core repository-operations layer for repositories
+  that are not forks.
 - [Fork Ops](https://github.com/nisavid/agent-armory/issues/87), as a planned
   Repo Ops add-on for fork-specific operations after Fork Ops source material
   and Repo Ops prerequisites are ready for intake.
