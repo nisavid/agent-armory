@@ -17,6 +17,8 @@ local TOML sources.
 This validation plan covers the v0 contract and current portable runtime slice.
 The current bundle change validates repository shape, contract coverage, and the
 standard-library engine behaviors covered by `tests.test_agent_equipment_config`.
+It also treats `docs/prd/agent-equipment-config.md` as the product source for
+required CLI/MCP operation-surface parity.
 
 ## Current deterministic checks
 
@@ -32,6 +34,7 @@ standard-library engine behaviors covered by `tests.test_agent_equipment_config`
 
 Armory Integrity Validation must require:
 
+- `docs/prd/agent-equipment-config.md`
 - `specs/agent-equipment-config/README.md`
 - `specs/agent-equipment-config/capability-card.md`
 - `specs/agent-equipment-config/interface-decision-record.md`
@@ -76,6 +79,20 @@ Runtime coverage tracks these current and follow-on cases:
 - config-diff output between two effective configs;
 - enforcement projection classification as blocking or advisory;
 - Issue Tracker Ops plain handoff ingestion and promotion.
+
+## Operation-surface validation
+
+Before #23 closes, validation must cover the PRD's MVP operation map:
+
+- `config resolve` maps to effective-config behavior and full provenance,
+  diagnostics, safety, and enforcement evidence.
+- `config validate` maps to lower-noise diagnostics, safety status, authority
+  readiness, fragment readiness, and pass/fail status.
+- `config diff` maps to config-diff behavior.
+- `onboard config` maps to onboarding-plan behavior.
+- `migrate config preview` and `migrate config apply` map to migration-apply
+  preview and authorized write behavior.
+- MCP tools mirror those safe operation families with typed inputs and outputs.
 
 Implemented by the v0 engine slice:
 

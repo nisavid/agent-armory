@@ -21,6 +21,7 @@ declares a schema fragment.
 ## What to use
 
 - Runtime: `tools/agent_equipment_config.py`
+- Product requirements: `docs/prd/agent-equipment-config.md`
 - Blueprint: `specs/agent-equipment-config/`
 - Edit boundaries: `specs/agent-equipment-config/edit-boundaries.md`
 - Example layer: `templates/config/agent-equipment-config-example.toml`
@@ -36,6 +37,12 @@ the resulting classification.
 
 General proposal, patch, revision, or apply tooling must follow the edit
 boundary contract before it writes any source.
+
+The product surface targets fluent CLI operations with MCP parity:
+`config resolve`, `config validate`, `config diff`, `onboard config`,
+`migrate config preview`, and `migrate config apply`. The current runtime
+command names remain the implementation and debugging path until that fluent
+surface lands.
 
 ## Load contract
 
@@ -239,7 +246,7 @@ supported edit intents are:
 | Intent | Current boundary |
 | --- | --- |
 | `propose` | Emit a candidate change and diff only; no source write. |
-| `patch` | Deferred until a chosen operation surface implements source selection, validation, authority, diff, and audit. |
+| `patch` | Deferred to Config Authoring Surfaces until source selection, validation, authority, diff, and audit are specified. |
 | `migrate` | Supported through `migration-apply` dry-run for registered schema migrations. |
 | `revise` | Supported as onboarding-plan section selection; source writing is deferred. |
 | `apply` | Supported only for registered migrations on eligible TOML sources. |

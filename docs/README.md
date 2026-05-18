@@ -93,6 +93,8 @@ agent equipment.
   Forge itself needs improvement.
 - [Repository threat model](security/threat-model.md): risks, boundaries, and
   control assumptions for people evaluating trust.
+- [Agent Equipment Config PRD](prd/agent-equipment-config.md): product
+  requirements for shared Config, including CLI and MCP operation surfaces.
 - [Design decisions](adr/): the decision records behind durable choices in the
   Forge.
 - [Agentic Engineering Operating Model Review](reviews/agentic-engineering-operating-model.md):
@@ -105,7 +107,9 @@ The current roadmap points to equipment lines that still have future slices:
 
 - [Agent Equipment Config](../specs/agent-equipment-config/): shared,
   layerable, enforceable configuration across equipment; the
-  [runtime slice](equipment/agent-equipment-config.md) is published.
+  [runtime slice](equipment/agent-equipment-config.md) is published, and the
+  [PRD](prd/agent-equipment-config.md) records the required CLI and MCP
+  operation surfaces.
 - [Issue Tracker Ops](../specs/issue-tracker-ops/): direct GitHub
   Issues bootstrap operations and future issue lifecycle equipment. Issue Ops
   is the accepted shorthand.
