@@ -8,7 +8,8 @@ and Agent Equipment Config has its first published runtime slice.
 
 - **Wielding a loadout**: start with the [Armory Vision](vision.md), then the
   [Forge Tour](forge-tour.md). For shared equipment configuration, use
-  [Agent Equipment Config](equipment/agent-equipment-config.md).
+  [Agent Equipment Config](equipment/agent-equipment-config.md) and the
+  [Config integration guide](equipment/agent-equipment-config-integration.md).
 - **Outfitting a harness**: ask an outfitter to compare
   [harness capabilities](harness-capabilities.md),
   [harness components](harness-components.md), and
@@ -81,6 +82,8 @@ agent equipment.
   future equipment.
 - [Agent Equipment Config](equipment/agent-equipment-config.md): published
   runtime slice for effective-config and config-diff behavior.
+- [Config integration guide](equipment/agent-equipment-config-integration.md):
+  how Smiths, Wielders, and Outfitters connect equipment to shared Config.
 
 ## Explanation
 
@@ -108,8 +111,9 @@ The current roadmap points to equipment lines that still have future slices:
 - [Agent Equipment Config](../specs/agent-equipment-config/): shared,
   layerable, enforceable configuration across equipment; the
   [runtime slice](equipment/agent-equipment-config.md) is published, and the
-  [PRD](prd/agent-equipment-config.md) records the required CLI and MCP
-  operation surfaces.
+  [integration guide](equipment/agent-equipment-config-integration.md) and
+  [PRD](prd/agent-equipment-config.md) record the current user path and
+  required CLI and MCP operation surfaces.
 - [Issue Tracker Ops](../specs/issue-tracker-ops/): direct GitHub
   Issues bootstrap operations and future issue lifecycle equipment. Issue Ops
   is the accepted shorthand.

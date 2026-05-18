@@ -60,7 +60,10 @@ The Forge separates equipment manufacturing from future outfitting and use.
 Examples, blueprints, and candidates remain construction material until they
 reach the readiness state that makes them safe to select. The first selectable
 surface is [Agent Equipment Config](equipment/agent-equipment-config.md), a
-published runtime slice for effective-config and config-diff behavior.
+published runtime slice for effective-config and config-diff behavior. Its
+[integration guide](equipment/agent-equipment-config-integration.md) shows how
+Smiths, Wielders, and Outfitters connect Config to equipment and harness
+surfaces.
 
 When equipment reaches the right readiness state, an outfitter will be able to
 select equipment from the Armory and assemble a loadout for a role, task,

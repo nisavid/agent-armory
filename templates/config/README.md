@@ -5,10 +5,18 @@
 Use this template for configuration that controls equipment enablement,
 ownership, autonomy, review, and approval boundaries.
 
-Use `agent-equipment-config-example.toml` when a Smith or Wielder needs a
-loadable Agent Equipment Config layer that exercises the v0 runtime.
+Use `example.toml` for the generic equipment config shape described below.
+
+Use `agent-equipment-config-example.toml` for a loadable Agent Equipment Config
+layer that exercises the v0 runtime.
+
+Use `issue-tracker-ops-plain-handoff.toml` when a Smith or Wielder needs a
+session-scoped Issue Tracker Ops handoff to pass with
+`--config-plain-handoff`.
 
 ## Required fields
+
+For `example.toml`:
 
 - Ownership.
 - Autonomy.
@@ -17,6 +25,8 @@ loadable Agent Equipment Config layer that exercises the v0 runtime.
 - Approval policy.
 
 ## Optional fields
+
+For `example.toml`:
 
 - Harness-specific overrides.
 - Environment selection.

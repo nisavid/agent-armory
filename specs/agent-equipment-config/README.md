@@ -74,8 +74,10 @@ an explicit authority gate. It defines deliberate `propose`, `patch`,
 source write remains registered migration apply. It does not resolve secrets,
 mutate external systems, or implement harness controls.
 
-Published usage guidance lives in
+Published runtime guidance lives in
 [docs/equipment/agent-equipment-config.md](../../docs/equipment/agent-equipment-config.md).
+Published integration guidance lives in
+[docs/equipment/agent-equipment-config-integration.md](../../docs/equipment/agent-equipment-config-integration.md).
 
 ### Load contract
 
