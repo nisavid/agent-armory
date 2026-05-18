@@ -1656,7 +1656,7 @@ def fragment_readiness_from_effective(effective: dict[str, Any], fragments: list
             for item in diagnostics
             if isinstance(item, dict) and diagnostic_matches_namespace(item, fragment.namespace)
         ]
-        diagnostic_kinds = sorted_unique(item.get("kind") for item in namespace_diagnostics)
+        diagnostic_kinds = sorted_present(item.get("kind") for item in namespace_diagnostics)
         blocking_diagnostics = [
             item
             for item in namespace_diagnostics
@@ -1766,7 +1766,7 @@ def build_parser() -> argparse.ArgumentParser:
     config_validate = config_subparsers.add_parser("validate")
     add_effective_config_arguments(config_validate)
     config_validate.add_argument("--include-effective-config", action="store_true")
-    config_validate.set_defaults(operation="config_validate", display_operation="config validate")
+    config_validate.set_defaults(operation="config_validate", display_operation="config validate", requested_behavior="mutation")
     config_diff = config_subparsers.add_parser("diff")
     add_diff_arguments(config_diff)
     config_diff.set_defaults(operation="config_diff", display_operation="config diff")
