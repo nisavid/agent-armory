@@ -1714,7 +1714,12 @@ def config_validation_report(
 def add_effective_config_arguments(parser: argparse.ArgumentParser, *, default_requested_behavior: str = "advisory") -> None:
     parser.add_argument("--layer", action="append", default=[])
     parser.add_argument("--plain-handoff", action="append", default=[])
-    parser.add_argument("--requested-behavior", choices=["advisory", "mutation"], default=default_requested_behavior)
+    parser.add_argument(
+        "--requested-behavior",
+        choices=["advisory", "mutation"],
+        default=default_requested_behavior,
+        help="Behavior to evaluate for safety and readiness.",
+    )
     parser.add_argument("--issue-tracker-ops", action="store_true")
 
 
@@ -1763,7 +1768,7 @@ def build_parser() -> argparse.ArgumentParser:
     config_resolve = config_subparsers.add_parser("resolve")
     add_effective_config_arguments(config_resolve)
     config_resolve.set_defaults(operation="config_resolve", display_operation="config resolve")
-    config_validate = config_subparsers.add_parser("validate")
+    config_validate = config_subparsers.add_parser("validate", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     add_effective_config_arguments(config_validate, default_requested_behavior="mutation")
     config_validate.add_argument("--include-effective-config", action="store_true")
     config_validate.set_defaults(operation="config_validate", display_operation="config validate")
