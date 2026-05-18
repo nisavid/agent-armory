@@ -23,9 +23,13 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         supported_capabilities: frozenset[str] = frozenset({"tracker_read", "tracker_write"}),
     ) -> dict[str, str]:
         if result["enforcement_projection"]["classification"] == "blocking":
+            diagnostic_kinds = sorted({item["kind"] for item in result["diagnostics"]})
+            reason = "enforcement projection classified requested behavior as blocking"
+            if diagnostic_kinds:
+                reason = f"{reason}: {', '.join(diagnostic_kinds)}"
             return {
                 "state": "blocking",
-                "reason": f"effective Config Safety Status is {result['safety_status']}",
+                "reason": reason,
                 "fallback": "advisory dry-run" if requested_behavior == "mutation" else "none",
             }
         if requested_behavior == "mutation" and "tracker_write" not in supported_capabilities:
@@ -2306,6 +2310,30 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(decision["state"], "warning")
         self.assertEqual(decision["reason"], "deprecated field")
 
+    def test_consumer_decision_fixture_returns_advisory_for_clean_read_only_behavior(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+
+            result = agent_equipment_config.effective_config([layer], [self.issue_ops_fragment()], requested_behavior="advisory")
+
+        decision = self.issue_tracker_ops_consumer_decision_fixture(
+            result,
+            requested_behavior="advisory",
+        )
+
+        self.assertEqual(result["safety_status"], "usable")
+        self.assertEqual(decision["state"], "advisory")
+        self.assertEqual(decision["fallback"], "none")
+
     def test_consumer_decision_fixture_blocks_mutation_behavior(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -2331,6 +2359,7 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         )
 
         self.assertEqual(decision["state"], "blocking")
+        self.assertIn("missing authority", decision["reason"])
         self.assertEqual(decision["fallback"], "advisory dry-run")
 
     def test_consumer_decision_fixture_reports_unsupported_capability(self):

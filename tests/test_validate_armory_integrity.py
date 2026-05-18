@@ -8947,7 +8947,7 @@ class SpecValidationTests(unittest.TestCase):
             "plain equipment-specific config handoff",
             "secret references",
             "consumer action decision",
-            "progressive",
+            "progressive fallback",
             "Issue Tracker Ops",
             "python3.14 -m unittest tests.test_agent_equipment_config",
             "policy",
