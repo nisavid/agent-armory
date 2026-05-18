@@ -62,6 +62,9 @@ Runtime coverage tracks these current and follow-on cases:
 - committed durable config plus local-only override;
 - checkout-local state;
 - session override;
+- explicit load-contract discovery proposal fields for source categories,
+  caller responsibility, input surfaces, provenance requirements, and secret
+  resolution boundaries;
 - multi-equipment composition;
 - secret reference resolution status without secret disclosure;
 - config-diff output between two effective configs;
@@ -84,6 +87,8 @@ Implemented by the v0 engine slice:
 - onboarding-plan output for missing shared Config, missing config data,
   interrupted partial config, resumed handoff completion, and restarted
   section revision;
+- onboarding-plan discovery proposals that expose the explicit-load contract
+  for caller-owned path discovery and schema-fragment registration;
 - Issue Tracker Ops pressure scenario for blocked live mutation.
 
 ## Pressure validation

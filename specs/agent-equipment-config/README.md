@@ -69,6 +69,37 @@ secrets, mutate external systems, or implement harness controls.
 Published usage guidance lives in
 [docs/equipment/agent-equipment-config.md](../../docs/equipment/agent-equipment-config.md).
 
+### Load contract
+
+The runtime uses explicit caller-supplied inputs. It does not discover default
+paths, import schema fragments from equipment packages, scan hook or plugin
+directories, resolve secret values, or decide harness enforcement.
+
+Scripts, hooks, harness adapters, repository equipment, and operators own these
+load duties:
+
+- discover candidate config paths through their own harness or repository
+  conventions;
+- select which sources apply to the requested behavior;
+- pass authored TOML layers through `--layer` or Python `Path` values;
+- pass plain session handoffs through `--plain-handoff` or
+  `plain_handoff_paths`;
+- order same-precedence sources deliberately;
+- register schema fragments before validation;
+- preserve and consume the provenance, diagnostics, discovery proposals,
+  migration previews, refusals, and audit records emitted by the runtime.
+
+Authored TOML layers declare `agent_equipment_config.layer.name`,
+`agent_equipment_config.layer.category`, and optional
+`agent_equipment_config.layer.trusted`. Layer `name` maps to Layer Precedence.
+Layer `category` must be one of the source categories below. `trusted = false`
+keeps the source visible for diagnostics without letting it authorize mutation.
+
+Schema fragments are caller-registered. Python callers pass `SchemaFragment`
+objects to the runtime functions. CLI callers use explicit fragment flags. The
+current CLI exposes the bundled `--issue-tracker-ops` fragment; arbitrary CLI
+schema-fragment registration belongs to a later integration surface.
+
 ### Runtime-slice harness projections
 
 The runtime slice exposes one portable CLI. Each harness projection invokes the
@@ -109,12 +140,14 @@ Authority gate.
 The v0 contract defines source categories and discovery duties rather than one
 universal filename:
 
-- committed durable config
-- local-only operator config
-- checkout-local state
-- session override
-- generated cache or state
-- secret reference source
+| Source category | Input surface | Core discovery | Mutation apply |
+| --- | --- | --- | --- |
+| `committed durable config` | `--layer` or Python layer path | None | Eligible after authority gates |
+| `local-only operator config` | `--layer` or Python layer path | None | Eligible after authority gates |
+| `checkout-local state` | `--layer` or Python layer path | None | Read-only |
+| `generated cache or state` | `--layer` or Python layer path | None | Read-only |
+| `secret reference source` | `--layer` or Python layer path | None | Read-only; unresolved secret metadata only |
+| `session override` | `--layer`, `--plain-handoff`, or Python paths | None | Read-only |
 
 Every harness or equipment projection must state where it discovers each
 category and whether that category is committed, local-only, session-scoped, or

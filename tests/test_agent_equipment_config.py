@@ -120,6 +120,30 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(result["handoff_behavior"]["mutation_capable_behavior"], "blocked")
         self.assertIn("committed durable config", [item["source_category"] for item in result["discovery_proposals"]])
 
+    def test_onboarding_discovery_proposals_describe_load_contract_responsibilities(self):
+        result = agent_equipment_config.config_onboarding_plan(
+            [],
+            [self.issue_ops_fragment()],
+            requested_behavior="mutation",
+        )
+
+        proposals = {
+            item["source_category"]: item
+            for item in result["discovery_proposals"]
+        }
+
+        self.assertEqual(proposals["committed durable config"]["core_discovery"], "none")
+        self.assertEqual(
+            proposals["committed durable config"]["caller_responsibility"],
+            "discover, select, order, and pass source paths",
+        )
+        self.assertEqual(proposals["committed durable config"]["input_surfaces"], ["--layer"])
+        self.assertEqual(proposals["session override"]["input_surfaces"], ["--layer", "--plain-handoff"])
+        self.assertEqual(
+            proposals["secret reference source"]["secret_resolution"],
+            "unresolved metadata only when present",
+        )
+
     def test_interrupted_onboarding_keeps_partial_output_and_blocks_mutation(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

@@ -28,14 +28,15 @@ agent preference.
 Use an Equipment Design Bundle, validator gate, and portable standard-library Python
 runtime slice for v0.
 
-The v0 contract defines typed schemas, namespaced schema fragments, Layer
-Precedence, Policy Authority, Config Safety Status, secret references,
-migrations, effective-config output, config-diff output, semantic validators,
-conflict diagnostics, and decision/mutation audit boundaries. The implemented
-runtime slice computes deterministic effective-config and config-diff output,
-diagnostics, plain handoff promotion, authority checks, and projection
-classification; consumer integration, onboarding, harness adapters, and
-blocking enforcement remain separate work.
+The v0 contract defines typed schemas, namespaced schema fragments, explicit
+load duties, Layer Precedence, Policy Authority, Config Safety Status, secret
+references, migrations, effective-config output, config-diff output, semantic
+validators, conflict diagnostics, and decision/mutation audit boundaries. The
+implemented runtime slice computes deterministic effective-config and
+config-diff output, diagnostics, plain handoff promotion, authority checks,
+onboarding-plan load-contract proposals, and projection classification;
+harness adapters, arbitrary CLI fragment registration, and blocking enforcement
+remain separate work.
 
 Use TOML for human-authored config layers and plain equipment-specific config
 handoff records. Use JSON-compatible objects for schemas, effective-config
@@ -53,6 +54,10 @@ output.
 - Scripts/tools: `tools/agent_equipment_config.py` computes effective config,
   config diff, validation diagnostics, migration previews, and projection
   classification for the v0 slice.
+- Load contract: callers discover paths, select sources, order same-precedence
+  inputs, register schema fragments, and pass explicit layer or handoff paths
+  into the runtime; the runtime preserves layer, source category, source path,
+  and trust provenance in output.
 - Hooks/permissions/approvals/sandboxes/tools: future enforcement projections.
 - Skills: future Smith/Wielder procedure around designing, onboarding, and
   repairing config.
@@ -84,13 +89,14 @@ gate aligned with the current source and runtime shape.
   source categories and projection duties before freezing harness-specific
   discovery paths.
 
-## Harness-specific projection
+## Load and harness-specific projection
 
 Every later implementation slice must explain how Codex, OpenClaw, Hermes
 Agent, Claude Code, Cursor, and OpenCode discover committed config, local-only
 operator config, checkout-local state, session overrides, generated state, and
-secret reference sources. Each projection must distinguish blocking controls
-from advisory fallback.
+secret reference sources before invoking the runtime. Each projection must
+distinguish path discovery, schema-fragment registration, provenance handling,
+blocking controls, and advisory fallback.
 
 ## Risks
 
