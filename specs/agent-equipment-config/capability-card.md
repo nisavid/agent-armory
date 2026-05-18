@@ -96,6 +96,7 @@ Deterministic surfaces emit JSON-compatible objects for:
 - migration-apply decisions, refusals, mutations, and audit records,
 - secret reference resolution status,
 - onboarding status and partial config handoff plans,
+- consumer action decision evidence,
 - policy decision audit records.
 
 ## Failure modes
@@ -114,6 +115,9 @@ Deterministic surfaces emit JSON-compatible objects for:
   collision, or schema conflict is resolved.
 - Semantic conflict or missing authority: output is `unsafe` until the
   behavior policy or authority gap is resolved.
+- Unsupported required capability: mutation-capable behavior fails closed, and
+  the consuming equipment may continue only through an explicit advisory or
+  plain-handoff fallback.
 
 ## Evidence
 

@@ -80,6 +80,47 @@ The load contract does not resolve secrets, create or mutate config outside
 `migration-apply --apply`, enforce harness controls, define universal filenames,
 or decide whether a caller may proceed after a blocking classification.
 
+## Consumption contract
+
+Consuming equipment turns effective Config output into its own action decision.
+Shared Config supplies typed fields, provenance, diagnostics, safety status,
+migration previews, plain-handoff promotion records, and an enforcement
+projection. The consumer owns the behavior-specific interpretation.
+
+A Config-aware consumer must:
+
+1. Register its schema fragment before validation.
+2. Keep defaults, required fields, migrations, and semantic validators in its
+   own namespace.
+3. Request the behavior it is evaluating, such as advisory or mutation, before
+   reading the effective output.
+4. Read `safety_status`, diagnostics, policy authority evidence, secret
+   reference metadata, and `enforcement_projection` before starting side
+   effects.
+5. Produce a consumer action decision before mutation, external calls, hook
+   execution, workflow changes, or durable publication.
+
+The consumer action decision states are:
+
+| State | Meaning |
+| --- | --- |
+| `allowed` | The requested behavior may run. Effective Config is `usable`, required consumer semantics pass, and the harness or equipment supports the needed capability. |
+| `advisory` | Read-only, dry-run, explanation, or model-facing guidance may continue, but the decision does not authorize side effects. |
+| `warning` | The requested behavior may run only with visible non-blocking diagnostics, such as deprecation or migration-preview evidence. |
+| `blocking` | The requested behavior must not run. Mutation-capable behavior fails closed when effective Config is missing, incomplete, unsafe, stale, untrusted, conflicted, or missing required Policy Authority. |
+| `unsupported` | The consumer or harness cannot apply a required capability. Mutation-capable behavior fails closed; the consumer may fall back to an explicit advisory or plain-handoff path when that path is safe. |
+
+The runtime's `enforcement_projection` is decision evidence, not a universal
+consumer API. A consumer may wrap it in a local action decision, but reusable
+helper APIs belong to a separate integration surface.
+
+Fallback is progressive. When shared Config is absent, the consumer uses its
+plain equipment-specific session handoff. When effective Config is present but
+does not authorize the requested behavior, the consumer may continue only with
+a narrower explicit behavior such as dry-run, read-only explanation, advisory
+guidance, or no action. A fallback must not silently turn an unsupported or
+blocking mutation into a write.
+
 ## Smith path
 
 When designing Config-aware equipment:

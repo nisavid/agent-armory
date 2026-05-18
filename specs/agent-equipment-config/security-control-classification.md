@@ -28,6 +28,7 @@ external write, or secret provider.
 - Secret references and their resolution status.
 - Schema fragments, semantic validators, migrations, and diagnostics.
 - Effective-config, config-diff, and audit outputs.
+- Consumer action decisions derived from effective Config output.
 - Enforcement projections to hooks, permissions, approvals, sandboxes, tools,
   and advisory model-facing guidance.
 
@@ -36,6 +37,7 @@ external write, or secret provider.
 - Human-authored TOML to deterministic parser.
 - Equipment schema fragment to shared Config merge behavior.
 - Semantic validator diagnostics to mutation decision.
+- Effective-config evidence to consumer action decision.
 - Committed config to local-only and session-scoped overrides.
 - Policy Authority to later overrides and lower-authority layers.
 - Secret reference metadata to harness-specific secret resolution.
@@ -51,6 +53,7 @@ external write, or secret provider.
 | Config-diff generation | Read | Explain changed values, policy effects, and unresolved conflicts. |
 | Migration preview | Read | Do not rewrite source config. |
 | Source migration apply | Local write | Require eligible source category, trusted provenance, dry-run-first output, explicit authority, and audit records. |
+| Consumer action decision | Policy decision | Fail closed for mutation-capable behavior unless effective Config is usable, authority and semantics pass, and the required capability is supported. |
 | Enforcement projection | Advisory or blocking control | Label blocking support versus advisory fallback. |
 | Secret reference resolution | Sensitive read | Report reference and status, never secret value. |
 
@@ -68,6 +71,9 @@ external write, or secret provider.
 - Untrusted config cannot authorize mutation-capable behavior.
 - Later or lower-authority layers cannot mint authority for an earlier Policy
   Authority gate.
+- Consumers classify requested behavior as `allowed`, `advisory`, `warning`,
+  `blocking`, or `unsupported` before mutation, external calls, hook execution,
+  workflow changes, or durable publication.
 - Harness projections must state whether controls are blocking or advisory.
 
 ## Conflict diagnostics
