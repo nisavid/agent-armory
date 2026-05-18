@@ -993,7 +993,7 @@ def enforcement_projection(safety_status: str, requested_behavior: str) -> dict[
     }
 
 
-def ordered_unique(values: Iterable[Any]) -> list[str]:
+def sorted_unique(values: Iterable[Any]) -> list[str]:
     unique: dict[str, None] = {}
     for value in values:
         unique[str(value)] = None
@@ -1015,9 +1015,10 @@ def consumer_action_decision(
 ) -> dict[str, Any]:
     diagnostics = effective.get("diagnostics", [])
     migration_previews = effective.get("migration_previews", [])
-    projection = effective.get("enforcement_projection", {})
-    required = ordered_unique(required_capabilities)
-    supported = ordered_unique(supported_capabilities)
+    projection_value = effective.get("enforcement_projection", {})
+    projection = projection_value if isinstance(projection_value, dict) else {}
+    required = sorted_unique(required_capabilities)
+    supported = sorted_unique(supported_capabilities)
     supported_set = set(supported)
     unsupported = [capability for capability in required if capability not in supported_set]
     evidence = {
@@ -1032,7 +1033,7 @@ def consumer_action_decision(
     projection_blocking = projection.get("classification") == "blocking"
     safety_blocking = requested_behavior == "mutation" and effective.get("safety_status") != "usable"
     if projection_blocking or safety_blocking:
-        diagnostic_kinds = ordered_unique(
+        diagnostic_kinds = sorted_unique(
             item.get("kind")
             for item in diagnostics
             if isinstance(item, dict) and item.get("kind") is not None
@@ -1065,13 +1066,13 @@ def consumer_action_decision(
             "evidence": evidence,
         }
     warning_kind_set = set(warning_diagnostic_kinds)
-    warnings = ordered_unique(
+    warnings = sorted_unique(
         item.get("kind")
         for item in diagnostics
         if isinstance(item, dict) and item.get("kind") in warning_kind_set
     )
     if migration_previews:
-        warnings = ordered_unique([*warnings, "migration preview"])
+        warnings = sorted_unique([*warnings, "migration preview"])
     if warnings:
         return {
             "equipment": equipment,

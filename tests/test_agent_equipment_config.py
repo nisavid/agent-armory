@@ -2384,6 +2384,27 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertIn("semantic conflict", decision["reason"])
         self.assertEqual(decision["fallback"], "advisory dry-run")
 
+    def test_consumer_action_decision_blocks_mutation_when_projection_is_malformed(self):
+        for malformed_projection in (None, "blocking", ["classification", "blocking"]):
+            with self.subTest(malformed_projection=malformed_projection):
+                decision = agent_equipment_config.consumer_action_decision(
+                    {
+                        "safety_status": "unsafe",
+                        "enforcement_projection": malformed_projection,
+                        "diagnostics": [{"kind": "semantic conflict"}],
+                        "migration_previews": [],
+                    },
+                    equipment="issue_tracker_ops",
+                    requested_behavior="mutation",
+                    required_capabilities=["tracker_write"],
+                    supported_capabilities=["tracker_write"],
+                )
+
+                self.assertEqual(decision["state"], "blocking")
+                self.assertEqual(decision["source"], "effective_config.safety_status")
+                self.assertEqual(decision["evidence"]["enforcement_projection"], {})
+                self.assertEqual(decision["fallback"], "advisory dry-run")
+
     def test_consumer_action_decision_prefers_blocking_over_unsupported(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
