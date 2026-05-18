@@ -993,6 +993,148 @@ def enforcement_projection(safety_status: str, requested_behavior: str) -> dict[
     }
 
 
+def ordered_unique(values: Iterable[Any]) -> list[str]:
+    unique: dict[str, None] = {}
+    for value in values:
+        unique[str(value)] = None
+    return sorted(unique)
+
+
+def fallback_for_behavior(requested_behavior: str) -> str:
+    return "advisory dry-run" if requested_behavior == "mutation" else "none"
+
+
+def consumer_action_decision(
+    effective: dict[str, Any],
+    *,
+    equipment: str,
+    requested_behavior: str,
+    required_capabilities: Iterable[str] = (),
+    supported_capabilities: Iterable[str] = (),
+    warning_diagnostic_kinds: Iterable[str] = ("deprecated field",),
+) -> dict[str, Any]:
+    diagnostics = effective.get("diagnostics", [])
+    migration_previews = effective.get("migration_previews", [])
+    projection = effective.get("enforcement_projection", {})
+    required = ordered_unique(required_capabilities)
+    supported = ordered_unique(supported_capabilities)
+    supported_set = set(supported)
+    unsupported = [capability for capability in required if capability not in supported_set]
+    evidence = {
+        "safety_status": effective.get("safety_status"),
+        "enforcement_projection": projection,
+        "diagnostics": diagnostics,
+        "migration_previews": migration_previews,
+        "required_capabilities": required,
+        "supported_capabilities": supported,
+        "unsupported_capabilities": unsupported,
+    }
+    projection_blocking = projection.get("classification") == "blocking"
+    safety_blocking = requested_behavior == "mutation" and effective.get("safety_status") != "usable"
+    if projection_blocking or safety_blocking:
+        diagnostic_kinds = ordered_unique(
+            item.get("kind")
+            for item in diagnostics
+            if isinstance(item, dict) and item.get("kind") is not None
+        )
+        source = "effective_config.enforcement_projection" if projection_blocking else "effective_config.safety_status"
+        reason = (
+            "enforcement projection classified requested behavior as blocking"
+            if projection_blocking
+            else "effective Config Safety Status is not usable for mutation"
+        )
+        if diagnostic_kinds:
+            reason = f"{reason}: {', '.join(diagnostic_kinds)}"
+        return {
+            "equipment": equipment,
+            "requested_behavior": requested_behavior,
+            "state": "blocking",
+            "source": source,
+            "reason": reason,
+            "fallback": fallback_for_behavior(requested_behavior),
+            "evidence": evidence,
+        }
+    if unsupported:
+        return {
+            "equipment": equipment,
+            "requested_behavior": requested_behavior,
+            "state": "unsupported",
+            "source": "consumer.required_capabilities",
+            "reason": f"required capability unavailable: {', '.join(unsupported)}",
+            "fallback": fallback_for_behavior(requested_behavior),
+            "evidence": evidence,
+        }
+    warning_kind_set = set(warning_diagnostic_kinds)
+    warnings = ordered_unique(
+        item.get("kind")
+        for item in diagnostics
+        if isinstance(item, dict) and item.get("kind") in warning_kind_set
+    )
+    if migration_previews:
+        warnings = ordered_unique([*warnings, "migration preview"])
+    if warnings:
+        return {
+            "equipment": equipment,
+            "requested_behavior": requested_behavior,
+            "state": "warning",
+            "source": "effective_config.diagnostics",
+            "reason": ", ".join(warnings),
+            "fallback": "none",
+            "evidence": evidence,
+        }
+    if requested_behavior == "mutation":
+        return {
+            "equipment": equipment,
+            "requested_behavior": requested_behavior,
+            "state": "allowed",
+            "source": "effective_config.safety_status",
+            "reason": "effective Config Safety Status is usable",
+            "fallback": "none",
+            "evidence": evidence,
+        }
+    return {
+        "equipment": equipment,
+        "requested_behavior": requested_behavior,
+        "state": "advisory",
+        "source": "requested_behavior",
+        "reason": "read-only or dry-run behavior",
+        "fallback": "none",
+        "evidence": evidence,
+    }
+
+
+def evaluate_consumer_config(
+    layer_paths: list[Path],
+    fragments: list[SchemaFragment],
+    *,
+    equipment: str,
+    requested_behavior: str,
+    plain_handoff_paths: list[Path] | None = None,
+    required_capabilities: Iterable[str] = (),
+    supported_capabilities: Iterable[str] = (),
+    warning_diagnostic_kinds: Iterable[str] = ("deprecated field",),
+) -> dict[str, Any]:
+    effective = effective_config(
+        layer_paths,
+        fragments,
+        requested_behavior=requested_behavior,
+        plain_handoff_paths=plain_handoff_paths,
+    )
+    return {
+        "equipment": equipment,
+        "requested_behavior": requested_behavior,
+        "effective_config": effective,
+        "consumer_action_decision": consumer_action_decision(
+            effective,
+            equipment=equipment,
+            requested_behavior=requested_behavior,
+            required_capabilities=required_capabilities,
+            supported_capabilities=supported_capabilities,
+            warning_diagnostic_kinds=warning_diagnostic_kinds,
+        ),
+    }
+
+
 def onboarding_status(shared_config_present: bool, onboarding_state: str, safety_status: str) -> str:
     if onboarding_state not in ONBOARDING_STATES:
         raise ConfigError(f"unknown onboarding state {onboarding_state!r}")

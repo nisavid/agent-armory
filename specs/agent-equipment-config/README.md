@@ -6,9 +6,10 @@ Promotion state: planned
 This Equipment Design Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for effective-config, config-diff,
 diagnostics, plain handoff promotion, authority checks, projection
-classification, onboarding-plan output, explicit migration apply, and the
-published runtime guide. It does not resolve secrets, mutate external systems,
-or implement harness controls. The Blueprint itself does not implement Agent Equipment.
+classification, reusable consumer action decisions, onboarding-plan output,
+explicit migration apply, and the published runtime guide. It does not resolve
+secrets, mutate external systems, or implement harness controls. The Blueprint
+itself does not implement Agent Equipment.
 The runtime guide names the currently published slice.
 
 Issue: [#23](https://github.com/nisavid/agent-armory/issues/23)
@@ -60,11 +61,12 @@ The v0 contract centers on explainable effective-config behavior:
 
 The first runtime slice provides a standard-library Python effective-config
 engine for deterministic validation and pressure coverage. It previews source
-migrations, classifies enforcement projections, and emits onboarding-plan
-output for missing, partial, interrupted, resumed, and restarted configuration
-flows. It also applies registered source migrations to eligible TOML sources
-after dry-run review and an explicit authority gate. It does not resolve
-secrets, mutate external systems, or implement harness controls.
+migrations, classifies enforcement projections, exposes reusable consumer action
+decision helpers, and emits onboarding-plan output for missing, partial,
+interrupted, resumed, and restarted configuration flows. It also applies
+registered source migrations to eligible TOML sources after dry-run review and
+an explicit authority gate. It does not resolve secrets, mutate external
+systems, or implement harness controls.
 
 Published usage guidance lives in
 [docs/equipment/agent-equipment-config.md](../../docs/equipment/agent-equipment-config.md).
@@ -130,9 +132,10 @@ Consumer action decision states:
 | `blocking` | The requested behavior must not run because Config is missing, incomplete, unsafe, stale, untrusted, conflicted, missing required Policy Authority, or otherwise classified as blocking for the behavior. |
 | `unsupported` | The required capability cannot be applied by the consumer or harness; mutation-capable behavior fails closed and only an explicit safe fallback may continue. |
 
-The runtime's `enforcement_projection` is evidence for this decision. It is not
-the reusable consumer integration surface. That surface belongs to a separate
-implementation slice.
+The runtime's `enforcement_projection` is evidence for this decision. Importable
+consumers use `evaluate_consumer_config` to load effective Config through the
+explicit-load contract and receive a consumer action decision, or
+`consumer_action_decision` when effective-config output is already available.
 
 Progressive fallback is required. A consumer uses a plain
 equipment-specific session handoff when shared Config is absent. When effective

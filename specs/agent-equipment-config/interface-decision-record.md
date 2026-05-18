@@ -5,9 +5,11 @@ Promotion state: planned
 
 This Equipment Design Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for effective-config, config-diff,
-diagnostics, plain handoff promotion, authority checks, and projection
-classification, plus onboarding-plan and migration-apply output. It does not implement Agent Equipment beyond this runtime slice, publish assets, resolve
-secrets, mutate external systems, or implement harness controls.
+diagnostics, plain handoff promotion, authority checks, projection
+classification, reusable consumer action decisions, plus onboarding-plan and
+migration-apply output. It does not implement Agent Equipment beyond this
+runtime slice, publish assets, resolve secrets, mutate external systems, or
+implement harness controls.
 
 ## Requirement
 
@@ -34,9 +36,9 @@ references, migrations, effective-config output, config-diff output, semantic
 validators, conflict diagnostics, and decision/mutation audit boundaries. The
 implemented runtime slice computes deterministic effective-config and
 config-diff output, diagnostics, plain handoff promotion, authority checks,
-onboarding-plan load-contract proposals, and projection classification;
-harness adapters, arbitrary CLI fragment registration, and blocking enforcement
-remain separate work.
+consumer action decisions, onboarding-plan load-contract proposals, and
+projection classification; harness adapters, arbitrary CLI fragment
+registration, and blocking enforcement remain separate work.
 
 The consumption contract keeps the final action decision with the consuming
 equipment. Shared Config output supplies evidence; the consumer maps that
@@ -66,6 +68,9 @@ output.
   inputs, register schema fragments, and pass explicit layer or handoff paths
   into the runtime; the runtime preserves layer, source category, source path,
   and trust provenance in output.
+- Consumer integration: importable callers use `evaluate_consumer_config` to
+  load effective Config and receive a consumer action decision, or
+  `consumer_action_decision` to classify existing effective-config evidence.
 - Hooks/permissions/approvals/sandboxes/tools: future enforcement projections.
 - Skills: future Smith/Wielder procedure around designing, onboarding, and
   repairing config.

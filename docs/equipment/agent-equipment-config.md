@@ -9,8 +9,8 @@ Python engine for loading authored TOML layers, composing schema fragments,
 explaining effective configuration, comparing config outputs, and preserving
 plain equipment-specific handoffs. It also exposes onboarding-plan output for
 first-run, interrupted, resumed, and restarted configuration flows, plus
-explicit migration-apply output for schema rewrites that pass authority and
-source-eligibility gates.
+reusable consumer action decision output and explicit migration-apply output
+for schema rewrites that pass authority and source-eligibility gates.
 
 Use this guide when a Smith is making Config-aware equipment or when a Wielder
 needs to provide local or session configuration for equipment that already
@@ -41,11 +41,14 @@ registers schema fragments, and invokes the runtime.
 
 Python callers import `tools.agent_equipment_config` and pass `Path` values plus
 `SchemaFragment` objects to `effective_config`, `config_onboarding_plan`, or
-`migration_apply`. CLI callers pass layer paths with `--layer`, session handoff
-paths with `--plain-handoff`, and supported schema fragments through explicit
-fragment flags. The current CLI exposes `--issue-tracker-ops` as the bundled
-fragment flag; arbitrary schema-fragment CLI registration belongs to a later
-integration surface.
+`migration_apply`. Config-aware consumers can call `evaluate_consumer_config`
+to load effective Config through the same explicit-load contract and receive a
+consumer action decision, or call `consumer_action_decision` when they already
+have effective-config output. CLI callers pass layer paths with `--layer`,
+session handoff paths with `--plain-handoff`, and supported schema fragments
+through explicit fragment flags. The current CLI exposes `--issue-tracker-ops`
+as the bundled fragment flag; arbitrary schema-fragment CLI registration belongs
+to a later CLI surface.
 
 Every authored TOML layer passed through `--layer` must declare `name` and
 `category`:
@@ -110,9 +113,12 @@ The consumer action decision states are:
 | `blocking` | The requested behavior must not run. Mutation-capable behavior fails closed when effective Config is missing, incomplete, unsafe, stale, untrusted, conflicted, or missing required Policy Authority. |
 | `unsupported` | The consumer or harness cannot apply a required capability. Mutation-capable behavior fails closed; the consumer may fall back to an explicit advisory or plain-handoff path when that path is safe. |
 
-The runtime's `enforcement_projection` is decision evidence, not a universal
-consumer API. A consumer may wrap it in a local action decision, but reusable
-helper APIs belong to a separate integration surface.
+The runtime's `enforcement_projection` is decision evidence, not the whole
+consumer decision. `consumer_action_decision` maps effective-config evidence,
+consumer-required capabilities, supported capabilities, diagnostics, and
+migration previews to `allowed`, `advisory`, `warning`, `blocking`, or
+`unsupported`. `evaluate_consumer_config` combines explicit layer loading with
+that decision helper for importable consumers.
 
 Fallback is progressive. When shared Config is absent, the consumer uses its
 plain equipment-specific session handoff. When effective Config is present but
@@ -257,11 +263,12 @@ Update this guide when:
 
 - a new Config runtime command becomes the supported entry point;
 - an equipment line consumes Config directly;
+- consumer action decision output changes;
 - onboarding-plan status, handoff, discovery, or revision output changes;
 - a harness projection turns advisory classification into blocking behavior;
 - secret-reference handling changes;
 - migration behavior begins writing source config.
 
 Security closeout for Config publication must cover CLI output, diagnostics,
-secret-reference redaction, local file reads, and any new write or enforcement
-surface.
+secret-reference redaction, local file reads, consumer action decisions, and
+any new write or enforcement surface.
