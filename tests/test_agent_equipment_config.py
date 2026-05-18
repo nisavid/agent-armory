@@ -2426,6 +2426,24 @@ class AgentEquipmentConfigTests(unittest.TestCase):
                 self.assertEqual(decision["evidence"]["diagnostics"], [])
                 self.assertEqual(decision["fallback"], "advisory dry-run")
 
+    def test_consumer_action_decision_ignores_malformed_migration_previews(self):
+        for malformed_migration_previews in (None, "migration preview", {"kind": "rename"}):
+            with self.subTest(malformed_migration_previews=malformed_migration_previews):
+                decision = agent_equipment_config.consumer_action_decision(
+                    {
+                        "safety_status": "usable",
+                        "enforcement_projection": {"classification": "advisory"},
+                        "diagnostics": [],
+                        "migration_previews": malformed_migration_previews,
+                    },
+                    equipment="issue_tracker_ops",
+                    requested_behavior="advisory",
+                )
+
+                self.assertEqual(decision["state"], "advisory")
+                self.assertEqual(decision["evidence"]["migration_previews"], [])
+                self.assertNotIn("migration preview", decision["reason"])
+
     def test_consumer_action_decision_prefers_blocking_over_unsupported(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
