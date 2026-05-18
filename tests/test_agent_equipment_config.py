@@ -2362,6 +2362,37 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertIn("missing authority", decision["reason"])
         self.assertEqual(decision["fallback"], "advisory dry-run")
 
+    def test_consumer_decision_fixture_prefers_blocking_over_unsupported(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy = self.write_layer(root, "org.toml", """
+                [agent_equipment_config.layer]
+                name = "organization or tracker policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.policy.issue_tracker_ops.mode]
+                required_for = "mutation"
+                authority = "live_tracker_write"
+
+                [issue_tracker_ops]
+                mode = "execute"
+                external_disclosure = "allowed"
+            """)
+
+            result = agent_equipment_config.effective_config([policy], [self.issue_ops_fragment()], requested_behavior="mutation")
+
+        decision = self.issue_tracker_ops_consumer_decision_fixture(
+            result,
+            requested_behavior="mutation",
+            supported_capabilities=frozenset({"tracker_read"}),
+        )
+
+        self.assertEqual(result["safety_status"], "unsafe")
+        self.assertEqual(result["enforcement_projection"]["classification"], "blocking")
+        self.assertEqual(decision["state"], "blocking")
+        self.assertIn("missing authority", decision["reason"])
+        self.assertEqual(decision["fallback"], "advisory dry-run")
+
     def test_consumer_decision_fixture_reports_unsupported_capability(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

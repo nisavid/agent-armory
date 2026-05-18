@@ -74,6 +74,9 @@ external write, or secret provider.
 - Consumers classify requested behavior as `allowed`, `advisory`, `warning`,
   `blocking`, or `unsupported` before mutation, external calls, hook execution,
   workflow changes, or durable publication.
+- Fallback behavior must not silently convert an `unsupported` or `blocking`
+  mutation into a write operation; the consumer must fail closed, escalate, or
+  surface a diagnostic instead.
 - Harness projections must state whether controls are blocking or advisory.
 
 ## Conflict diagnostics
