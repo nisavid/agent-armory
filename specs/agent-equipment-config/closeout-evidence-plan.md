@@ -6,8 +6,10 @@ Promotion state: planned
 This Equipment Design Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for effective-config, config-diff,
 diagnostics, plain handoff promotion, authority checks, and projection
-classification, plus onboarding-plan and migration-apply output. It does not implement Agent Equipment beyond this runtime slice, publish assets, resolve
-secrets, mutate external systems, or implement harness controls.
+classification, plus onboarding-plan, migration-apply output, and deliberate
+edit-boundary reference. It does not implement Agent Equipment beyond this
+runtime slice, publish assets, resolve secrets, mutate external systems, or
+implement harness controls.
 
 ## Closeout scope
 
@@ -53,6 +55,7 @@ After the bundle lands, #23 should gain child issues for:
 - onboarding, re-onboarding, resume, and handoff flows;
 - harness projection docs and enforcement support;
 - audit, migration, and security hardening;
+- general edit operation surfaces after #76 chooses ownership;
 - publication and pressure validation after runtime behavior exists.
 
 Each child issue should name the bundle files it depends on, the expected output

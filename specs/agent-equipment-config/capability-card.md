@@ -59,7 +59,7 @@ policy model without making Config depend on Issue Tracker Ops.
   records.
 - Scripts/tools: the first portable effective-config, config-diff,
   onboarding-plan, and migration-apply CLI slice, plus future validation
-  commands.
+  commands and deliberate edit-boundary reference.
 - Hooks, permissions, approvals, sandboxes, or tool gates: future enforcement
   projections for mutation-capable behavior.
 - Skills: future Smith and Wielder judgment around design, onboarding, and
@@ -82,6 +82,9 @@ policy model without making Config depend on Issue Tracker Ops.
 - Secret references may appear in config; secret values must not.
 - Read-time migrations may explain stale config; source rewrites require an
   explicit audited mutation.
+- Deliberate config source writes require explicit edit intent, eligible source
+  category, trusted provenance, applicable authority, reviewable diff, final
+  source precondition check, and audit evidence.
 
 ## Output contract
 
@@ -94,6 +97,7 @@ Deterministic surfaces emit JSON-compatible objects for:
 - semantic validator diagnostics,
 - migration previews,
 - migration-apply decisions, refusals, mutations, and audit records,
+- edit intent and refusal evidence for deliberate source changes,
 - secret reference resolution status,
 - onboarding status and partial config handoff plans,
 - consumer action decision evidence,

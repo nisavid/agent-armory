@@ -832,6 +832,7 @@ CONFIG_BUNDLE_REQUIRED_PATHS = [
     f"{CONFIG_BUNDLE_PATH}/capability-card.md",
     f"{CONFIG_BUNDLE_PATH}/interface-decision-record.md",
     f"{CONFIG_BUNDLE_PATH}/security-control-classification.md",
+    f"{CONFIG_BUNDLE_PATH}/edit-boundaries.md",
     f"{CONFIG_BUNDLE_PATH}/pressure-scenarios.md",
     f"{CONFIG_BUNDLE_PATH}/validation-plan.md",
     f"{CONFIG_BUNDLE_PATH}/closeout-evidence-plan.md",
