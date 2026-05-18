@@ -31,7 +31,7 @@ but those read-only operations do not authorize source mutation.
 
 ## Source ownership
 
-| Source category | Edit stance | Write owner |
+| Source category or context | Edit stance | Write owner |
 | --- | --- | --- |
 | `committed durable config` | Writable only through a deliberate Config write surface with authority, diff, validation, audit, and rollback evidence. | Project or repository policy owner. |
 | `local-only operator config` | Writable only through a deliberate local write surface with operator authority, diff, validation, audit, and local artifact classification. | Local operator. |
@@ -39,7 +39,7 @@ but those read-only operations do not authorize source mutation.
 | `generated cache or state` | Read-only to Config edit surfaces. A proposal may ask the generator to refresh it. | Generator. |
 | `secret reference source` | Read-only metadata. Config may propose or patch secret-reference pointers in eligible authored config, but it must not write secret values or mutate the secret provider. | Secret provider or harness. |
 | `session override` | Session-scoped and read-only for durable source writes. A session may accept a new plain handoff or override value, but Config must not persist it as project truth without a separate eligible target. | Current session or handoff owner. |
-| Externally owned source | Read-only unless the owner exposes a Config-aware write surface with its own authority and audit contract. | External owner. |
+| External owner context, not a v0 `agent_equipment_config.layer.category` value | Read-only unless the owner exposes a Config-aware write surface with its own authority and audit contract. | External owner. |
 
 The source category is not enough by itself. A write also needs trusted
 provenance, an eligible source path, applicable Policy Authority, and a clean
