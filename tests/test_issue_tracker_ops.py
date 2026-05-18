@@ -251,6 +251,11 @@ class IssueTrackerOpsTests(unittest.TestCase):
             payload["config"]["consumer_action_decision"]["evidence"]["unsupported_capabilities"],
         )
 
+    def test_execute_config_without_consumer_decision_fails_closed(self):
+        args = argparse.Namespace(operation="comment", execute=True)
+
+        self.assertTrue(issue_tracker_ops.config_refuses_execute({"consumer_semantics": {}}, args))
+
     def test_execute_error_omits_resolved_when_no_resolution_occurred(self):
         gh = FakeGh([subprocess.CompletedProcess(["gh"], 1, stdout="", stderr="boom")])
 

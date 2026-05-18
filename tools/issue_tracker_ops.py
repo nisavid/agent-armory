@@ -20,7 +20,7 @@ DEFAULT_API_VERSION = "2026-03-10"
 DEFAULT_ACCEPT = "application/vnd.github+json"
 JSONValue = dict | list | str | int | float | bool | None
 MUTATION_OPERATIONS = {"create-issue", "update-issue", "comment", "add-blocked-by", "remove-blocked-by"}
-CONFIG_REFUSAL_STATES = {"blocking", "unsupported"}
+CONFIG_EXECUTE_ALLOWED_STATES = {"allowed", "warning"}
 CONFIGURED_EXECUTE_CAPABILITY = "configured_execute_mode"
 TRACKER_READ_CAPABILITY = "tracker_read"
 TRACKER_WRITE_CAPABILITY = "tracker_write"
@@ -539,16 +539,17 @@ def evaluate_issue_tracker_ops_config(args: argparse.Namespace) -> dict | None:
 def config_refuses_execute(config: dict | None, args: argparse.Namespace) -> bool:
     if config is None or args.operation not in MUTATION_OPERATIONS or not args.execute:
         return False
-    decision = config.get("consumer_action_decision", {})
+    decision = config.get("consumer_action_decision")
     if not isinstance(decision, dict):
         return True
-    return decision.get("state") in CONFIG_REFUSAL_STATES
+    state = decision.get("state")
+    return state not in CONFIG_EXECUTE_ALLOWED_STATES
 
 
 def config_refusal_payload(operation: str, request: RequestSpec | dict, config: dict) -> dict:
-    decision = config.get("consumer_action_decision", {})
-    state = decision.get("state") if isinstance(decision, dict) else "unknown"
-    reason = decision.get("reason") if isinstance(decision, dict) else "malformed consumer action decision"
+    decision = config.get("consumer_action_decision")
+    state = decision.get("state") if isinstance(decision, dict) else None
+    reason = decision.get("reason") if isinstance(decision, dict) else None
     request_payload = compact_request(request) if isinstance(request, RequestSpec) else request
     return {
         "mode": "execute",
@@ -557,8 +558,9 @@ def config_refusal_payload(operation: str, request: RequestSpec | dict, config: 
         "config": config,
         "error": {
             "code": "config_refused",
-            "state": state,
-            "message": f"Issue Tracker Ops Config did not authorize execute: {reason}",
+            "state": state or "unknown",
+            "message": "Issue Tracker Ops Config did not authorize execute: "
+            f"{reason or 'missing or malformed consumer action decision'}",
         },
     }
 
