@@ -88,10 +88,11 @@ scheduling periods, and install preferences.
 Config should use typed values and human-friendly names. Store secret
 references, not secrets.
 
-Agent Equipment Config is the planned shared equipment for robust, layerable,
-composable, adaptable, and enforceable config. Equipment-specific config should
-still have a plain session-scoped shape so the equipment can run, hand off, and
-later ingest config when shared config equipment is unavailable.
+Agent Equipment Config is the shared equipment path for robust, layerable,
+composable, adaptable, and enforceable config. Its published runtime slice
+loads explicit config sources, and equipment-specific config should still have
+a plain session-scoped shape so the equipment can run, hand off, and later
+ingest shared config when Agent Equipment Config is unavailable.
 
 Use `templates/config/` to capture ownership, autonomy, enabled state, review,
 and approval boundaries.

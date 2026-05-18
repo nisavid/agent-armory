@@ -18,13 +18,21 @@ Use this guide when a Smith is making Config-aware equipment or when a Wielder
 needs to provide local or session configuration for equipment that already
 declares a schema fragment.
 
+Use the
+[Config integration guide](agent-equipment-config-integration.md) for the
+Smith, Wielder, and Outfitter paths that connect equipment, harness surfaces,
+and the current runtime.
+
 ## What to use
 
 - Runtime: `tools/agent_equipment_config.py`
 - Product requirements: `docs/prd/agent-equipment-config.md`
+- Integration guide: `docs/equipment/agent-equipment-config-integration.md`
 - Blueprint: `specs/agent-equipment-config/`
 - Edit boundaries: `specs/agent-equipment-config/edit-boundaries.md`
 - Example layer: `templates/config/agent-equipment-config-example.toml`
+- Plain Issue Tracker Ops handoff:
+  `templates/config/issue-tracker-ops-plain-handoff.toml`
 - Generic config template: `templates/config/example.toml`
 
 The runtime reads local files supplied by the caller and emits JSON to stdout.
