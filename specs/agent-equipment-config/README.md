@@ -100,6 +100,60 @@ objects to the runtime functions. CLI callers use explicit fragment flags. The
 current CLI exposes the bundled `--issue-tracker-ops` fragment; arbitrary CLI
 schema-fragment registration belongs to a later integration surface.
 
+### Consumption contract
+
+Consuming equipment derives its own consumer action decision from effective
+Config output. Shared Config does not know every equipment action; it provides
+machine-visible evidence that a consumer evaluates against its own side-effect
+boundary.
+
+The consumer must:
+
+- register the equipment schema fragment before validation;
+- keep defaults, required fields, migrations, semantic validators, and
+  equipment-specific policy gates in that fragment;
+- pass the requested behavior, such as advisory or mutation, into the Config
+  runtime;
+- inspect `safety_status`, diagnostics, provenance, policy authority evidence,
+  secret reference metadata, migration previews, and
+  `enforcement_projection`;
+- emit a consumer action decision before mutation, external calls, hook
+  execution, workflow changes, or durable publication.
+
+Consumer action decision states:
+
+| State | Required meaning |
+| --- | --- |
+| `allowed` | The requested behavior may run because effective Config is `usable`, consumer semantic validators pass, and the required capability is supported. |
+| `advisory` | Read-only, dry-run, explanation, or model-facing guidance may continue, but no side effect is authorized. |
+| `warning` | The requested behavior may run with visible non-blocking diagnostics, such as deprecation or migration-preview evidence. |
+| `blocking` | The requested behavior must not run because Config is missing, incomplete, unsafe, stale, untrusted, conflicted, missing required Policy Authority, or otherwise classified as blocking for the behavior. |
+| `unsupported` | The required capability cannot be applied by the consumer or harness; mutation-capable behavior fails closed and only an explicit safe fallback may continue. |
+
+The runtime's `enforcement_projection` is evidence for this decision. It is not
+the reusable consumer integration surface. That surface belongs to a separate
+implementation slice.
+
+Fallback is progressive. A consumer uses a plain equipment-specific session
+handoff when shared Config is absent. When effective Config exists but cannot
+authorize the requested behavior, the consumer may continue only with a narrower
+explicit behavior such as dry-run, read-only explanation, advisory guidance, or
+no action. A fallback must not silently turn an unsupported or blocking mutation
+into a write.
+
+Example consumer-owned decision shape for Issue Tracker Ops:
+
+```json
+{
+  "equipment": "issue_tracker_ops",
+  "requested_behavior": "mutation",
+  "state": "blocking",
+  "source": "effective_config.enforcement_projection",
+  "reason": "missing usable Policy Authority for live tracker writes",
+  "fallback": "advisory dry-run"
+}
+```
+
 ### Runtime-slice harness projections
 
 The runtime slice exposes one portable CLI. Each harness projection invokes the

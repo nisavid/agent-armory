@@ -15,6 +15,50 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         path.write_text(textwrap.dedent(text).lstrip(), encoding="utf-8")
         return path
 
+    def issue_tracker_ops_consumer_decision_fixture(
+        self,
+        result: dict,
+        *,
+        requested_behavior: str,
+        supported_capabilities: frozenset[str] = frozenset({"tracker_read", "tracker_write"}),
+    ) -> dict[str, str]:
+        if requested_behavior == "mutation" and "tracker_write" not in supported_capabilities:
+            return {
+                "state": "unsupported",
+                "reason": "tracker_write capability is unavailable",
+                "fallback": "advisory dry-run",
+            }
+        if result["enforcement_projection"]["classification"] == "blocking":
+            return {
+                "state": "blocking",
+                "reason": f"effective Config Safety Status is {result['safety_status']}",
+                "fallback": "advisory dry-run" if requested_behavior == "mutation" else "none",
+            }
+        non_blocking_warnings = [
+            item["kind"]
+            for item in result["diagnostics"]
+            if item["kind"] in {"deprecated field"}
+        ]
+        if result["migration_previews"]:
+            non_blocking_warnings.append("migration preview")
+        if non_blocking_warnings:
+            return {
+                "state": "warning",
+                "reason": ", ".join(sorted(set(non_blocking_warnings))),
+                "fallback": "none",
+            }
+        if requested_behavior == "mutation":
+            return {
+                "state": "allowed",
+                "reason": "effective Config Safety Status is usable",
+                "fallback": "none",
+            }
+        return {
+            "state": "advisory",
+            "reason": "read-only or dry-run behavior",
+            "fallback": "none",
+        }
+
     def test_load_layers_preserves_declared_source_category_and_order(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -2200,6 +2244,122 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(result["safety_status"], "usable")
         self.assertEqual(result["diagnostics"], [])
         self.assertEqual(result["enforcement_projection"]["classification"], "advisory")
+
+    def test_consumer_decision_fixture_allows_usable_mutation_behavior(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy = self.write_layer(root, "org.toml", """
+                [agent_equipment_config.layer]
+                name = "organization or tracker policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.policy.issue_tracker_ops.mode]
+                required_for = "mutation"
+                authority = "live_tracker_write"
+
+                [agent_equipment_config.authority]
+                live_tracker_write = "usable"
+
+                [issue_tracker_ops]
+                mode = "execute"
+                external_disclosure = "allowed"
+            """)
+
+            result = agent_equipment_config.effective_config([policy], [self.issue_ops_fragment()], requested_behavior="mutation")
+
+        decision = self.issue_tracker_ops_consumer_decision_fixture(
+            result,
+            requested_behavior="mutation",
+        )
+
+        self.assertEqual(decision["state"], "allowed")
+        self.assertEqual(decision["fallback"], "none")
+
+    def test_consumer_decision_fixture_warns_for_non_blocking_diagnostics(self):
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=1,
+            fields={
+                "old_mode": agent_equipment_config.FieldSpec(type="string", deprecated=True, replacement="mode"),
+                "mode": agent_equipment_config.FieldSpec(type="string", default="dry-run"),
+            },
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                old_mode = "dry-run"
+            """)
+
+            result = agent_equipment_config.effective_config([layer], [fragment], requested_behavior="advisory")
+
+        decision = self.issue_tracker_ops_consumer_decision_fixture(
+            result,
+            requested_behavior="advisory",
+        )
+
+        self.assertEqual(result["safety_status"], "usable")
+        self.assertEqual(decision["state"], "warning")
+        self.assertEqual(decision["reason"], "deprecated field")
+
+    def test_consumer_decision_fixture_blocks_mutation_behavior(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy = self.write_layer(root, "org.toml", """
+                [agent_equipment_config.layer]
+                name = "organization or tracker policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.policy.issue_tracker_ops.mode]
+                required_for = "mutation"
+                authority = "live_tracker_write"
+
+                [issue_tracker_ops]
+                mode = "execute"
+                external_disclosure = "allowed"
+            """)
+
+            result = agent_equipment_config.effective_config([policy], [self.issue_ops_fragment()], requested_behavior="mutation")
+
+        decision = self.issue_tracker_ops_consumer_decision_fixture(
+            result,
+            requested_behavior="mutation",
+        )
+
+        self.assertEqual(decision["state"], "blocking")
+        self.assertEqual(decision["fallback"], "advisory dry-run")
+
+    def test_consumer_decision_fixture_reports_unsupported_capability(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy = self.write_layer(root, "org.toml", """
+                [agent_equipment_config.layer]
+                name = "organization or tracker policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.authority]
+                live_tracker_write = "usable"
+
+                [issue_tracker_ops]
+                mode = "execute"
+                external_disclosure = "allowed"
+            """)
+
+            result = agent_equipment_config.effective_config([policy], [self.issue_ops_fragment()], requested_behavior="mutation")
+
+        decision = self.issue_tracker_ops_consumer_decision_fixture(
+            result,
+            requested_behavior="mutation",
+            supported_capabilities=frozenset({"tracker_read"}),
+        )
+
+        self.assertEqual(result["safety_status"], "usable")
+        self.assertEqual(decision["state"], "unsupported")
+        self.assertEqual(decision["fallback"], "advisory dry-run")
 
     def test_untrusted_metadata_only_authority_cannot_authorize_mutation(self):
         with tempfile.TemporaryDirectory() as tmpdir:

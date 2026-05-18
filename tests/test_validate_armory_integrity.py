@@ -8667,6 +8667,7 @@ class SpecValidationTests(unittest.TestCase):
                 contract for typed schemas, schema fragments, layered config,
                 config-diff output, Layer Precedence, Policy Authority, Config Safety Status,
                 semantic validators, conflict diagnostics, migrations, secret references,
+                consumer action decision evidence, progressive fallback,
                 session-scoped behavior, and plain equipment-specific config handoff
                 promotion.
 
@@ -8945,6 +8946,8 @@ class SpecValidationTests(unittest.TestCase):
             "session-scoped",
             "plain equipment-specific config handoff",
             "secret references",
+            "consumer action decision",
+            "progressive",
             "Issue Tracker Ops",
             "python3.14 -m unittest tests.test_agent_equipment_config",
             "policy",

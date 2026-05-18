@@ -38,6 +38,14 @@ onboarding-plan load-contract proposals, and projection classification;
 harness adapters, arbitrary CLI fragment registration, and blocking enforcement
 remain separate work.
 
+The consumption contract keeps the final action decision with the consuming
+equipment. Shared Config output supplies evidence; the consumer maps that
+evidence to `allowed`, `advisory`, `warning`, `blocking`, or `unsupported`
+before mutation, external calls, hook execution, workflow changes, or durable
+publication. Mutation-capable behavior fails closed unless effective Config is
+`usable`, required authority and semantic validators pass, and the required
+capability is supported.
+
 Use TOML for human-authored config layers and plain equipment-specific config
 handoff records. Use JSON-compatible objects for schemas, effective-config
 output, config-diff output, diagnostics, audit records, and deterministic tool

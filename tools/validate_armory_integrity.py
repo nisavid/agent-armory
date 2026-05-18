@@ -852,6 +852,8 @@ CONFIG_BUNDLE_REQUIRED_TEXT = [
     "session-scoped",
     "plain equipment-specific config handoff",
     "secret references",
+    "consumer action decision",
+    "progressive",
     "Issue Tracker Ops",
     "python3.14 -m unittest tests.test_agent_equipment_config",
     "policy",

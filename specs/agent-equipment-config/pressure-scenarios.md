@@ -32,6 +32,8 @@ Expected Config behavior:
   override, and the policy source that blocked it.
 - The Config Safety Status is `usable` for advisory dry-run behavior and
   `unsafe` or `conflicted` for live mutation until authority is resolved.
+- The Issue Tracker Ops consumer action decision is `blocking` for live
+  mutation and `advisory` for the safe dry-run fallback.
 - The secret reference status is reported without exposing the token value.
 - Issue Tracker Ops remains able to serialize a plain equipment-specific config
   handoff if shared Config is absent.
