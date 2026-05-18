@@ -140,6 +140,10 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(proposals["committed durable config"]["input_surfaces"], ["--layer"])
         self.assertEqual(proposals["session override"]["input_surfaces"], ["--layer", "--plain-handoff"])
         self.assertEqual(
+            proposals["session override"]["provenance_requirement"],
+            "agent_equipment_config.layer metadata or plain handoff promotion record",
+        )
+        self.assertEqual(
             proposals["secret reference source"]["secret_resolution"],
             "unresolved metadata only when present",
         )
