@@ -56,9 +56,9 @@ hooks, skills, Agent Profiles, plugins, or GitHub Projects extension.
 - The adapter emits JSON audit output for request shape, result, resolved IDs,
   and failure.
 - When explicit Config inputs are supplied, mutation subcommands evaluate the
-  Issue Ops Config fragment before side effects. Live mutation requires
-  configured `execute` mode and a consumer decision that is not `blocking` or
-  `unsupported`.
+  Issue Ops Config fragment before side effects. Live mutation requires the
+  configured mode to be `execute` and a consumer decision that is not
+  `blocking` or `unsupported`.
 - Missing or uncertain auth, policy, adapter behavior, or tracker state fails
   closed for writes.
 

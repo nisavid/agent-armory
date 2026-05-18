@@ -39,8 +39,8 @@ shape.
   Config evidence, and reusable consumer action decisions. Issue Ops owns the
   `issue_tracker_ops` fragment, plain handoff ingestion, and adapter semantics:
   dry-run is the default, live mutation still requires `--execute`, and
-  config-aware live mutation requires configured `execute` mode with a
-  non-blocking consumer decision.
+  config-aware live mutation requires the configured mode to be `execute` with
+  a non-blocking consumer decision.
 - Local docs: this Equipment Design Bundle records current design, security,
   validation, and closeout expectations.
 
