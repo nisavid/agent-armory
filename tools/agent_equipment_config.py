@@ -1577,40 +1577,209 @@ def issue_tracker_ops_fragment() -> SchemaFragment:
 
     return SchemaFragment(
         namespace="issue_tracker_ops",
-        version=1,
+        version=2,
         fields={
             "mode": FieldSpec(type="string", required=True, enum=["dry-run", "execute"]),
             "external_disclosure": FieldSpec(type="string", required=True, enum=["blocked", "allowed"]),
             "github_token": FieldSpec(type="object", required=False),
         },
         semantic_validators=(execute_requires_disclosure,),
+        migrations=(
+            MigrationPreview(
+                from_version=1,
+                field_renames={"operation_mode": "mode"},
+                note="rename operation_mode to mode",
+            ),
+        ),
     )
+
+
+def diagnostic_matches_namespace(diagnostic_item: dict[str, Any], namespace: str) -> bool:
+    path = diagnostic_item.get("path")
+    return path == namespace or (isinstance(path, str) and path.startswith(f"{namespace}."))
+
+
+def diagnostic_evidence_value(diagnostic_item: dict[str, Any], key: str) -> Any:
+    evidence = diagnostic_item.get("evidence", {})
+    if not isinstance(evidence, dict):
+        return None
+    return evidence.get(key)
+
+
+def sorted_present(values: Iterable[Any]) -> list[str]:
+    return sorted_unique(value for value in values if value is not None)
+
+
+def authority_readiness_from_effective(effective: dict[str, Any]) -> dict[str, Any]:
+    diagnostics = list_or_empty(effective.get("diagnostics", []))
+    missing_authorities = sorted_present(
+        diagnostic_evidence_value(item, "authority")
+        for item in diagnostics
+        if isinstance(item, dict) and item.get("kind") == "missing authority"
+    )
+    untrusted_authorities = sorted_present(
+        diagnostic_evidence_value(item, "authority")
+        for item in diagnostics
+        if (
+            isinstance(item, dict)
+            and item.get("kind") == "untrusted source"
+            and isinstance(item.get("path"), str)
+            and item["path"].startswith("agent_equipment_config.authority.")
+        )
+    )
+    return {
+        "status": "ready" if not missing_authorities and not untrusted_authorities else "not_ready",
+        "missing_authorities": missing_authorities,
+        "untrusted_authorities": untrusted_authorities,
+    }
+
+
+def fragment_readiness_from_effective(effective: dict[str, Any], fragments: list[SchemaFragment]) -> dict[str, Any]:
+    diagnostics = list_or_empty(effective.get("diagnostics", []))
+    effective_values = effective.get("effective", {})
+    if not isinstance(effective_values, dict):
+        effective_values = {}
+    partial = partial_config_from_effective(effective_values, fragments, diagnostics)
+    readiness_items: list[dict[str, Any]] = []
+    blocking_fragment_kinds = {"schema conflict", "same-precedence collision", "stale schema", "semantic conflict", "untrusted source"}
+    for fragment in fragments:
+        namespace_diagnostics = [
+            item
+            for item in diagnostics
+            if isinstance(item, dict) and diagnostic_matches_namespace(item, fragment.namespace)
+        ]
+        diagnostic_kinds = sorted_unique(item.get("kind") for item in namespace_diagnostics)
+        blocking_diagnostics = [
+            item
+            for item in namespace_diagnostics
+            if item.get("kind") in blocking_fragment_kinds
+        ]
+        section = partial["sections"][fragment.namespace]
+        readiness_items.append(
+            {
+                "namespace": fragment.namespace,
+                "version": fragment.version,
+                "status": "ready" if section["status"] == "complete" and not blocking_diagnostics else "not_ready",
+                "missing_required": section["missing_required"],
+                "diagnostic_kinds": diagnostic_kinds,
+                "stale_sources": sorted_present(
+                    item.get("source")
+                    for item in namespace_diagnostics
+                    if item.get("kind") == "stale schema"
+                ),
+            }
+        )
+    return {
+        "status": "ready" if all(item["status"] == "ready" for item in readiness_items) else "not_ready",
+        "fragments": readiness_items,
+    }
+
+
+def config_validation_report(
+    layer_paths: list[Path],
+    fragments: list[SchemaFragment],
+    *,
+    requested_behavior: str,
+    plain_handoff_paths: list[Path] | None = None,
+    include_effective_config: bool = False,
+) -> dict[str, Any]:
+    effective = effective_config(
+        layer_paths,
+        fragments,
+        requested_behavior=requested_behavior,
+        plain_handoff_paths=plain_handoff_paths,
+    )
+    report = {
+        "operation": "config validate",
+        "passed": effective["safety_status"] == "usable",
+        "safety_status": effective["safety_status"],
+        "authority_readiness": authority_readiness_from_effective(effective),
+        "fragment_readiness": fragment_readiness_from_effective(effective, fragments),
+        "diagnostics": effective["diagnostics"],
+        "enforcement_projection": effective["enforcement_projection"],
+    }
+    if include_effective_config:
+        report["effective_config"] = effective
+    return report
+
+
+def add_effective_config_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--layer", action="append", default=[])
+    parser.add_argument("--plain-handoff", action="append", default=[])
+    parser.add_argument("--requested-behavior", choices=["advisory", "mutation"], default="advisory")
+    parser.add_argument("--issue-tracker-ops", action="store_true")
+
+
+def add_onboarding_arguments(parser: argparse.ArgumentParser) -> None:
+    add_effective_config_arguments(parser)
+    parser.add_argument("--shared-config-missing", dest="shared_config_present", action="store_false", default=True)
+    parser.add_argument("--onboarding-state", choices=sorted(ONBOARDING_STATES), default="first-run")
+    parser.add_argument("--revise-section", action="append", default=[])
+
+
+def add_migration_arguments(parser: argparse.ArgumentParser, *, include_apply_flag: bool) -> None:
+    parser.add_argument("--layer", action="append", default=[])
+    parser.add_argument("--issue-tracker-ops", action="store_true")
+    if include_apply_flag:
+        parser.add_argument("--apply", action="store_true")
+    parser.add_argument("--apply-authority", choices=["operator"])
+
+
+def add_diff_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--before", required=True)
+    parser.add_argument("--after", required=True)
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Compute Agent Equipment Config v0 outputs.")
     subparsers = parser.add_subparsers(dest="command", required=True)
+
     effective = subparsers.add_parser("effective-config")
-    effective.add_argument("--layer", action="append", default=[])
-    effective.add_argument("--plain-handoff", action="append", default=[])
-    effective.add_argument("--requested-behavior", choices=["advisory", "mutation"], default="advisory")
-    effective.add_argument("--issue-tracker-ops", action="store_true")
+    add_effective_config_arguments(effective)
+    effective.set_defaults(operation="config_resolve", display_operation="effective-config")
+
     onboarding = subparsers.add_parser("onboarding-plan")
-    onboarding.add_argument("--layer", action="append", default=[])
-    onboarding.add_argument("--plain-handoff", action="append", default=[])
-    onboarding.add_argument("--requested-behavior", choices=["advisory", "mutation"], default="advisory")
-    onboarding.add_argument("--issue-tracker-ops", action="store_true")
-    onboarding.add_argument("--shared-config-missing", dest="shared_config_present", action="store_false", default=True)
-    onboarding.add_argument("--onboarding-state", choices=sorted(ONBOARDING_STATES), default="first-run")
-    onboarding.add_argument("--revise-section", action="append", default=[])
+    add_onboarding_arguments(onboarding)
+    onboarding.set_defaults(operation="onboard_config", display_operation="onboarding-plan")
+
     migration = subparsers.add_parser("migration-apply")
-    migration.add_argument("--layer", action="append", default=[])
-    migration.add_argument("--issue-tracker-ops", action="store_true")
-    migration.add_argument("--apply", action="store_true")
-    migration.add_argument("--apply-authority", choices=["operator"])
+    add_migration_arguments(migration, include_apply_flag=True)
+    migration.set_defaults(operation="migrate_config", display_operation="migration-apply")
+
     diff = subparsers.add_parser("config-diff")
-    diff.add_argument("--before", required=True)
-    diff.add_argument("--after", required=True)
+    add_diff_arguments(diff)
+    diff.set_defaults(operation="config_diff", display_operation="config-diff")
+
+    config = subparsers.add_parser("config")
+    config_subparsers = config.add_subparsers(dest="config_operation", required=True)
+    config_resolve = config_subparsers.add_parser("resolve")
+    add_effective_config_arguments(config_resolve)
+    config_resolve.set_defaults(operation="config_resolve", display_operation="config resolve")
+    config_validate = config_subparsers.add_parser("validate")
+    add_effective_config_arguments(config_validate)
+    config_validate.add_argument("--include-effective-config", action="store_true")
+    config_validate.set_defaults(operation="config_validate", display_operation="config validate")
+    config_diff = config_subparsers.add_parser("diff")
+    add_diff_arguments(config_diff)
+    config_diff.set_defaults(operation="config_diff", display_operation="config diff")
+
+    onboard = subparsers.add_parser("onboard")
+    onboard_subparsers = onboard.add_subparsers(dest="onboard_operation", required=True)
+    onboard_config = onboard_subparsers.add_parser("config")
+    add_onboarding_arguments(onboard_config)
+    onboard_config.set_defaults(operation="onboard_config", display_operation="onboard config")
+
+    migrate = subparsers.add_parser("migrate")
+    migrate_subparsers = migrate.add_subparsers(dest="migrate_operation", required=True)
+    migrate_config = migrate_subparsers.add_parser("config")
+    migrate_config_subparsers = migrate_config.add_subparsers(dest="migrate_config_operation", required=True)
+    migrate_preview = migrate_config_subparsers.add_parser("preview")
+    add_migration_arguments(migrate_preview, include_apply_flag=False)
+    migrate_preview.set_defaults(operation="migrate_config", display_operation="migrate config preview", apply=False)
+    migrate_apply = migrate_config_subparsers.add_parser("apply")
+    add_migration_arguments(migrate_apply, include_apply_flag=False)
+    migrate_apply.set_defaults(operation="migrate_config", display_operation="migrate config apply", apply=True)
+
     return parser
 
 
@@ -1626,15 +1795,17 @@ def run(
     output = stdout or sys.stdout
     error_output = stderr or sys.stderr
     try:
-        if args.command == "config-diff":
+        operation = args.operation
+        display_operation = args.display_operation
+        if operation == "config_diff":
             before = json.loads(Path(args.before).read_text(encoding="utf-8"))
             after = json.loads(Path(args.after).read_text(encoding="utf-8"))
             payload = config_diff(before, after)
         else:
             fragments = [issue_tracker_ops_fragment()] if args.issue_tracker_ops else []
             if not fragments:
-                raise ConfigError(f"{args.command} requires at least one schema fragment flag")
-            if args.command == "onboarding-plan":
+                raise ConfigError(f"{display_operation} requires at least one schema fragment flag")
+            if operation == "onboard_config":
                 payload = config_onboarding_plan(
                     [Path(path) for path in args.layer],
                     fragments,
@@ -1644,12 +1815,20 @@ def run(
                     onboarding_state=args.onboarding_state,
                     revise_sections=args.revise_section,
                 )
-            elif args.command == "migration-apply":
+            elif operation == "migrate_config":
                 payload = migration_apply(
                     [Path(path) for path in args.layer],
                     fragments,
                     apply=args.apply,
                     apply_authority=args.apply_authority,
+                )
+            elif operation == "config_validate":
+                payload = config_validation_report(
+                    [Path(path) for path in args.layer],
+                    fragments,
+                    requested_behavior=args.requested_behavior,
+                    plain_handoff_paths=[Path(path) for path in args.plain_handoff],
+                    include_effective_config=args.include_effective_config,
                 )
             else:
                 payload = effective_config(
@@ -1668,6 +1847,8 @@ def run(
         return text
     # CLI output is redacted by redact_for_cli before this write boundary.
     output.writelines([text])
+    if getattr(args, "operation", None) == "config_validate" and not payload["passed"]:
+        return 1
     return 0
 
 

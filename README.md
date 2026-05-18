@@ -84,9 +84,10 @@ made, commission new equipment, or evaluate whether a future item was made with
 enough discipline to trust.
 
 [Agent Equipment Config](docs/equipment/agent-equipment-config.md) is available
-as a local runtime slice for effective-config and config-diff behavior. It gives
-Smiths and Wielders a concrete way to load authored TOML layers, register schema
-fragments, explain policy decisions, and keep secret references unresolved. The
+as a local runtime slice with fluent CLI operations for resolving, validating,
+diffing, onboarding, and migrating shared Config. It gives Smiths and Wielders
+a concrete way to load authored TOML layers, register schema fragments, explain
+policy decisions, and keep secret references unresolved. The
 [Config integration guide](docs/equipment/agent-equipment-config-integration.md)
 shows how Smiths, Wielders, and Outfitters connect that runtime to equipment and
 harness surfaces.

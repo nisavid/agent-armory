@@ -4,17 +4,18 @@ Status: Equipment Blueprint
 Promotion state: planned
 
 This Equipment Design Bundle describes desired behavior and includes the first
-standard-library runtime engine slice for effective-config, config-diff,
-diagnostics, plain handoff promotion, authority checks, projection
-classification, plus reusable consumer action decisions. It does not implement Agent Equipment
-beyond this runtime slice, publish assets, resolve secrets, mutate external
-systems, or implement harness controls. Source mutation is limited to explicit
-migration apply for eligible local TOML sources.
+standard-library runtime engine slice for fluent CLI operations,
+effective-config, config-diff, diagnostics, plain handoff promotion, authority
+checks, projection classification, plus reusable consumer action decisions. It
+does not implement Agent Equipment beyond this runtime slice, publish assets,
+resolve secrets, mutate external systems, or implement harness controls. Source
+mutation is limited to explicit migration apply for eligible local TOML
+sources.
 
 ## Scope
 
 This classification covers the v0 contract, bundle source shape, deliberate
-edit boundaries, and first portable parser, merge engine, and migration-apply
+edit boundaries, and first portable parser, merge engine, and migration apply
 slice. It does not certify a hook, permission gate, sandbox, approval
 integration, plugin, harness control, external write, or secret provider.
 

@@ -1903,6 +1903,268 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(stdout.getvalue(), "")
         self.assertIn("error: effective-config requires at least one schema fragment flag", stderr.getvalue())
 
+    def test_cli_config_resolve_outputs_effective_config_json(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+
+            stdout = agent_equipment_config.run(
+                ["config", "resolve", "--layer", str(layer), "--issue-tracker-ops"],
+                stdout_text=True,
+            )
+
+        payload = json.loads(stdout)
+        self.assertEqual(payload["safety_status"], "usable")
+        self.assertEqual(payload["effective"]["issue_tracker_ops"]["mode"]["value"], "dry-run")
+        self.assertEqual(payload["enforcement_projection"]["classification"], "advisory")
+
+    def test_cli_config_validate_outputs_lower_noise_report_and_exit_status(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+            """)
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+
+            exit_code = agent_equipment_config.run(
+                [
+                    "config",
+                    "validate",
+                    "--layer",
+                    str(layer),
+                    "--issue-tracker-ops",
+                    "--requested-behavior",
+                    "mutation",
+                ],
+                stdout=stdout,
+                stderr=stderr,
+            )
+
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(stderr.getvalue(), "")
+        self.assertFalse(payload["passed"])
+        self.assertEqual(payload["safety_status"], "incomplete")
+        self.assertEqual(payload["authority_readiness"]["status"], "ready")
+        self.assertEqual(payload["fragment_readiness"]["status"], "not_ready")
+        self.assertEqual(
+            payload["fragment_readiness"]["fragments"][0]["missing_required"],
+            ["external_disclosure"],
+        )
+        self.assertEqual(payload["diagnostics"][0]["kind"], "schema conflict")
+        self.assertNotIn("effective", payload)
+
+    def test_cli_config_validate_can_include_effective_config_on_request(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+
+            stdout = agent_equipment_config.run(
+                [
+                    "config",
+                    "validate",
+                    "--layer",
+                    str(layer),
+                    "--issue-tracker-ops",
+                    "--include-effective-config",
+                ],
+                stdout_text=True,
+            )
+
+        payload = json.loads(stdout)
+        self.assertTrue(payload["passed"])
+        self.assertEqual(payload["safety_status"], "usable")
+        self.assertEqual(payload["effective_config"]["effective"]["issue_tracker_ops"]["mode"]["value"], "dry-run")
+
+    def test_cli_config_validate_reports_missing_authority_readiness(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "org.toml", """
+                [agent_equipment_config.layer]
+                name = "organization or tracker policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.policy.issue_tracker_ops.mode]
+                required_for = "mutation"
+                authority = "live_tracker_write"
+
+                [issue_tracker_ops]
+                mode = "execute"
+                external_disclosure = "allowed"
+            """)
+            stdout = io.StringIO()
+
+            exit_code = agent_equipment_config.run(
+                [
+                    "config",
+                    "validate",
+                    "--layer",
+                    str(layer),
+                    "--issue-tracker-ops",
+                    "--requested-behavior",
+                    "mutation",
+                ],
+                stdout=stdout,
+            )
+
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(payload["safety_status"], "unsafe")
+        self.assertEqual(payload["authority_readiness"]["status"], "not_ready")
+        self.assertEqual(payload["authority_readiness"]["missing_authorities"], ["live_tracker_write"])
+        self.assertEqual(payload["fragment_readiness"]["status"], "ready")
+
+    def test_cli_config_validate_marks_semantic_conflict_fragment_not_ready(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "session.toml", """
+                [agent_equipment_config.layer]
+                name = "session overrides"
+                category = "session override"
+
+                [issue_tracker_ops]
+                mode = "execute"
+                external_disclosure = "blocked"
+            """)
+            stdout = io.StringIO()
+
+            exit_code = agent_equipment_config.run(
+                [
+                    "config",
+                    "validate",
+                    "--layer",
+                    str(layer),
+                    "--issue-tracker-ops",
+                    "--requested-behavior",
+                    "mutation",
+                ],
+                stdout=stdout,
+            )
+
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(payload["safety_status"], "unsafe")
+        self.assertEqual(payload["authority_readiness"]["status"], "ready")
+        self.assertEqual(payload["fragment_readiness"]["status"], "not_ready")
+        self.assertEqual(payload["fragment_readiness"]["fragments"][0]["diagnostic_kinds"], ["semantic conflict"])
+
+    def test_cli_config_diff_fluent_operation_outputs_json(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            before = root / "before.json"
+            after = root / "after.json"
+            before.write_text(json.dumps({"effective": {"issue_tracker_ops": {"mode": {"value": "dry-run"}}}}), encoding="utf-8")
+            after.write_text(json.dumps({"effective": {"issue_tracker_ops": {"mode": {"value": "execute"}}}}), encoding="utf-8")
+
+            stdout = agent_equipment_config.run(
+                ["config", "diff", "--before", str(before), "--after", str(after)],
+                stdout_text=True,
+            )
+
+        payload = json.loads(stdout)
+        self.assertEqual(payload["changes"][0]["path"], "issue_tracker_ops.mode")
+        self.assertEqual(payload["changes"][0]["after"], "execute")
+
+    def test_cli_onboard_config_fluent_operation_outputs_json(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+
+            stdout = agent_equipment_config.run(
+                ["onboard", "config", "--layer", str(layer), "--issue-tracker-ops"],
+                stdout_text=True,
+            )
+
+        payload = json.loads(stdout)
+        self.assertEqual(payload["onboarding_status"], "complete")
+        self.assertEqual(payload["effective_config"]["safety_status"], "usable")
+
+    def test_cli_migrate_config_preview_and_apply_map_to_migration_runtime(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            preview_layer = self.write_layer(root, "preview.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.fragment_versions]
+                issue_tracker_ops = 1
+
+                [issue_tracker_ops]
+                operation_mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            apply_layer = self.write_layer(root, "apply.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.fragment_versions]
+                issue_tracker_ops = 1
+
+                [issue_tracker_ops]
+                operation_mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+
+            preview_stdout = agent_equipment_config.run(
+                ["migrate", "config", "preview", "--layer", str(preview_layer), "--issue-tracker-ops"],
+                stdout_text=True,
+            )
+            apply_stdout = agent_equipment_config.run(
+                [
+                    "migrate",
+                    "config",
+                    "apply",
+                    "--layer",
+                    str(apply_layer),
+                    "--issue-tracker-ops",
+                    "--apply-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            )
+            applied_text = apply_layer.read_text(encoding="utf-8")
+
+        preview_payload = json.loads(preview_stdout)
+        apply_payload = json.loads(apply_stdout)
+        self.assertEqual(preview_payload["mode"], "dry-run")
+        self.assertFalse(preview_payload["applications"][0]["write_performed"])
+        self.assertEqual(apply_payload["mode"], "apply")
+        self.assertTrue(apply_payload["applied"])
+        self.assertIn('mode = "dry-run"', applied_text)
+        self.assertNotIn("operation_mode", applied_text)
+
     def test_cli_migration_apply_outputs_dry_run_json(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

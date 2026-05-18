@@ -6,7 +6,7 @@ category = "committed durable config"
 repo-maintainers = "usable"
 
 [agent_equipment_config.fragment_versions]
-issue_tracker_ops = 1
+issue_tracker_ops = 2
 
 [agent_equipment_config.policy.issue_tracker_ops.mode]
 required_for = "always"

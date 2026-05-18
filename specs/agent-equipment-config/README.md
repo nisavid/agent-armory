@@ -4,12 +4,12 @@ Status: Equipment Blueprint
 Promotion state: planned
 
 This Equipment Design Bundle describes desired behavior and includes the first
-standard-library runtime engine slice for effective-config, config-diff,
-diagnostics, plain handoff promotion, authority checks, projection
-classification, reusable consumer action decisions, onboarding-plan output,
-explicit migration apply, deliberate edit boundaries, and the published runtime
-guide. It does not resolve secrets, mutate external systems, or implement
-harness controls. The Blueprint itself does not implement Agent Equipment.
+standard-library runtime engine slice for fluent CLI operations,
+effective-config, config-diff, diagnostics, plain handoff promotion, authority
+checks, projection classification, reusable consumer action decisions,
+onboarding output, explicit migration apply, deliberate edit boundaries, and
+the published runtime guide. It does not resolve secrets, mutate external
+systems, or implement harness controls. This Blueprint does not implement Agent Equipment.
 The runtime guide names the currently published slice.
 
 Issue: [#23](https://github.com/nisavid/agent-armory/issues/23)
@@ -227,7 +227,7 @@ record. Read-only operations such as inspect, explain, trace, compare, validate,
 and propose do not authorize source mutation.
 
 The supported edit intents are `propose`, `patch`, `migrate`, `revise`, and
-`apply`. Current runtime source writing is limited to `migration-apply` for
+`apply`. Current source writing is limited to `migrate config apply` for
 registered migrations on `committed durable config` and
 `local-only operator config`. General source patching and revision writes remain
 deferred to the Config Authoring Surfaces bucket.
@@ -246,7 +246,8 @@ target is a fluent CLI with MCP parity:
 | Migration preview | `migrate config preview` | `migrate.config_preview` |
 | Migration apply | `migrate config apply` | `migrate.config_apply` |
 
-The current runtime commands remain the implementation and debug path. Skills
+The fluent CLI commands are the supported invocation surface. Runtime commands
+remain available for implementation debugging and evidence comparison. Skills
 and docs route agents to CLI or MCP usage; they are not substitutes for those
 surfaces. General authoring operations such as propose, patch, and general
 apply belong to the deferred Config Authoring Surfaces bucket.

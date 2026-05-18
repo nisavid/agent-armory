@@ -13,8 +13,9 @@ consumer, not the owner.
 **Proposed Solution**: Build Agent Equipment Config as independent Agent
 Equipment with a deterministic runtime, typed schema fragments, explicit load
 contracts, fluent CLI operations, MCP parity for agent fluency, and documented
-edit boundaries. The current runtime slice remains the implementation and debug
-path while the product surface settles.
+edit boundaries. The fluent CLI wraps the runtime implementation, while the
+implementation command names remain available for debugging and evidence
+comparison.
 
 **Success Criteria**:
 
@@ -209,7 +210,7 @@ after their CLI and source-write contracts are specified.
 
 **Phased Rollout**:
 
-- **MVP**: Maintain the current runtime slice; add the fluent CLI operation
+- **MVP**: Maintain the current runtime slice and fluent CLI operation
   vocabulary; add MCP parity for the safe runtime slice; publish integration
   guides; preserve edit-boundary constraints.
 - **v1.1**: Prove consumption through Issue Tracker Ops or another concrete
@@ -221,7 +222,7 @@ after their CLI and source-write contracts are specified.
 
 **Blocker Map**:
 
-- #23 remains blocked until MVP CLI fluency (#91), MCP parity (#92), and
+- #23 remains blocked until the MVP CLI fluency (#91), MCP parity (#92), and
   integration guide (#78) surfaces are complete.
 - #78 owns the integration-guide slice for the MVP operation surface. #91, #92,
   and #93 track CLI fluency, MCP parity, and deferred authoring follow-up work.

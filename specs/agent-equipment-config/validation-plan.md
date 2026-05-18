@@ -4,13 +4,13 @@ Status: Equipment Blueprint
 Promotion state: planned
 
 This Equipment Design Bundle describes desired behavior and includes the first
-standard-library runtime engine slice for effective-config, config-diff,
-diagnostics, plain handoff promotion, authority checks, projection
-classification, reusable consumer action decisions, and deliberate edit
-boundaries. It does not implement Agent Equipment beyond this runtime slice,
-publish assets, resolve secrets, mutate external systems, or implement harness
-controls. Source mutation is limited to explicit migration apply for eligible
-local TOML sources.
+standard-library runtime engine slice for fluent Config CLI operations,
+effective-config, config-diff, diagnostics, plain handoff promotion, authority
+checks, projection classification, reusable consumer action decisions, and
+deliberate edit boundaries. It does not implement Agent Equipment beyond this
+runtime slice, publish assets, resolve secrets, mutate external systems, or
+implement harness controls. Source mutation is limited to explicit migration
+apply for eligible local TOML sources.
 
 ## Scope
 
@@ -98,8 +98,12 @@ Implemented by the v0 engine slice:
 
 - TOML layer loading;
 - schema fragment validation;
+- fluent CLI operations for resolve, validate, diff, onboarding, migration
+  preview, and migration apply;
 - effective-config output;
 - config-diff output for values, secret-reference identity, status changes, and diagnostic changes;
+- lower-noise config validation output with authority readiness, fragment
+  readiness, diagnostics, pass/fail status, and scriptable exit status;
 - Config Safety Status classification;
 - deprecation diagnostics and migration-preview output with audit-preview shape;
 - migration-apply dry-run, write authority, source eligibility, refusal, and
@@ -114,10 +118,10 @@ Implemented by the v0 engine slice:
   unsupported outcomes;
 - missing-authority diagnostics for mutation-gated settings;
 - enforcement projection classification as `blocking` or `advisory`;
-- onboarding-plan output for missing shared Config, missing config data,
+- onboarding output for missing shared Config, missing config data,
   interrupted partial config, resumed handoff completion, and restarted
   section revision;
-- onboarding-plan discovery proposals that expose the explicit-load contract
+- onboarding discovery proposals that expose the explicit-load contract
   for caller-owned path discovery and schema-fragment registration;
 - importable consumer integration output that preserves effective-config
   evidence and returns `allowed`, `advisory`, `warning`, `blocking`, and

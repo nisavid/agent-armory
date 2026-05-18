@@ -5,9 +5,9 @@ Promotion state: planned
 
 This Equipment Design Bundle document defines deliberate Agent Equipment Config
 edit and mutation boundaries. It does not implement Agent Equipment. The
-current implemented runtime support is `migration-apply`; broader edit surfaces
-must follow this contract when later tools, MCP functions, skills, hooks, or
-guides expose them.
+current implemented mutation support is `migrate config preview` and
+`migrate config apply`; broader edit surfaces must follow this contract when
+later tools, MCP functions, skills, hooks, or guides expose them.
 
 ## Purpose
 
@@ -22,8 +22,8 @@ machine-visible before any source write.
 | --- | --- | --- |
 | `propose` | Produce a candidate config change, rationale, and diff without selecting a write target. | No source write. |
 | `patch` | Change specific fields in one selected authored config source. | Deferred until an approved surface implements source selection, validation, authority, diff, and audit. |
-| `migrate` | Translate stale schema metadata through a registered migration. | Current runtime supports dry-run preview and eligible source apply through `migration-apply`. |
-| `revise` | Re-open selected equipment namespaces for onboarding or re-onboarding while preserving unselected sections. | Current runtime reports a revision plan; source writing is deferred. |
+| `migrate` | Translate stale schema metadata through a registered migration. | Current runtime supports dry-run preview and eligible source apply through `migrate config preview` and `migrate config apply`. |
+| `revise` | Re-open selected equipment namespaces for onboarding or re-onboarding while preserving unselected sections. | Current runtime reports a revision plan through `onboard config`; source writing is deferred. |
 | `apply` | Write a previously reviewed plan to an eligible source after explicit authority and final precondition checks. | Current runtime applies only registered migrations to eligible TOML sources. |
 
 An edit surface may also inspect, explain, trace, compare, or validate Config,
@@ -105,9 +105,9 @@ detail.
 
 ## Current runtime reconciliation
 
-`migration-apply` is the only current source mutation surface. It supports:
+`migrate config apply` is the only current source mutation surface. It supports:
 
-- `migrate` as dry-run output with exact changes and audit records;
+- `migrate config preview` as dry-run output with exact changes and audit records;
 - `apply` for registered migrations on `committed durable config` and
   `local-only operator config`;
 - operator authority through `--apply-authority operator`;
@@ -116,7 +116,7 @@ detail.
   migration, missing-authority, and changed-source cases;
 - blocked partial apply when any candidate refuses.
 
-`onboarding-plan --revise-section` implements revision planning. It selects the
+`onboard config --revise-section` implements revision planning. It selects the
 sections to revisit and marks unselected sections for preservation. It does not
 write source config.
 
@@ -135,9 +135,9 @@ Allowed current write path:
 
 1. A trusted `committed durable config` layer has stale schema metadata for a
    namespace with a registered migration.
-2. `migration-apply` dry-run reports exact field renames, fragment-version
+2. `migrate config preview` reports exact field renames, fragment-version
    updates, source category, write target, and audit records.
-3. The operator reruns with `--apply --apply-authority operator`.
+3. The operator runs `migrate config apply --apply-authority operator`.
 4. The source still matches the reviewed precondition.
 5. The runtime writes the TOML atomically and emits `applied` mutation audit
    evidence.
@@ -146,7 +146,7 @@ Refused current write path:
 
 1. A `generated cache or state`, `checkout-local state`, `session override`, or
    `secret reference source` layer has stale schema metadata.
-2. The operator requests `migration-apply --apply`.
+2. The operator requests `migrate config apply`.
 3. The runtime refuses the candidate because the source category is not eligible
    for migration apply.
 4. No source write occurs, and the refusal audit record names the source,
