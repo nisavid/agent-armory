@@ -1000,6 +1000,10 @@ def sorted_unique(values: Iterable[Any]) -> list[str]:
     return sorted(unique)
 
 
+def list_or_empty(value: Any) -> list[Any]:
+    return value if isinstance(value, list) else []
+
+
 def fallback_for_behavior(requested_behavior: str) -> str:
     return "advisory dry-run" if requested_behavior == "mutation" else "none"
 
@@ -1013,8 +1017,8 @@ def consumer_action_decision(
     supported_capabilities: Iterable[str] = (),
     warning_diagnostic_kinds: Iterable[str] = ("deprecated field",),
 ) -> dict[str, Any]:
-    diagnostics = effective.get("diagnostics", [])
-    migration_previews = effective.get("migration_previews", [])
+    diagnostics = list_or_empty(effective.get("diagnostics", []))
+    migration_previews = list_or_empty(effective.get("migration_previews", []))
     projection_value = effective.get("enforcement_projection", {})
     projection = projection_value if isinstance(projection_value, dict) else {}
     required = sorted_unique(required_capabilities)
