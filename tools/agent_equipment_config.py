@@ -1641,7 +1641,15 @@ def fragment_readiness_from_effective(effective: dict[str, Any], fragments: list
         effective_values = {}
     partial = partial_config_from_effective(effective_values, fragments, diagnostics)
     readiness_items: list[dict[str, Any]] = []
-    blocking_fragment_kinds = {"schema conflict", "same-precedence collision", "stale schema", "semantic conflict", "untrusted source"}
+    blocking_fragment_kinds = {
+        "schema conflict",
+        "same-precedence collision",
+        "stale schema",
+        "semantic conflict",
+        "untrusted source",
+        "blocked override",
+        "missing authority",
+    }
     for fragment in fragments:
         namespace_diagnostics = [
             item

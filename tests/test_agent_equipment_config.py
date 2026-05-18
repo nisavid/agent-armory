@@ -2034,7 +2034,55 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(payload["safety_status"], "unsafe")
         self.assertEqual(payload["authority_readiness"]["status"], "not_ready")
         self.assertEqual(payload["authority_readiness"]["missing_authorities"], ["live_tracker_write"])
-        self.assertEqual(payload["fragment_readiness"]["status"], "ready")
+        self.assertEqual(payload["fragment_readiness"]["status"], "not_ready")
+        self.assertEqual(payload["fragment_readiness"]["fragments"][0]["diagnostic_kinds"], ["missing authority"])
+
+    def test_cli_config_validate_marks_blocked_override_fragment_not_ready(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy = self.write_layer(root, "org.toml", """
+                [agent_equipment_config.layer]
+                name = "organization or tracker policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.policy.issue_tracker_ops.mode]
+                non_overridable = true
+                required_for = "mutation"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            session = self.write_layer(root, "session.toml", """
+                [agent_equipment_config.layer]
+                name = "session overrides"
+                category = "session override"
+
+                [issue_tracker_ops]
+                mode = "execute"
+            """)
+            stdout = io.StringIO()
+
+            exit_code = agent_equipment_config.run(
+                [
+                    "config",
+                    "validate",
+                    "--layer",
+                    str(policy),
+                    "--layer",
+                    str(session),
+                    "--issue-tracker-ops",
+                    "--requested-behavior",
+                    "mutation",
+                ],
+                stdout=stdout,
+            )
+
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(payload["safety_status"], "conflicted")
+        self.assertEqual(payload["fragment_readiness"]["status"], "not_ready")
+        self.assertEqual(payload["fragment_readiness"]["fragments"][0]["diagnostic_kinds"], ["blocked override"])
 
     def test_cli_config_validate_marks_semantic_conflict_fragment_not_ready(self):
         with tempfile.TemporaryDirectory() as tmpdir:
