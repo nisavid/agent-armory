@@ -81,7 +81,7 @@ load duties:
 - discover candidate config paths through their own harness or repository
   conventions;
 - select which sources apply to the requested behavior;
-- pass authored TOML layers through `--layer` or Python `Path` values;
+- pass authored TOML layers through `--layer` or Python `layer_paths`;
 - pass plain session handoffs through `--plain-handoff` or
   `plain_handoff_paths`;
 - order same-precedence sources deliberately;
@@ -142,12 +142,12 @@ universal filename:
 
 | Source category | Input surface | Core discovery | Mutation apply |
 | --- | --- | --- | --- |
-| `committed durable config` | `--layer` or Python layer path | None | Eligible after authority gates |
-| `local-only operator config` | `--layer` or Python layer path | None | Eligible after authority gates |
-| `checkout-local state` | `--layer` or Python layer path | None | Read-only |
-| `generated cache or state` | `--layer` or Python layer path | None | Read-only |
-| `secret reference source` | `--layer` or Python layer path | None | Read-only; unresolved secret metadata only |
-| `session override` | `--layer`, `--plain-handoff`, or Python paths | None | Read-only |
+| `committed durable config` | `--layer` or `layer_paths` | None | Eligible after authority gates |
+| `local-only operator config` | `--layer` or `layer_paths` | None | Eligible after authority gates |
+| `checkout-local state` | `--layer` or `layer_paths` | None | Read-only |
+| `generated cache or state` | `--layer` or `layer_paths` | None | Read-only |
+| `secret reference source` | `--layer` or `layer_paths` | None | Read-only; unresolved secret metadata only |
+| `session override` | `--layer`, `--plain-handoff`, `layer_paths`, or `plain_handoff_paths` | None | Read-only |
 
 Every harness or equipment projection must state where it discovers each
 category and whether that category is committed, local-only, session-scoped, or

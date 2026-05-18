@@ -64,12 +64,12 @@ proposals, migration previews, refusals, and audit records.
 
 | Source category | Input surface | Caller responsibility | Core discovery | Notes |
 | --- | --- | --- | --- | --- |
-| `committed durable config` | `--layer` or Python layer path | Discover, select, order, and pass source paths | None | Eligible for migration apply after authority gates. |
-| `local-only operator config` | `--layer` or Python layer path | Discover, select, order, and pass source paths | None | Eligible for migration apply after authority gates; not project truth. |
-| `checkout-local state` | `--layer` or Python layer path | Discover, select, order, and pass source paths | None | Read-only for migration apply. |
-| `generated cache or state` | `--layer` or Python layer path | Discover, select, order, and pass source paths | None | Read-only for migration apply. |
-| `secret reference source` | `--layer` or Python layer path | Discover, select, order, and pass source paths | None | Carries unresolved secret metadata, not secret values. |
-| `session override` | `--layer`, `--plain-handoff`, or Python paths | Discover, select, order, and pass source paths | None | Plain handoffs are promoted to session overrides with promotion provenance. |
+| `committed durable config` | `--layer` or `layer_paths` | Discover, select, order, and pass source paths | None | Eligible for migration apply after authority gates. |
+| `local-only operator config` | `--layer` or `layer_paths` | Discover, select, order, and pass source paths | None | Eligible for migration apply after authority gates; not project truth. |
+| `checkout-local state` | `--layer` or `layer_paths` | Discover, select, order, and pass source paths | None | Read-only for migration apply. |
+| `generated cache or state` | `--layer` or `layer_paths` | Discover, select, order, and pass source paths | None | Read-only for migration apply. |
+| `secret reference source` | `--layer` or `layer_paths` | Discover, select, order, and pass source paths | None | Carries unresolved secret metadata, not secret values. |
+| `session override` | `--layer`, `--plain-handoff`, `layer_paths`, or `plain_handoff_paths` | Discover, select, order, and pass source paths | None | Plain handoffs are promoted to session overrides with promotion provenance. |
 
 Schema fragments must be available before validation. Equipment owns its
 namespace, schema fields, defaults, semantic validators, and migrations. Shared

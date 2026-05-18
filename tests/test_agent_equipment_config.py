@@ -137,8 +137,11 @@ class AgentEquipmentConfigTests(unittest.TestCase):
             proposals["committed durable config"]["caller_responsibility"],
             "discover, select, order, and pass source paths",
         )
-        self.assertEqual(proposals["committed durable config"]["input_surfaces"], ["--layer"])
-        self.assertEqual(proposals["session override"]["input_surfaces"], ["--layer", "--plain-handoff"])
+        self.assertEqual(proposals["committed durable config"]["input_surfaces"], ["--layer", "layer_paths"])
+        self.assertEqual(
+            proposals["session override"]["input_surfaces"],
+            ["--layer", "--plain-handoff", "layer_paths", "plain_handoff_paths"],
+        )
         self.assertEqual(
             proposals["session override"]["provenance_requirement"],
             "agent_equipment_config.layer metadata or plain handoff promotion record",
