@@ -2069,14 +2069,6 @@ def mcp_fragments(arguments: dict[str, Any]) -> list[SchemaFragment]:
     names = mcp_string_list(arguments, "fragments")
     if not names:
         raise ConfigError("MCP Config tools require at least one schema fragment")
-    seen_names: set[str] = set()
-    duplicate_names: list[str] = []
-    for name in names:
-        if name in seen_names and name not in duplicate_names:
-            duplicate_names.append(name)
-        seen_names.add(name)
-    if duplicate_names:
-        raise ConfigError(f"fragments contains duplicate fragment name(s): {', '.join(duplicate_names)}")
     fragments: list[SchemaFragment] = []
     for name in names:
         builder = MCP_FRAGMENT_BUILDERS.get(name)
