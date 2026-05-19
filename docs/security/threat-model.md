@@ -277,7 +277,7 @@ delegation.
 - `docs/story-closeout.md` requires security closeout, documentation closeout,
   projection checks, evidence durability classification, and review gates.
 - `tools/validate_armory_integrity.py` checks required paths, source
-  disposition, source retirement, markdown links, promotion-state boundaries,
+  disposition, source retirement, Markdown links, promotion-state boundaries,
   harness-profile surfaces, templates, examples, specs, and closeout surfaces.
 - The validator rejects symlinked required paths and repository-root escapes
   for required live surfaces.
@@ -338,7 +338,7 @@ projection of private or stale security evidence.
 | Armory Integrity Validation | `python3.14 tools/validate_armory_integrity.py` | Reviewed repo files -> validation decision | Reads Markdown/TOML/Python/TypeScript structure and validates path/link/status boundaries. | `tools/validate_armory_integrity.py` |
 | Agent Equipment Config CLI/runtime | `tools/agent_equipment_config.py` CLI or Python import | Caller-supplied config paths/fragments -> policy decision or local migration write | Explicit-load contract; no discovery; migration apply is the only source-write path. | `tools/agent_equipment_config.py`, `docs/equipment/agent-equipment-config.md` |
 | Config MCP parity helpers | `mcp_tool_definitions()` and `call_mcp_tool()` | MCP caller arguments -> typed Config operation | Closed-world schemas and per-call apply authority govern local write operation. | `tools/agent_equipment_config.py`, `specs/agent-equipment-config/mcp-tools.md` |
-| Issue Tracker Ops | `tools/issue_tracker_ops.py` CLI | Local command + Config preflight -> authenticated GitHub API read or mutation | Defaults reads and writes to dry-run; `--execute` crosses network/auth boundary. | `tools/issue_tracker_ops.py`, `docs/agents/issue-tracker.md` |
+| Issue Tracker Ops | `tools/issue_tracker_ops.py` CLI | Local command -> authenticated GitHub API read or mutation; Config preflight gates mutation-capable operations. | Defaults reads and writes to dry-run; `--execute` crosses network/auth boundary. | `tools/issue_tracker_ops.py`, `docs/agents/issue-tracker.md` |
 | Harness Capability Profile Manager Core | `tools/harness_capability_profiles.py` CLI | Scout/plan/replacement paths -> canonical profile writes | Root-relative path validation, symlink rejection, allowed mutation target checks. | `tools/harness_capability_profiles.py`, `specs/vanilla-harness-capability-profiles/` |
 | Hook and script templates | Future Smith copies or adapts templates | Template guidance -> future executable equipment | Templates are non-published scaffolds but can influence future privileged surfaces. | `templates/hook/hook.ts`, `templates/script/validate-example.py` |
 | Issue and PR projection text | Agent publishes comments, PR bodies, handoffs | Local evidence -> external public project state | Must avoid stale status, secrets, raw logs, or private session details. | `docs/story-closeout.md`, `docs/agents/triage-labels.md` |
