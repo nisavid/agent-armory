@@ -2038,6 +2038,60 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertNotIn("raw-token", rendered)
         self.assertIn("secret boundary violation", [item["kind"] for item in result["diagnostics"]])
 
+    def test_auth_scalar_secret_is_blocked_from_effective_config(self):
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="service_config",
+            version=1,
+            fields={"auth": agent_equipment_config.FieldSpec(type="string", required=True)},
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "local.toml", """
+                [agent_equipment_config.layer]
+                name = "user/operator local overrides"
+                category = "local-only operator config"
+
+                [service_config]
+                auth = "raw-token"
+            """)
+
+            result = agent_equipment_config.effective_config([layer], [fragment], requested_behavior="mutation")
+
+        auth = result["effective"]["service_config"]["auth"]
+        rendered = json.dumps(result, sort_keys=True)
+        self.assertEqual(result["safety_status"], "unsafe")
+        self.assertEqual(auth["value"], agent_equipment_config.REDACTED)
+        self.assertEqual(auth["redaction_status"], "blocked_direct_secret_value")
+        self.assertNotIn("raw-token", rendered)
+        self.assertIn("secret boundary violation", [item["kind"] for item in result["diagnostics"]])
+
+    def test_auth_array_secret_is_blocked_from_effective_config(self):
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="service_config",
+            version=1,
+            fields={"auth": agent_equipment_config.FieldSpec(type="array", required=True)},
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "local.toml", """
+                [agent_equipment_config.layer]
+                name = "user/operator local overrides"
+                category = "local-only operator config"
+
+                [service_config]
+                auth = ["raw-token"]
+            """)
+
+            result = agent_equipment_config.effective_config([layer], [fragment], requested_behavior="mutation")
+
+        auth = result["effective"]["service_config"]["auth"]
+        rendered = json.dumps(result, sort_keys=True)
+        self.assertEqual(result["safety_status"], "unsafe")
+        self.assertEqual(auth["value"], agent_equipment_config.REDACTED)
+        self.assertEqual(auth["redaction_status"], "blocked_direct_secret_value")
+        self.assertNotIn("raw-token", rendered)
+        self.assertIn("secret boundary violation", [item["kind"] for item in result["diagnostics"]])
+
     def test_direct_secret_redaction_preserves_semantic_validator_input(self):
         seen_tokens = []
 
