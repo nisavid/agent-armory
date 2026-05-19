@@ -2276,12 +2276,13 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertTrue(tools["migrate.config_apply"]["annotations"]["destructiveHint"])
         self.assertEqual(
             tools["migrate.config_apply"]["x-agent-armory"]["approval_requirements"],
-            ["explicit apply authority"],
+            ["per-call apply_authority"],
         )
         self.assertEqual(
             tools["migrate.config_apply"]["x-agent-armory"]["auth_source"],
-            "explicit apply authority",
+            "per-call apply_authority",
         )
+        self.assertIn("apply_authority", tools["migrate.config_apply"]["inputSchema"]["required"])
 
     def test_mcp_config_resolve_returns_structured_read_only_success(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -2308,7 +2309,8 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertFalse(result.get("isError", False))
         self.assertEqual(result["content"][0]["type"], "text")
         self.assertEqual(result["structuredContent"]["tool"], "config.resolve")
-        self.assertEqual(result["structuredContent"]["operation"], "config resolve")
+        self.assertEqual(result["structuredContent"]["operation"], "config.resolve")
+        self.assertEqual(result["structuredContent"]["cli_operation"], "config resolve")
         self.assertEqual(result["structuredContent"]["read_write_classification"], "read-only")
         payload = result["structuredContent"]["result"]
         self.assertEqual(payload["safety_status"], "usable")
@@ -2325,6 +2327,18 @@ class AgentEquipmentConfigTests(unittest.TestCase):
 
         self.assertTrue(result["isError"])
         self.assertIn("unknown argument(s) for config.resolve", result["content"][0]["text"])
+
+    def test_mcp_rejects_values_outside_published_input_schema(self):
+        result = agent_equipment_config.call_mcp_tool(
+            "config.resolve",
+            {
+                "fragments": ["issue_tracker_ops"],
+                "requested_behavior": "execute",
+            },
+        )
+
+        self.assertTrue(result["isError"])
+        self.assertIn("arguments.requested_behavior must be one of", result["content"][0]["text"])
 
     def test_mcp_config_validate_returns_low_noise_blocking_report(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -2348,6 +2362,7 @@ class AgentEquipmentConfigTests(unittest.TestCase):
             )
 
         self.assertFalse(result.get("isError", False))
+        self.assertEqual(result["content"][0]["text"], "config.validate: passed=False safety_status=incomplete")
         payload = result["structuredContent"]["result"]
         self.assertFalse(payload["passed"])
         self.assertEqual(payload["safety_status"], "incomplete")
@@ -2438,7 +2453,7 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertFalse(payload["applied"])
         self.assertEqual(payload["applications"][0]["decision"], "dry-run")
 
-    def test_mcp_migrate_config_apply_refuses_without_authority(self):
+    def test_mcp_migrate_config_apply_requires_per_call_authority(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             layer = self.write_layer(root, "repo.toml", """
@@ -2465,9 +2480,73 @@ class AgentEquipmentConfigTests(unittest.TestCase):
             rewritten_text = layer.read_text(encoding="utf-8")
 
         self.assertEqual(rewritten_text, original_text)
+        self.assertTrue(result["isError"])
+        self.assertIn("apply_authority is required for migrate.config_apply", result["content"][0]["text"])
+
+    def test_mcp_migrate_config_apply_requires_per_call_authority_even_with_configured_authority(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.authority]
+                config_migration_apply = "usable"
+
+                [agent_equipment_config.fragment_versions]
+                issue_tracker_ops = 1
+
+                [issue_tracker_ops]
+                operation_mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            original_text = layer.read_text(encoding="utf-8")
+
+            result = agent_equipment_config.call_mcp_tool(
+                "migrate.config_apply",
+                {
+                    "layer_paths": [str(layer)],
+                    "fragments": ["issue_tracker_ops"],
+                },
+            )
+            rewritten_text = layer.read_text(encoding="utf-8")
+
+        self.assertEqual(rewritten_text, original_text)
+        self.assertTrue(result["isError"])
+        self.assertIn("apply_authority is required for migrate.config_apply", result["content"][0]["text"])
+
+    def test_mcp_migrate_config_apply_preserves_runtime_refusal_with_explicit_authority(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "cache.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "generated cache or state"
+
+                [agent_equipment_config.fragment_versions]
+                issue_tracker_ops = 1
+
+                [issue_tracker_ops]
+                operation_mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            original_text = layer.read_text(encoding="utf-8")
+
+            result = agent_equipment_config.call_mcp_tool(
+                "migrate.config_apply",
+                {
+                    "layer_paths": [str(layer)],
+                    "fragments": ["issue_tracker_ops"],
+                    "apply_authority": "operator",
+                },
+            )
+            rewritten_text = layer.read_text(encoding="utf-8")
+
+        self.assertEqual(rewritten_text, original_text)
         payload = result["structuredContent"]["result"]
         self.assertFalse(payload["applied"])
-        self.assertEqual(payload["refusals"][0]["reason"], "effective Config Safety Status is incomplete")
+        self.assertEqual(payload["refusals"][0]["reason"], "source category is not eligible for migration apply")
         self.assertEqual(payload["audit_records"][0]["decision"], "refused")
 
     def test_mcp_migrate_config_apply_writes_with_explicit_authority(self):

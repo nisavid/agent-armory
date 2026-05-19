@@ -47,21 +47,13 @@ The fluent CLI commands are the supported invocation surface. The runtime
 command names remain available for implementation debugging and evidence
 comparison.
 
-MCP parity uses the same operation map with typed inputs and structured
-outputs:
-
-| User intent | MCP tool | Fallback CLI |
-| --- | --- | --- |
-| Read, explain, and trace effective Config | `config.resolve` | `config resolve` |
-| Check readiness without dumping full output | `config.validate` | `config validate` |
-| Compare two effective outputs | `config.diff` | `config diff` |
-| Plan first-run, resume, restart, or revise work | `onboard.config` | `onboard config` |
-| Preview registered source migrations | `migrate.config_preview` | `migrate config preview` |
-| Apply registered source migrations | `migrate.config_apply` | `migrate config apply` |
-
-Use MCP when the harness exposes these tools and an agent can operate through
-typed arguments. Use the fluent CLI when MCP is unavailable, when a human needs
-a copyable command, or when command output is the clearer review artifact.
+MCP parity uses the same operation families with typed inputs and structured
+outputs. Use MCP when the harness exposes these tools and an agent can operate
+through typed arguments. Use the fluent CLI when MCP is unavailable, when a
+human needs a copyable command, or when command output is the clearer review
+artifact. See the [runtime guide's MCP parity section](agent-equipment-config.md#mcp-parity)
+and the [MCP tools specification](../../specs/agent-equipment-config/mcp-tools.md)
+for the authoritative MCP-to-CLI map.
 
 ## Smith path
 
@@ -195,8 +187,12 @@ and `tools.agent_equipment_config.call_mcp_tool()` rather than hand-copying
 the Config operation behavior. The current MCP layer classifies
 `config.resolve`, `config.validate`, `config.diff`, `onboard.config`, and
 `migrate.config_preview` as read-only. It classifies `migrate.config_apply` as
-a local write that requires the migration apply authority contract and returns
-applications, refusals, write failures, and audit records.
+a local write that requires per-call `apply_authority = "operator"` for the MCP
+tool, plus the migration apply contract's source category, trusted provenance,
+projected safety, precondition, and audit gates. See
+[`migrate.config_apply`](../../specs/agent-equipment-config/mcp-tools.md#migrateconfig_apply)
+and [Migration apply](agent-equipment-config.md#migration-apply) for the full
+contract.
 
 Before publishing an integration surface, document:
 

@@ -24,8 +24,9 @@ Each Config MCP tool definition includes:
   modes.
 
 Tool-call results return an MCP-style object with text `content` and
-`structuredContent`. The structured content contains the tool name, paired CLI
-operation, read/write classification, and the redacted runtime result.
+`structuredContent`. The structured content contains the MCP operation name,
+paired CLI operation, read/write classification, and the redacted runtime
+result.
 The direct dispatcher rejects arguments outside the published input schema and
 requires every schema-required argument before invoking runtime behavior.
 
@@ -124,12 +125,12 @@ Purpose: apply registered migrations to eligible local TOML sources and return
 applications, refusals, write failures, projected effective Config, and audit
 records.
 
-Classification: local write. Auth source: explicit apply authority. Side
-effects: eligible local TOML source rewrite. Approval requirements: explicit
-apply authority.
+Classification: local write. Auth source: per-call `apply_authority`. Side
+effects: eligible local TOML source rewrite. Approval requirements: per-call
+`apply_authority = "operator"`.
 
 Mutation gate: eligible source category, trusted provenance, usable projected
-Config, explicit apply authority, and final source precondition check.
+Config, per-call apply authority, and final source precondition check.
 
 Failure modes: input validation failure, config parse failure, missing
 migration apply authority, ineligible source refusal, source precondition
