@@ -91,6 +91,7 @@ SECRET_REFERENCE_METADATA_KEYS = {"kind", "name", "scope", "required_for"}
 SECRET_VALUE_KEYS = {"value", "secret_value", "resolved_value", "plain_value"}
 SECRET_VALUE_KEY_EXACT = {"secret", "secrets", "token", "credential", "credentials", "password", "api_key", "private_key"}
 SECRET_VALUE_KEY_SUFFIXES = ("_secret", "_token", "_credential", "_password", "_api_key", "_private_key")
+SECRET_CONTEXT_KEYS = {"auth", "authentication", "secret", "secrets", "credential", "credentials"}
 SENSITIVE_KEYWORDS = ("secret", "token", "credential", "password", "api_key", "private_key")
 REDACTED = "<redacted>"
 REQUIRED_FOR_VALUES = {"advisory", "mutation", "always"}
@@ -779,19 +780,31 @@ def secret_reference(value: JSONValue) -> dict[str, Any] | None:
     return None
 
 
+def normalized_key(key: Any) -> str:
+    return str(key).lower().replace("-", "_")
+
+
+def secret_reference_candidate(value: JSONValue) -> bool:
+    return isinstance(value, dict) and value.get("kind") in SECRET_REFERENCE_KINDS
+
+
 def secret_value_key(key: str) -> bool:
-    normalized = key.lower().replace("-", "_")
+    normalized = normalized_key(key)
     return normalized in SECRET_VALUE_KEY_EXACT or normalized.endswith(SECRET_VALUE_KEY_SUFFIXES)
 
 
 def direct_value_keys_in_secret_reference(value: JSONValue) -> list[str]:
-    if secret_reference(value) is None or not isinstance(value, dict):
+    if not secret_reference_candidate(value) or not isinstance(value, dict):
         return []
     direct_keys = [
         str(key)
-        for key in value
-        if str(key) not in SECRET_REFERENCE_METADATA_KEYS
-        and (str(key) in SECRET_VALUE_KEYS or secret_value_key(str(key)))
+        for key, item in value.items()
+        if normalized_key(key) not in SECRET_REFERENCE_METADATA_KEYS
+        and (
+            normalized_key(key) in SECRET_VALUE_KEYS
+            or secret_value_key(str(key))
+            or nested_direct_secret_value(item, secret_context=True)
+        )
     ]
     return sorted(direct_keys)
 
@@ -815,22 +828,38 @@ def secret_value_path(path: Any) -> bool:
     return any(secret_value_key(part) for part in parts)
 
 
-def nested_direct_secret_value(value: JSONValue) -> bool:
+def direct_secret_payload_value(value: JSONValue, *, secret_context: bool) -> bool:
+    if isinstance(value, dict):
+        return nested_direct_secret_value(value, secret_context=secret_context)
+    if isinstance(value, list):
+        return any(direct_secret_payload_value(item, secret_context=secret_context) for item in value)
+    return value is not None
+
+
+def nested_direct_secret_value(value: JSONValue, *, secret_context: bool = False) -> bool:
     if isinstance(value, dict):
         for key, item in value.items():
-            if secret_value_key(str(key)) and item is not None:
+            normalized = normalized_key(key)
+            key_is_secret_value = secret_value_key(str(key))
+            child_secret_context = secret_context or key_is_secret_value or normalized in SECRET_CONTEXT_KEYS
+            if (key_is_secret_value or (secret_context and normalized in SECRET_VALUE_KEYS)) and direct_secret_payload_value(
+                item,
+                secret_context=child_secret_context,
+            ):
                 return True
-            if nested_direct_secret_value(item):
+            if nested_direct_secret_value(item, secret_context=child_secret_context):
                 return True
     if isinstance(value, list):
-        return any(nested_direct_secret_value(item) for item in value)
+        return any(nested_direct_secret_value(item, secret_context=secret_context) for item in value)
     return False
 
 
 def direct_sensitive_value(value: JSONValue, path: str) -> bool:
-    if secret_reference(value) is not None:
+    if secret_reference_candidate(value):
         return bool(direct_value_keys_in_secret_reference(value))
-    return (secret_value_path(path) and value is not None) or nested_direct_secret_value(value)
+    if secret_value_path(path):
+        return direct_secret_payload_value(value, secret_context=True)
+    return nested_direct_secret_value(value)
 
 
 def secret_boundary_violation_diagnostic(
