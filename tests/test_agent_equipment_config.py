@@ -1914,6 +1914,39 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertNotIn("raw-token", rendered)
         self.assertIn("secret boundary violation", [item["kind"] for item in result["diagnostics"]])
 
+    def test_direct_secret_redaction_preserves_semantic_validator_input(self):
+        seen_tokens = []
+
+        def validator(values, requested_behavior):
+            _ = requested_behavior
+            seen_tokens.append(values["auth"].get("token"))
+            return []
+
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="service_config",
+            version=1,
+            fields={"auth": agent_equipment_config.FieldSpec(type="object", required=True)},
+            semantic_validators=(validator,),
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "local.toml", """
+                [agent_equipment_config.layer]
+                name = "user/operator local overrides"
+                category = "local-only operator config"
+
+                [service_config.auth]
+                token = "raw-token"
+            """)
+
+            result = agent_equipment_config.effective_config([layer], [fragment], requested_behavior="mutation")
+
+        auth = result["effective"]["service_config"]["auth"]
+        rendered = json.dumps(result, sort_keys=True)
+        self.assertEqual(seen_tokens, ["raw-token"])
+        self.assertEqual(auth["value"], agent_equipment_config.REDACTED)
+        self.assertNotIn("raw-token", rendered)
+
     def test_structural_token_named_object_is_not_blocked_as_direct_secret(self):
         fragment = agent_equipment_config.SchemaFragment(
             namespace="service_config",

@@ -1393,6 +1393,7 @@ def effective_config_from_layers(
     migration_previews: list[dict[str, Any]] = []
     for fragment in fragments:
         namespace_values: dict[str, Any] = {}
+        plain_values: dict[str, JSONValue] = {}
         for field_name, field_spec in fragment.fields.items():
             value = field_spec.default
             source_layer: Layer | None = None
@@ -1468,6 +1469,7 @@ def effective_config_from_layers(
                         keys=direct_value_keys_in_secret_reference(value),
                     )
                 )
+            plain_values[field_name] = None if reference is not None else value
             wrapped_value = {
                 "value": value,
                 "source": source_layer.path if source_layer else "schema default",
@@ -1487,7 +1489,6 @@ def effective_config_from_layers(
             if fragment.namespace in versions and versions[fragment.namespace] < fragment.version:
                 diagnostics.append(diagnostic("stale schema", fragment.namespace, f"source version {versions[fragment.namespace]} is older than schema version {fragment.version}", layer))
                 migration_previews.extend(migration_previews_for_layer(layer, fragment))
-        plain_values = raw_values_for_namespace(namespace_values)
         for validator in fragment.semantic_validators:
             diagnostics.extend(validator(plain_values, requested_behavior))
         effective[fragment.namespace] = namespace_values
