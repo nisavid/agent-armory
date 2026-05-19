@@ -78,6 +78,8 @@ agent equipment.
   decides what can be trusted.
 - [Security and control](security-and-control.md): what equipment may do, what
   needs approval, and where secrets and side effects are controlled.
+- [Security Best Practices Baseline](security/security-best-practices.md):
+  current secure defaults for executable repository surfaces.
 - [Templates](../templates/): starting points an agent can copy while making
   future equipment.
 - [Agent Equipment Config](equipment/agent-equipment-config.md): published
@@ -97,6 +99,8 @@ agent equipment.
   Forge itself needs improvement.
 - [Repository threat model](security/threat-model.md): risks, boundaries, and
   control assumptions for people evaluating trust.
+- [Security Best Practices Baseline](security/security-best-practices.md):
+  durable conclusions from the current executable-surface security refresh.
 - [Agent Equipment Config PRD](prd/agent-equipment-config.md): product
   requirements for shared Config, including CLI and MCP operation surfaces.
 - [Design decisions](adr/): the decision records behind durable choices in the
