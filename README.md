@@ -84,10 +84,11 @@ made, commission new equipment, or evaluate whether a future item was made with
 enough discipline to trust.
 
 [Agent Equipment Config](docs/equipment/agent-equipment-config.md) is available
-as a local runtime slice with fluent CLI operations for resolving, validating,
-diffing, onboarding, and migrating shared Config. It gives Smiths and Wielders
-a concrete way to load authored TOML layers, register schema fragments, explain
-policy decisions, and keep secret references unresolved. The
+as a local runtime slice with fluent CLI operations and MCP parity tools for
+resolving, validating, diffing, onboarding, and migrating shared Config. It
+gives Smiths and Wielders a concrete way to load authored TOML layers, register
+schema fragments, explain policy decisions, and keep secret references
+unresolved. The
 [Config integration guide](docs/equipment/agent-equipment-config-integration.md)
 shows how Smiths, Wielders, and Outfitters connect that runtime to equipment and
 harness surfaces.
@@ -139,8 +140,8 @@ The current roadmap includes these equipment lines:
   [published runtime slice](docs/equipment/agent-equipment-config.md) is
   available now, the
   [integration guide](docs/equipment/agent-equipment-config-integration.md)
-  covers current integration paths, and follow-up cards carry onboarding,
-  migration, enforcement, and secret-reference provider boundaries.
+  covers current integration paths, and follow-up cards carry enforcement,
+  secret-reference provider, and broader authoring boundaries.
 - [Issue Tracker Ops](specs/issue-tracker-ops/), for direct
   GitHub Issues bootstrap operations and future issue lifecycle equipment.
   Issue Ops is the accepted shorthand.

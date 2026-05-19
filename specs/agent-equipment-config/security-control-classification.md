@@ -6,11 +6,11 @@ Promotion state: planned
 This Equipment Design Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for fluent CLI operations,
 effective-config, config-diff, diagnostics, plain handoff promotion, authority
-checks, projection classification, plus reusable consumer action decisions. It
-does not implement Agent Equipment beyond this runtime slice, publish assets,
-resolve secrets, mutate external systems, or implement harness controls. Source
-mutation is limited to explicit migration apply for eligible local TOML
-sources.
+checks, projection classification, MCP parity tool definitions, plus reusable
+consumer action decisions. It does not implement Agent Equipment beyond this
+runtime slice, publish assets, resolve secrets, mutate external systems, or
+implement harness controls. Source mutation is limited to explicit migration
+apply for eligible local TOML sources.
 
 ## Scope
 
@@ -57,6 +57,7 @@ integration, plugin, harness control, external write, or secret provider.
 | Config patch or revise plan | Policy decision | Require selected sections or fields, eligible future surface, validation, authority evidence, and refusal output before any write. |
 | Migration preview | Read | Do not rewrite source config. |
 | Source migration apply | Local write | Require eligible source category, trusted provenance, dry-run-first output, explicit authority, and audit records. |
+| MCP Config parity tools | Read or local write | Mirror the safe CLI/runtime slice with typed schemas, MCP annotations, read/write classification, auth source, side-effect metadata, approval requirements, failure modes, and mutation gates. |
 | General config apply | Local write | Deferred; future surfaces must satisfy edit intent, source eligibility, diff, authority, precondition, atomic write, and audit controls before implementation. |
 | Consumer action decision | Policy decision | Fail closed for mutation-capable behavior unless effective Config is usable, authority and semantics pass, and the required capability is supported. |
 | Enforcement projection | Advisory or blocking control | Label blocking support versus advisory fallback. |
@@ -73,6 +74,9 @@ integration, plugin, harness control, external write, or secret provider.
 - Read-time migrations do not mutate source config.
 - Migration apply writes only eligible local TOML sources and produces
   decision/mutation audit records.
+- MCP parity tools classify read-only versus mutation-capable behavior before
+  publication and preserve runtime refusals, source category, authority, and
+  audit evidence in structured output.
 - General source edits must identify intent, target, source category,
   provenance, diff, authority, validation result, final precondition, and audit
   record before writing.

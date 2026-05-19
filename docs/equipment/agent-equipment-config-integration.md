@@ -47,6 +47,22 @@ The fluent CLI commands are the supported invocation surface. The runtime
 command names remain available for implementation debugging and evidence
 comparison.
 
+MCP parity uses the same operation map with typed inputs and structured
+outputs:
+
+| User intent | MCP tool | Fallback CLI |
+| --- | --- | --- |
+| Read, explain, and trace effective Config | `config.resolve` | `config resolve` |
+| Check readiness without dumping full output | `config.validate` | `config validate` |
+| Compare two effective outputs | `config.diff` | `config diff` |
+| Plan first-run, resume, restart, or revise work | `onboard.config` | `onboard config` |
+| Preview registered source migrations | `migrate.config_preview` | `migrate config preview` |
+| Apply registered source migrations | `migrate.config_apply` | `migrate config apply` |
+
+Use MCP when the harness exposes these tools and an agent can operate through
+typed arguments. Use the fluent CLI when MCP is unavailable, when a human needs
+a copyable command, or when command output is the clearer review artifact.
+
 ## Smith path
 
 Start with the equipment's plain session handoff. Keep that shape useful when
@@ -173,6 +189,14 @@ Expose the fluent CLI operation names and MCP parity names from the PRD when
 designing user-facing surfaces. Use runtime commands only for implementation
 debug evidence. Do not turn a skill or prose guide into the product operation
 surface.
+
+When exposing MCP, wrap `tools.agent_equipment_config.mcp_tool_definitions()`
+and `tools.agent_equipment_config.call_mcp_tool()` rather than hand-copying
+the Config operation behavior. The current MCP layer classifies
+`config.resolve`, `config.validate`, `config.diff`, `onboard.config`, and
+`migrate.config_preview` as read-only. It classifies `migrate.config_apply` as
+a local write that requires the migration apply authority contract and returns
+applications, refusals, write failures, and audit records.
 
 Before publishing an integration surface, document:
 

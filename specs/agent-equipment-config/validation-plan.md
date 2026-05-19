@@ -7,10 +7,10 @@ This Equipment Design Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for fluent Config CLI operations,
 effective-config, config-diff, diagnostics, plain handoff promotion, authority
 checks, projection classification, reusable consumer action decisions, and
-deliberate edit boundaries. It does not implement Agent Equipment beyond this
-runtime slice, publish assets, resolve secrets, mutate external systems, or
-implement harness controls. Source mutation is limited to explicit migration
-apply for eligible local TOML sources.
+MCP parity tool definitions. It does not implement Agent Equipment beyond this
+runtime slice, publish assets, resolve secrets, mutate external systems,
+implement harness controls, or expose general authoring writes. Source mutation
+is limited to explicit migration apply for eligible local TOML sources.
 
 ## Scope
 
@@ -39,6 +39,7 @@ Armory Integrity Validation must require:
 - `specs/agent-equipment-config/capability-card.md`
 - `specs/agent-equipment-config/interface-decision-record.md`
 - `specs/agent-equipment-config/security-control-classification.md`
+- `specs/agent-equipment-config/mcp-tools.md`
 - `specs/agent-equipment-config/edit-boundaries.md`
 - `specs/agent-equipment-config/pressure-scenarios.md`
 - `specs/agent-equipment-config/validation-plan.md`
@@ -113,6 +114,12 @@ Implemented by the v0 engine slice:
 - migration-apply refused path for generated, checkout-local, session,
   secret-reference, untrusted, unsafe, incomplete, stale-without-migration,
   missing-authority, and changed-source cases;
+- MCP tool definitions for every MVP operation with input schemas, output
+  schemas, annotations, read/write classification, auth source, side effects,
+  approval requirements, mutation gates, and failure modes;
+- MCP tool-call dispatch for successful read-only resolution, config diff,
+  onboarding, blocking validation, migration preview, refused apply, and
+  allowed apply;
 - plain Issue Tracker Ops handoff fallback and promotion;
 - consumer action decision helper for allowed, advisory, warning, blocking, and
   unsupported outcomes;

@@ -8582,6 +8582,7 @@ class SpecValidationTests(unittest.TestCase):
         "specs/agent-equipment-config/capability-card.md",
         "specs/agent-equipment-config/interface-decision-record.md",
         "specs/agent-equipment-config/security-control-classification.md",
+        "specs/agent-equipment-config/mcp-tools.md",
         "specs/agent-equipment-config/edit-boundaries.md",
         "specs/agent-equipment-config/pressure-scenarios.md",
         "specs/agent-equipment-config/validation-plan.md",
@@ -8669,7 +8670,7 @@ class SpecValidationTests(unittest.TestCase):
                 contract for typed schemas, schema fragments, layered config,
                 config-diff output, Layer Precedence, Policy Authority, Config Safety Status,
                 semantic validators, conflict diagnostics, migrations, secret references,
-                consumer action decision evidence, progressive fallback,
+                consumer action decision evidence, MCP parity, progressive fallback,
                 session-scoped behavior, and plain equipment-specific config handoff
                 promotion.
 
@@ -8733,6 +8734,22 @@ class SpecValidationTests(unittest.TestCase):
                 policy, untrusted config, local-only state, and mutation gates
                 are represented in structured diagnostics. Policy Authority
                 constrains later overrides and lower-authority layers.
+                """,
+            ),
+            "specs/agent-equipment-config/mcp-tools.md": bundle_doc(
+                "MCP Tools: Agent Equipment Config",
+                """\
+                ## Tool definition contract
+
+                MCP parity tools expose typed input schemas, output schemas,
+                read/write classification, auth source, side effects, approval
+                requirements, mutation gates, and failure modes.
+
+                ## Operation map
+
+                config.resolve, config.validate, config.diff, onboard.config,
+                migrate.config_preview, and migrate.config_apply mirror the
+                fluent CLI/runtime slice.
                 """,
             ),
             "specs/agent-equipment-config/edit-boundaries.md": bundle_doc(

@@ -1711,6 +1711,436 @@ def config_validation_report(
     return report
 
 
+MCP_FRAGMENT_NAMES = ["issue_tracker_ops"]
+
+
+def mcp_array_schema(description: str) -> dict[str, Any]:
+    return {
+        "type": "array",
+        "description": description,
+        "items": {"type": "string"},
+    }
+
+
+def mcp_fragment_schema() -> dict[str, Any]:
+    return {
+        "type": "array",
+        "description": "Schema fragment names to register before evaluating Config.",
+        "items": {"type": "string", "enum": MCP_FRAGMENT_NAMES},
+        "minItems": 1,
+    }
+
+
+def mcp_requested_behavior_schema(default: str) -> dict[str, Any]:
+    return {
+        "type": "string",
+        "enum": ["advisory", "mutation"],
+        "default": default,
+        "description": "Behavior to evaluate for Config safety and readiness.",
+    }
+
+
+def mcp_load_input_properties(*, default_requested_behavior: str) -> dict[str, Any]:
+    return {
+        "layer_paths": mcp_array_schema("Explicit authored TOML layer paths supplied by the caller."),
+        "plain_handoff_paths": mcp_array_schema("Explicit plain handoff TOML paths to promote as session overrides."),
+        "fragments": mcp_fragment_schema(),
+        "requested_behavior": mcp_requested_behavior_schema(default_requested_behavior),
+    }
+
+
+def mcp_object_schema(description: str) -> dict[str, Any]:
+    return {
+        "type": "object",
+        "description": description,
+        "additionalProperties": True,
+    }
+
+
+def mcp_output_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "properties": {
+            "tool": {"type": "string"},
+            "operation": {"type": "string"},
+            "cli_operation": {"type": "string"},
+            "read_write_classification": {"type": "string"},
+            "result": {"type": "object"},
+        },
+        "required": ["tool", "operation", "cli_operation", "read_write_classification", "result"],
+        "additionalProperties": True,
+    }
+
+
+def mcp_tool_spec(
+    name: str,
+    *,
+    title: str,
+    description: str,
+    cli_operation: str,
+    input_schema: dict[str, Any],
+    read_write_classification: str,
+    side_effects: list[str],
+    approval_requirements: list[str],
+    failure_modes: list[str],
+    auth_source: str = "none",
+    mutation_gate: str = "not mutation-capable",
+    read_only: bool = True,
+    destructive: bool = False,
+    idempotent: bool = True,
+) -> dict[str, Any]:
+    annotations: dict[str, Any] = {
+        "readOnlyHint": read_only,
+        "openWorldHint": False,
+    }
+    if not read_only:
+        annotations["destructiveHint"] = destructive
+        annotations["idempotentHint"] = idempotent
+    return {
+        "name": name,
+        "title": title,
+        "description": description,
+        "inputSchema": input_schema,
+        "outputSchema": mcp_output_schema(),
+        "annotations": annotations,
+        "x-agent-armory": {
+            "cli_operation": cli_operation,
+            "read_write_classification": read_write_classification,
+            "auth_source": auth_source,
+            "approval_requirements": approval_requirements,
+            "side_effects": side_effects,
+            "mutation_gate": mutation_gate,
+            "failure_modes": failure_modes,
+        },
+    }
+
+
+def mcp_tool_definitions() -> list[dict[str, Any]]:
+    load_properties = mcp_load_input_properties(default_requested_behavior="advisory")
+    validate_properties = mcp_load_input_properties(default_requested_behavior="mutation")
+    return [
+        mcp_tool_spec(
+            "config.resolve",
+            title="Config Resolve",
+            description="Resolve effective Agent Equipment Config with provenance, diagnostics, safety status, and enforcement evidence.",
+            cli_operation="config resolve",
+            input_schema={
+                "type": "object",
+                "properties": load_properties,
+                "required": ["fragments"],
+                "additionalProperties": False,
+            },
+            read_write_classification="read-only",
+            side_effects=[],
+            approval_requirements=[],
+            failure_modes=["input validation failure", "config parse failure", "schema conflict", "policy diagnostic"],
+        ),
+        mcp_tool_spec(
+            "config.validate",
+            title="Config Validate",
+            description="Validate Agent Equipment Config readiness without returning full effective Config by default.",
+            cli_operation="config validate",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    **validate_properties,
+                    "include_effective_config": {
+                        "type": "boolean",
+                        "default": False,
+                        "description": "Include full effective Config output in addition to the low-noise report.",
+                    },
+                },
+                "required": ["fragments"],
+                "additionalProperties": False,
+            },
+            read_write_classification="read-only",
+            side_effects=[],
+            approval_requirements=[],
+            failure_modes=["input validation failure", "config parse failure", "blocking validation", "policy diagnostic"],
+        ),
+        mcp_tool_spec(
+            "config.diff",
+            title="Config Diff",
+            description="Compare two effective Config JSON objects and report value, diagnostic, and safety-status changes.",
+            cli_operation="config diff",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "before": mcp_object_schema("Effective Config output or an effective section before the change."),
+                    "after": mcp_object_schema("Effective Config output or an effective section after the change."),
+                },
+                "required": ["before", "after"],
+                "additionalProperties": False,
+            },
+            read_write_classification="read-only",
+            side_effects=[],
+            approval_requirements=[],
+            failure_modes=["input validation failure", "malformed effective Config input"],
+        ),
+        mcp_tool_spec(
+            "onboard.config",
+            title="Onboard Config",
+            description="Return first-run, resume, restart, or revise planning output for Agent Equipment Config.",
+            cli_operation="onboard config",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    **load_properties,
+                    "shared_config_present": {
+                        "type": "boolean",
+                        "default": True,
+                        "description": "Whether shared Config is present for the onboarding run.",
+                    },
+                    "onboarding_state": {
+                        "type": "string",
+                        "enum": sorted(ONBOARDING_STATES),
+                        "default": "first-run",
+                    },
+                    "revise_sections": mcp_array_schema("Config namespaces selected for revise-planning output."),
+                },
+                "required": ["fragments"],
+                "additionalProperties": False,
+            },
+            read_write_classification="read-only",
+            side_effects=[],
+            approval_requirements=[],
+            failure_modes=["input validation failure", "config parse failure", "unknown revise section", "policy diagnostic"],
+        ),
+        mcp_tool_spec(
+            "migrate.config_preview",
+            title="Migrate Config Preview",
+            description="Preview registered Config migrations, refusals, and audit evidence without rewriting source files.",
+            cli_operation="migrate config preview",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "layer_paths": mcp_array_schema("Explicit authored TOML layer paths supplied by the caller."),
+                    "fragments": mcp_fragment_schema(),
+                },
+                "required": ["layer_paths", "fragments"],
+                "additionalProperties": False,
+            },
+            read_write_classification="read-only",
+            side_effects=[],
+            approval_requirements=[],
+            failure_modes=["input validation failure", "config parse failure", "migration refusal", "policy diagnostic"],
+        ),
+        mcp_tool_spec(
+            "migrate.config_apply",
+            title="Migrate Config Apply",
+            description="Apply registered Config migrations to eligible local TOML sources with explicit authority and audit records.",
+            cli_operation="migrate config apply",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "layer_paths": mcp_array_schema("Explicit authored TOML layer paths supplied by the caller."),
+                    "fragments": mcp_fragment_schema(),
+                    "apply_authority": {
+                        "type": "string",
+                        "enum": ["operator"],
+                        "description": "Explicit authority to write eligible migration targets.",
+                    },
+                },
+                "required": ["layer_paths", "fragments"],
+                "additionalProperties": False,
+            },
+            read_write_classification="local write",
+            auth_source="explicit apply authority",
+            side_effects=["eligible local TOML source rewrite"],
+            approval_requirements=["explicit apply authority"],
+            failure_modes=[
+                "input validation failure",
+                "config parse failure",
+                "missing migration apply authority",
+                "ineligible source refusal",
+                "source precondition failure",
+                "partial local write failure",
+            ],
+            mutation_gate="eligible source category, trusted provenance, usable projected Config, explicit apply authority, and source precondition check",
+            read_only=False,
+            destructive=True,
+            idempotent=False,
+        ),
+    ]
+
+
+def mcp_tool_definition_by_name() -> dict[str, dict[str, Any]]:
+    return {tool["name"]: tool for tool in mcp_tool_definitions()}
+
+
+def mcp_validate_arguments(tool: dict[str, Any], arguments: dict[str, Any]) -> None:
+    schema = tool["inputSchema"]
+    properties = schema.get("properties", {})
+    allowed_keys = set(properties)
+    unknown_keys = sorted(set(arguments) - allowed_keys)
+    if unknown_keys:
+        raise ConfigError(f"unknown argument(s) for {tool['name']}: {', '.join(unknown_keys)}")
+    for key in schema.get("required", []):
+        if key not in arguments or arguments[key] is None:
+            raise ConfigError(f"{key} is required for {tool['name']}")
+
+
+def mcp_path_list(arguments: dict[str, Any], key: str) -> list[Path]:
+    values = arguments.get(key, [])
+    if values is None:
+        values = []
+    if not isinstance(values, list) or not all(isinstance(value, str) for value in values):
+        raise ConfigError(f"{key} must be a list of paths")
+    return [Path(value) for value in values]
+
+
+def mcp_string_list(arguments: dict[str, Any], key: str) -> list[str]:
+    values = arguments.get(key, [])
+    if values is None:
+        values = []
+    if not isinstance(values, list) or not all(isinstance(value, str) for value in values):
+        raise ConfigError(f"{key} must be a list of strings")
+    return values
+
+
+def mcp_bool(arguments: dict[str, Any], key: str, default: bool) -> bool:
+    value = arguments.get(key, default)
+    if not isinstance(value, bool):
+        raise ConfigError(f"{key} must be a boolean")
+    return value
+
+
+def mcp_requested_behavior(arguments: dict[str, Any], default: str) -> str:
+    value = arguments.get("requested_behavior", default)
+    if value not in {"advisory", "mutation"}:
+        raise ConfigError("requested_behavior must be 'advisory' or 'mutation'")
+    return str(value)
+
+
+def mcp_fragments(arguments: dict[str, Any]) -> list[SchemaFragment]:
+    names = mcp_string_list(arguments, "fragments")
+    if not names:
+        raise ConfigError("MCP Config tools require at least one schema fragment")
+    fragments: list[SchemaFragment] = []
+    for name in names:
+        if name == "issue_tracker_ops":
+            fragments.append(issue_tracker_ops_fragment())
+        else:
+            raise ConfigError(f"unknown schema fragment {name!r}")
+    return fragments
+
+
+def mcp_apply_authority(arguments: dict[str, Any]) -> str | None:
+    value = arguments.get("apply_authority")
+    if value is None:
+        return None
+    if value != "operator":
+        raise ConfigError("apply_authority must be 'operator'")
+    return str(value)
+
+
+def mcp_call_summary(tool_name: str, payload: dict[str, Any]) -> str:
+    if "safety_status" in payload:
+        return f"{tool_name}: safety_status={payload['safety_status']}"
+    if "passed" in payload:
+        return f"{tool_name}: passed={payload['passed']} safety_status={payload.get('safety_status')}"
+    if "applied" in payload:
+        return f"{tool_name}: mode={payload.get('mode')} applied={payload['applied']} refusals={len(payload.get('refusals', []))}"
+    if "onboarding_status" in payload:
+        return f"{tool_name}: onboarding_status={payload['onboarding_status']}"
+    if "changes" in payload:
+        return f"{tool_name}: changes={len(payload['changes'])}"
+    return f"{tool_name}: completed"
+
+
+def mcp_call_result(tool: dict[str, Any], payload: dict[str, Any]) -> dict[str, Any]:
+    metadata = tool["x-agent-armory"]
+    structured = {
+        "tool": tool["name"],
+        "operation": metadata["cli_operation"],
+        "cli_operation": metadata["cli_operation"],
+        "read_write_classification": metadata["read_write_classification"],
+        "result": redact_for_cli(payload),
+    }
+    return {
+        "content": [{"type": "text", "text": mcp_call_summary(tool["name"], payload)}],
+        "structuredContent": structured,
+    }
+
+
+def mcp_error_result(tool_name: str, message: str) -> dict[str, Any]:
+    return {
+        "content": [{"type": "text", "text": f"{tool_name}: error: {message}"}],
+        "structuredContent": {
+            "tool": tool_name,
+            "error": {
+                "kind": "tool_error",
+                "message": message,
+            },
+        },
+        "isError": True,
+    }
+
+
+def call_mcp_tool(name: str, arguments: dict[str, Any] | None = None) -> dict[str, Any]:
+    tool = mcp_tool_definition_by_name().get(name)
+    if tool is None:
+        return mcp_error_result(name, f"unknown MCP Config tool {name!r}")
+    if arguments is None:
+        arguments = {}
+    if not isinstance(arguments, dict):
+        return mcp_error_result(name, "arguments must be an object")
+    try:
+        mcp_validate_arguments(tool, arguments)
+        if name == "config.resolve":
+            payload = effective_config(
+                mcp_path_list(arguments, "layer_paths"),
+                mcp_fragments(arguments),
+                requested_behavior=mcp_requested_behavior(arguments, "advisory"),
+                plain_handoff_paths=mcp_path_list(arguments, "plain_handoff_paths"),
+            )
+        elif name == "config.validate":
+            payload = config_validation_report(
+                mcp_path_list(arguments, "layer_paths"),
+                mcp_fragments(arguments),
+                requested_behavior=mcp_requested_behavior(arguments, "mutation"),
+                plain_handoff_paths=mcp_path_list(arguments, "plain_handoff_paths"),
+                include_effective_config=mcp_bool(arguments, "include_effective_config", False),
+            )
+        elif name == "config.diff":
+            before = arguments.get("before")
+            after = arguments.get("after")
+            if not isinstance(before, dict) or not isinstance(after, dict):
+                raise ConfigError("before and after must be effective Config objects")
+            payload = config_diff(before, after)
+        elif name == "onboard.config":
+            onboarding_state = arguments.get("onboarding_state", "first-run")
+            if onboarding_state not in ONBOARDING_STATES:
+                raise ConfigError(f"unknown onboarding state {onboarding_state!r}")
+            payload = config_onboarding_plan(
+                mcp_path_list(arguments, "layer_paths"),
+                mcp_fragments(arguments),
+                requested_behavior=mcp_requested_behavior(arguments, "advisory"),
+                plain_handoff_paths=mcp_path_list(arguments, "plain_handoff_paths"),
+                shared_config_present=mcp_bool(arguments, "shared_config_present", True),
+                onboarding_state=str(onboarding_state),
+                revise_sections=mcp_string_list(arguments, "revise_sections"),
+            )
+        elif name == "migrate.config_preview":
+            payload = migration_apply(
+                mcp_path_list(arguments, "layer_paths"),
+                mcp_fragments(arguments),
+                apply=False,
+            )
+        elif name == "migrate.config_apply":
+            payload = migration_apply(
+                mcp_path_list(arguments, "layer_paths"),
+                mcp_fragments(arguments),
+                apply=True,
+                apply_authority=mcp_apply_authority(arguments),
+            )
+        else:
+            raise ConfigError(f"no dispatcher registered for MCP Config tool {name!r}")
+    except (ConfigError, OSError, JSONDecodeError, UnicodeDecodeError) as exc:
+        return mcp_error_result(name, str(exc))
+    return mcp_call_result(tool, payload)
+
+
 def add_effective_config_arguments(parser: argparse.ArgumentParser, *, default_requested_behavior: str = "advisory") -> None:
     parser.add_argument("--layer", action="append", default=[])
     parser.add_argument("--plain-handoff", action="append", default=[])

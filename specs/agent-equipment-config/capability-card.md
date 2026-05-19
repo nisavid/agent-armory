@@ -7,10 +7,10 @@ This Equipment Design Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for fluent CLI operations,
 effective-config, config-diff, diagnostics, plain handoff promotion, authority
 checks, and projection classification, plus onboarding output for first-run and
-re-onboarding flows and explicit migration apply for eligible local TOML
-sources. It does not implement Agent Equipment beyond this runtime slice,
-publish assets, resolve secrets, mutate external systems, or implement harness
-controls.
+re-onboarding flows, explicit migration apply for eligible local TOML sources,
+and MCP parity tool definitions for the same safe operation families. It does not implement Agent Equipment beyond this runtime slice.
+It does not publish assets, resolve secrets, mutate external systems, or
+implement harness controls.
 
 ## Purpose
 
@@ -62,6 +62,9 @@ policy model without making Config depend on Issue Tracker Ops.
 - Scripts/tools: the portable fluent CLI slice for resolve, validate, diff,
   onboarding, migration preview, and migration apply, plus implementation
   commands and deliberate edit-boundary reference.
+- MCP/tools: typed parity tools for `config.resolve`, `config.validate`,
+  `config.diff`, `onboard.config`, `migrate.config_preview`, and
+  `migrate.config_apply`.
 - Hooks, permissions, approvals, sandboxes, or tool gates: future enforcement
   projections for mutation-capable behavior.
 - Skills: future Smith and Wielder judgment around design, onboarding, and
@@ -99,6 +102,7 @@ Deterministic surfaces emit JSON-compatible objects for:
 - semantic validator diagnostics,
 - migration previews,
 - migration-apply decisions, refusals, mutations, and audit records,
+- MCP tool metadata and structured tool-call results,
 - edit intent and refusal evidence for deliberate source changes,
 - secret reference resolution status,
 - onboarding status and partial config handoff plans,
