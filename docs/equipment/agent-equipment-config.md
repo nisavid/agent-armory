@@ -171,9 +171,13 @@ effects, approval requirements, mutation gates, and failure modes.
 MCP callers pass explicit `layer_paths`, optional `plain_handoff_paths`,
 registered `fragments`, and the requested behavior. `config.diff` accepts
 typed `before` and `after` effective-config objects. `migrate.config_apply`
-uses the same migration apply gates as the CLI: eligible source category,
-trusted provenance, usable projected Config, explicit apply authority, final
-source precondition checking, and audit output.
+uses the migration apply gates for eligible source category, trusted
+provenance, usable projected Config, final source precondition checking, and
+audit output. The MCP tool also requires per-call
+`apply_authority = "operator"`. See [Migration apply](#migration-apply) for
+detailed gate definitions and satisfaction criteria for `migrate.config_apply`;
+`config.diff` remains a read-only comparison of supplied effective-config
+objects.
 
 Use MCP when a harness exposes these tools and the agent benefits from typed
 input and output. Fall back to the fluent CLI when MCP is unavailable, when a

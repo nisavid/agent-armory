@@ -1711,7 +1711,10 @@ def config_validation_report(
     return report
 
 
-MCP_FRAGMENT_NAMES = ["issue_tracker_ops"]
+MCP_FRAGMENT_BUILDERS: dict[str, Callable[[], SchemaFragment]] = {
+    "issue_tracker_ops": issue_tracker_ops_fragment,
+}
+MCP_FRAGMENT_NAMES = sorted(MCP_FRAGMENT_BUILDERS)
 
 
 def mcp_array_schema(description: str) -> dict[str, Any]:
@@ -1928,7 +1931,7 @@ def mcp_tool_definitions() -> list[dict[str, Any]]:
         mcp_tool_spec(
             "migrate.config_apply",
             title="Migrate Config Apply",
-            description="Apply registered Config migrations to eligible local TOML sources with explicit authority and audit records.",
+            description="Apply registered Config migrations to eligible local TOML sources with per-call authority and audit records.",
             cli_operation="migrate config apply",
             input_schema={
                 "type": "object",
@@ -1938,16 +1941,16 @@ def mcp_tool_definitions() -> list[dict[str, Any]]:
                     "apply_authority": {
                         "type": "string",
                         "enum": ["operator"],
-                        "description": "Explicit authority to write eligible migration targets.",
+                        "description": "Per-call authority to write eligible migration targets.",
                     },
                 },
-                "required": ["layer_paths", "fragments"],
+                "required": ["layer_paths", "fragments", "apply_authority"],
                 "additionalProperties": False,
             },
             read_write_classification="local write",
-            auth_source="explicit apply authority",
+            auth_source="per-call apply_authority",
             side_effects=["eligible local TOML source rewrite"],
-            approval_requirements=["explicit apply authority"],
+            approval_requirements=["per-call apply_authority"],
             failure_modes=[
                 "input validation failure",
                 "config parse failure",
@@ -1956,7 +1959,7 @@ def mcp_tool_definitions() -> list[dict[str, Any]]:
                 "source precondition failure",
                 "partial local write failure",
             ],
-            mutation_gate="eligible source category, trusted provenance, usable projected Config, explicit apply authority, and source precondition check",
+            mutation_gate="eligible source category, trusted provenance, usable projected Config, per-call apply_authority, and source precondition check",
             read_only=False,
             destructive=True,
             idempotent=False,
@@ -1968,16 +1971,51 @@ def mcp_tool_definition_by_name() -> dict[str, dict[str, Any]]:
     return {tool["name"]: tool for tool in mcp_tool_definitions()}
 
 
+def mcp_validate_schema_value(schema: dict[str, Any], value: Any, path: str, *, tool_name: str) -> None:
+    expected_type = schema.get("type")
+    if expected_type == "object":
+        if not isinstance(value, dict):
+            raise ConfigError(f"{path} must be an object")
+        properties = schema.get("properties", {})
+        for key in schema.get("required", []):
+            if key not in value or value[key] is None:
+                if path == "arguments":
+                    raise ConfigError(f"{key} is required for {tool_name}")
+                raise ConfigError(f"{path}.{key} is required")
+        if schema.get("additionalProperties") is False:
+            unknown_keys = sorted(set(value) - set(properties))
+            if unknown_keys:
+                if path == "arguments":
+                    raise ConfigError(f"unknown argument(s) for {tool_name}: {', '.join(unknown_keys)}")
+                raise ConfigError(f"{path} contains unknown field(s): {', '.join(unknown_keys)}")
+        for key, item in value.items():
+            property_schema = properties.get(key)
+            if property_schema is not None:
+                mcp_validate_schema_value(property_schema, item, f"{path}.{key}", tool_name=tool_name)
+        return
+    if expected_type == "array":
+        if not isinstance(value, list):
+            raise ConfigError(f"{path} must be an array")
+        minimum_items = schema.get("minItems")
+        if isinstance(minimum_items, int) and len(value) < minimum_items:
+            raise ConfigError(f"{path} must contain at least {minimum_items} item(s)")
+        item_schema = schema.get("items")
+        if isinstance(item_schema, dict):
+            for index, item in enumerate(value):
+                mcp_validate_schema_value(item_schema, item, f"{path}[{index}]", tool_name=tool_name)
+    elif expected_type == "string":
+        if not isinstance(value, str):
+            raise ConfigError(f"{path} must be a string")
+    elif expected_type == "boolean":
+        if not isinstance(value, bool):
+            raise ConfigError(f"{path} must be a boolean")
+    enum_values = schema.get("enum")
+    if isinstance(enum_values, list) and value not in enum_values:
+        raise ConfigError(f"{path} must be one of {enum_values!r}")
+
+
 def mcp_validate_arguments(tool: dict[str, Any], arguments: dict[str, Any]) -> None:
-    schema = tool["inputSchema"]
-    properties = schema.get("properties", {})
-    allowed_keys = set(properties)
-    unknown_keys = sorted(set(arguments) - allowed_keys)
-    if unknown_keys:
-        raise ConfigError(f"unknown argument(s) for {tool['name']}: {', '.join(unknown_keys)}")
-    for key in schema.get("required", []):
-        if key not in arguments or arguments[key] is None:
-            raise ConfigError(f"{key} is required for {tool['name']}")
+    mcp_validate_schema_value(tool["inputSchema"], arguments, "arguments", tool_name=tool["name"])
 
 
 def mcp_path_list(arguments: dict[str, Any], key: str) -> list[Path]:
@@ -2018,10 +2056,10 @@ def mcp_fragments(arguments: dict[str, Any]) -> list[SchemaFragment]:
         raise ConfigError("MCP Config tools require at least one schema fragment")
     fragments: list[SchemaFragment] = []
     for name in names:
-        if name == "issue_tracker_ops":
-            fragments.append(issue_tracker_ops_fragment())
-        else:
+        builder = MCP_FRAGMENT_BUILDERS.get(name)
+        if builder is None:
             raise ConfigError(f"unknown schema fragment {name!r}")
+        fragments.append(builder())
     return fragments
 
 
@@ -2035,10 +2073,10 @@ def mcp_apply_authority(arguments: dict[str, Any]) -> str | None:
 
 
 def mcp_call_summary(tool_name: str, payload: dict[str, Any]) -> str:
-    if "safety_status" in payload:
-        return f"{tool_name}: safety_status={payload['safety_status']}"
     if "passed" in payload:
         return f"{tool_name}: passed={payload['passed']} safety_status={payload.get('safety_status')}"
+    if "safety_status" in payload:
+        return f"{tool_name}: safety_status={payload['safety_status']}"
     if "applied" in payload:
         return f"{tool_name}: mode={payload.get('mode')} applied={payload['applied']} refusals={len(payload.get('refusals', []))}"
     if "onboarding_status" in payload:
@@ -2052,7 +2090,7 @@ def mcp_call_result(tool: dict[str, Any], payload: dict[str, Any]) -> dict[str, 
     metadata = tool["x-agent-armory"]
     structured = {
         "tool": tool["name"],
-        "operation": metadata["cli_operation"],
+        "operation": tool["name"],
         "cli_operation": metadata["cli_operation"],
         "read_write_classification": metadata["read_write_classification"],
         "result": redact_for_cli(payload),
