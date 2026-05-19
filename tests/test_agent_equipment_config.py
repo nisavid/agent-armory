@@ -1860,6 +1860,74 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertNotIn("raw-token", rendered)
         self.assertIn("secret boundary violation", [item["kind"] for item in result["diagnostics"]])
 
+    def test_secret_reference_metadata_payload_is_blocked(self):
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=1,
+            fields={"github_token": agent_equipment_config.FieldSpec(type="object", required=True)},
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "local.toml", """
+                [agent_equipment_config.layer]
+                name = "user/operator local overrides"
+                category = "local-only operator config"
+
+                [issue_tracker_ops.github_token]
+                kind = "env"
+                name = "GITHUB_TOKEN"
+                required_for = "tracker write"
+
+                [issue_tracker_ops.github_token.scope]
+                value = "raw-token"
+            """)
+
+            result = agent_equipment_config.effective_config([layer], [fragment], requested_behavior="mutation")
+
+        token = result["effective"]["issue_tracker_ops"]["github_token"]
+        rendered = json.dumps(result, sort_keys=True)
+        self.assertEqual(result["safety_status"], "unsafe")
+        self.assertEqual(token["secret_reference"]["kind"], "env")
+        self.assertNotIn("scope", token["secret_reference"])
+        self.assertNotIn("raw-token", rendered)
+        self.assertIn("secret boundary violation", [item["kind"] for item in result["diagnostics"]])
+
+    def test_blocked_override_diagnostic_redacts_direct_secret_candidate(self):
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=1,
+            fields={"github_token": agent_equipment_config.FieldSpec(type="object", required=True)},
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy = self.write_layer(root, "org.toml", """
+                [agent_equipment_config.layer]
+                name = "organization or tracker policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.policy.issue_tracker_ops.github_token]
+                non_overridable = true
+
+                [issue_tracker_ops.github_token]
+                kind = "env"
+                name = "GITHUB_TOKEN"
+            """)
+            session = self.write_layer(root, "session.toml", """
+                [agent_equipment_config.layer]
+                name = "session overrides"
+                category = "session override"
+
+                [issue_tracker_ops.github_token]
+                token = "raw-token"
+            """)
+
+            result = agent_equipment_config.effective_config([policy, session], [fragment], requested_behavior="mutation")
+
+        blocked = next(item for item in result["diagnostics"] if item["kind"] == "blocked override")
+        rendered = json.dumps(result, sort_keys=True)
+        self.assertEqual(blocked["evidence"]["blocked_value"], agent_equipment_config.REDACTED)
+        self.assertNotIn("raw-token", rendered)
+
     def test_direct_sensitive_value_is_blocked_from_effective_config(self):
         fragment = agent_equipment_config.SchemaFragment(
             namespace="issue_tracker_ops",

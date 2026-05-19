@@ -796,16 +796,19 @@ def secret_value_key(key: str) -> bool:
 def direct_value_keys_in_secret_reference(value: JSONValue) -> list[str]:
     if not secret_reference_candidate(value) or not isinstance(value, dict):
         return []
-    direct_keys = [
-        str(key)
-        for key, item in value.items()
-        if normalized_key(key) not in SECRET_REFERENCE_METADATA_KEYS
-        and (
-            normalized_key(key) in SECRET_VALUE_KEYS
+    direct_keys: list[str] = []
+    for key, item in value.items():
+        normalized = normalized_key(key)
+        if normalized in SECRET_REFERENCE_METADATA_KEYS:
+            if nested_direct_secret_value(item, secret_context=True):
+                direct_keys.append(str(key))
+            continue
+        if (
+            normalized in SECRET_VALUE_KEYS
             or secret_value_key(str(key))
             or nested_direct_secret_value(item, secret_context=True)
-        )
-    ]
+        ):
+            direct_keys.append(str(key))
     return sorted(direct_keys)
 
 
@@ -862,6 +865,10 @@ def direct_sensitive_value(value: JSONValue, path: str) -> bool:
     if secret_value_path(path):
         return direct_secret_payload_value(value, secret_context=True)
     return nested_direct_secret_value(value)
+
+
+def redacted_if_direct_secret(value: JSONValue, path: str) -> JSONValue:
+    return REDACTED if direct_sensitive_value(value, path) else value
 
 
 def secret_boundary_violation_diagnostic(
@@ -1024,7 +1031,7 @@ def blocked_override_diagnostic(path: str, layer: Layer, lock: PolicyLock, candi
         f"{layer.name} cannot override {lock_reason} value from {lock.layer.name}",
         layer,
         evidence={
-            "blocked_value": candidate,
+            "blocked_value": redacted_if_direct_secret(candidate, path),
             "blocked_by": {
                 "layer": lock.layer.name,
                 "source": lock.layer.path,
@@ -1462,13 +1469,16 @@ def effective_config_from_layers(
             if not unresolved_conflict:
                 diagnostics.extend(validate_field(value, field_spec, path, source_layer))
             reference = secret_reference(value)
-            direct_secret_value = not unresolved_conflict and direct_sensitive_value(value, path)
+            direct_secret_keys = direct_value_keys_in_secret_reference(value)
+            direct_secret_value = not unresolved_conflict and (
+                bool(direct_secret_keys) if secret_reference_candidate(value) else direct_sensitive_value(value, path)
+            )
             if direct_secret_value:
                 diagnostics.append(
                     secret_boundary_violation_diagnostic(
                         path,
                         source_layer,
-                        keys=direct_value_keys_in_secret_reference(value),
+                        keys=direct_secret_keys,
                     )
                 )
             plain_values[field_name] = None if reference is not None else value
@@ -1479,6 +1489,12 @@ def effective_config_from_layers(
             }
             if reference is not None:
                 wrapped_value.pop("value", None)
+                if direct_secret_keys:
+                    reference = {
+                        key: item
+                        for key, item in reference.items()
+                        if key not in direct_secret_keys
+                    }
                 wrapped_value["secret_reference"] = reference
             elif direct_secret_value:
                 wrapped_value["value"] = REDACTED
