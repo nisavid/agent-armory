@@ -1828,6 +1828,33 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertNotIn("raw-token", rendered)
         self.assertIn("secret boundary violation", [item["kind"] for item in result["diagnostics"]])
 
+    def test_secret_reference_candidate_with_invalid_kind_shape_is_blocked(self):
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="service_config",
+            version=1,
+            fields={"auth": agent_equipment_config.FieldSpec(type="object", required=True)},
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "local.toml", """
+                [agent_equipment_config.layer]
+                name = "user/operator local overrides"
+                category = "local-only operator config"
+
+                [service_config.auth]
+                kind = ["env"]
+                token = "raw-token"
+            """)
+
+            result = agent_equipment_config.effective_config([layer], [fragment], requested_behavior="mutation")
+
+        auth = result["effective"]["service_config"]["auth"]
+        rendered = json.dumps(result, sort_keys=True)
+        self.assertEqual(result["safety_status"], "unsafe")
+        self.assertEqual(auth["value"], agent_equipment_config.REDACTED)
+        self.assertNotIn("raw-token", rendered)
+        self.assertIn("secret boundary violation", [item["kind"] for item in result["diagnostics"]])
+
     def test_valid_secret_reference_with_nested_payload_is_blocked(self):
         fragment = agent_equipment_config.SchemaFragment(
             namespace="issue_tracker_ops",
@@ -1880,6 +1907,35 @@ class AgentEquipmentConfigTests(unittest.TestCase):
 
                 [issue_tracker_ops.github_token.scope]
                 value = "raw-token"
+            """)
+
+            result = agent_equipment_config.effective_config([layer], [fragment], requested_behavior="mutation")
+
+        token = result["effective"]["issue_tracker_ops"]["github_token"]
+        rendered = json.dumps(result, sort_keys=True)
+        self.assertEqual(result["safety_status"], "unsafe")
+        self.assertEqual(token["secret_reference"]["kind"], "env")
+        self.assertNotIn("scope", token["secret_reference"])
+        self.assertNotIn("raw-token", rendered)
+        self.assertIn("secret boundary violation", [item["kind"] for item in result["diagnostics"]])
+
+    def test_secret_reference_metadata_array_payload_is_blocked(self):
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=1,
+            fields={"github_token": agent_equipment_config.FieldSpec(type="object", required=True)},
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "local.toml", """
+                [agent_equipment_config.layer]
+                name = "user/operator local overrides"
+                category = "local-only operator config"
+
+                [issue_tracker_ops.github_token]
+                kind = "env"
+                name = "GITHUB_TOKEN"
+                scope = ["raw-token"]
             """)
 
             result = agent_equipment_config.effective_config([layer], [fragment], requested_behavior="mutation")
@@ -3162,6 +3218,29 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertNotIn("raw-api-key", rendered)
         self.assertNotIn("migrated-api-key", rendered)
         self.assertNotIn("list-api-key", rendered)
+
+    def test_cli_redacts_blocked_secret_reference_names(self):
+        payload = {
+            "diagnostics": [
+                {
+                    "kind": "blocked override",
+                    "path": "issue_tracker_ops.github_token",
+                    "evidence": {
+                        "blocked_value": {
+                            "kind": "env",
+                            "name": "GITHUB_TOKEN",
+                            "resolution_status": "unresolved",
+                        }
+                    },
+                }
+            ]
+        }
+
+        redacted = agent_equipment_config.redact_for_cli(payload)
+        rendered = json.dumps(redacted)
+
+        self.assertEqual(redacted["diagnostics"][0]["evidence"]["blocked_value"]["name"], agent_equipment_config.REDACTED)
+        self.assertNotIn("GITHUB_TOKEN", rendered)
 
     def test_plain_issue_tracker_ops_handoff_promotes_without_shared_config_layer(self):
         with tempfile.TemporaryDirectory() as tmpdir:
