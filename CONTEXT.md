@@ -392,6 +392,22 @@ Accepted shorthand for Issue Tracker Ops after the full name is clear in the
 current context.
 _Avoid_: using it as a separate equipment name
 
+**Foreign Policy Surface**:
+A non-Armory skill, doc, config file, hook, script, or integration that carries
+policy or behavior an Armory equipment migration may discover, preserve,
+ingest, discard, or leave untouched.
+_Avoid_: legacy surface when the point is external origin rather than age;
+treating a whole surface as indivisible when only some functions should migrate
+
+**Foreign Policy Compatibility Surface**:
+A kept Foreign Policy Surface that remains usable while its policy or behavior
+is anchored in the Armory's preferred encoding. The compatibility mechanism may
+be indirection, generation, adapter behavior, or a mixed strategy, depending on
+what the foreign surface can faithfully support.
+_Avoid_: Compatibility Surface when the point is specifically migrated foreign
+policy; exposing mechanism-specific choices before the surface has been
+classified
+
 **Issue Tracker Baseline**:
 The current GitHub Issues-only baseline for Issue Tracker Ops. Labels represent
 custom predicates, and out-of-band policy imposes structure on those
