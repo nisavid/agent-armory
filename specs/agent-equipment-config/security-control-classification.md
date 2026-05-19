@@ -100,6 +100,9 @@ integration, plugin, harness control, external write, or secret provider.
   mutation into a write operation; the consumer must fail closed, escalate, or
   surface a diagnostic instead.
 - Harness projections must state whether controls are blocking or advisory.
+- Direct secret values or secret-reference tables with embedded value payloads
+  produce `secret boundary violation` diagnostics, redacted effective-config
+  output, and an `unsafe` Config Safety Status.
 
 ## Conflict diagnostics
 
@@ -124,8 +127,18 @@ Valid secret references are typed pointers with:
 - optional `required_for`, the behavior that needs it.
 
 Effective-config output reports reference identity and resolution status only.
-Provider-specific fetching belongs to harness projections or future tools, not
-to the v0 contract itself.
+The runtime may carry provider-local names in importable output for trusted
+adapters, but CLI, MCP, log, audit, issue, PR, and handoff surfaces redact those
+names before publication. Provider-specific fetching belongs to harness
+projections, tools, or adapters, not to the core Config merge engine.
+
+| Reference kind | Provider owner | Config responsibility |
+| --- | --- | --- |
+| `env` | Harness, script, shell, or operator-owned process environment | Preserve unresolved metadata and never read the environment variable. |
+| `keychain` | Host keychain integration or operator-owned tool | Preserve unresolved metadata and never call the keychain. |
+| `vault` | Vault client, harness plugin, or organization secret tooling | Preserve unresolved metadata and never authenticate to the vault. |
+| `harness-secret` | Harness-native secret store or adapter | Preserve unresolved metadata and never call harness secret APIs. |
+| `external` | Named external provider adapter | Preserve unresolved metadata and require the adapter to own lookup, auth, and value lifetime. |
 
 ## Known gaps
 

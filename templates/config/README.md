@@ -39,6 +39,7 @@ For `example.toml`:
 - Treating config as consent for risky actions without an approval rule.
 - Leaving ownership implicit.
 - Enabling a capability by default before validation.
+- Putting a secret value in Config instead of a provider-owned secret reference.
 - Mixing local workstation paths into portable examples.
 
 ## Validation expectations

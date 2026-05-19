@@ -198,6 +198,10 @@ after their CLI and source-write contracts are specified.
 **Security And Privacy**:
 
 - Config stores secret references, not secret values.
+- Provider-specific secret resolution belongs to harnesses, tools, or adapters,
+  not to the core Config merge engine.
+- Direct secret values are unsafe Config input and must be redacted from
+  published output.
 - Mutation-capable behavior requires usable effective Config, applicable
   authority, supported capability, validation success, and a surface that owns
   the requested write.

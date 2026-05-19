@@ -1770,6 +1770,113 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(token["secret_reference"]["resolution_status"], "unresolved")
         self.assertNotIn("value", token["secret_reference"])
 
+    def test_secret_reference_with_direct_value_payload_is_blocked(self):
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=1,
+            fields={"github_token": agent_equipment_config.FieldSpec(type="object", required=True)},
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "local.toml", """
+                [agent_equipment_config.layer]
+                name = "user/operator local overrides"
+                category = "local-only operator config"
+
+                [issue_tracker_ops.github_token]
+                kind = "env"
+                name = "GITHUB_TOKEN"
+                value = "raw-token"
+            """)
+
+            result = agent_equipment_config.effective_config([layer], [fragment], requested_behavior="mutation")
+
+        token = result["effective"]["issue_tracker_ops"]["github_token"]
+        rendered = json.dumps(result, sort_keys=True)
+        self.assertEqual(result["safety_status"], "unsafe")
+        self.assertEqual(token["secret_reference"]["kind"], "env")
+        self.assertNotIn("value", token)
+        self.assertNotIn("raw-token", rendered)
+        self.assertIn("secret boundary violation", [item["kind"] for item in result["diagnostics"]])
+
+    def test_direct_sensitive_value_is_blocked_from_effective_config(self):
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=1,
+            fields={"github_token": agent_equipment_config.FieldSpec(type="object", required=True)},
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "local.toml", """
+                [agent_equipment_config.layer]
+                name = "user/operator local overrides"
+                category = "local-only operator config"
+
+                [issue_tracker_ops.github_token]
+                token = "raw-token"
+            """)
+
+            result = agent_equipment_config.effective_config([layer], [fragment], requested_behavior="mutation")
+
+        token = result["effective"]["issue_tracker_ops"]["github_token"]
+        rendered = json.dumps(result, sort_keys=True)
+        self.assertEqual(result["safety_status"], "unsafe")
+        self.assertEqual(token["value"], agent_equipment_config.REDACTED)
+        self.assertEqual(token["redaction_status"], "blocked_direct_secret_value")
+        self.assertNotIn("raw-token", rendered)
+        self.assertIn("secret boundary violation", [item["kind"] for item in result["diagnostics"]])
+
+    def test_nested_direct_secret_key_is_blocked_from_effective_config(self):
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="service_config",
+            version=1,
+            fields={"auth": agent_equipment_config.FieldSpec(type="object", required=True)},
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "local.toml", """
+                [agent_equipment_config.layer]
+                name = "user/operator local overrides"
+                category = "local-only operator config"
+
+                [service_config.auth]
+                token = "raw-token"
+            """)
+
+            result = agent_equipment_config.effective_config([layer], [fragment], requested_behavior="mutation")
+
+        auth = result["effective"]["service_config"]["auth"]
+        rendered = json.dumps(result, sort_keys=True)
+        self.assertEqual(result["safety_status"], "unsafe")
+        self.assertEqual(auth["value"], agent_equipment_config.REDACTED)
+        self.assertEqual(auth["redaction_status"], "blocked_direct_secret_value")
+        self.assertNotIn("raw-token", rendered)
+        self.assertIn("secret boundary violation", [item["kind"] for item in result["diagnostics"]])
+
+    def test_non_secret_token_named_field_is_not_blocked_as_direct_secret(self):
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="model_runtime",
+            version=1,
+            fields={"token_budget": agent_equipment_config.FieldSpec(type="integer", required=True)},
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "local.toml", """
+                [agent_equipment_config.layer]
+                name = "user/operator local overrides"
+                category = "local-only operator config"
+
+                [model_runtime]
+                token_budget = 4096
+            """)
+
+            result = agent_equipment_config.effective_config([layer], [fragment], requested_behavior="advisory")
+
+        token_budget = result["effective"]["model_runtime"]["token_budget"]
+        self.assertEqual(result["safety_status"], "usable")
+        self.assertEqual(token_budget["value"], 4096)
+        self.assertNotIn("secret boundary violation", [item["kind"] for item in result["diagnostics"]])
+
     def test_config_diff_reports_changed_values(self):
         before = {"issue_tracker_ops": {"mode": {"value": "dry-run"}}}
         after = {"issue_tracker_ops": {"mode": {"value": "execute"}}}

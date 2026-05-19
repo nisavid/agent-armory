@@ -21,3 +21,9 @@ authority = "repo-maintainers"
 [issue_tracker_ops]
 mode = "dry-run"
 external_disclosure = "blocked"
+
+[issue_tracker_ops.github_token]
+kind = "env"
+name = "GITHUB_TOKEN"
+scope = "session"
+required_for = "tracker write"

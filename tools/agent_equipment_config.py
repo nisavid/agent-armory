@@ -87,6 +87,10 @@ MIGRATION_APPLY_SOURCE_CATEGORIES = {
 }
 
 SECRET_REFERENCE_KINDS = {"env", "keychain", "vault", "harness-secret", "external"}
+SECRET_REFERENCE_METADATA_KEYS = {"kind", "name", "scope", "required_for"}
+SECRET_VALUE_KEYS = {"value", "secret_value", "resolved_value", "plain_value"}
+SECRET_VALUE_KEY_EXACT = {"secret", "secrets", "token", "credential", "credentials", "password", "api_key", "private_key"}
+SECRET_VALUE_KEY_SUFFIXES = ("_secret", "_token", "_credential", "_password", "_api_key", "_private_key")
 SENSITIVE_KEYWORDS = ("secret", "token", "credential", "password", "api_key", "private_key")
 REDACTED = "<redacted>"
 REQUIRED_FOR_VALUES = {"advisory", "mutation", "always"}
@@ -775,6 +779,23 @@ def secret_reference(value: JSONValue) -> dict[str, Any] | None:
     return None
 
 
+def secret_value_key(key: str) -> bool:
+    normalized = key.lower().replace("-", "_")
+    return normalized in SECRET_VALUE_KEY_EXACT or normalized.endswith(SECRET_VALUE_KEY_SUFFIXES)
+
+
+def direct_value_keys_in_secret_reference(value: JSONValue) -> list[str]:
+    if secret_reference(value) is None or not isinstance(value, dict):
+        return []
+    direct_keys = [
+        str(key)
+        for key in value
+        if str(key) not in SECRET_REFERENCE_METADATA_KEYS
+        and (str(key) in SECRET_VALUE_KEYS or secret_value_key(str(key)))
+    ]
+    return sorted(direct_keys)
+
+
 def sensitive_key(key: str) -> bool:
     normalized = key.lower().replace("-", "_")
     return any(keyword in normalized for keyword in SENSITIVE_KEYWORDS)
@@ -785,6 +806,49 @@ def sensitive_path(path: Any) -> bool:
         return False
     parts = path.replace("[", ".").replace("]", "").split(".")
     return any(sensitive_key(part) for part in parts)
+
+
+def secret_value_path(path: Any) -> bool:
+    if not isinstance(path, str):
+        return False
+    parts = path.replace("[", ".").replace("]", "").split(".")
+    return any(secret_value_key(part) for part in parts)
+
+
+def nested_direct_secret_value(value: JSONValue) -> bool:
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if secret_value_key(str(key)) and item is not None:
+                return True
+            if nested_direct_secret_value(item):
+                return True
+    if isinstance(value, list):
+        return any(nested_direct_secret_value(item) for item in value)
+    return False
+
+
+def direct_sensitive_value(value: JSONValue, path: str) -> bool:
+    if secret_reference(value) is not None:
+        return bool(direct_value_keys_in_secret_reference(value))
+    return (secret_value_path(path) and value is not None) or nested_direct_secret_value(value)
+
+
+def secret_boundary_violation_diagnostic(
+    path: str,
+    layer: Layer | None,
+    *,
+    keys: list[str] | None = None,
+) -> Diagnostic:
+    evidence: dict[str, Any] = {"redaction_status": "blocked_direct_secret_value"}
+    if keys:
+        evidence["direct_value_keys"] = keys
+    return diagnostic(
+        "secret boundary violation",
+        path,
+        "secret values must be represented as provider-owned secret references",
+        layer,
+        evidence=evidence,
+    )
 
 
 def redact_for_cli(value: Any, path: tuple[str, ...] = (), *, sensitive_context: bool = False) -> Any:
@@ -1365,15 +1429,27 @@ def effective_config_from_layers(
                 diagnostics.append(diagnostic("schema conflict", path, "missing required value", source_layer))
             if not unresolved_conflict:
                 diagnostics.extend(validate_field(value, field_spec, path, source_layer))
+            reference = secret_reference(value)
+            direct_secret_value = not unresolved_conflict and direct_sensitive_value(value, path)
+            if direct_secret_value:
+                diagnostics.append(
+                    secret_boundary_violation_diagnostic(
+                        path,
+                        source_layer,
+                        keys=direct_value_keys_in_secret_reference(value),
+                    )
+                )
             wrapped_value = {
                 "value": value,
                 "source": source_layer.path if source_layer else "schema default",
                 "layer": source_layer.name if source_layer else "schema default",
             }
-            reference = secret_reference(value)
             if reference is not None:
                 wrapped_value.pop("value", None)
                 wrapped_value["secret_reference"] = reference
+            elif direct_secret_value:
+                wrapped_value["value"] = REDACTED
+                wrapped_value["redaction_status"] = "blocked_direct_secret_value"
             namespace_values[field_name] = wrapped_value
         for layer in layers:
             if not layer.trusted and fragment.namespace in layer.data and requested_behavior == "mutation":
@@ -1564,7 +1640,7 @@ def safety_status_from_diagnostics(diagnostics: list[Diagnostic], *, requested_b
         return "untrusted"
     if "stale schema" in kinds:
         return "stale"
-    if "semantic conflict" in kinds or "missing authority" in kinds:
+    if "semantic conflict" in kinds or "missing authority" in kinds or "secret boundary violation" in kinds:
         return "unsafe"
     return "usable"
 
@@ -1649,6 +1725,7 @@ def fragment_readiness_from_effective(effective: dict[str, Any], fragments: list
         "untrusted source",
         "blocked override",
         "missing authority",
+        "secret boundary violation",
     }
     for fragment in fragments:
         namespace_diagnostics = [

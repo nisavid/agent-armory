@@ -77,6 +77,8 @@ Runtime coverage tracks these current and follow-on cases:
   resolution boundaries;
 - multi-equipment composition;
 - secret reference resolution status without secret disclosure;
+- blocked direct secret values and secret-reference tables with embedded value
+  payloads;
 - config-diff output between two effective configs;
 - enforcement projection classification as blocking or advisory;
 - Issue Tracker Ops plain handoff ingestion and promotion.

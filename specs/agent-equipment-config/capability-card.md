@@ -84,7 +84,8 @@ policy model without making Config depend on Issue Tracker Ops.
 - Config Safety Status is machine-visible.
 - Mutation-capable behavior fails closed unless the effective configuration is
   `usable`.
-- Secret references may appear in config; secret values must not.
+- Secret references may appear in config; secret values must not. Direct secret
+  values produce unsafe, redacted output.
 - Read-time migrations may explain stale config; source rewrites require an
   explicit audited mutation.
 - Deliberate config source writes require explicit edit intent, eligible source
@@ -105,6 +106,7 @@ Deterministic surfaces emit JSON-compatible objects for:
 - MCP tool metadata and structured tool-call results,
 - edit intent and refusal evidence for deliberate source changes,
 - secret reference resolution status,
+- secret boundary violation diagnostics,
 - onboarding status and partial config handoff plans,
 - consumer action decision evidence,
 - policy decision audit records.
