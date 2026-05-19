@@ -264,13 +264,6 @@ def fragment_versions(layer: Layer) -> dict[str, int]:
     return parsed
 
 
-def raw_values_for_namespace(effective_namespace: dict[str, Any]) -> dict[str, JSONValue]:
-    return {
-        field_name: wrapped.get("value")
-        for field_name, wrapped in effective_namespace.items()
-    }
-
-
 def migration_previews_for_layer(layer: Layer, fragment: SchemaFragment) -> list[dict[str, Any]]:
     source_version = fragment_versions(layer).get(fragment.namespace)
     if source_version is None or source_version >= fragment.version:
@@ -769,7 +762,7 @@ def secret_reference(value: JSONValue) -> dict[str, Any] | None:
         return None
     kind = value.get("kind")
     name = value.get("name")
-    if kind in SECRET_REFERENCE_KINDS and isinstance(name, str):
+    if isinstance(kind, str) and kind in SECRET_REFERENCE_KINDS and isinstance(name, str):
         return {
             "kind": kind,
             "name": name,
@@ -785,7 +778,11 @@ def normalized_key(key: Any) -> str:
 
 
 def secret_reference_candidate(value: JSONValue) -> bool:
-    return isinstance(value, dict) and value.get("kind") in SECRET_REFERENCE_KINDS
+    return (
+        isinstance(value, dict)
+        and isinstance(value.get("kind"), str)
+        and value.get("kind") in SECRET_REFERENCE_KINDS
+    )
 
 
 def secret_value_key(key: str) -> bool:
@@ -800,7 +797,7 @@ def direct_value_keys_in_secret_reference(value: JSONValue) -> list[str]:
     for key, item in value.items():
         normalized = normalized_key(key)
         if normalized in SECRET_REFERENCE_METADATA_KEYS:
-            if nested_direct_secret_value(item, secret_context=True):
+            if isinstance(item, (dict, list)) and direct_secret_payload_value(item, secret_context=True):
                 direct_keys.append(str(key))
             continue
         if (
@@ -894,10 +891,11 @@ def redact_for_cli(value: Any, path: tuple[str, ...] = (), *, sensitive_context:
         redacted: dict[str, Any] = {}
         entry_path_sensitive = any(sensitive_path(value.get(key)) for key in ("path", "from", "to"))
         child_sensitive_context = sensitive_context or entry_path_sensitive
+        secret_reference_shape = secret_reference_candidate(value)
         for key, item in value.items():
             key_text = str(key)
             child_path = (*path, key_text)
-            if key_text == "name" and path and path[-1] == "secret_reference":
+            if key_text == "name" and (secret_reference_shape or (path and path[-1] == "secret_reference")):
                 redacted[key] = REDACTED
             elif key_text in {"before", "after", "value", "blocked_value"} and child_sensitive_context and not isinstance(item, (dict, list)):
                 redacted[key] = REDACTED
