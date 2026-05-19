@@ -26,21 +26,28 @@ in hooks, permissions, sandboxes, approvals, tools, or other hard boundaries.
 5. Does it vary by environment, user, machine, checkout, threshold, or mode?
    Put it in config. Use local overlays for machine-local choices.
 
-6. Does the model need to apply procedural judgment?
+6. Is the requirement already encoded in a legacy policy surface with active
+   dependents?
+   Follow the policy migration rules in `docs/smith-runbook.md`. Choose the
+   preferred policy authority first, then treat legacy surfaces as
+   compatibility layers, generated outputs, adapter outputs, retired surfaces,
+   or explicit transitional authorities.
+
+7. Does the model need to apply procedural judgment?
    Use a skill. Keep the skill thin and point to docs, scripts, tools, and templates.
 
-7. Does the requirement shape future reasoning, reflection, memory, or routing?
+8. Does the requirement shape future reasoning, reflection, memory, or routing?
    Treat it as cognition enhancement equipment, then split its responsibilities
    across skills, typed operations, docs, config, validators, hooks, and issue
    capture rather than leaving it as prompt style.
 
-8. Does the task need a distinct identity, authority, context, model, or toolset?
+9. Does the task need a distinct identity, authority, context, model, or toolset?
    Use an Agent Profile.
 
-9. Does the behavior need to run around lifecycle events?
+10. Does the behavior need to run around lifecycle events?
    Use hooks.
 
-10. Does the equipment need installation, versioning, sharing, or distribution as a bundle?
+11. Does the equipment need installation, versioning, sharing, or distribution as a bundle?
    Use a Harness Plugin.
 
 ## placement guide
@@ -63,4 +70,6 @@ Common anti-patterns:
 - hidden hook behavior that changes outcomes without a clear reason;
 - production-looking examples without validation;
 - config files used as long-form policy docs;
-- duplicated local convention across docs, skills, hooks, and README surfaces.
+- duplicated local convention across docs, skills, hooks, and README surfaces;
+- migrated policy that leaves the old and new encodings as independent
+  authorities for the same scope.

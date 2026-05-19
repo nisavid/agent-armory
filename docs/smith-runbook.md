@@ -86,6 +86,49 @@ Use the component templates under `templates/` when a capability needs a skill,
 hook, Agent Profile, plugin, script, MCP/tool definition, config file, security
 review, or context-budget review.
 
+## Policy migration
+
+When a capability moves policy from a legacy policy surface into a preferred
+policy encoding, make the preferred encoding the policy authority for that
+scope.
+
+First inventory the legacy surfaces and active dependents. Identify every
+policy aspect that should survive, including policy to preserve faithfully,
+intentional improvements, obsolete policy to retire, and unresolved policy that
+still needs operator or agent judgment.
+
+Then migrate the selected policy into the preferred encoding. Represent
+structured facts as structured data where practical. Represent semantic policy
+with references, assumptions, inferred classifications, safety status, and open
+questions instead of flattening unresolved judgment into hidden defaults.
+
+Give every legacy policy surface an explicit fate:
+
+- `compatibility layer`: it remains for active dependents and refers to or
+  interprets the preferred policy authority;
+- `generated output`: it is produced from the preferred authority by a
+  deterministic generator;
+- `adapter output`: it is produced from the preferred authority by a translator
+  for a dependent surface;
+- `retired surface`: it is removed after dependents no longer need it;
+- `transitional authority`: it remains authoritative only for a stated scope,
+  owner, safety status, and closeout condition.
+
+For LLM-interpreted legacy docs, prefer a compatibility layer that points to
+the preferred authority and explains how to interpret it faithfully. Keep prose
+authoritative only when the preferred encoding cannot yet express that policy,
+and name the reason, scope, and follow-up condition.
+
+For deterministic legacy encodings, generate or adapt the legacy surface from
+the preferred authority as deterministically as practical. Generated and
+adapted surfaces must state their provenance, refresh path, and verification
+check.
+
+Do not leave two independent policy authorities for the same scope. If a
+temporary split is unavoidable, record what remains authoritative in each
+surface, why the split exists, who or what can close it, and how closeout will
+prove convergence.
+
 ## Pressure Scenario Validation
 
 Use Pressure Scenario Validation before promoting a skill or skill-shaped workflow.
