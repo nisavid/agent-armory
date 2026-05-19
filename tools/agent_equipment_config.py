@@ -1731,6 +1731,7 @@ def mcp_fragment_schema() -> dict[str, Any]:
         "description": "Schema fragment names to register before evaluating Config.",
         "items": {"type": "string", "enum": MCP_FRAGMENT_NAMES},
         "minItems": 1,
+        "uniqueItems": True,
     }
 
 
@@ -1999,6 +2000,20 @@ def mcp_validate_schema_value(schema: dict[str, Any], value: Any, path: str, *, 
         minimum_items = schema.get("minItems")
         if isinstance(minimum_items, int) and len(value) < minimum_items:
             raise ConfigError(f"{path} must contain at least {minimum_items} item(s)")
+        if schema.get("uniqueItems") is True:
+            seen: set[str] = set()
+            duplicate_items: list[Any] = []
+            for item in value:
+                try:
+                    marker = json.dumps(item, sort_keys=True, separators=(",", ":"))
+                except TypeError:
+                    marker = repr(item)
+                if marker in seen and item not in duplicate_items:
+                    duplicate_items.append(item)
+                seen.add(marker)
+            if duplicate_items:
+                duplicates = ", ".join(str(item) for item in duplicate_items)
+                raise ConfigError(f"{path} must not contain duplicate item(s): {duplicates}")
         item_schema = schema.get("items")
         if isinstance(item_schema, dict):
             for index, item in enumerate(value):
@@ -2054,6 +2069,14 @@ def mcp_fragments(arguments: dict[str, Any]) -> list[SchemaFragment]:
     names = mcp_string_list(arguments, "fragments")
     if not names:
         raise ConfigError("MCP Config tools require at least one schema fragment")
+    seen_names: set[str] = set()
+    duplicate_names: list[str] = []
+    for name in names:
+        if name in seen_names and name not in duplicate_names:
+            duplicate_names.append(name)
+        seen_names.add(name)
+    if duplicate_names:
+        raise ConfigError(f"fragments contains duplicate fragment name(s): {', '.join(duplicate_names)}")
     fragments: list[SchemaFragment] = []
     for name in names:
         builder = MCP_FRAGMENT_BUILDERS.get(name)
@@ -2101,15 +2124,29 @@ def mcp_call_result(tool: dict[str, Any], payload: dict[str, Any]) -> dict[str, 
     }
 
 
-def mcp_error_result(tool_name: str, message: str) -> dict[str, Any]:
+def mcp_error_result(tool_or_name: dict[str, Any] | str, message: str) -> dict[str, Any]:
+    if isinstance(tool_or_name, dict):
+        tool_name = tool_or_name["name"]
+        metadata = tool_or_name["x-agent-armory"]
+        cli_operation = metadata["cli_operation"]
+        read_write_classification = metadata["read_write_classification"]
+    else:
+        tool_name = tool_or_name
+        cli_operation = "unknown"
+        read_write_classification = "unknown"
+    error = {
+        "kind": "tool_error",
+        "message": message,
+    }
     return {
         "content": [{"type": "text", "text": f"{tool_name}: error: {message}"}],
         "structuredContent": {
             "tool": tool_name,
-            "error": {
-                "kind": "tool_error",
-                "message": message,
-            },
+            "operation": tool_name,
+            "cli_operation": cli_operation,
+            "read_write_classification": read_write_classification,
+            "result": {"error": error},
+            "error": error,
         },
         "isError": True,
     }
@@ -2122,7 +2159,7 @@ def call_mcp_tool(name: str, arguments: dict[str, Any] | None = None) -> dict[st
     if arguments is None:
         arguments = {}
     if not isinstance(arguments, dict):
-        return mcp_error_result(name, "arguments must be an object")
+        return mcp_error_result(tool, "arguments must be an object")
     try:
         mcp_validate_arguments(tool, arguments)
         if name == "config.resolve":
@@ -2175,7 +2212,7 @@ def call_mcp_tool(name: str, arguments: dict[str, Any] | None = None) -> dict[st
         else:
             raise ConfigError(f"no dispatcher registered for MCP Config tool {name!r}")
     except (ConfigError, OSError, JSONDecodeError, UnicodeDecodeError) as exc:
-        return mcp_error_result(name, str(exc))
+        return mcp_error_result(tool, str(exc))
     return mcp_call_result(tool, payload)
 
 

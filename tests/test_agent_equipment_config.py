@@ -2340,6 +2340,33 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertTrue(result["isError"])
         self.assertIn("arguments.requested_behavior must be one of", result["content"][0]["text"])
 
+    def test_mcp_rejects_duplicate_fragments(self):
+        result = agent_equipment_config.call_mcp_tool(
+            "config.resolve",
+            {"fragments": ["issue_tracker_ops", "issue_tracker_ops"]},
+        )
+
+        self.assertTrue(result["isError"])
+        self.assertIn("arguments.fragments must not contain duplicate item(s)", result["content"][0]["text"])
+        self.assertIn("issue_tracker_ops", result["content"][0]["text"])
+
+    def test_mcp_validation_error_preserves_structured_output_contract(self):
+        result = agent_equipment_config.call_mcp_tool(
+            "config.resolve",
+            {
+                "fragments": ["issue_tracker_ops"],
+                "requested_behavior": "execute",
+            },
+        )
+
+        self.assertTrue(result["isError"])
+        structured = result["structuredContent"]
+        self.assertEqual(structured["tool"], "config.resolve")
+        self.assertEqual(structured["operation"], "config.resolve")
+        self.assertEqual(structured["cli_operation"], "config resolve")
+        self.assertEqual(structured["read_write_classification"], "read-only")
+        self.assertIn("error", structured["result"])
+
     def test_mcp_config_validate_returns_low_noise_blocking_report(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
