@@ -143,7 +143,8 @@ equipment, and transient scan artifacts are instance-scoped evidence.
 - **Issue Tracker Ops adapter**: `tools/issue_tracker_ops.py` builds GitHub
   Issues API requests, defaults live read and write operations to dry-run,
   optionally consumes Config, and uses the authenticated `gh` CLI only when
-  `--execute` is set and Config preflight permits it.
+  `--execute` is set. Config preflight can refuse mutation-capable execute
+  paths; read operations treat Config as advisory.
 - **Harness Capability Profile Manager Core**:
   `tools/harness_capability_profiles.py` migrates, validates, summarizes,
   scouts, analyzes, plans, diffs, applies, and audits source-backed Vanilla
