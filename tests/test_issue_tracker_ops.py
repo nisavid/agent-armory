@@ -43,10 +43,11 @@ class IssueTrackerOpsTests(unittest.TestCase):
         decision_state: str,
         safety_status: str,
         diagnostic_kind: str | None = None,
+        operation: str = "comment",
     ) -> None:
         projection = config["consumer_enforcement_projection"]
         self.assertEqual(projection["surface"], "issue_tracker_ops.github_api_mutation_preflight")
-        self.assertEqual(projection["operation"], "comment")
+        self.assertEqual(projection["operation"], operation)
         self.assertEqual(projection["requested_behavior"], "mutation")
         self.assertEqual(projection["adapter_action"], action)
         self.assertEqual(projection["decision_state"], decision_state)
@@ -445,6 +446,18 @@ class IssueTrackerOpsTests(unittest.TestCase):
 
         self.assertTrue(issue_tracker_ops.config_refuses_execute({"consumer_semantics": {}}, args))
 
+        payload = issue_tracker_ops.config_refusal_payload(
+            "comment",
+            issue_tracker_ops.RequestSpec("POST", "repos/OWNER/REPO/issues/11/comments", {"body": "x"}),
+            {"consumer_enforcement_projection": {"adapter_action": "allow"}},
+        )
+
+        self.assertEqual(
+            payload["error"]["message"],
+            "Issue Tracker Ops Config did not authorize execute: "
+            "missing or malformed consumer action decision",
+        )
+
     def test_execute_config_without_enforcement_projection_fails_closed(self):
         args = argparse.Namespace(operation="comment", execute=True)
 
@@ -454,6 +467,53 @@ class IssueTrackerOpsTests(unittest.TestCase):
                 args,
             )
         )
+
+        payload = issue_tracker_ops.config_refusal_payload(
+            "comment",
+            issue_tracker_ops.RequestSpec("POST", "repos/OWNER/REPO/issues/11/comments", {"body": "x"}),
+            {"consumer_action_decision": {"state": "allowed"}},
+        )
+
+        self.assertEqual(
+            payload["error"]["message"],
+            "Issue Tracker Ops Config did not authorize execute: "
+            "missing or malformed consumer_enforcement_projection",
+        )
+
+    def test_execute_config_with_malformed_decision_state_fails_closed(self):
+        args = argparse.Namespace(operation="comment", execute=True)
+        config = {
+            "consumer_action_decision": {"state": ["allowed"]},
+            "consumer_enforcement_projection": {"adapter_action": "allow"},
+        }
+
+        self.assertTrue(issue_tracker_ops.config_refuses_execute(config, args))
+        payload = issue_tracker_ops.config_refusal_payload(
+            "comment",
+            issue_tracker_ops.RequestSpec("POST", "repos/OWNER/REPO/issues/11/comments", {"body": "x"}),
+            config,
+        )
+
+        self.assertEqual(payload["error"]["state"], "unknown")
+        self.assertEqual(
+            payload["error"]["message"],
+            "Issue Tracker Ops Config did not authorize execute: "
+            "consumer action decision did not authorize execute",
+        )
+
+    def test_enforcement_projection_with_malformed_decision_state_blocks(self):
+        args = argparse.Namespace(operation="comment", execute=True)
+
+        projection = issue_tracker_ops.issue_tracker_ops_enforcement_projection(
+            args,
+            {
+                "effective_config": {"safety_status": "usable"},
+                "consumer_action_decision": {"state": ["allowed"]},
+            },
+        )
+
+        self.assertEqual(projection["adapter_action"], "block")
+        self.assertEqual(projection["decision_state"], "unknown")
 
     def test_execute_error_omits_resolved_when_no_resolution_occurred(self):
         gh = FakeGh([subprocess.CompletedProcess(["gh"], 1, stdout="", stderr="boom")])

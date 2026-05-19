@@ -481,6 +481,11 @@ def requested_config_behavior(args: argparse.Namespace) -> str:
     return "advisory"
 
 
+def string_decision_state(decision: dict) -> str | None:
+    state = decision.get("state")
+    return state if isinstance(state, str) else None
+
+
 def effective_issue_tracker_ops_value(config_result: dict, field_name: str) -> JSONValue:
     effective_config = config_result.get("effective_config", {})
     if not isinstance(effective_config, dict):
@@ -519,7 +524,7 @@ def issue_tracker_ops_enforcement_projection(args: argparse.Namespace, config_re
     decision = config_result.get("consumer_action_decision", {})
     if not isinstance(decision, dict):
         decision = {}
-    decision_state = decision.get("state")
+    decision_state = string_decision_state(decision)
     mutation_requested = args.operation in MUTATION_OPERATIONS and args.execute
     if mutation_requested:
         adapter_action = "allow" if decision_state in CONFIG_EXECUTE_ALLOWED_STATES else "block"
@@ -586,20 +591,37 @@ def evaluate_issue_tracker_ops_config(args: argparse.Namespace) -> dict | None:
 def config_refuses_execute(config: dict | None, args: argparse.Namespace) -> bool:
     if config is None or args.operation not in MUTATION_OPERATIONS or not args.execute:
         return False
+    return config_execute_refusal(config) is not None
+
+
+def config_execute_refusal(config: dict) -> tuple[str, str] | None:
     projection = config.get("consumer_enforcement_projection")
     if not isinstance(projection, dict):
-        return True
+        return "unknown", "missing or malformed consumer_enforcement_projection"
     decision = config.get("consumer_action_decision")
     if not isinstance(decision, dict):
-        return True
-    state = decision.get("state")
-    return projection.get("adapter_action") != "allow" or state not in CONFIG_EXECUTE_ALLOWED_STATES
+        return "unknown", "missing or malformed consumer action decision"
+
+    state = string_decision_state(decision)
+    adapter_action = projection.get("adapter_action")
+    if adapter_action != "allow":
+        action = adapter_action if isinstance(adapter_action, str) and adapter_action else "missing"
+        return state or "unknown", f"adapter projection action was {action}"
+    if state not in CONFIG_EXECUTE_ALLOWED_STATES:
+        reason = decision.get("reason")
+        if not isinstance(reason, str) or not reason:
+            reason = "consumer action decision did not authorize execute"
+        return state or "unknown", reason
+    return None
 
 
 def config_refusal_payload(operation: str, request: RequestSpec | dict, config: dict) -> dict:
-    decision = config.get("consumer_action_decision")
-    state = decision.get("state") if isinstance(decision, dict) else None
-    reason = decision.get("reason") if isinstance(decision, dict) else None
+    refusal = config_execute_refusal(config)
+    state, reason = (
+        refusal
+        if refusal is not None
+        else ("unknown", "consumer action decision did not authorize execute")
+    )
     request_payload = compact_request(request) if isinstance(request, RequestSpec) else request
     return {
         "mode": "execute",
@@ -608,9 +630,8 @@ def config_refusal_payload(operation: str, request: RequestSpec | dict, config: 
         "config": config,
         "error": {
             "code": "config_refused",
-            "state": state or "unknown",
-            "message": "Issue Tracker Ops Config did not authorize execute: "
-            f"{reason or 'missing or malformed consumer action decision'}",
+            "state": state,
+            "message": f"Issue Tracker Ops Config did not authorize execute: {reason}",
         },
     }
 
