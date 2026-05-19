@@ -58,11 +58,12 @@ hooks, skills, Agent Profiles, plugins, or GitHub Projects extension.
 - When explicit Config inputs are supplied, mutation subcommands evaluate the
   Issue Ops Config fragment before side effects. Live mutation requires the
   configured mode to be `execute`, a consumer decision that is not `blocking`
-  or `unsupported`, and an adapter preflight projection with
-  `adapter_action = "allow"`.
-- The adapter preflight records the effective Config Safety Status, diagnostic
-  kinds, decision state, fallback, owner, and unsupported approval behavior in
-  JSON audit output.
+  or `unsupported`, and a present, well-formed adapter preflight projection
+  with `adapter_action = "allow"`. Missing or malformed projection evidence
+  fails closed before `gh` runs.
+- A valid adapter preflight projection records the effective Config Safety
+  Status, diagnostic kinds, decision state, fallback, owner, and unsupported
+  approval behavior in JSON audit output.
 - Missing or uncertain auth, policy, adapter behavior, or tracker state fails
   closed for writes.
 
