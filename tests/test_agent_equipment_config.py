@@ -2466,6 +2466,11 @@ class AgentEquipmentConfigTests(unittest.TestCase):
             [change["path"] for change in payload["changes"]],
             ["issue_tracker_ops.external_disclosure", "issue_tracker_ops.mode"],
         )
+        changes_by_path = {change["path"]: change for change in payload["changes"]}
+        self.assertEqual(changes_by_path["issue_tracker_ops.external_disclosure"]["before"], "blocked")
+        self.assertEqual(changes_by_path["issue_tracker_ops.external_disclosure"]["after"], "allowed")
+        self.assertEqual(changes_by_path["issue_tracker_ops.mode"]["before"], "dry-run")
+        self.assertEqual(changes_by_path["issue_tracker_ops.mode"]["after"], "execute")
 
     def test_mcp_onboard_config_returns_missing_shared_config_plan(self):
         result = agent_equipment_config.call_mcp_tool(
