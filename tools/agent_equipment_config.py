@@ -847,6 +847,8 @@ def nested_direct_secret_value(value: JSONValue, *, secret_context: bool = False
                 secret_context=child_secret_context,
             ):
                 return True
+            if key_is_secret_value or (secret_context and normalized in SECRET_VALUE_KEYS):
+                continue
             if nested_direct_secret_value(item, secret_context=child_secret_context):
                 return True
     if isinstance(value, list):
