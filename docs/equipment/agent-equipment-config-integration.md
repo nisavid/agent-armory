@@ -149,6 +149,17 @@ passes `--execute`, the adapter must refuse the write unless effective Config
 supports live tracker mutation and the Issue Tracker Ops consumer decision is
 non-blocking.
 
+The adapter records that gate in
+`config.consumer_enforcement_projection.surface =
+"issue_tracker_ops.github_api_mutation_preflight"`. For mutation commands,
+`adapter_action = "allow"` means the adapter called `gh`; `adapter_action =
+"block"` means the adapter refused before any GitHub API mutation. The
+projection records the effective Config Safety Status, diagnostic kinds,
+consumer decision state, fallback, and `approval_behavior = "not_supported"`.
+Issue Tracker Ops therefore blocks incomplete, unsafe, conflicted, stale,
+untrusted, missing-authority, and unsupported mutation outputs, while preserving
+safe dry-run fallback as advisory behavior.
+
 Use a plain handoff when shared Config is absent but the consuming equipment has
 a narrow session shape:
 

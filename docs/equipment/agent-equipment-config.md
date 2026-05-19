@@ -145,6 +145,16 @@ migration previews to `allowed`, `advisory`, `warning`, `blocking`, or
 `unsupported`. `evaluate_consumer_config` combines explicit layer loading with
 that decision helper for importable consumers.
 
+Issue Tracker Ops is the current concrete adapter projection. When
+`tools/issue_tracker_ops.py` receives Config input, it emits
+`config.consumer_enforcement_projection` for
+`issue_tracker_ops.github_api_mutation_preflight`. For `--execute` mutation
+commands, `adapter_action = "allow"` permits the GitHub API call and
+`adapter_action = "block"` refuses it before `gh` is called. The adapter has no
+approval surface; approval behavior is reported as `not_supported`, and
+blocking or unsupported Config output can only fall back to explicit advisory
+dry-run behavior.
+
 Fallback is progressive. When shared Config is absent, the consumer uses its
 plain equipment-specific session handoff. When effective Config is present but
 does not authorize the requested behavior, the consumer may continue only with

@@ -35,6 +35,28 @@ class IssueTrackerOpsTests(unittest.TestCase):
         path.write_text(textwrap.dedent(text).lstrip(), encoding="utf-8")
         return path
 
+    def assert_config_projection(
+        self,
+        config: dict,
+        *,
+        action: str,
+        decision_state: str,
+        safety_status: str,
+        diagnostic_kind: str | None = None,
+    ) -> None:
+        projection = config["consumer_enforcement_projection"]
+        self.assertEqual(projection["surface"], "issue_tracker_ops.github_api_mutation_preflight")
+        self.assertEqual(projection["operation"], "comment")
+        self.assertEqual(projection["requested_behavior"], "mutation")
+        self.assertEqual(projection["adapter_action"], action)
+        self.assertEqual(projection["decision_state"], decision_state)
+        self.assertEqual(projection["approval_behavior"], "not_supported")
+        self.assertEqual(projection["owner"], "issue_tracker_ops_adapter")
+        self.assertEqual(projection["effective_config"]["safety_status"], safety_status)
+        self.assertEqual(config["effective_config"]["safety_status"], safety_status)
+        if diagnostic_kind is not None:
+            self.assertIn(diagnostic_kind, projection["effective_config"]["diagnostic_kinds"])
+
     def test_create_issue_defaults_to_dry_run_without_calling_gh(self):
         gh = FakeGh()
 
@@ -130,6 +152,8 @@ class IssueTrackerOpsTests(unittest.TestCase):
         payload = json.loads(stdout)
         self.assertEqual(payload["mode"], "dry-run")
         self.assertEqual(payload["config"]["consumer_action_decision"]["state"], "advisory")
+        self.assertEqual(payload["config"]["consumer_enforcement_projection"]["adapter_action"], "advise")
+        self.assertEqual(payload["config"]["consumer_enforcement_projection"]["requested_behavior"], "advisory")
         self.assertEqual(
             payload["config"]["effective_config"]["effective"]["issue_tracker_ops"]["mode"]["value"],
             "dry-run",
@@ -206,6 +230,169 @@ class IssueTrackerOpsTests(unittest.TestCase):
         self.assertEqual(payload["mode"], "execute")
         self.assertEqual(payload["config"]["consumer_action_decision"]["state"], "allowed")
         self.assertEqual(payload["config"]["consumer_semantics"]["configured_mode"], "execute")
+        self.assert_config_projection(
+            payload["config"],
+            action="allow",
+            decision_state="allowed",
+            safety_status="usable",
+        )
+
+    def test_comment_execute_config_projection_blocks_required_safety_statuses(self):
+        cases = [
+            (
+                "incomplete",
+                [(
+                    "repo.toml",
+                    """
+                    [agent_equipment_config.layer]
+                    name = "repository policy"
+                    category = "committed durable config"
+
+                    [issue_tracker_ops]
+                    mode = "execute"
+                    """,
+                )],
+                "schema conflict",
+            ),
+            (
+                "unsafe",
+                [(
+                    "repo.toml",
+                    """
+                    [agent_equipment_config.layer]
+                    name = "repository policy"
+                    category = "committed durable config"
+
+                    [issue_tracker_ops]
+                    mode = "execute"
+                    external_disclosure = "blocked"
+                    """,
+                )],
+                "semantic conflict",
+            ),
+            (
+                "conflicted",
+                [
+                    (
+                        "repo-a.toml",
+                        """
+                        [agent_equipment_config.layer]
+                        name = "repository policy"
+                        category = "committed durable config"
+
+                        [issue_tracker_ops]
+                        mode = "execute"
+                        external_disclosure = "allowed"
+                        """,
+                    ),
+                    (
+                        "repo-b.toml",
+                        """
+                        [agent_equipment_config.layer]
+                        name = "repository policy"
+                        category = "committed durable config"
+
+                        [issue_tracker_ops]
+                        mode = "dry-run"
+                        external_disclosure = "allowed"
+                        """,
+                    ),
+                ],
+                "same-precedence collision",
+            ),
+            (
+                "stale",
+                [(
+                    "repo.toml",
+                    """
+                    [agent_equipment_config.layer]
+                    name = "repository policy"
+                    category = "committed durable config"
+
+                    [agent_equipment_config.fragment_versions]
+                    issue_tracker_ops = 1
+
+                    [issue_tracker_ops]
+                    mode = "execute"
+                    external_disclosure = "allowed"
+                    """,
+                )],
+                "stale schema",
+            ),
+            (
+                "untrusted",
+                [(
+                    "repo.toml",
+                    """
+                    [agent_equipment_config.layer]
+                    name = "repository policy"
+                    category = "committed durable config"
+                    trusted = false
+
+                    [issue_tracker_ops]
+                    mode = "execute"
+                    external_disclosure = "allowed"
+                    """,
+                )],
+                "untrusted source",
+            ),
+            (
+                "unsafe",
+                [(
+                    "repo.toml",
+                    """
+                    [agent_equipment_config.layer]
+                    name = "organization or tracker policy"
+                    category = "committed durable config"
+
+                    [agent_equipment_config.policy.issue_tracker_ops.mode]
+                    required_for = "mutation"
+                    authority = "live_tracker_write"
+
+                    [issue_tracker_ops]
+                    mode = "execute"
+                    external_disclosure = "allowed"
+                    """,
+                )],
+                "missing authority",
+            ),
+        ]
+        for expected_status, layers, diagnostic_kind in cases:
+            with self.subTest(expected_status=expected_status, diagnostic_kind=diagnostic_kind):
+                gh = FakeGh()
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    root = Path(tmpdir)
+                    layer_paths = [
+                        self.write_config_layer(root, layer_name, layer_text)
+                        for layer_name, layer_text in layers
+                    ]
+                    argv = [
+                        "comment",
+                        "--repo",
+                        "OWNER/REPO",
+                        "--issue-number",
+                        "11",
+                        "--body",
+                        "Validation note",
+                        "--execute",
+                    ]
+                    for layer_path in layer_paths:
+                        argv.extend(["--config-layer", str(layer_path)])
+
+                    exit_code, stdout, stderr = self.run_cli(argv, gh=gh)
+
+                self.assertEqual(exit_code, 1)
+                self.assertEqual(stderr, "")
+                self.assertEqual(gh.calls, [])
+                payload = json.loads(stdout)
+                self.assertEqual(payload["error"]["code"], "config_refused")
+                self.assert_config_projection(
+                    payload["config"],
+                    action="block",
+                    decision_state="blocking",
+                    safety_status=expected_status,
+                    diagnostic_kind=diagnostic_kind,
+                )
 
     def test_comment_execute_with_configured_dry_run_refuses_without_calling_gh(self):
         gh = FakeGh()
@@ -246,6 +433,8 @@ class IssueTrackerOpsTests(unittest.TestCase):
         self.assertEqual(payload["error"]["code"], "config_refused")
         self.assertEqual(payload["config"]["consumer_action_decision"]["state"], "unsupported")
         self.assertEqual(payload["config"]["consumer_action_decision"]["fallback"], "advisory dry-run")
+        self.assertEqual(payload["config"]["consumer_enforcement_projection"]["adapter_action"], "block")
+        self.assertEqual(payload["config"]["consumer_enforcement_projection"]["decision_state"], "unsupported")
         self.assertIn(
             "configured_execute_mode",
             payload["config"]["consumer_action_decision"]["evidence"]["unsupported_capabilities"],
@@ -255,6 +444,16 @@ class IssueTrackerOpsTests(unittest.TestCase):
         args = argparse.Namespace(operation="comment", execute=True)
 
         self.assertTrue(issue_tracker_ops.config_refuses_execute({"consumer_semantics": {}}, args))
+
+    def test_execute_config_without_enforcement_projection_fails_closed(self):
+        args = argparse.Namespace(operation="comment", execute=True)
+
+        self.assertTrue(
+            issue_tracker_ops.config_refuses_execute(
+                {"consumer_action_decision": {"state": "allowed"}},
+                args,
+            )
+        )
 
     def test_execute_error_omits_resolved_when_no_resolution_occurred(self):
         gh = FakeGh([subprocess.CompletedProcess(["gh"], 1, stdout="", stderr="boom")])

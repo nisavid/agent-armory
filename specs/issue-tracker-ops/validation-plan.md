@@ -43,8 +43,8 @@ paths.
 - Confirm the adapter uses `subprocess.run` with an argument list and JSON stdin.
 - Confirm mutation commands require `--execute`.
 - Confirm dry-run output records the operation without invoking `gh`.
-- Confirm Config-aware mutation refuses blocking or unsupported consumer
-  decisions before invoking `gh`.
+- Confirm Config-aware mutation refuses blocking, unsupported, malformed, or
+  missing projection decisions before invoking `gh`.
 
 ## Documentation validation
 

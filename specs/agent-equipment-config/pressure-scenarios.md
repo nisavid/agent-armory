@@ -36,14 +36,20 @@ Expected Config behavior:
   `unsafe` or `conflicted` for live mutation until authority is resolved.
 - The Issue Tracker Ops consumer action decision is `blocking` for live
   mutation and `advisory` for the safe dry-run fallback.
+- The Issue Tracker Ops adapter emits a
+  `consumer_enforcement_projection` for
+  `issue_tracker_ops.github_api_mutation_preflight`; live mutation is allowed
+  only when the projection action is `allow`, and blocked outputs stop before
+  the GitHub API call.
 - The secret reference status is reported without exposing the token value.
 - Issue Tracker Ops remains able to serialize a plain equipment-specific config
   handoff if shared Config is absent.
 
-Runtime coverage: `tests.test_agent_equipment_config` covers the blocked
-session override path and missing-authority path for Issue Tracker Ops
-mutation. The broader pressure scenario still needs harness-specific
-enforcement implementation before promotion beyond `planned`.
+Runtime coverage: `tests.test_agent_equipment_config` covers effective-config
+classification and consumer action decisions. `tests.test_issue_tracker_ops`
+covers the adapter projection for usable, incomplete, unsafe, conflicted,
+stale, untrusted, and missing-authority live mutation outputs. Harness-specific
+hook, permission, sandbox, and approval enforcement remains future work.
 
 ## Partial onboarding
 

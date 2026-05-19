@@ -92,6 +92,10 @@ integration, plugin, harness control, external write, or secret provider.
 - Consumers classify requested behavior as `allowed`, `advisory`, `warning`,
   `blocking`, or `unsupported` before mutation, external calls, hook execution,
   workflow changes, or durable publication.
+- Issue Tracker Ops consumes effective-config evidence through a concrete
+  adapter preflight projection before GitHub issue mutation. The projection
+  fails closed when Config is incomplete, unsafe, conflicted, stale, untrusted,
+  missing authority, unsupported, or malformed.
 - Fallback behavior must not silently convert an `unsupported` or `blocking`
   mutation into a write operation; the consumer must fail closed, escalate, or
   surface a diagnostic instead.
@@ -127,7 +131,8 @@ to the v0 contract itself.
 
 - The parser, merge behavior, and consumer decision helper are limited to the
   tested portable runtime slice.
-- No hook or approval gate consumes these diagnostics yet.
+- No hook or approval gate consumes these diagnostics yet; Issue Tracker Ops
+  enforces only its adapter-owned GitHub API mutation preflight.
 - No provider-specific secret resolver exists yet.
 - No general source patch or revision writer exists yet.
 - Onboarding output is deterministic JSON; no interactive harness projection

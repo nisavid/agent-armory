@@ -123,10 +123,10 @@ The bootstrap adapter emits JSON for every operation. Dry-run output records the
 request that would be sent and the provisional policy. Execute output records
 the request, result, resolved dependency IDs when applicable, and errors.
 
-Full Equipment delivery will add Agent Equipment Config integration, Issue
-Ops-specific plain config serialization, onboarding, tracker-neutral core
-contracts, richer repair/orchestration modes, fallback reconciliation, and
-publication guidance.
+Full Equipment delivery will deepen the current Agent Equipment Config
+adapter projection with the broader Issue Ops profile, onboarding,
+tracker-neutral core contracts, richer repair/orchestration modes, fallback
+reconciliation, and publication guidance.
 
 ## Failure modes
 

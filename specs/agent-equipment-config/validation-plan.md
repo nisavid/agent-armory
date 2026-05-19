@@ -133,6 +133,9 @@ Implemented by the v0 engine slice:
 - importable consumer integration output that preserves effective-config
   evidence and returns `allowed`, `advisory`, `warning`, `blocking`, and
   `unsupported` decisions;
+- Issue Tracker Ops adapter projection for GitHub API mutation preflight,
+  including allowed usable output and blocked incomplete, unsafe, conflicted,
+  stale, untrusted, and missing-authority output;
 - Issue Tracker Ops pressure scenario for blocked live mutation.
 
 ## Pressure validation

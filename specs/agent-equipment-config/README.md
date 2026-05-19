@@ -148,6 +148,16 @@ consumers use `evaluate_consumer_config` to load effective Config through the
 explicit-load contract and receive a consumer action decision, or
 `consumer_action_decision` when effective-config output is already available.
 
+Issue Tracker Ops provides the current concrete adapter projection for live
+GitHub issue mutation. Its `consumer_enforcement_projection` consumes
+effective-config output and the consumer action decision, then maps mutation
+requests to `allow` or `block` before the adapter calls `gh`. The projection
+records the `issue_tracker_ops.github_api_mutation_preflight` surface,
+effective Config Safety Status, diagnostic kinds, decision state, fallback, and
+`approval_behavior = "not_supported"`. Harness-level hook, permission,
+sandbox, and approval projections remain advisory or unsupported unless a
+specific harness adapter consumes this output and enforces it.
+
 Progressive fallback is required. A consumer uses a plain
 equipment-specific session handoff when shared Config is absent. When effective
 Config exists but cannot authorize the requested behavior, the consumer may

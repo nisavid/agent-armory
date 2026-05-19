@@ -497,6 +497,52 @@ def effective_issue_tracker_ops_value(config_result: dict, field_name: str) -> J
     return wrapped.get("value")
 
 
+def diagnostic_kinds(effective_config: dict) -> list[str]:
+    diagnostics = effective_config.get("diagnostics", [])
+    if not isinstance(diagnostics, list):
+        return []
+    kinds = {
+        item.get("kind")
+        for item in diagnostics
+        if isinstance(item, dict) and isinstance(item.get("kind"), str)
+    }
+    return sorted(kinds)
+
+
+def issue_tracker_ops_enforcement_projection(args: argparse.Namespace, config_result: dict) -> dict:
+    effective_config = config_result.get("effective_config", {})
+    if not isinstance(effective_config, dict):
+        effective_config = {}
+    projection = effective_config.get("enforcement_projection", {})
+    if not isinstance(projection, dict):
+        projection = {}
+    decision = config_result.get("consumer_action_decision", {})
+    if not isinstance(decision, dict):
+        decision = {}
+    decision_state = decision.get("state")
+    mutation_requested = args.operation in MUTATION_OPERATIONS and args.execute
+    if mutation_requested:
+        adapter_action = "allow" if decision_state in CONFIG_EXECUTE_ALLOWED_STATES else "block"
+    else:
+        adapter_action = "advise"
+    return {
+        "surface": "issue_tracker_ops.github_api_mutation_preflight",
+        "operation": args.operation,
+        "requested_behavior": requested_config_behavior(args),
+        "mutation_requested": mutation_requested,
+        "adapter_action": adapter_action,
+        "decision_state": decision_state or "unknown",
+        "approval_behavior": "not_supported",
+        "owner": "issue_tracker_ops_adapter",
+        "fallback": decision.get("fallback", "none"),
+        "effective_config": {
+            "safety_status": effective_config.get("safety_status"),
+            "projection_classification": projection.get("classification"),
+            "diagnostic_kinds": diagnostic_kinds(effective_config),
+        },
+    }
+
+
 def evaluate_issue_tracker_ops_config(args: argparse.Namespace) -> dict | None:
     layer_paths, plain_handoff_paths = config_inputs(args)
     if not layer_paths and not plain_handoff_paths:
@@ -533,17 +579,21 @@ def evaluate_issue_tracker_ops_config(args: argparse.Namespace) -> dict | None:
             required_capabilities=[CONFIGURED_EXECUTE_CAPABILITY, TRACKER_WRITE_CAPABILITY],
             supported_capabilities=[TRACKER_READ_CAPABILITY, TRACKER_WRITE_CAPABILITY],
         )
+    config_result["consumer_enforcement_projection"] = issue_tracker_ops_enforcement_projection(args, config_result)
     return agent_equipment_config.redact_for_cli(config_result)
 
 
 def config_refuses_execute(config: dict | None, args: argparse.Namespace) -> bool:
     if config is None or args.operation not in MUTATION_OPERATIONS or not args.execute:
         return False
+    projection = config.get("consumer_enforcement_projection")
+    if not isinstance(projection, dict):
+        return True
     decision = config.get("consumer_action_decision")
     if not isinstance(decision, dict):
         return True
     state = decision.get("state")
-    return state not in CONFIG_EXECUTE_ALLOWED_STATES
+    return projection.get("adapter_action") != "allow" or state not in CONFIG_EXECUTE_ALLOWED_STATES
 
 
 def config_refusal_payload(operation: str, request: RequestSpec | dict, config: dict) -> dict:
