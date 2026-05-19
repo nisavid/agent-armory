@@ -7,9 +7,11 @@ This Equipment Design Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for fluent CLI operations,
 effective-config, config-diff, diagnostics, plain handoff promotion, authority
 checks, and projection classification, plus onboarding, migration apply output,
-and deliberate edit-boundary reference. The Config PRD owns the product
-requirements and CLI/MCP operation-surface parity. It does not implement Agent Equipment beyond this runtime slice, publish assets, resolve secrets, mutate
-external systems, or implement harness controls.
+MCP parity tool definitions, and deliberate edit-boundary reference. The
+Config PRD owns the product requirements and CLI/MCP operation-surface parity.
+It does not implement Agent Equipment beyond this runtime slice, publish
+assets, resolve secrets, mutate external systems, or implement harness
+controls.
 
 ## Closeout scope
 
@@ -30,6 +32,9 @@ Record:
   security review conclusion for executable parsing, merge, diff, migration
   preview, plain handoff, authority, projection-classification, and
   secret-reference behavior;
+- Agent Equipment Config MCP parity evidence for tool definitions, typed input
+  and output contracts, read/write classification, failure modes, and migration
+  apply gates;
 - validation commands and results;
 - security review scope, artifact disposition, and findings disposition;
 - documentation closeout scope and unchanged rationale where applicable;

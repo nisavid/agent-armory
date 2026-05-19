@@ -81,7 +81,8 @@ agent equipment.
 - [Templates](../templates/): starting points an agent can copy while making
   future equipment.
 - [Agent Equipment Config](equipment/agent-equipment-config.md): published
-  runtime slice with fluent CLI operations for shared Config.
+  runtime slice with fluent CLI operations and MCP parity tools for shared
+  Config.
 - [Config integration guide](equipment/agent-equipment-config-integration.md):
   how Smiths, Wielders, and Outfitters connect equipment to shared Config.
 

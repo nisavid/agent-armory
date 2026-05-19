@@ -28,6 +28,7 @@ and the current runtime.
 - Product requirements: `docs/prd/agent-equipment-config.md`
 - Integration guide: `docs/equipment/agent-equipment-config-integration.md`
 - Blueprint: `specs/agent-equipment-config/`
+- MCP tool specs: `specs/agent-equipment-config/mcp-tools.md`
 - Edit boundaries: `specs/agent-equipment-config/edit-boundaries.md`
 - Example layer: `templates/config/agent-equipment-config-example.toml`
 - Plain Issue Tracker Ops handoff:
@@ -49,7 +50,11 @@ boundary contract before it writes any source.
 Use the fluent CLI operations as the supported invocation surface:
 `config resolve`, `config validate`, `config diff`, `onboard config`,
 `migrate config preview`, and `migrate config apply`. The implementation
-command names remain available as the debugging path.
+command names remain available as the debugging path. When a harness exposes
+Config MCP tools, use `config.resolve`, `config.validate`, `config.diff`,
+`onboard.config`, `migrate.config_preview`, and `migrate.config_apply` for the
+same safe runtime slice. The importable runtime exposes tool metadata through
+`mcp_tool_definitions()` and direct dispatch through `call_mcp_tool()`.
 
 ## Load contract
 
@@ -146,6 +151,34 @@ does not authorize the requested behavior, the consumer may continue only with
 a narrower explicit behavior such as dry-run, read-only explanation, advisory
 guidance, or no action. A fallback must not silently turn an unsupported or
 blocking mutation into a write.
+
+## MCP parity
+
+The MCP surface mirrors the fluent CLI operation families instead of defining a
+separate Config product. Each MCP tool has typed inputs and structured output,
+and each tool definition records read/write classification, auth source, side
+effects, approval requirements, mutation gates, and failure modes.
+
+| MCP tool | Paired CLI | Class |
+| --- | --- | --- |
+| `config.resolve` | `config resolve` | read-only |
+| `config.validate` | `config validate` | read-only |
+| `config.diff` | `config diff` | read-only |
+| `onboard.config` | `onboard config` | read-only |
+| `migrate.config_preview` | `migrate config preview` | read-only |
+| `migrate.config_apply` | `migrate config apply` | local write |
+
+MCP callers pass explicit `layer_paths`, optional `plain_handoff_paths`,
+registered `fragments`, and the requested behavior. `config.diff` accepts
+typed `before` and `after` effective-config objects. `migrate.config_apply`
+uses the same migration apply gates as the CLI: eligible source category,
+trusted provenance, usable projected Config, explicit apply authority, final
+source precondition checking, and audit output.
+
+Use MCP when a harness exposes these tools and the agent benefits from typed
+input and output. Fall back to the fluent CLI when MCP is unavailable, when a
+human needs a copyable command, or when command-line evidence comparison is
+clearer for review.
 
 ## Smith path
 
