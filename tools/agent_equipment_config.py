@@ -828,6 +828,13 @@ def secret_value_path(path: Any) -> bool:
     return any(secret_value_key(part) for part in parts)
 
 
+def secret_context_path(path: Any) -> bool:
+    if not isinstance(path, str):
+        return False
+    parts = path.replace("[", ".").replace("]", "").split(".")
+    return any(normalized_key(part) in SECRET_CONTEXT_KEYS for part in parts)
+
+
 def direct_secret_payload_value(value: JSONValue, *, secret_context: bool) -> bool:
     if isinstance(value, dict):
         return nested_direct_secret_value(value, secret_context=secret_context)
@@ -859,7 +866,7 @@ def nested_direct_secret_value(value: JSONValue, *, secret_context: bool = False
 def direct_sensitive_value(value: JSONValue, path: str) -> bool:
     if secret_reference_candidate(value):
         return bool(direct_value_keys_in_secret_reference(value))
-    if secret_value_path(path):
+    if secret_value_path(path) or secret_context_path(path):
         return direct_secret_payload_value(value, secret_context=True)
     return nested_direct_secret_value(value)
 
