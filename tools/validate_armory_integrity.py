@@ -828,6 +828,7 @@ EXAMPLE_REQUIRED_PATHS = [
 ]
 CONFIG_BUNDLE_PATH = "specs/agent-equipment-config"
 CONFIG_PRD_PATH = "docs/prd/agent-equipment-config.md"
+ISSUE_TRACKER_OPS_PRD_PATH = "docs/prd/issue-tracker-ops.md"
 CONFIG_BUNDLE_REQUIRED_PATHS = [
     f"{CONFIG_BUNDLE_PATH}/README.md",
     f"{CONFIG_BUNDLE_PATH}/capability-card.md",
@@ -4760,6 +4761,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
         "CONTEXT.md",
         "docs/prd/forge-seed.md",
         CONFIG_PRD_PATH,
+        ISSUE_TRACKER_OPS_PRD_PATH,
         SOURCE_DISPOSITION_PATH,
         THREAT_MODEL_PATH,
         DOCUMENTATION_CLOSEOUT_PATH,
