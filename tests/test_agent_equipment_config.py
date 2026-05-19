@@ -2316,6 +2316,40 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(payload["safety_status"], "usable")
         self.assertEqual(payload["effective"]["issue_tracker_ops"]["mode"]["value"], "dry-run")
 
+    def test_mcp_config_resolve_redacts_secret_references_in_structured_result(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+
+                [issue_tracker_ops.github_token]
+                kind = "env"
+                name = "GITHUB_TOKEN_RAW"
+            """)
+
+            result = agent_equipment_config.call_mcp_tool(
+                "config.resolve",
+                {
+                    "layer_paths": [str(layer)],
+                    "fragments": ["issue_tracker_ops"],
+                    "requested_behavior": "advisory",
+                },
+            )
+
+        self.assertFalse(result.get("isError", False))
+        payload = result["structuredContent"]["result"]
+        token = payload["effective"]["issue_tracker_ops"]["github_token"]
+        self.assertEqual(token["secret_reference"]["name"], agent_equipment_config.REDACTED)
+        rendered = json.dumps(payload, sort_keys=True)
+        self.assertIn(agent_equipment_config.REDACTED, rendered)
+        self.assertNotIn("GITHUB_TOKEN_RAW", rendered)
+
     def test_mcp_rejects_arguments_outside_published_input_schema(self):
         result = agent_equipment_config.call_mcp_tool(
             "config.resolve",
