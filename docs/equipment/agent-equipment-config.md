@@ -108,6 +108,43 @@ The load contract does not resolve secrets, create or mutate config outside
 `migrate config apply`, enforce harness controls, define universal filenames, or
 decide whether a caller may proceed after a blocking classification.
 
+## Secret-reference provider boundary
+
+Agent Equipment Config represents secrets as provider references, not as stored
+secret values. A valid secret reference has:
+
+- `kind`: `env`, `keychain`, `vault`, `harness-secret`, or `external`;
+- `name`: the provider-local name or handle;
+- optional `scope`: repository, organization, host, session, harness, or another
+  provider-owned scope;
+- optional `required_for`: the behavior that needs the secret.
+
+The runtime reports recognized references as unresolved metadata and adds
+`resolution_status = "unresolved"`. The importable Python result may carry
+`kind`, `name`, `scope`, `required_for`, and `resolution_status` so a trusted
+harness, tool, or adapter can resolve the value outside Config. The core Config
+runtime never reads environment variables, keychains, vaults, harness secret
+stores, external secret systems, or provider-specific credential files.
+
+Provider resolution belongs to the surface that owns the provider. That surface
+must own authentication, provider lookup, scope checks, retries, failure
+classification, value lifetime, and any private audit trail. Config output is
+only decision evidence for whether resolution is needed and which provider
+handle the owner should use.
+
+CLI and MCP output redact provider-local secret names before writing JSON to the
+caller. Logs, diagnostics, audit previews, PR evidence, issue comments, and
+handoffs must use the redacted form unless the artifact is explicitly private to
+the provider owner. Effective-config and config-diff projections may report
+reference kind, scope, required behavior, and unresolved status; they must not
+publish secret values.
+
+If a sensitive field supplies a direct value instead of a secret reference, or a
+secret-reference table includes a direct value payload, Config classifies the
+result as `unsafe`, emits a `secret boundary violation` diagnostic, and redacts
+the value in effective-config output with
+`redaction_status = "blocked_direct_secret_value"`.
+
 ## Consumption contract
 
 Consuming equipment turns effective Config output into its own action decision.
@@ -219,7 +256,8 @@ When supplying config:
 - Put machine-local choices in local-only config.
 - Put checkout-local state in checkout-local state.
 - Put per-session choices in session overrides or a plain handoff.
-- Use secret references instead of secret values.
+- Use secret references instead of secret values; direct secret values make
+  effective Config `unsafe`.
 - Treat `blocking` projection output as a stop signal until the relevant
   policy owner or harness adapter decides otherwise.
 
@@ -367,9 +405,9 @@ Update this guide when:
 - consumer action decision output changes;
 - onboarding status, handoff, discovery, or revision output changes;
 - a harness projection turns advisory classification into blocking behavior;
-- secret-reference handling changes;
+- secret-reference handling, provider boundaries, or redaction rules change;
 - migration behavior begins writing source config.
 
 Security closeout for Config publication must cover CLI output, diagnostics,
-secret-reference redaction, local file reads, consumer action decisions, and
-any new write or enforcement surface.
+secret-reference redaction, direct-value blocking, local file reads, consumer
+action decisions, and any new write or enforcement surface.

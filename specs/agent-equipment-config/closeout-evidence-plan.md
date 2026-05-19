@@ -31,7 +31,7 @@ Record:
   `python3.14 -m unittest tests.test_agent_equipment_config` and the focused
   security review conclusion for executable parsing, merge, diff, migration
   preview, plain handoff, authority, projection-classification, and
-  secret-reference behavior;
+  secret-reference behavior, including direct-value blocking;
 - Agent Equipment Config MCP parity evidence for tool definitions, typed input
   and output contracts, read/write classification, failure modes, and migration
   apply gates;

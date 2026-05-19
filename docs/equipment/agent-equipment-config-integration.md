@@ -160,6 +160,14 @@ Issue Tracker Ops therefore blocks incomplete, unsafe, conflicted, stale,
 untrusted, missing-authority, and unsupported mutation outputs, while preserving
 safe dry-run fallback as advisory behavior.
 
+Secret references remain unresolved until a provider-owning surface resolves
+them. For example, an Issue Tracker Ops adapter may decide that
+`issue_tracker_ops.github_token` needs an environment variable, but Agent
+Equipment Config only reports the reference and safety status. The adapter,
+harness, or operator-owned tool reads the environment variable, keychain, vault,
+harness secret store, or external provider after it has accepted the Config
+decision evidence.
+
 Use a plain handoff when shared Config is absent but the consuming equipment has
 a narrow session shape:
 
@@ -185,6 +193,8 @@ operations. Keep these responsibilities separate:
 - Agent Equipment Config resolves and validates the supplied inputs.
 - Consuming equipment turns Config evidence into behavior-specific action
   decisions.
+- Secret provider adapters resolve referenced secrets outside the core Config
+  runtime and own the value lifetime, error handling, and private audit boundary.
 - Harness controls decide whether a decision becomes advisory evidence,
   approval friction, or a hard block.
 
@@ -212,6 +222,8 @@ Before publishing an integration surface, document:
   session-scoped;
 - which Config operation family the surface exposes;
 - which schema fragments it can register;
+- which provider owns each secret-reference `kind` and how secret names are
+  redacted in user-facing output;
 - what side effects the consuming equipment may perform;
 - how `blocking` and `unsupported` decisions are enforced or handed back;
 - where audit evidence and refusal records appear.
@@ -222,7 +234,8 @@ Before publishing an integration surface, document:
   restating unstable internal detail.
 - Keep all source selection explicit; do not add hidden default discovery to
   the core runtime.
-- Keep secret values out of Config and examples.
+- Keep secret values out of Config and examples; use secret references and let
+  provider-owning adapters resolve values after Config classification.
 - Keep local-only paths out of durable examples.
 - Demonstrate at least one dry-run path before live mutation.
 - Treat `blocking` and `unsupported` as stop signals for mutation-capable

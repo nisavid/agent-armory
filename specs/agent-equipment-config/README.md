@@ -59,7 +59,7 @@ The v0 contract centers on explainable effective-config behavior:
 - Config Safety Status values are `usable`, `incomplete`, `unsafe`, `stale`,
   `untrusted`, and `conflicted`.
 - Secret references describe where secrets are resolved without storing secret
-  values in config.
+  values in config. Direct secret values make effective Config `unsafe`.
 - Migrations may run at read time for preview and diagnostics; source rewrites
   require an explicit audited config mutation.
 
@@ -86,7 +86,8 @@ Published integration guidance lives in
 
 The runtime uses explicit caller-supplied inputs. It does not discover default
 paths, import schema fragments from equipment packages, scan hook or plugin
-directories, resolve secret values, or decide harness enforcement.
+directories, resolve secret values, read secret providers, or decide harness
+enforcement.
 
 Scripts, hooks, harness adapters, repository equipment, and operators own these
 load duties:

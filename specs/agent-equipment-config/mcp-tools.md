@@ -42,7 +42,9 @@ requires every schema-required argument before invoking runtime behavior.
 | `migrate config apply` | `migrate.config_apply` | local write |
 
 All tools are closed-world local Config operations. They do not call networks,
-resolve secret values, mutate external systems, or discover config paths.
+resolve secret values, mutate external systems, or discover config paths. MCP
+structured results use the same CLI redaction boundary for secret-reference
+names and direct secret values.
 
 ## Shared inputs
 
@@ -73,7 +75,7 @@ Classification: read-only. Auth source: none. Side effects: none. Approval
 requirements: none.
 
 Failure modes: input validation failure, config parse failure, schema conflict,
-policy diagnostic.
+policy diagnostic, secret boundary violation.
 
 ### `config.validate`
 
@@ -85,7 +87,7 @@ Classification: read-only. Auth source: none. Side effects: none. Approval
 requirements: none.
 
 Failure modes: input validation failure, config parse failure, blocking
-validation, policy diagnostic.
+validation, policy diagnostic, secret boundary violation.
 
 ### `config.diff`
 
