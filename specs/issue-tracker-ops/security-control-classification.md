@@ -21,7 +21,7 @@ hooks, skills, Agent Profiles, plugins, or GitHub Projects extension.
 | Issue update | Network write | Requires `--execute`; emits JSON audit output. |
 | Issue comment | Network write and notification | Requires `--execute`; emits JSON audit output. |
 | Dependency add/remove | Network write | Requires `--execute`; resolves issue number to REST `id` when needed and emits JSON audit output. |
-| Config-aware mutation | Policy decision | Uses explicit Config inputs only; blocking or unsupported consumer decisions fail closed before `gh` runs. |
+| Config-aware mutation | Policy decision and adapter preflight | Uses explicit Config inputs only; `consumer_enforcement_projection` maps consumer decisions to allow or block behavior, and blocking or unsupported decisions fail closed before `gh` runs. |
 
 ## Assets
 
@@ -57,15 +57,19 @@ hooks, skills, Agent Profiles, plugins, or GitHub Projects extension.
   and failure.
 - When explicit Config inputs are supplied, mutation subcommands evaluate the
   Issue Ops Config fragment before side effects. Live mutation requires the
-  configured mode to be `execute` and a consumer decision that is not
-  `blocking` or `unsupported`.
+  configured mode to be `execute`, a consumer decision that is not `blocking`
+  or `unsupported`, and an adapter preflight projection with
+  `adapter_action = "allow"`.
+- The adapter preflight records the effective Config Safety Status, diagnostic
+  kinds, decision state, fallback, owner, and unsupported approval behavior in
+  JSON audit output.
 - Missing or uncertain auth, policy, adapter behavior, or tracker state fails
   closed for writes.
 
 ## Known gaps
 
 - Config consumption is limited to the Issue Ops fragment, explicit layers,
-  plain handoff promotion, and execute-mode gating.
+  plain handoff promotion, and adapter-owned GitHub API mutation preflight.
 - The broader Issue Ops config profile is not implemented yet.
 - No duplicate detection or idempotency key behavior yet.
 - No rollback or compensation beyond recording the failed or successful

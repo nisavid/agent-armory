@@ -29,9 +29,11 @@ issues.
 
 The adapter consumes explicit Agent Equipment Config sources when callers pass
 `--config-layer` or `--config-plain-handoff`. Config-aware dry-runs include the
-effective Config evidence and consumer action decision. Config-aware live
-mutation requires both `--execute` and an Issue Ops consumer decision that
-supports execute mode; blocking or unsupported decisions fail closed before the
+effective Config evidence, consumer action decision, and adapter enforcement
+projection. Config-aware live mutation requires `--execute`, an Issue Ops
+consumer decision that supports execute mode, and
+`consumer_enforcement_projection.adapter_action = "allow"`; blocking,
+unsupported, malformed, or missing projection evidence fails closed before the
 adapter invokes `gh`.
 
 Durable layered configuration belongs to Agent Equipment Config. Issue Ops owns
