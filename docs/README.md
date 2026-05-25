@@ -121,6 +121,10 @@ The current roadmap points to equipment lines that still have future slices:
 - [Issue Tracker Ops](../specs/issue-tracker-ops/): direct GitHub
   Issues bootstrap operations and future issue lifecycle equipment. Issue Ops
   is the accepted shorthand.
+- [Existing Equipment Onboarding](prd/existing-equipment-onboarding.md): draft
+  generic contract for discovering prior equipment, deciding compatibility and
+  disposition, and reporting activation limits before an equipment line claims
+  coverage.
 - [Repo Ops](../specs/repo-ops.md): repository framework for agentic
   operations. Repo Ops is complete for repositories that are not forks.
 - [Fork Ops](https://github.com/nisavid/agent-armory/issues/87): planned
