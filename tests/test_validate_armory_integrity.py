@@ -13,6 +13,7 @@ from tools.validate_armory_integrity import (
     ACCEPTED_SOURCE_REQUIREMENTS,
     CheckResult,
     CANONICAL_DOC_STATUSES,
+    CONTEXT_REQUIRED_SECTIONS,
     REQUIRED_HARNESSES,
     SOURCE_DISPOSITION_ITEM_FIELDS,
     SOURCE_DISPOSITION_MANIFEST_FIELDS,
@@ -26,6 +27,7 @@ from tools.validate_armory_integrity import (
     validate_final_source_retired_stamp,
     validate_final_closeout,
     validate_canonical_docs,
+    validate_context,
     validate_documentation_closeout,
     validate_examples,
     validate_forge_routes,
@@ -545,9 +547,9 @@ class SourceProjectionTests(unittest.TestCase):
             root = Path(tmpdir)
             (root / "docs").mkdir()
             self.write_source_handoff_fixture(root)
-            (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
+            (root / "CONTEXT.md").write_text("# Fixture\n", encoding="utf-8")
             rows = [
-                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | {'planned' if requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS else 'validated'} |"
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | CONTEXT.md |  | {'planned' if requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS else 'validated'} |"
                 for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
             ]
             self.write_register(root, rows)
@@ -584,9 +586,9 @@ class SourceProjectionTests(unittest.TestCase):
             root = Path(tmpdir)
             (root / "docs").mkdir()
             self.write_source_handoff_fixture(root)
-            (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
+            (root / "CONTEXT.md").write_text("# Fixture\n", encoding="utf-8")
             rows = [
-                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | {'planned' if requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS else 'validated'} |"
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | CONTEXT.md |  | {'planned' if requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS else 'validated'} |"
                 for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
             ]
             rows[0] = rows[0].replace("00-metasmith-handoff-prompt.md", "wrong-source.md")
@@ -613,9 +615,9 @@ class SourceProjectionTests(unittest.TestCase):
                 "# Different anchor\n",
                 encoding="utf-8",
             )
-            (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
+            (root / "CONTEXT.md").write_text("# Fixture\n", encoding="utf-8")
             rows = [
-                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | {'planned' if requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS else 'validated'} |"
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | CONTEXT.md |  | {'planned' if requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS else 'validated'} |"
                 for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
             ]
             self.write_register(root, rows)
@@ -637,9 +639,9 @@ class SourceProjectionTests(unittest.TestCase):
             root = Path(tmpdir)
             (root / "docs").mkdir()
             self.write_source_handoff_fixture(root, omit={"00-metasmith-handoff-prompt.md"})
-            (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
+            (root / "CONTEXT.md").write_text("# Fixture\n", encoding="utf-8")
             rows = [
-                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | {'planned' if requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS else 'validated'} |"
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | CONTEXT.md |  | {'planned' if requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS else 'validated'} |"
                 for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
             ]
             self.write_register(root, rows)
@@ -768,9 +770,9 @@ class SourceProjectionTests(unittest.TestCase):
             root = Path(tmpdir)
             (root / "docs").mkdir()
             self.write_source_handoff_fixture(root)
-            (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
+            (root / "CONTEXT.md").write_text("# Fixture\n", encoding="utf-8")
             rows = [
-                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | {'planned' if requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS else 'validated'} |"
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | CONTEXT.md |  | {'planned' if requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS else 'validated'} |"
                 for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
             ]
             rows[0] = "| H001 | 00-metasmith-handoff-prompt.md | Your objective | Defer seed objective | deferred | specs/future-work.md | Deferred until follow-up. | planned |"
@@ -785,9 +787,9 @@ class SourceProjectionTests(unittest.TestCase):
             root = Path(tmpdir)
             (root / "docs").mkdir()
             self.write_source_handoff_fixture(root)
-            (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
+            (root / "CONTEXT.md").write_text("# Fixture\n", encoding="utf-8")
             rows = [
-                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | {'planned' if requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS else 'validated'} |"
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | CONTEXT.md |  | {'planned' if requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS else 'validated'} |"
                 for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
             ]
             rows[0] = rows[0].replace(" | validated |", " | done |")
@@ -810,12 +812,12 @@ class SourceProjectionTests(unittest.TestCase):
             root = Path(tmpdir)
             (root / "docs").mkdir()
             self.write_source_handoff_fixture(root)
-            (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
+            (root / "CONTEXT.md").write_text("# Fixture\n", encoding="utf-8")
             rows = []
             for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items():
                 status = "validated" if requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS else "planned"
                 rows.append(
-                    f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | {status} |"
+                    f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | CONTEXT.md |  | {status} |"
                 )
             self.write_register(root, rows)
 
@@ -836,14 +838,14 @@ class SourceProjectionTests(unittest.TestCase):
             root = Path(tmpdir)
             (root / "docs").mkdir()
             self.write_source_handoff_fixture(root)
-            (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
+            (root / "CONTEXT.md").write_text("# Fixture\n", encoding="utf-8")
             rows = []
             for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items():
                 status = "planned" if requirement_id == "H001" else "validated"
                 if requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS:
                     status = "planned"
                 rows.append(
-                    f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | {status} |"
+                    f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | CONTEXT.md |  | {status} |"
                 )
             self.write_register(root, rows)
 
@@ -910,11 +912,11 @@ class SourceProjectionTests(unittest.TestCase):
             root = Path(tmpdir)
             (root / "docs").mkdir()
             self.write_source_handoff_fixture(root)
-            (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
+            (root / "CONTEXT.md").write_text("# Fixture\n", encoding="utf-8")
             self.write_register(
                 root,
                 [
-                    "| H001 | 00-metasmith-handoff-prompt.md | Required content | Ubiquitous language docs | projected | docs/ubiquitous-language.md |  | planned |"
+                    "| H001 | 00-metasmith-handoff-prompt.md | Required content | Project vocabulary docs | projected | CONTEXT.md |  | planned |"
                 ],
             )
 
@@ -957,9 +959,9 @@ class SourceProjectionTests(unittest.TestCase):
             root = Path(tmpdir)
             (root / "docs").mkdir()
             self.write_source_handoff_fixture(root)
-            (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
+            (root / "CONTEXT.md").write_text("# Fixture\n", encoding="utf-8")
             rows = [
-                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | {'planned' if requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS else 'validated'} |"
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | CONTEXT.md |  | {'planned' if requirement_id in SOURCE_PROJECTION_PLANNED_REQUIREMENTS else 'validated'} |"
                 for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
             ]
             rows.append(rows[0])
@@ -2113,7 +2115,6 @@ class CanonicalDocTests(unittest.TestCase):
             "Reflection",
             "Lifecycle use",
         ],
-        "docs/ubiquitous-language.md": ["Language", "Relationships", "Precision rules"],
         "docs/agent-equipment-forge.md": [
             "Purpose",
             "Vision alignment",
@@ -2642,6 +2643,46 @@ class CanonicalDocTests(unittest.TestCase):
             ),
             results,
         )
+
+
+class ContextDocTests(unittest.TestCase):
+    def valid_context(self) -> str:
+        sections = "\n".join(f"## {section}\n\nContent.\n" for section in CONTEXT_REQUIRED_SECTIONS)
+        return f"# Agent Armory\n\n{sections}"
+
+    def test_validate_context_accepts_required_sections(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "CONTEXT.md").write_text(self.valid_context(), encoding="utf-8")
+
+            results = validate_context(root)
+
+        self.assertEqual(results, [])
+
+    def test_validate_context_rejects_each_missing_required_section(self):
+        for missing_section in CONTEXT_REQUIRED_SECTIONS:
+            with self.subTest(missing_section=missing_section):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    root = Path(tmpdir)
+                    sections = [
+                        section for section in CONTEXT_REQUIRED_SECTIONS if section != missing_section
+                    ]
+                    markdown = "# Agent Armory\n\n" + "\n".join(
+                        f"## {section}\n\nContent.\n" for section in sections
+                    )
+                    (root / "CONTEXT.md").write_text(markdown, encoding="utf-8")
+
+                    results = validate_context(root)
+
+                self.assertIn(
+                    CheckResult(
+                        f"context:section:{missing_section}",
+                        False,
+                        f"missing section: {missing_section}",
+                        "CONTEXT.md",
+                    ),
+                    results,
+                )
 
 
 class ThreatModelValidationTests(unittest.TestCase):

@@ -22,8 +22,7 @@ The scan covered:
   templates.
 
 The human-facing documentation spine refresh touched `README.md`,
-`docs/forge-tour.md`, `docs/README.md`, `CONTEXT.md`,
-`docs/ubiquitous-language.md`, `docs/prd/forge-seed.md`,
+`docs/forge-tour.md`, `docs/README.md`, `CONTEXT.md`, `docs/prd/forge-seed.md`,
 `docs/security/threat-model.md`, `templates/skill/SKILL.md`, this closeout
 surface, `docs/closeout/forge-seed-documentation.md`, and projection evidence.
 The final public README presentation refresh also added

@@ -512,6 +512,7 @@ REQUIRED_PRELOADED_ROUTES = [
     "examples/",
     "specs/",
 ]
+CONTEXT_REQUIRED_SECTIONS = ["Language", "Relationships", "Precision rules", "Flagged ambiguities"]
 CANONICAL_DOC_REQUIRED_SECTIONS = {
     "docs/vision.md": [
         "Experience",
@@ -523,7 +524,6 @@ CANONICAL_DOC_REQUIRED_SECTIONS = {
         "Reflection",
         "Lifecycle use",
     ],
-    "docs/ubiquitous-language.md": ["Language", "Relationships", "Precision rules"],
     "docs/agent-equipment-forge.md": [
         "Purpose",
         "Vision alignment",
@@ -1694,7 +1694,6 @@ def story_closeout_gate_order_valid(markdown: str) -> bool:
 
 CANONICAL_DOC_STATUSES = {
     "docs/vision.md": "Armory Canon",
-    "docs/ubiquitous-language.md": "Forge Canon",
     "docs/agent-equipment-forge.md": "Forge Canon",
     "docs/smith-runbook.md": "Forge Core",
     "docs/forgewright-runbook.md": "Forge Core",
@@ -2354,6 +2353,28 @@ def validate_canonical_docs(root: Path) -> list[CheckResult]:
             )
         if not any(result.name.startswith(f"canonical_doc:") and result.path == relative_path and not result.ok for result in results):
             results.append(CheckResult(f"canonical_doc:{relative_path}", True, "present", relative_path))
+    return results
+
+
+def validate_context(root: Path) -> list[CheckResult]:
+    ok, detail, path = repo_relative_path_status(root, "CONTEXT.md", "file")
+    if not ok:
+        if detail == "path contains symlink":
+            detail = "context path contains symlink"
+        return [CheckResult("context:path", False, detail, "CONTEXT.md")]
+    markdown = path.read_text(encoding="utf-8")
+    headings = markdown_heading_texts(markdown)
+    results: list[CheckResult] = []
+    for required_section in CONTEXT_REQUIRED_SECTIONS:
+        if normalize_reference_label(required_section) not in headings:
+            results.append(
+                CheckResult(
+                    f"context:section:{required_section}",
+                    False,
+                    f"missing section: {required_section}",
+                    "CONTEXT.md",
+                )
+            )
     return results
 
 
@@ -4778,6 +4799,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
         *validate_required_paths(root, required_paths),
         *validate_python_runtime_declaration(root),
         *validate_forge_routes(root),
+        *validate_context(root),
         *validate_canonical_docs(root),
         *validate_threat_model(root),
         *validate_documentation_closeout(root),

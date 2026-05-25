@@ -85,7 +85,6 @@ Inspect affected agent-facing and human-facing docs before closeout:
 
 - `AGENTS.md`
 - `CONTEXT.md`
-- `docs/ubiquitous-language.md`
 - Forge Canon under `docs/`
 - `specs/`
 - `templates/`

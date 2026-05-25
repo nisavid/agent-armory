@@ -25,7 +25,7 @@ Create or modify these files:
 - Create: `docs/security/threat-model.md` for the persistent Repository Threat Model.
 - Create: `docs/security/forge-seed-closeout.md` for Forge Seed security closeout evidence.
 - Create: `docs/closeout/forge-seed-documentation.md` for Forge Seed documentation closeout evidence.
-- Create: `docs/ubiquitous-language.md`.
+- Create: `CONTEXT.md`.
 - Create: `docs/agent-equipment-forge.md`.
 - Create: `docs/smith-runbook.md`.
 - Create: `docs/forgewright-runbook.md`.
@@ -405,9 +405,9 @@ class SourceProjectionTests(unittest.TestCase):
             root = Path(tmpdir)
             (root / "docs").mkdir()
             self.write_source_handoff_fixture(root)
-            (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
+            (root / "CONTEXT.md").write_text("# Fixture\n", encoding="utf-8")
             rows = [
-                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | planned |"
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | CONTEXT.md |  | planned |"
                 for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
             ]
             self.write_register(root, rows)
@@ -444,9 +444,9 @@ class SourceProjectionTests(unittest.TestCase):
             root = Path(tmpdir)
             (root / "docs").mkdir()
             self.write_source_handoff_fixture(root)
-            (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
+            (root / "CONTEXT.md").write_text("# Fixture\n", encoding="utf-8")
             rows = [
-                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | planned |"
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | CONTEXT.md |  | planned |"
                 for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
             ]
             rows[0] = rows[0].replace("00-metasmith-handoff-prompt.md", "wrong-source.md")
@@ -473,9 +473,9 @@ class SourceProjectionTests(unittest.TestCase):
                 "# Different anchor\n",
                 encoding="utf-8",
             )
-            (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
+            (root / "CONTEXT.md").write_text("# Fixture\n", encoding="utf-8")
             rows = [
-                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | planned |"
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | CONTEXT.md |  | planned |"
                 for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
             ]
             self.write_register(root, rows)
@@ -497,9 +497,9 @@ class SourceProjectionTests(unittest.TestCase):
             root = Path(tmpdir)
             (root / "docs").mkdir()
             self.write_source_handoff_fixture(root, omit={"00-metasmith-handoff-prompt.md"})
-            (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
+            (root / "CONTEXT.md").write_text("# Fixture\n", encoding="utf-8")
             rows = [
-                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | planned |"
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | CONTEXT.md |  | planned |"
                 for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
             ]
             self.write_register(root, rows)
@@ -628,9 +628,9 @@ class SourceProjectionTests(unittest.TestCase):
             root = Path(tmpdir)
             (root / "docs").mkdir()
             self.write_source_handoff_fixture(root)
-            (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
+            (root / "CONTEXT.md").write_text("# Fixture\n", encoding="utf-8")
             rows = [
-                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | planned |"
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | CONTEXT.md |  | planned |"
                 for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
             ]
             rows[0] = "| H001 | 00-metasmith-handoff-prompt.md | Your objective | Defer seed objective | deferred | specs/future-work.md | Deferred until follow-up. | planned |"
@@ -691,11 +691,11 @@ class SourceProjectionTests(unittest.TestCase):
             root = Path(tmpdir)
             (root / "docs").mkdir()
             self.write_source_handoff_fixture(root)
-            (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
+            (root / "CONTEXT.md").write_text("# Fixture\n", encoding="utf-8")
             self.write_register(
                 root,
                 [
-                    "| H001 | 00-metasmith-handoff-prompt.md | Required content | Ubiquitous language docs | projected | docs/ubiquitous-language.md |  | planned |"
+                    "| H001 | 00-metasmith-handoff-prompt.md | Required content | Project vocabulary docs | projected | CONTEXT.md |  | planned |"
                 ],
             )
 
@@ -738,9 +738,9 @@ class SourceProjectionTests(unittest.TestCase):
             root = Path(tmpdir)
             (root / "docs").mkdir()
             self.write_source_handoff_fixture(root)
-            (root / "docs/ubiquitous-language.md").write_text("# Fixture\n", encoding="utf-8")
+            (root / "CONTEXT.md").write_text("# Fixture\n", encoding="utf-8")
             rows = [
-                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | docs/ubiquitous-language.md |  | planned |"
+                f"| {requirement_id} | {metadata['source_file']} | {metadata['source_anchor']} | Summary | projected | CONTEXT.md |  | planned |"
                 for requirement_id, metadata in ACCEPTED_SOURCE_REQUIREMENTS.items()
             ]
             rows.append(rows[0])
@@ -1703,7 +1703,7 @@ This register maps accepted Source Handoff requirements to canonical Forge Seed 
 | requirement_id | source_file | source_anchor | summary | disposition | target_path | deferment_reason | validation_status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | H001 | 00-metasmith-handoff-prompt.md | Your objective | Produce the Forge Seed as canonical docs, templates, examples, specs, and validation surfaces. | projected | docs/prd/forge-seed.md |  | planned |
-| H002 | 00-metasmith-handoff-prompt.md | Terms you must use | Establish the core Forge vocabulary. | projected | docs/ubiquitous-language.md |  | planned |
+| H002 | 00-metasmith-handoff-prompt.md | Terms you must use | Establish the core Forge vocabulary. | projected | CONTEXT.md |  | planned |
 | H003 | 00-metasmith-handoff-prompt.md | Core principle | Preserve least cognitive privilege as the Forge's central design rule. | projected | docs/agent-equipment-forge.md |  | planned |
 | ... | ... | ... | ... | ... | ... | ... | ... |
 ```
@@ -1990,7 +1990,7 @@ git commit -m "docs(forge): add canonical reading paths" -m "Co-authored-by: Cod
 ## Task 4: Forge Canon
 
 **Files:**
-- Create: `docs/ubiquitous-language.md`
+- Create: `CONTEXT.md`
 - Create: `docs/agent-equipment-forge.md`
 - Create: `docs/smith-runbook.md`
 - Create: `docs/forgewright-runbook.md`
@@ -2034,7 +2034,7 @@ Each document must include `Status: Forge Seed` near the top.
 
 Required sections:
 
-- `docs/ubiquitous-language.md`: Language, Relationships, Precision rules.
+- `CONTEXT.md`: Language, Relationships, Precision rules.
 - `docs/agent-equipment-forge.md`: Purpose, Least cognitive privilege, Component model, Context management, Security, Maintenance.
 - `docs/smith-runbook.md`: Capability card, Interface decision record, Docs/config/scripts/hooks/skills/agents/plugins, Pressure Scenario Validation, Equipment Promotion Path, Closeout.
 - `docs/forgewright-runbook.md`: Source handoff preservation, decision projection, Review Until Clean, Harness Fact Refresh, Issue Projection, downstream Smith specs.
@@ -2060,7 +2060,7 @@ Expected: canonical doc path and content checks PASS; later template/example/spe
 Run:
 
 ```bash
-git add docs/ubiquitous-language.md docs/agent-equipment-forge.md docs/smith-runbook.md docs/forgewright-runbook.md docs/interface-decision-guide.md docs/harness-components.md docs/evidence-taxonomy.md docs/security-and-control.md docs/equipment-promotion.md tools/validate_forge_seed.py tests/test_validate_forge_seed.py
+git add CONTEXT.md docs/agent-equipment-forge.md docs/smith-runbook.md docs/forgewright-runbook.md docs/interface-decision-guide.md docs/harness-components.md docs/evidence-taxonomy.md docs/security-and-control.md docs/equipment-promotion.md tools/validate_forge_seed.py tests/test_validate_forge_seed.py
 git commit -m "docs(forge): add forge canon" -m "Co-authored-by: Codex <noreply@openai.com>"
 ```
 

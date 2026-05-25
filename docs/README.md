@@ -41,9 +41,8 @@ and Agent Equipment Config has its first published runtime slice.
   agent roles, and current construction state.
 - [Forge Canon](agent-equipment-forge.md): core method for the Forge and component
   model.
-- [Ubiquitous language](ubiquitous-language.md): vocabulary for agent
-  equipment, loadouts, wielders, outfitters, smiths, forgewrights, work in the
-  Forge, and readiness states.
+- [Project context and language](../CONTEXT.md): glossary, relationships,
+  precision rules, example dialogue, and ambiguity resolutions.
 
 ## Tutorials and guided examples
 

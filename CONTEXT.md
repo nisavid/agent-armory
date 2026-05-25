@@ -4,31 +4,38 @@ The Agent Armory defines a shared language for creating, cataloging, and maintai
 
 ## Language
 
+Keep glossary terms in this section sorted alphabetically by term name.
+
+**Agent**:
+The causal stream of reasoning, actions, tool calls, messages, and content mediated by an Agent Harness.
+_Avoid_: bot, model, profile when precision matters
+
 **Agent Armory**:
 A home for Agent Equipment.
 _Avoid_: narrowing this term to one methodology, content model, directory structure, or toolchain
-
-**Efficient Coherence**:
-The Agent Armory's guiding doctrine: honor the Underlying Intent, match the
-rigor to the unresolved uncertainty, and minimize spend within that quality
-boundary.
-_Avoid_: treating economy as prior to intent alignment, or treating rigor as
-ceremony rather than a response to unresolved uncertainty
-
-**Agent Equipment**:
-Reusable tooling, behavior, workflow, knowledge, or configuration that equips an Agent or agentic system.
-_Avoid_: asset, artifact, extension when used as the general term
-
-**Agentic Engineering**:
-Software engineering performed agentically: code is written by AI Agents, and
-the surrounding work is managed with methodical attention to how Agents
-navigate tasks, fail, recover, use context, and benefit from equipment.
-_Avoid_: vibe coding, Agent Engineering, Agent Meta-Engineering
 
 **Agent Engineering**:
 The engineering of Agents, agentic systems, agent roles, and agent workflows.
 _Avoid_: Agentic Engineering when the work is ordinary software engineering
 performed by Agents
+
+**Agent Equipment**:
+Reusable tooling, behavior, workflow, knowledge, or configuration that equips an Agent or agentic system.
+_Avoid_: asset, artifact, extension when used as the general term
+
+**Agent Equipment Config**:
+Agent Equipment for shared, layerable, composable, adaptable, and enforceable
+configuration across Agent Equipment.
+_Avoid_: treating it as a component of Repo Ops or any other higher-level
+equipment
+
+**Agent Equipment Forge**:
+The Armory's method and supporting artifacts for designing, building, validating, and maintaining Agent Equipment.
+_Avoid_: the Forge when the referent is unclear; Forge when the full name is needed for disambiguation
+
+**Agent Harness**:
+The runtime or orchestration system in which an Agent is strapped.
+_Avoid_: client when the system provides agent orchestration
 
 **Agent Meta-Engineering**:
 Agent Engineering whose problem domain is engineering work: creating or
@@ -37,96 +44,23 @@ equipment that make Agentic Engineering more capable.
 _Avoid_: Agentic Engineering, generic Agent Engineering outside the engineering
 work domain
 
-**Equipment Candidate**:
-A proposed, specified, planned, or implemented equipment surface that has not yet been validated and published for use.
-_Avoid_: Published Agent Equipment
-
-**Equipment Design Bundle**:
-A neutral project-path bundle that gathers the design and validation-planning
-artifacts for one Equipment Candidate, such as the capability card, interface
-decision, security/control classification, pressure scenarios, validation plan,
-closeout evidence plan, and related design records.
-_Avoid_: Inventory, component implementation path, status dump
-
-**Published Agent Equipment**:
-Agent Equipment that has completed the promotion path and is intended to be equipped.
-_Avoid_: example, draft, candidate
-
-**Agent Equipment Forge**:
-The Armory's method and supporting artifacts for designing, building, validating, and maintaining Agent Equipment.
-_Avoid_: the Forge when the referent is unclear; Forge when the full name is needed for disambiguation
-
-**Forgewright**:
-An Agent that creates or refines the Agent Equipment Forge.
-_Avoid_: architect agent, Forge author
-
-**Smith**:
-An Agent that creates Agent Equipment using the Agent Equipment Forge.
-_Avoid_: implementer when the role includes equipment design
-
-**Agent**:
-The causal stream of reasoning, actions, tool calls, messages, and content mediated by an Agent Harness.
-_Avoid_: bot, model, profile when precision matters
-
-**Operator**:
-An intent-capable actor that initiates, routes, controls, or evaluates Agent
-work. An Operator may be a human or an orchestrator-agent.
-_Avoid_: assuming every Operator is human; use human operator or stakeholder
-when human authority specifically matters
-
-**Agent Harness**:
-The runtime or orchestration system in which an Agent is strapped.
-_Avoid_: client when the system provides agent orchestration
-
-**Strapped**:
-Mediated by an Agent Harness.
-_Avoid_: installed, configured, running when the harness relationship is the point
+**Agent Ops**:
+The generic term for operations work performed agentically.
+_Avoid_: using Agent Ops as the name of the repository-operations equipment line
 
 **Agent Profile**:
 A reusable harness configuration for identity, mission, prompt, tools, model, permissions, and related behavior.
 _Avoid_: Agent when referring to the reusable declaration
 
-**Harness Component**:
-Reusable behavior integrated into an Agent Harness.
-_Avoid_: plugin part unless the package boundary matters
+**Agent-Operated Repository**:
+A repository where agents drive assigned execution after a human operator initiates or continues the work session.
+_Avoid_: fully autonomous repository, human-absent governance
 
-**Harness Plugin**:
-A portable collection of Harness Components.
-_Avoid_: plugin when referring to an individual skill, hook, or profile
-
-**Source Handoff**:
-Preserved upstream material accepted as provenance for Forge design, not the live Forge surface.
-_Avoid_: canonical docs, final docs
-
-**Forge Canon**:
-The current conceptual framework and corresponding documentation that govern
-Forge work.
-_Avoid_: handoff docs, source notes
-
-**Forge Core**:
-The materialized and enacted Forge processes, contracts, components, and
-deterministic tools that implement the core features and functions of the
-Forge.
-_Avoid_: Forge Canon, Forge Equipment Core, Armory Operating Contract
-
-**Forge Equipment Core**:
-The minimal Agent Equipment necessary for agents to autonomously operate Forge
-functions in a manner that fulfills Forge contracts.
-_Avoid_: Forge Canon, Forge Core
-
-**Armory Operating Contract**:
-A durable rule surface that governs Agentic Engineering or repository
-operations across the Agent Armory, rather than a specific Forge function or
-Equipment Candidate.
-_Avoid_: Forge Core when the rule applies across the Armory; Armory Equipment
-Core when the surface is a process contract rather than Agent Equipment
-
-**Armory Equipment Core**:
-The minimal Agent Equipment necessary for agents to autonomously operate Armory
-functions outside the Forge. It may share equipment with the Forge Equipment
-Core.
-_Avoid_: Forge Equipment Core when the function is outside the Forge; Armory
-Operating Contract when the surface is policy or process rather than equipment
+**Agentic Engineering**:
+Software engineering performed agentically: code is written by AI Agents, and
+the surrounding work is managed with methodical attention to how Agents
+navigate tasks, fail, recover, use context, and benefit from equipment.
+_Avoid_: vibe coding, Agent Engineering, Agent Meta-Engineering
 
 **Agentic Engineering Operating Model Review**:
 A structured review of the contracts and guidance under which Agents perform
@@ -135,136 +69,50 @@ obligations, validation routing, issue and PR projection, evidence durability,
 and how Agents discover, reference, and update those rules.
 _Avoid_: Forge Domain Model Review, ad hoc process reminder
 
+**Armory Equipment Core**:
+The minimal Agent Equipment necessary for agents to autonomously operate Armory
+functions outside the Forge. It may share equipment with the Forge Equipment
+Core.
+_Avoid_: Forge Equipment Core when the function is outside the Forge; Armory
+Operating Contract when the surface is policy or process rather than equipment
+
 **Armory Integrity Validation**:
 The top-level live repository validation umbrella for checking current Armory
 surfaces, contracts, evidence, routing, and publication-readiness invariants.
 It may include Forge-scoped validation suites and other Armory-scoped suites.
 _Avoid_: Seed Validation, equipment-specific behavior validation
 
-**Forge Integrity Validation**:
-The Forge-scoped suite within Armory Integrity Validation that checks current
-Forge Canon, Forge Core, Forge Equipment Core, Forge routes, Forge design
-surfaces, and Forge closeout invariants.
-_Avoid_: Armory-wide validation when the scope is only Forge; downstream
-equipment behavior validation
+**Armory Operating Contract**:
+A durable rule surface that governs Agentic Engineering or repository
+operations across the Agent Armory, rather than a specific Forge function or
+Equipment Candidate.
+_Avoid_: Forge Core when the rule applies across the Armory; Armory Equipment
+Core when the surface is a process contract rather than Agent Equipment
 
-**Forge Seed**:
-The first coherent version of the Agent Equipment Forge, limited to canonical docs, decision method, evidence discipline, harness catalog, templates, examples, Smith task specs, and Seed Validation.
-_Avoid_: Repo Ops implementation, Periodic Actions implementation
+**Assembly**:
+A cohesive grouping of equipment designed to work together.
+_Avoid_: unintegrated collection
 
-**Seed Validation**:
-Historical runnable checks that verified the Forge Seed's own repository shape,
-documentation links, provenance, accepted-handoff projection or explicit
-deferment, and structured catalog fields.
-_Avoid_: Armory Integrity Validation, Forge Integrity Validation, harness integration validation, production equipment validation
+**Blueprint**:
+A positive construction spec for something to be built.
+_Avoid_: non-goal list when the desired construction can be stated directly
 
-**Harness Capability Catalog**:
-The human-facing front door and collection boundary for Vanilla Harness
-Capability Profiles, sources, limitations, and refresh requirements.
-_Avoid_: source map, research notes
+**Capability Analysis Angle**:
+A way of modeling, probing, or judging a capability claim, including the chosen
+Capability State Graph, observation points, controls, expected evidence, and
+practical tradeoffs.
+_Avoid_: treating the first plausible test model as the only valid model
 
-**Capability Surface**:
-The capabilities, constraints, affordances, controls, state, and effects that
-an entity, arrangement, environment, equipment item, harness, or potential
-configuration can grant, alter, restrict, expose, or mediate. A Capability
-Surface can describe an actual current state, past state, intended state,
-potential state, realizable fixture, or hypothetical design.
-_Avoid_: component list when the capability-bearing state is the point
+**Capability Claim Triage**:
+The process for deciding how much re-analysis a capability claim needs based on
+prior evidence, version deltas, claim criticality, similar capabilities,
+applicability scope changes, and current intended use.
+_Avoid_: exhaustive re-proof of every claim, unexamined evidence reuse
 
 **Capability Profile**:
 A notionally complete analysis and breakdown of a Capability Surface for a
 stated scope, state, evidence basis, and intended use.
 _Avoid_: summary, inventory, implementation plan
-
-**Equipment Capability Surface**:
-The Capability Surface of Agent Equipment, framed by the Agent capabilities the
-equipment grants, alters, exposes, mediates, or restricts.
-_Avoid_: implementation file list, installed package boundary
-
-**Equipment Capability Profile**:
-A Capability Profile for an Equipment Capability Surface.
-_Avoid_: capability card when the profile is about observed or analyzable
-capabilities rather than intended equipment purpose
-
-**Harness Capability Surface**:
-The Capability Surface of an Agent Harness in a stated state, including the
-capabilities granted, altered, exposed, mediated, or restricted by the harness
-and by the settings, equipment, plugins, profiles, tools, hooks, config, local
-state, or other capabilities present in that state.
-_Avoid_: Vanilla Harness Capability Surface when a non-default state is meant
-
-**Harness Capability Profile**:
-A Capability Profile for a Harness Capability Surface.
-_Avoid_: Agent Profile, Harness Plugin, equipment projection guidance
-
-**Vanilla Harness Capability Surface**:
-The Harness Capability Surface for a harness immediately after installation and
-onboarding, with default settings and default equipment. Vanilla Harness
-Surface is accepted shorthand when the harness context is clear.
-_Avoid_: Effective Harness Capability Surface, configured local harness state
-
-**Vanilla Harness Capability Profile**:
-A Harness Capability Profile for a Vanilla Harness Capability Surface. Vanilla
-Harness Profile is accepted shorthand when the harness context is clear.
-_Avoid_: Agent Profile, Effective Harness Capability Profile
-
-**Effective Harness Capability Surface**:
-The Harness Capability Surface for a harness in any specified state: current,
-past, potential, realizable, or hypothetical. If the state is unspecified,
-current state is assumed. Effective Harness Surface is accepted shorthand when
-the harness context is clear.
-_Avoid_: Vanilla Harness Capability Surface, base harness capability
-
-**Effective Harness Capability Profile**:
-A Harness Capability Profile for an Effective Harness Capability Surface.
-Effective Harness Profile is accepted shorthand when the harness context is
-clear.
-_Avoid_: Vanilla Harness Capability Profile, Agent Profile
-
-**Harness Fact Refresh**:
-A source-backed update to Vanilla Harness Capability Profile claims when
-harness versions or affordances may have changed.
-_Avoid_: casual web lookup, stale handoff copy
-
-**Harness Capability Profile Manager**:
-The system that maintains Harness Capability Profiles through deterministic
-manager-core tooling, agent-guided workflows, and optional evidence adapters.
-_Avoid_: recurring scheduler, Forge consumption guidance
-
-**Harness Capability Profile Manager Core**:
-The deterministic tool layer of the Harness Capability Profile Manager,
-responsible for schema validation, structured IO, claim IDs, evidence-link
-checks, summary generation, diffs, deterministic migration, dry-run and apply
-mechanics, audit formatting, fixture checks, and machine-readable study plan or
-report validation.
-_Avoid_: agent-guided judgment, source interpretation, open-ended research
-
-**Manual Refresh Scout Report**:
-A normalized, noncanonical refresh artifact that records curated source
-evidence, fallback evidence, local observations, selected study reports,
-evidence notes, hypotheses, unknowns, effect classification, and scratch
-disposition for one harness.
-_Avoid_: canonical profile mutation, raw cache dump
-
-**Manual Refresh Analysis Report**:
-A normalized, noncanonical refresh artifact that compares a Manual Refresh
-Scout Report with current Vanilla Harness Capability Profiles, prior evidence
-basis, schema pressure, version deltas, similar claims, and Capability Claim
-Triage.
-_Avoid_: mutation plan, profile rewrite
-
-**Manual Refresh Update Plan**:
-A reviewable refresh artifact that records explicit canonical profile or schema
-mutations, precondition hashes, planned content hashes, validation commands,
-evidence promotions, and follow-up issue candidates.
-_Avoid_: scout cache, implicit profile edit
-
-**Manual Refresh Audit Summary**:
-A refresh closeout artifact that records checked sources, planned and changed
-profile files, claim dispositions, schema pressure, selected-rigor deviations,
-scratch evidence disposition, apply result, validation results, and follow-up
-disposition.
-_Avoid_: raw transcript, hidden local cache
 
 **Capability Profiling Protocol**:
 A generic meta-protocol that generates a study protocol for a selected
@@ -280,124 +128,103 @@ external states that influence or are influenced by the capability under study.
 _Avoid_: vague behavior pattern, single target state when the capability
 manifests across states
 
-**Capability Analysis Angle**:
-A way of modeling, probing, or judging a capability claim, including the chosen
-Capability State Graph, observation points, controls, expected evidence, and
-practical tradeoffs.
-_Avoid_: treating the first plausible test model as the only valid model
+**Capability Surface**:
+The capabilities, constraints, affordances, controls, state, and effects that
+an entity, arrangement, environment, equipment item, harness, or potential
+configuration can grant, alter, restrict, expose, or mediate. A Capability
+Surface can describe an actual current state, past state, intended state,
+potential state, realizable fixture, or hypothetical design.
+_Avoid_: component list when the capability-bearing state is the point
 
-**Capability Claim Triage**:
-The process for deciding how much re-analysis a capability claim needs based on
-prior evidence, version deltas, claim criticality, similar capabilities,
-applicability scope changes, and current intended use.
-_Avoid_: exhaustive re-proof of every claim, unexamined evidence reuse
+**Change Set Documentation Closeout**:
+The end-of-change documentation activity that inspects affected agent-facing and human-facing docs, updates stale or incomplete claims, and reviews the result with audience-appropriate doc-writing standards.
+_Avoid_: README-only cleanup, indiscriminate doc churn, stale initial-state language
 
-**Study Target Declaration**:
-The machine-readable declaration of the Capability Surface target, scope,
-state or Capability State Graph, claims under study, required evidence,
-available controls, operator preferences, permitted effects, and selected
-rigor for a Capability Profiling Protocol study.
-_Avoid_: study result, profile claim
+**Change Set Security Closeout**:
+The end-of-change security activity that determines and performs the applicable security analyses, records findings and resolutions, and blocks merge-readiness on unresolved reportable risk.
+_Avoid_: treating security review as optional cleanup, replacing analysis with a generic note
 
-**Study Plan**:
-A pre-execution Capability Profiling Protocol artifact that records the study
-target, Capability State Graph, Capability Analysis Angles, rigor controls,
-permitted effects, approvals, observation points, and sufficiency criteria.
-_Avoid_: study report, profile mutation plan
+**Cognition Enhancement Equipment**:
+Agent Equipment that shapes how an Agent reasons, reflects, remembers, routes
+insight, right-sizes cognition, or improves its future harness behavior.
+_Avoid_: prompt style when deterministic support, durable capture, policy, or
+validation is the needed surface
 
-**Study Report**:
-A post-execution Capability Profiling Protocol artifact that records observed
-results, claim confidence, test sufficiency, limitations, failed controls,
-artifact disposition, and profile impact.
-_Avoid_: raw transcript, unreviewed scratch output
+**Config Edit Intent**:
+A deliberate Agent Equipment Config source-change purpose such as propose,
+patch, migrate, revise, or apply. The intent does not authorize a write by
+itself.
+_Avoid_: treating edit purpose as write authority
 
-**Jig Adequacy Report**:
-A Capability Profiling Protocol report for a clean-room profiling jig that
-classifies controls as claimed, verified, unsupported, or unknown and records
-how those controls affect selected rigor.
-_Avoid_: assuming a clean-room jig is fully adequate without control evidence
+**Config Refusal State**:
+The machine-visible reason a Config edit cannot write a source, such as
+ineligible source category, missing authority, blocking safety status,
+validation failure, secret-boundary violation, ownership-boundary violation,
+or changed source precondition.
+_Avoid_: treating every refusal as a validation failure
 
-**Standard Clean-Room Profiling Jig**:
-The ideal preferred baseline study environment and Capability Surface for
-official Vanilla Harness Capability Profiles, designed to maximize control over
-harness state, equipment, configuration, isolation, reproducibility, permitted
-effects, and evidence quality within the limits of each harness.
-_Avoid_: assuming every harness can expose the same controls
+**Config Safety Status**:
+The machine-visible Agent Equipment Config classification that states whether a
+configuration is usable, incomplete, unsafe, stale, untrusted, or conflicted
+for the requested behavior.
+_Avoid_: treating schema validity alone as write safety
 
-**Per-Harness Clean-Room Jig**:
-The harness-specific clean-room profiling environment and Capability Surface
-that records how closely one Agent Harness can approach the Standard
-Clean-Room Profiling Jig and where it falls short.
-_Avoid_: treating a harness-limited jig as the ideal baseline
+**Cross-Boundary Coherence Ralph Review**:
+A Review Until Clean gate that checks whether process outputs agree across PRD, specs, plans, implementation, validation, security, documentation, projection, and release or handoff surfaces.
+_Avoid_: local-only consistency check
 
-**Forge Example**:
-An annotated demonstration of the Forge's decision method using realistic but non-production equipment shapes.
-_Avoid_: production package, installable equipment unless promoted through the full workflow
+**Effective Harness Capability Profile**:
+A Harness Capability Profile for an Effective Harness Capability Surface.
+Effective Harness Profile is accepted shorthand when the harness context is
+clear.
+_Avoid_: Vanilla Harness Capability Profile, Agent Profile
 
-**Agent Ops**:
-The generic term for operations work performed agentically.
-_Avoid_: using Agent Ops as the name of the repository-operations equipment line
+**Effective Harness Capability Surface**:
+The Harness Capability Surface for a harness in any specified state: current,
+past, potential, realizable, or hypothetical. If the state is unspecified,
+current state is assumed. Effective Harness Surface is accepted shorthand when
+the harness context is clear.
+_Avoid_: Vanilla Harness Capability Surface, base harness capability
 
-**Repo Ops**:
-Future Agent Equipment for operating repositories agentically. Repo Ops is
-complete for repositories that are not forks and provides the extension base
-for fork-specific operations.
-_Avoid_: treating it as implemented by the Forge Seed, forcing fork-specific
-behavior into non-fork repos
+**Effective Intent**:
+The Intent actually imposed by ADRs, PRDs, specs, plans, acceptance criteria, review dispositions, and other declarative project surfaces; this is the direction the project would take if agents followed those declarations literally.
+_Avoid_: assuming declarations always capture the operator's full purpose
 
-**Fork Ops**:
-A planned Repo Ops add-on for fork-specific operations, including upstream,
-downstream, divergence, sync, publication, and selective-upstreaming behavior.
-_Avoid_: treating it as a replacement for Repo Ops, treating current
-non-Forge-built Fork Ops source material as published Armory equipment
+**Efficient Coherence**:
+The Agent Armory's guiding doctrine: honor the Underlying Intent, match the
+rigor to the unresolved uncertainty, and minimize spend within that quality
+boundary.
+_Avoid_: treating economy as prior to intent alignment, or treating rigor as
+ceremony rather than a response to unresolved uncertainty
 
-**Agent-Operated Repository**:
-A repository where agents drive assigned execution after a human operator initiates or continues the work session.
-_Avoid_: fully autonomous repository, human-absent governance
+**Equipment Blueprint**:
+A Blueprint for Agent Equipment.
+_Avoid_: downstream Smith spec when naming the current artifact shape
 
-**Initiative Authority**:
-The human operator's reserved authority to choose project initiatives and start or continue work sessions.
-_Avoid_: implementation authority, routine closeout authority
+**Equipment Candidate**:
+A proposed, specified, planned, or implemented equipment surface that has not yet been validated and published for use.
+_Avoid_: Published Agent Equipment
 
-**Periodic Actions**:
-Future Agent Equipment for defining, installing, inspecting, and uninstalling recurring agent actions across harnesses.
-_Avoid_: treating it as implemented by the Forge Seed
+**Equipment Capability Profile**:
+A Capability Profile for an Equipment Capability Surface.
+_Avoid_: capability card when the profile is about observed or analyzable
+capabilities rather than intended equipment purpose
 
-**Harness Capability Refresh**:
-Future recurring Agent Equipment for invoking the Harness Capability Profile
-Manager and keeping Vanilla Harness Capability Profiles current over time.
-_Avoid_: one-time Harness Fact Refresh
+**Equipment Capability Surface**:
+The Capability Surface of Agent Equipment, framed by the Agent capabilities the
+equipment grants, alters, exposes, mediates, or restricts.
+_Avoid_: implementation file list, installed package boundary
 
-**Repo Draft PRD**:
-A worktree-authored PRD used for review and refinement before projection into the issue tracker.
-_Avoid_: treating the draft as the final issue-tracker record
+**Equipment Design Bundle**:
+A neutral project-path bundle that gathers the design and validation-planning
+artifacts for one Equipment Candidate, such as the capability card, interface
+decision, security/control classification, pressure scenarios, validation plan,
+closeout evidence plan, and related design records.
+_Avoid_: Inventory, component implementation path, status dump
 
-**Published PRD Issue**:
-A GitHub issue that tracks an accepted PRD after repo-draft review.
-_Avoid_: letting it drift from the Repo Draft PRD without an explicit projection note
-
-**Issue Projection**:
-The post-review step that creates or updates a Published PRD Issue from a stable Repo Draft PRD.
-_Avoid_: issue churn during draft review, untracked divergence
-
-**Issue Tracker Ops**:
-Agent Equipment for recording, reviewing, repairing, enriching, organizing,
-assigning, working, and orchestrating issue-tracked follow-ups directly in an
-issue tracker.
-_Avoid_: Issue Projection when the work is broader than PRD publication;
-in-tree tracking state when the issue tracker is available
-
-**Issue Ops**:
-Accepted shorthand for Issue Tracker Ops after the full name is clear in the
-current context.
-_Avoid_: using it as a separate equipment name
-
-**Foreign Policy Surface**:
-A non-Armory skill, doc, config file, hook, script, or integration that carries
-policy or behavior an Armory equipment migration may discover, preserve,
-ingest, discard, or leave untouched.
-_Avoid_: legacy surface when the point is external origin rather than age;
-treating a whole surface as indivisible when only some functions should migrate
+**Equipment Promotion Path**:
+The lifecycle that moves an equipment idea from example or spec toward Published Agent Equipment.
+_Avoid_: treating example, specified, planned, implemented, validated, and published as interchangeable states
 
 **Foreign Policy Compatibility Surface**:
 A kept Foreign Policy Surface that remains usable while its policy or behavior
@@ -408,88 +235,126 @@ _Avoid_: Compatibility Surface when the point is specifically migrated foreign
 policy; exposing mechanism-specific choices before the surface has been
 classified
 
-**Issue Tracker Baseline**:
-The current GitHub Issues-only baseline for Issue Tracker Ops. Labels represent
-custom predicates, and out-of-band policy imposes structure on those
-predicates until richer tracker or GitHub Projects support is designed,
-implemented, validated, and dogfooded.
-_Avoid_: treating labels as the best long-term UX, or treating GitHub Projects
-custom fields as already adopted policy
+**Foreign Policy Surface**:
+A non-Armory skill, doc, config file, hook, script, or integration that carries
+policy or behavior an Armory equipment migration may discover, preserve,
+ingest, discard, or leave untouched.
+_Avoid_: legacy surface when the point is external origin rather than age;
+treating a whole surface as indivisible when only some functions should migrate
 
-**Issue Category Role**:
-The coarse triage classification that distinguishes `bug` from `enhancement`.
-Every triaged issue should carry exactly one Issue Category Role.
-_Avoid_: work kind, readiness state, priority, implementation surface
+**Forge Canon**:
+The current conceptual framework and corresponding documentation that govern
+Forge work.
+_Avoid_: handoff docs, source notes
 
-**Issue State Role**:
-The mutually exclusive triage state that records whether an issue still needs
-triage, needs specific outside information, is ready for an AFK agent, is ready
-for human handling, or should not be actioned.
-_Avoid_: dependency state, triage depth, priority, engagement mode, work kind
+**Forge Conveyor**:
+The preloaded agent-facing route from root `AGENTS.md` into the Forge Canon, without scouting.
+_Avoid_: requiring repo-wide search, relying only on README discovery
 
-**Issue Work Kind**:
-The orthogonal description of what kind of work an issue requires, such as
-research, design, documentation, implementation, epic, cleanup, or Reflection
-Finding.
-_Avoid_: Issue Category Role, triage state
+**Forge Core**:
+The materialized and enacted Forge processes, contracts, components, and
+deterministic tools that implement the core features and functions of the
+Forge.
+_Avoid_: Forge Canon, Forge Equipment Core, Armory Operating Contract
 
-**Triage Depth**:
-The evidence boundary that supports the current issue-triage recommendation,
-from semantic hygiene through deep issue-session analysis.
-_Avoid_: readiness state, work kind, priority
+**Forge Equipment Core**:
+The minimal Agent Equipment necessary for agents to autonomously operate Forge
+functions in a manner that fulfills Forge contracts.
+_Avoid_: Forge Canon, Forge Core
 
-**Issue Engagement Mode**:
-The next expected handling shape for an issue, such as AFK implementation,
-agent-led grill, human decision, linked-context triage, or deep issue session.
-_Avoid_: triage state, category, priority
+**Forge Example**:
+An annotated demonstration of the Forge's decision method using realistic but non-production equipment shapes.
+_Avoid_: production package, installable equipment unless promoted through the full workflow
 
-**Issue Brief Status**:
-The issue-tracker indication of whether the issue has the agent or human brief
-needed for safe delegation.
-_Avoid_: readiness state by itself; brief status supports readiness but does
-not replace it
+**Forge Integrity Validation**:
+The Forge-scoped suite within Armory Integrity Validation that checks current
+Forge Canon, Forge Core, Forge Equipment Core, Forge routes, Forge design
+surfaces, and Forge closeout invariants.
+_Avoid_: Armory-wide validation when the scope is only Forge; downstream
+equipment behavior validation
 
-**Issue Dependency Disposition**:
-The issue-tracker indication of how dependency state affects issue selection:
-unblocked, blocked, unknown, or needing tracker-record repair.
-_Avoid_: native dependency relation by itself; disposition records the current
-selection effect of dependency knowledge
+**Forge Seed**:
+The first coherent version of the Agent Equipment Forge, limited to canonical docs, decision method, evidence discipline, harness catalog, templates, examples, Smith task specs, and Seed Validation.
+_Avoid_: Repo Ops implementation, Periodic Actions implementation
 
-**Issue Triage Record**:
-A concise issue comment that records the evidence boundary, reasoning,
-unresolved factors, applied or recommended labels, and next action behind a
-triage outcome.
-_Avoid_: labels as rationale, rewriting issue bodies for transient reasoning,
-copying large private or instance-scoped evidence into public tracker comments
+**Forge Tooling**:
+Reusable fixtures, processes, validators, templates, and workflows supplied by the Forge.
+_Avoid_: one-off Smith workaround
 
-**Agent Equipment Config**:
-Agent Equipment for shared, layerable, composable, adaptable, and enforceable
-configuration across Agent Equipment.
-_Avoid_: treating it as a component of Repo Ops or any other higher-level
-equipment
+**Forge Tour**:
+The Forge's exclusively human-facing documentation set, starting in this repo with `docs/forge-tour.md`.
+_Avoid_: treating the root README link to the Tour as a special named surface; maintainer process dump; agent policy surface
 
-**Layer Precedence**:
-The normal Agent Equipment Config merge order that decides which configuration
-value would win when no policy lock blocks it.
-_Avoid_: policy authority, when the point is the value merge order
+**Forgewright**:
+An Agent that creates or refines the Agent Equipment Forge.
+_Avoid_: architect agent, Forge author
 
-**Policy Authority**:
-The right of a configuration layer to constrain later overrides or
-lower-authority layers by marking a setting non-overridable or requiring a
-mutation gate.
-_Avoid_: layer precedence, when the point is who may constrain later overrides
+**Forgewright Hand-Back**:
+The return note a Forgewright gives a Smith after resolving or deferring a Tooling Gap.
+_Avoid_: chat-only conclusion, undocumented resume instruction
 
-**Config Safety Status**:
-The machine-visible Agent Equipment Config classification that states whether a
-configuration is usable, incomplete, unsafe, stale, untrusted, or conflicted
-for the requested behavior.
-_Avoid_: treating schema validity alone as write safety
+**Forgewright Runbook**:
+A concise canonical workflow for Agents that maintain the Agent Equipment Forge.
+_Avoid_: storing every project plan, review transcript, or implementation checklist there
 
-**Cognition Enhancement Equipment**:
-Agent Equipment that shapes how an Agent reasons, reflects, remembers, routes
-insight, right-sizes cognition, or improves its future harness behavior.
-_Avoid_: prompt style when deterministic support, durable capture, policy, or
-validation is the needed surface
+**Fork Ops**:
+A planned Repo Ops add-on for fork-specific operations, including upstream,
+downstream, divergence, sync, publication, and selective-upstreaming behavior.
+_Avoid_: treating it as a replacement for Repo Ops, treating current
+non-Forge-built Fork Ops source material as published Armory equipment
+
+**Harness Capability Catalog**:
+The human-facing front door and collection boundary for Vanilla Harness
+Capability Profiles, sources, limitations, and refresh requirements.
+_Avoid_: source map, research notes
+
+**Harness Capability Profile**:
+A Capability Profile for a Harness Capability Surface.
+_Avoid_: Agent Profile, Harness Plugin, equipment projection guidance
+
+**Harness Capability Profile Manager**:
+The system that maintains Harness Capability Profiles through deterministic
+manager-core tooling, agent-guided workflows, and optional evidence adapters.
+_Avoid_: recurring scheduler, Forge consumption guidance
+
+**Harness Capability Profile Manager Core**:
+The deterministic tool layer of the Harness Capability Profile Manager,
+responsible for schema validation, structured IO, claim IDs, evidence-link
+checks, summary generation, diffs, deterministic migration, dry-run and apply
+mechanics, audit formatting, fixture checks, and machine-readable study plan or
+report validation.
+_Avoid_: agent-guided judgment, source interpretation, open-ended research
+
+**Harness Capability Refresh**:
+Future recurring Agent Equipment for invoking the Harness Capability Profile
+Manager and keeping Vanilla Harness Capability Profiles current over time.
+_Avoid_: one-time Harness Fact Refresh
+
+**Harness Capability Surface**:
+The Capability Surface of an Agent Harness in a stated state, including the
+capabilities granted, altered, exposed, mediated, or restricted by the harness
+and by the settings, equipment, plugins, profiles, tools, hooks, config, local
+state, or other capabilities present in that state.
+_Avoid_: Vanilla Harness Capability Surface when a non-default state is meant
+
+**Harness Component**:
+Reusable behavior integrated into an Agent Harness.
+_Avoid_: plugin part unless the package boundary matters
+
+**Harness Evidence Source Policy**:
+The rule that Harness Capability Profile claims prefer first-party sources, use
+third-party metadata only as labeled fallback, and record local CLI
+observations separately.
+_Avoid_: unlabeled source mixing, stale memory-backed harness claims
+
+**Harness Fact Refresh**:
+A source-backed update to Vanilla Harness Capability Profile claims when
+harness versions or affordances may have changed.
+_Avoid_: casual web lookup, stale handoff copy
+
+**Harness Plugin**:
+A portable collection of Harness Components.
+_Avoid_: plugin when referring to an individual skill, hook, or profile
 
 **Head Gear**:
 The planned name for the Armory's generic Cognition Enhancement Equipment for
@@ -498,6 +363,171 @@ outcomes by inducing reflection, imagination, questioning, bookkeeping,
 knowledge retrieval, capability prediction, and self-outfitting.
 _Avoid_: domain-specific equipment, style-only prompting, one-off instruction
 to think harder
+
+**Initiative Authority**:
+The human operator's reserved authority to choose project initiatives and start or continue work sessions.
+_Avoid_: implementation authority, routine closeout authority
+
+**Intent**:
+A direction that an intent-capable actor, declaration, specification, tool, or workflow imposes or attempts to impose. Intent is usually goal-oriented, or at least directionally so.
+_Avoid_: treating intent as only stakeholder purpose or only written specification
+
+**Intent Alignment Check**:
+A Story Quality check that compares Effective Intent with the refreshed model of Underlying Intent after Cross-Boundary Coherence has made Effective Intent legible. Refresh the model again if closeout evidence introduced new intent signals.
+_Avoid_: silent reinterpretation, mind-reading, unexamined literalism
+
+**Intent Model Refresh**:
+The first Story Closeout gate, where the agent updates its evidence-backed model of Underlying Intent from current operator input, accepted decisions, review dispositions, handoffs, and observed corrections before running downstream closeout gates.
+_Avoid_: validating against stale assumptions
+
+**Inventory**:
+An index or catalog of available, candidate, or planned equipment.
+_Avoid_: treating every docs list as Inventory
+
+**Issue Brief Status**:
+The issue-tracker indication of whether the issue has the agent or human brief
+needed for safe delegation.
+_Avoid_: readiness state by itself; brief status supports readiness but does
+not replace it
+
+**Issue Category Role**:
+The coarse triage classification that distinguishes `bug` from `enhancement`.
+Every triaged issue should carry exactly one Issue Category Role.
+_Avoid_: work kind, readiness state, priority, implementation surface
+
+**Issue Dependency Disposition**:
+The issue-tracker indication of how dependency state affects issue selection:
+unblocked, blocked, unknown, or needing tracker-record repair.
+_Avoid_: native dependency relation by itself; disposition records the current
+selection effect of dependency knowledge
+
+**Issue Engagement Mode**:
+The next expected handling shape for an issue, such as AFK implementation,
+agent-led grill, human decision, linked-context triage, or deep issue session.
+_Avoid_: triage state, category, priority
+
+**Issue Ops**:
+Accepted shorthand for Issue Tracker Ops after the full name is clear in the
+current context.
+_Avoid_: using it as a separate equipment name
+
+**Issue Projection**:
+The post-review step that creates or updates a Published PRD Issue from a stable Repo Draft PRD.
+_Avoid_: issue churn during draft review, untracked divergence
+
+**Issue State Role**:
+The mutually exclusive triage state that records whether an issue still needs
+triage, needs specific outside information, is ready for an AFK agent, is ready
+for human handling, or should not be actioned.
+_Avoid_: dependency state, triage depth, priority, engagement mode, work kind
+
+**Issue Tracker Baseline**:
+The current GitHub Issues-only baseline for Issue Tracker Ops. Labels represent
+custom predicates, and out-of-band policy imposes structure on those
+predicates until richer tracker or GitHub Projects support is designed,
+implemented, validated, and dogfooded.
+_Avoid_: treating labels as the best long-term UX, or treating GitHub Projects
+custom fields as already adopted policy
+
+**Issue Tracker Ops**:
+Agent Equipment for recording, reviewing, repairing, enriching, organizing,
+assigning, working, and orchestrating issue-tracked follow-ups directly in an
+issue tracker.
+_Avoid_: Issue Projection when the work is broader than PRD publication;
+in-tree tracking state when the issue tracker is available
+
+**Issue Triage Record**:
+A concise issue comment that records the evidence boundary, reasoning,
+unresolved factors, applied or recommended labels, and next action behind a
+triage outcome.
+_Avoid_: labels as rationale, rewriting issue bodies for transient reasoning,
+copying large private or instance-scoped evidence into public tracker comments
+
+**Issue Work Kind**:
+The orthogonal description of what kind of work an issue requires, such as
+research, design, documentation, implementation, epic, cleanup, or Reflection
+Finding.
+_Avoid_: Issue Category Role, triage state
+
+**Jig Adequacy Report**:
+A Capability Profiling Protocol report for a clean-room profiling jig that
+classifies controls as claimed, verified, unsupported, or unknown and records
+how those controls affect selected rigor.
+_Avoid_: assuming a clean-room jig is fully adequate without control evidence
+
+**Layer Precedence**:
+The normal Agent Equipment Config merge order that decides which configuration
+value would win when no policy lock blocks it.
+_Avoid_: policy authority, when the point is the value merge order
+
+**Loadout**:
+The selected equipment set for a role, task, session, Agent, or agentic system.
+_Avoid_: Inventory, Assembly
+
+**Manual Refresh Analysis Report**:
+A normalized, noncanonical refresh artifact that compares a Manual Refresh
+Scout Report with current Vanilla Harness Capability Profiles, prior evidence
+basis, schema pressure, version deltas, similar claims, and Capability Claim
+Triage.
+_Avoid_: mutation plan, profile rewrite
+
+**Manual Refresh Audit Summary**:
+A refresh closeout artifact that records checked sources, planned and changed
+profile files, claim dispositions, schema pressure, selected-rigor deviations,
+scratch evidence disposition, apply result, validation results, and follow-up
+disposition.
+_Avoid_: raw transcript, hidden local cache
+
+**Manual Refresh Scout Report**:
+A normalized, noncanonical refresh artifact that records curated source
+evidence, fallback evidence, local observations, selected study reports,
+evidence notes, hypotheses, unknowns, effect classification, and scratch
+disposition for one harness.
+_Avoid_: canonical profile mutation, raw cache dump
+
+**Manual Refresh Update Plan**:
+A reviewable refresh artifact that records explicit canonical profile or schema
+mutations, precondition hashes, planned content hashes, validation commands,
+evidence promotions, and follow-up issue candidates.
+_Avoid_: scout cache, implicit profile edit
+
+**Operator**:
+An intent-capable actor that initiates, routes, controls, or evaluates Agent
+work. An Operator may be a human or an orchestrator-agent.
+_Avoid_: assuming every Operator is human; use human operator or stakeholder
+when human authority specifically matters
+
+**Outfitter**:
+An Agent that selects and assembles Agent Equipment from the Agent Armory into a Loadout for a role, task, session, Agent, or agentic system.
+_Avoid_: Smith, Forgewright, Equipment creator
+
+**Per-Harness Clean-Room Jig**:
+The harness-specific clean-room profiling environment and Capability Surface
+that records how closely one Agent Harness can approach the Standard
+Clean-Room Profiling Jig and where it falls short.
+_Avoid_: treating a harness-limited jig as the ideal baseline
+
+**Periodic Actions**:
+Future Agent Equipment for defining, installing, inspecting, and uninstalling recurring agent actions across harnesses.
+_Avoid_: treating it as implemented by the Forge Seed
+
+**Policy Authority**:
+The right of a configuration layer to constrain later overrides or
+lower-authority layers by marking a setting non-overridable or requiring a
+mutation gate.
+_Avoid_: layer precedence, when the point is who may constrain later overrides
+
+**Pressure Scenario Validation**:
+A skill-validation method that tests whether an Agent follows a proposed skill under realistic task pressure, including evidence of baseline failure or gap and post-skill compliance.
+_Avoid_: informal read-through, author confidence
+
+**Published Agent Equipment**:
+Agent Equipment that has completed the promotion path and is intended to be equipped.
+_Avoid_: example, draft, candidate
+
+**Published PRD Issue**:
+A GitHub issue that tracks an accepted PRD after repo-draft review.
+_Avoid_: letting it drift from the Repo Draft PRD without an explicit projection note
 
 **Reflection**:
 An Agent activity that inspects recent experience, extracts reusable lessons,
@@ -511,85 +541,102 @@ observed friction, failure, pattern, or insight and the induced equipment,
 policy, validator, config, workflow, or documentation candidate.
 _Avoid_: final equipment design, untracked note
 
+**Repo Draft PRD**:
+A worktree-authored PRD used for review and refinement before projection into the issue tracker.
+_Avoid_: treating the draft as the final issue-tracker record
+
+**Repo Ops**:
+Future Agent Equipment for operating repositories agentically. Repo Ops is
+complete for repositories that are not forks and provides the extension base
+for fork-specific operations.
+_Avoid_: treating it as implemented by the Forge Seed, forcing fork-specific
+behavior into non-fork repos
+
+**Repository Threat Model**:
+A repository-scoped security model that records assets, trust boundaries, attacker-controlled inputs, assumptions, invariants, and high-impact failure modes for future scans.
+_Avoid_: target-specific finding list, one-off scan report
+
 **Review Until Clean**:
 A repeated review-and-revision loop that stops only when the latest review cycle has no findings.
 _Avoid_: assuming any named external review skill is repo policy unless the operator invokes it or repo policy names it
-
-**Forgewright Runbook**:
-A concise canonical workflow for Agents that maintain the Agent Equipment Forge.
-_Avoid_: storing every project plan, review transcript, or implementation checklist there
-
-**Target Structure**:
-A planned repository shape used to reason about Forge surfaces before all of those surfaces exist.
-_Avoid_: treating the target as an unconditional directory mandate
 
 **Seed Surface**:
 A file or directory implemented during the Forge Seed because it had a clear
 seed role.
 _Avoid_: placeholder directories without seed responsibilities
 
+**Seed Validation**:
+Historical runnable checks that verified the Forge Seed's own repository shape,
+documentation links, provenance, accepted-handoff projection or explicit
+deferment, and structured catalog fields.
+_Avoid_: Armory Integrity Validation, Forge Integrity Validation, harness integration validation, production equipment validation
+
 **Seed Validation Tool**:
 A historical standard-library Python script shape for completed Forge Seed
 checks. Current live checks run through Armory Integrity Validation tooling.
 _Avoid_: package-manager-dependent validator, harness-specific validator
 
-**Harness Evidence Source Policy**:
-The rule that Harness Capability Profile claims prefer first-party sources, use
-third-party metadata only as labeled fallback, and record local CLI
-observations separately.
-_Avoid_: unlabeled source mixing, stale memory-backed harness claims
-
-**Equipment Promotion Path**:
-The lifecycle that moves an equipment idea from example or spec toward Published Agent Equipment.
-_Avoid_: treating example, specified, planned, implemented, validated, and published as interchangeable states
-
-**Pressure Scenario Validation**:
-A skill-validation method that tests whether an Agent follows a proposed skill under realistic task pressure, including evidence of baseline failure or gap and post-skill compliance.
-_Avoid_: informal read-through, author confidence
-
 **Skill Template**:
 A seed artifact that shows how Smiths should shape future skills without itself being equipped as a skill.
 _Avoid_: repo-local skill, production skill
 
-**Forge Conveyor**:
-The preloaded agent-facing route from root `AGENTS.md` into the Forge Canon, without scouting.
-_Avoid_: requiring repo-wide search, relying only on README discovery
+**Smith**:
+An Agent that creates Agent Equipment using the Agent Equipment Forge.
+_Avoid_: implementer when the role includes equipment design
 
-**Forge Tour**:
-The Forge's exclusively human-facing documentation set, starting in this repo with `docs/forge-tour.md`.
-_Avoid_: treating the root README link to the Tour as a special named surface; maintainer process dump; agent policy surface
+**Smith-to-Forgewright Handoff**:
+The context package a Smith gives to a Forgewright for Tooling Request.
+_Avoid_: vague note, unstructured context dump
 
-**Blueprint**:
-A positive construction spec for something to be built.
-_Avoid_: non-goal list when the desired construction can be stated directly
+**Source Disposition Ledger**:
+A durable, self-contained closeout surface that records source-handoff coverage, retained claim summaries, operator dispositions, and source-retirement evidence after raw source handoff materials are retired.
+_Avoid_: raw source archive, implicit coverage, unverifiable handoff completeness
 
-**Equipment Blueprint**:
-A Blueprint for Agent Equipment.
-_Avoid_: downstream Smith spec when naming the current artifact shape
+**Source Handoff**:
+Preserved upstream material accepted as provenance for Forge design, not the live Forge surface.
+_Avoid_: canonical docs, final docs
 
-**Inventory**:
-An index or catalog of available, candidate, or planned equipment.
-_Avoid_: treating every docs list as Inventory
+**Standard Clean-Room Profiling Jig**:
+The ideal preferred baseline study environment and Capability Surface for
+official Vanilla Harness Capability Profiles, designed to maximize control over
+harness state, equipment, configuration, isolation, reproducibility, permitted
+effects, and evidence quality within the limits of each harness.
+_Avoid_: assuming every harness can expose the same controls
 
-**Outfitter**:
-An Agent that selects and assembles Agent Equipment from the Agent Armory into a Loadout for a role, task, session, Agent, or agentic system.
-_Avoid_: Smith, Forgewright, Equipment creator
+**Story Closeout**:
+The story-level activity that assembles validation, security, documentation, review, projection, and handoff evidence before a story is treated as complete.
+_Avoid_: treating one clean subprocess as proof that the whole story is complete
 
-**Loadout**:
-The selected equipment set for a role, task, session, Agent, or agentic system.
-_Avoid_: Inventory, Assembly
+**Story Quality Ralph Review**:
+A Review Until Clean gate that checks holistic quality after coherence is established, including DX, UX, architecture, robustness, strategic alignment, and lessons from prior development or operations failures.
+_Avoid_: style-only review, generic correctness pass
 
-**Wielder**:
-An Agent outfitted with a Loadout and actively using that Agent Equipment to perform work.
-_Avoid_: Outfitter, Loadout, Agent Profile
+**Strapped**:
+Mediated by an Agent Harness.
+_Avoid_: installed, configured, running when the harness relationship is the point
 
-**Assembly**:
-A cohesive grouping of equipment designed to work together.
-_Avoid_: unintegrated collection
+**Study Plan**:
+A pre-execution Capability Profiling Protocol artifact that records the study
+target, Capability State Graph, Capability Analysis Angles, rigor controls,
+permitted effects, approvals, observation points, and sufficiency criteria.
+_Avoid_: study report, profile mutation plan
 
-**Forge Tooling**:
-Reusable fixtures, processes, validators, templates, and workflows supplied by the Forge.
-_Avoid_: one-off Smith workaround
+**Study Report**:
+A post-execution Capability Profiling Protocol artifact that records observed
+results, claim confidence, test sufficiency, limitations, failed controls,
+artifact disposition, and profile impact.
+_Avoid_: raw transcript, unreviewed scratch output
+
+**Study Target Declaration**:
+The machine-readable declaration of the Capability Surface target, scope,
+state or Capability State Graph, claims under study, required evidence,
+available controls, operator preferences, permitted effects, and selected
+rigor for a Capability Profiling Protocol study.
+_Avoid_: study result, profile claim
+
+**Target Structure**:
+A planned repository shape used to reason about Forge surfaces before all of those surfaces exist.
+_Avoid_: treating the target as an unconditional directory mandate
 
 **Tooling Gap**:
 A missing or inadequate Forge provision that blocks or materially weakens Smith work.
@@ -605,61 +652,29 @@ _Avoid_: vague handoff, unsupported workaround, continuing with an underspecifie
 Forgewright work that adds or refines Forge Tooling.
 _Avoid_: Smith equipment work
 
-**Source Disposition Ledger**:
-A durable, self-contained closeout surface that records source-handoff coverage, retained claim summaries, operator dispositions, and source-retirement evidence after raw source handoff materials are retired.
-_Avoid_: raw source archive, implicit coverage, unverifiable handoff completeness
-
-**Change Set Security Closeout**:
-The end-of-change security activity that determines and performs the applicable security analyses, records findings and resolutions, and blocks merge-readiness on unresolved reportable risk.
-_Avoid_: treating security review as optional cleanup, replacing analysis with a generic note
-
-**Repository Threat Model**:
-A repository-scoped security model that records assets, trust boundaries, attacker-controlled inputs, assumptions, invariants, and high-impact failure modes for future scans.
-_Avoid_: target-specific finding list, one-off scan report
-
-**Change Set Documentation Closeout**:
-The end-of-change documentation activity that inspects affected agent-facing and human-facing docs, updates stale or incomplete claims, and reviews the result with audience-appropriate doc-writing standards.
-_Avoid_: README-only cleanup, indiscriminate doc churn, stale initial-state language
-
-**Story Closeout**:
-The story-level activity that assembles validation, security, documentation, review, projection, and handoff evidence before a story is treated as complete.
-_Avoid_: treating one clean subprocess as proof that the whole story is complete
-
-**Cross-Boundary Coherence Ralph Review**:
-A Review Until Clean gate that checks whether process outputs agree across PRD, specs, plans, implementation, validation, security, documentation, projection, and release or handoff surfaces.
-_Avoid_: local-only consistency check
-
-**Story Quality Ralph Review**:
-A Review Until Clean gate that checks holistic quality after coherence is established, including DX, UX, architecture, robustness, strategic alignment, and lessons from prior development or operations failures.
-_Avoid_: style-only review, generic correctness pass
-
-**Intent**:
-A direction that an intent-capable actor, declaration, specification, tool, or workflow imposes or attempts to impose. Intent is usually goal-oriented, or at least directionally so.
-_Avoid_: treating intent as only stakeholder purpose or only written specification
-
-**Effective Intent**:
-The Intent actually imposed by ADRs, PRDs, specs, plans, acceptance criteria, review dispositions, and other declarative project surfaces; this is the direction the project would take if agents followed those declarations literally.
-_Avoid_: assuming declarations always capture the operator's full purpose
+**Triage Depth**:
+The evidence boundary that supports the current issue-triage recommendation,
+from semantic hygiene through deep issue-session analysis.
+_Avoid_: readiness state, work kind, priority
 
 **Underlying Intent**:
 The stakeholder's actual current Intent: the direction they would want the project to move if a mismatch were brought to their attention. An agent does not directly know a stakeholder's or other intent-capable actor's Underlying Intent; it maintains an evidence-backed model that can be tested through questions, experiments, and observed corrections.
 _Avoid_: confusing the agent's model of intent with the intent itself
 
-**Intent Model Refresh**:
-The first Story Closeout gate, where the agent updates its evidence-backed model of Underlying Intent from current operator input, accepted decisions, review dispositions, handoffs, and observed corrections before running downstream closeout gates.
-_Avoid_: validating against stale assumptions
+**Vanilla Harness Capability Profile**:
+A Harness Capability Profile for a Vanilla Harness Capability Surface. Vanilla
+Harness Profile is accepted shorthand when the harness context is clear.
+_Avoid_: Agent Profile, Effective Harness Capability Profile
 
-**Intent Alignment Check**:
-A Story Quality check that compares Effective Intent with the refreshed model of Underlying Intent after Cross-Boundary Coherence has made Effective Intent legible. Refresh the model again if closeout evidence introduced new intent signals.
-_Avoid_: silent reinterpretation, mind-reading, unexamined literalism
+**Vanilla Harness Capability Surface**:
+The Harness Capability Surface for a harness immediately after installation and
+onboarding, with default settings and default equipment. Vanilla Harness
+Surface is accepted shorthand when the harness context is clear.
+_Avoid_: Effective Harness Capability Surface, configured local harness state
 
-**Smith-to-Forgewright Handoff**:
-The context package a Smith gives to a Forgewright for Tooling Request.
-_Avoid_: vague note, unstructured context dump
-
-**Forgewright Hand-Back**:
-The return note a Forgewright gives a Smith after resolving or deferring a Tooling Gap.
-_Avoid_: chat-only conclusion, undocumented resume instruction
+**Wielder**:
+An Agent outfitted with a Loadout and actively using that Agent Equipment to perform work.
+_Avoid_: Outfitter, Loadout, Agent Profile
 
 ## Relationships
 
@@ -674,8 +689,13 @@ _Avoid_: chat-only conclusion, undocumented resume instruction
 - An **Equipment Design Bundle** gathers the early design and
   validation-planning surfaces for one **Equipment Candidate** before the
   interface decision projects implemented components into their chosen paths.
+- **Outfitters** select **Agent Equipment** from the Armory and assemble
+  **Loadouts**.
+- **Wielders** use **Loadouts** to perform work.
 - **Equipment Candidates** may become **Published Agent Equipment** after validation and publication.
 - An **Agent** is **Strapped** when its reasoning and actions are mediated by an **Agent Harness**.
+- **Operators** initiate, route, control, or evaluate **Agent** work; human
+  authority should be named explicitly when the distinction matters.
 - A **Harness Plugin** packages one or more **Harness Components**.
 - An **Agent Profile** configures a reusable kind of **Agent** but is not the running **Agent**.
 - A **Source Handoff** can inform **Forge Canon**, but it is not itself the live Forge surface.
@@ -696,6 +716,14 @@ _Avoid_: chat-only conclusion, undocumented resume instruction
 - The **Harness Capability Profile Manager** maintains **Harness Capability
   Profiles** as deterministic data and tooling, while **Harness Capability
   Refresh** is the future recurring **Agent Equipment** that can invoke it.
+- Manual refresh moves through **Manual Refresh Scout Report**, **Manual
+  Refresh Analysis Report**, **Manual Refresh Update Plan**, explicit apply,
+  and **Manual Refresh Audit Summary** artifacts so deterministic Manager Core
+  operations stay separate from agent-guided judgment.
+- The **Capability Profiling Protocol** produces **Study Plans** before
+  execution and **Study Reports** after execution; **Jig Adequacy Reports** use
+  the same protocol vocabulary because clean-room jigs are **Capability
+  Surfaces**.
 - A **Forge Example** demonstrates how a **Smith** applies the **Agent Equipment Forge** but is not automatically **Agent Equipment**.
 - **Repo Ops**, **Periodic Actions**, and **Harness Capability Refresh** are downstream **Agent Equipment** specified by the **Forge Seed**.
 - **Fork Ops** is planned as a **Repo Ops** add-on after Repo Ops and its
@@ -741,6 +769,61 @@ _Avoid_: chat-only conclusion, undocumented resume instruction
 - **Cross-Boundary Coherence Ralph Review** precedes **Story Quality Ralph Review** because quality review depends on coherent process evidence.
 - A **Story Quality Ralph Review** includes an **Intent Alignment Check** that compares **Effective Intent** with the refreshed model of **Underlying Intent** before final Story Closeout.
 - A **Tooling Request** turns an unsatisfied Forge Tooling need into a task dependency, moves Tooling Work to a **Forgewright**, and returns a **Forgewright Hand-Back** that lets the **Smith** resume safely.
+
+## Precision rules
+
+- Use **Agent** for the running causal stream, not for a reusable harness
+  declaration.
+- Use **Agent Profile** for a reusable identity, mission, tool, permission, or
+  model configuration. Use `agents/` for source paths when following
+  harness/plugin convention.
+- Use **Agent Harness** for the runtime or orchestration system that mediates
+  the Agent.
+- Use **Vanilla Harness Capability Profile** for the default post-installation
+  and onboarding harness profile. Use **Effective Harness Capability Profile**
+  for a current, potential, realizable, hypothetical, or otherwise specified
+  configured harness state.
+- Use **Agent Equipment** for reusable capability; use **Equipment Candidate**
+  until validation and publication are complete.
+- Use **Equipment Design Bundle** for early design and validation-planning
+  records, not for an Inventory or implemented component path.
+- Use **Published Agent Equipment** only after the promotion path reaches
+  `published`.
+- Use **Outfitter** for equipment selection and Loadout assembly, not for
+  Equipment creation.
+- Use **Wielder** for the equipped Agent using a Loadout, not for the Loadout
+  itself.
+- Use **Source Handoff** for source material before disposition and **Source
+  Disposition Ledger** for durable coverage after raw source retirement.
+- Use **Forge Canon** for current guidance.
+- Use **Forge Seed** for the first Forge pass; name downstream equipment
+  separately.
+- Use **Harness Fact Refresh** for source-backed profile updates and **Harness
+  Capability Refresh** for the downstream recurring equipment that invokes the
+  profile manager over time.
+- Use **Manual Refresh Scout Report**, **Manual Refresh Analysis Report**,
+  **Manual Refresh Update Plan**, and **Manual Refresh Audit Summary** for the
+  staged manual workflow artifacts; use **Harness Capability Refresh** for the
+  deferred recurring equipment.
+- Use **Study Plan** for intended protocol shape before execution and **Study
+  Report** for observed outcomes after execution.
+- Use **Jig Adequacy Report** when the target under study is the control
+  adequacy of a clean-room profiling jig.
+- Use **Issue Tracker Ops** for broad issue lifecycle equipment; use **Issue
+  Projection** only for post-review PRD publication into the issue tracker.
+- Use **Issue Ops** as shorthand only after the full Issue Tracker Ops name is
+  clear in the current context.
+- Use **Agent Equipment Config** for the shared equipment config primitive; use
+  equipment-specific config for one equipment line's schema fragment or plain
+  handoff shape.
+- Use **Layer Precedence** for merge order, **Policy Authority** for who may
+  constrain later overrides, and **Config Safety Status** for machine-visible
+  safety classification.
+- Use **Reflection Finding** for durable reflection output, not for private
+  reasoning or final equipment design.
+- Use **Efficient Coherence** for quality-bound efficiency: preserve
+  Underlying Intent, match rigor to unresolved uncertainty, and minimize spend
+  only inside that quality boundary.
 
 ## Example dialogue
 

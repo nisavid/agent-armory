@@ -26,7 +26,8 @@ For accepted source material:
 
 Project durable decisions into the narrowest live surface that future Smiths or Forgewrights will read at the right time.
 
-- Vocabulary belongs in `CONTEXT.md` and this Forge language surface.
+- Vocabulary definitions, relationships, and precision rules belong in
+  `CONTEXT.md`.
 - Experience and lifecycle north-star guidance belongs in `docs/vision.md` or
   in narrower docs that explicitly apply that vision.
 - Current Smith procedure belongs in Forge Canon and templates.

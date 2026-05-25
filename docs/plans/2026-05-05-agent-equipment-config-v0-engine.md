@@ -2379,7 +2379,6 @@ Inspect affected agent-facing and human-facing docs before merge-readiness:
 
 - `AGENTS.md`;
 - `CONTEXT.md`;
-- `docs/ubiquitous-language.md`;
 - Forge Canon under `docs/`;
 - `specs/agent-equipment-config/`;
 - `templates/`;
