@@ -9076,6 +9076,7 @@ class SpecValidationTests(unittest.TestCase):
             "progressive fallback",
             "Issue Tracker Ops",
             "config propose",
+            "config apply",
             "patch-layer",
             "create-layer",
             "reviewed plan artifacts",

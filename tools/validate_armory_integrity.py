@@ -863,6 +863,7 @@ CONFIG_BUNDLE_REQUIRED_TEXT = [
     "progressive fallback",
     "Issue Tracker Ops",
     "config propose",
+    "config apply",
     "patch-layer",
     "create-layer",
     "reviewed plan artifacts",
