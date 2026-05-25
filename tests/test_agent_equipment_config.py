@@ -3518,6 +3518,729 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(payload["validation_result"]["planned_source_diagnostic_kinds"], ["schema conflict"])
         self.assertEqual(payload["virtual_post_change_effective_config"]["safety_status"], "usable")
 
+    def test_cli_config_apply_writes_reviewed_patch_layer_plan_from_file(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            plan_stdout = agent_equipment_config.run(
+                [
+                    "config",
+                    "patch",
+                    "--layer",
+                    str(layer),
+                    "--source-target",
+                    str(layer),
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=execute",
+                    "--set",
+                    "issue_tracker_ops.external_disclosure=allowed",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            )
+            plan_path = root / "patch-plan.json"
+            plan_path.write_text(plan_stdout, encoding="utf-8")
+
+            apply_stdout = agent_equipment_config.run(
+                [
+                    "config",
+                    "apply",
+                    "--plan",
+                    str(plan_path),
+                    "--apply-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            )
+            applied_text = layer.read_text(encoding="utf-8")
+
+        payload = json.loads(apply_stdout)
+        self.assertEqual(payload["operation"], "config apply")
+        self.assertEqual(payload["plan_kind"], "patch-layer")
+        self.assertTrue(payload["applied"])
+        self.assertEqual(payload["result"], "applied")
+        self.assertEqual(payload["refusal_codes"], [])
+        self.assertIn('mode = "execute"', applied_text)
+        self.assertIn('external_disclosure = "allowed"', applied_text)
+        self.assertEqual(payload["audit_records"][-1]["action"], "config authoring apply mutation")
+        self.assertEqual(payload["audit_records"][-1]["result"], "applied")
+        self.assertTrue(payload["audit_records"][-1]["project_truth_after_apply"])
+
+    def test_cli_config_apply_creates_reviewed_layer_plan_from_stdin(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            destination = root / "agent-equipment.toml"
+            plan_stdout = agent_equipment_config.run(
+                [
+                    "create-layer",
+                    "--destination",
+                    str(destination),
+                    "--layer-name",
+                    "repository policy",
+                    "--source-category",
+                    "committed durable config",
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=dry-run",
+                    "--set",
+                    "issue_tracker_ops.external_disclosure=blocked",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            )
+
+            apply_stdout = agent_equipment_config.run(
+                [
+                    "config",
+                    "apply",
+                    "--plan",
+                    "-",
+                    "--apply-authority",
+                    "operator",
+                ],
+                stdin=io.StringIO(plan_stdout),
+                stdout_text=True,
+            )
+            applied_text = destination.read_text(encoding="utf-8")
+
+        payload = json.loads(apply_stdout)
+        self.assertTrue(payload["applied"])
+        self.assertEqual(payload["plan_kind"], "create-layer")
+        self.assertIn("[agent_equipment_config.layer]", applied_text)
+        self.assertIn('name = "repository policy"', applied_text)
+        self.assertIn("[issue_tracker_ops]", applied_text)
+        self.assertEqual(payload["audit_records"][-1]["source_artifact_durability"], "durable project evidence")
+
+    def test_cli_config_apply_refuses_stale_patch_layer_precondition(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            plan_stdout = agent_equipment_config.run(
+                [
+                    "config",
+                    "patch",
+                    "--layer",
+                    str(layer),
+                    "--source-target",
+                    str(layer),
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=execute",
+                    "--set",
+                    "issue_tracker_ops.external_disclosure=allowed",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            )
+            plan_path = root / "patch-plan.json"
+            plan_path.write_text(plan_stdout, encoding="utf-8")
+            layer.write_text(layer.read_text(encoding="utf-8").replace('mode = "dry-run"', 'mode = "execute"'), encoding="utf-8")
+            stdout = io.StringIO()
+
+            exit_code = agent_equipment_config.run(
+                [
+                    "config",
+                    "apply",
+                    "--plan",
+                    str(plan_path),
+                    "--apply-authority",
+                    "operator",
+                ],
+                stdout=stdout,
+            )
+            current_text = layer.read_text(encoding="utf-8")
+
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(exit_code, 1)
+        self.assertFalse(payload["applied"])
+        self.assertIn("source_changed", payload["refusal_codes"])
+        self.assertIn('external_disclosure = "blocked"', current_text)
+        self.assertFalse(payload["audit_records"][-1]["write_performed"])
+
+    def test_cli_config_apply_rechecks_operator_authority(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            plan_stdout = agent_equipment_config.run(
+                [
+                    "config",
+                    "patch",
+                    "--layer",
+                    str(layer),
+                    "--source-target",
+                    str(layer),
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=execute",
+                    "--set",
+                    "issue_tracker_ops.external_disclosure=allowed",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            )
+            plan_path = root / "patch-plan.json"
+            plan_path.write_text(plan_stdout, encoding="utf-8")
+            stdout = io.StringIO()
+
+            exit_code = agent_equipment_config.run(
+                ["config", "apply", "--plan", str(plan_path)],
+                stdout=stdout,
+            )
+
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(exit_code, 1)
+        self.assertIn("missing_authority", payload["refusal_codes"])
+        self.assertEqual(payload["authority_evidence"]["status"], "missing")
+        self.assertFalse(payload["applied"])
+
+    def test_cli_config_apply_refuses_validation_and_blocks_partial_write(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            plan = json.loads(agent_equipment_config.run(
+                [
+                    "config",
+                    "patch",
+                    "--layer",
+                    str(layer),
+                    "--source-target",
+                    str(layer),
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=execute",
+                    "--set",
+                    "issue_tracker_ops.external_disclosure=allowed",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            ))
+            for change in plan["change_payload"]["changes"]:
+                if change["path"] == "issue_tracker_ops.mode":
+                    change["after"] = "bogus"
+            plan_path = root / "tampered-plan.json"
+            plan_path.write_text(json.dumps(plan), encoding="utf-8")
+            stdout = io.StringIO()
+
+            exit_code = agent_equipment_config.run(
+                [
+                    "config",
+                    "apply",
+                    "--plan",
+                    str(plan_path),
+                    "--apply-authority",
+                    "operator",
+                ],
+                stdout=stdout,
+            )
+            current_text = layer.read_text(encoding="utf-8")
+
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(exit_code, 1)
+        self.assertIn("validation_failed", payload["refusal_codes"])
+        self.assertIn("partial_write_blocked", payload["refusal_codes"])
+        self.assertIn('mode = "dry-run"', current_text)
+        self.assertIn('external_disclosure = "blocked"', current_text)
+
+    def test_cli_config_apply_refuses_semantic_safety_regression(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            plan = json.loads(agent_equipment_config.run(
+                [
+                    "config",
+                    "patch",
+                    "--layer",
+                    str(layer),
+                    "--source-target",
+                    str(layer),
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=execute",
+                    "--set",
+                    "issue_tracker_ops.external_disclosure=allowed",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            ))
+            for change in plan["change_payload"]["changes"]:
+                if change["path"] == "issue_tracker_ops.external_disclosure":
+                    change["after"] = "blocked"
+            stdout = io.StringIO()
+
+            exit_code = agent_equipment_config.run(
+                [
+                    "config",
+                    "apply",
+                    "--plan",
+                    "-",
+                    "--apply-authority",
+                    "operator",
+                ],
+                stdin=io.StringIO(json.dumps(plan)),
+                stdout=stdout,
+            )
+
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(exit_code, 1)
+        self.assertIn("safety_status_blocking", payload["refusal_codes"])
+        self.assertIn("validation_failed", payload["refusal_codes"])
+        self.assertEqual(payload["virtual_post_change_effective_config"]["safety_status"], "unsafe")
+
+    def test_cli_config_apply_refuses_secret_boundary_violation(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            plan = json.loads(agent_equipment_config.run(
+                [
+                    "config",
+                    "patch",
+                    "--layer",
+                    str(layer),
+                    "--source-target",
+                    str(layer),
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=dry-run",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            ))
+            plan["change_payload"]["changes"] = [
+                {
+                    "path": "issue_tracker_ops.github_token",
+                    "before": {"presence": "absent"},
+                    "after": {"kind": "env", "name": "GH_TOKEN", "value": "raw-token"},
+                }
+            ]
+            stdout = io.StringIO()
+
+            exit_code = agent_equipment_config.run(
+                [
+                    "config",
+                    "apply",
+                    "--plan",
+                    "-",
+                    "--apply-authority",
+                    "operator",
+                ],
+                stdin=io.StringIO(json.dumps(plan)),
+                stdout=stdout,
+            )
+
+        output = stdout.getvalue()
+        payload = json.loads(output)
+        self.assertEqual(exit_code, 1)
+        self.assertIn("secret_boundary_violation", payload["refusal_codes"])
+        self.assertNotIn("raw-token", output)
+        self.assertNotIn("GH_TOKEN", output)
+
+    def test_cli_config_apply_refuses_redacted_secret_reference_plan(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            plan_stdout = agent_equipment_config.run(
+                [
+                    "config",
+                    "patch",
+                    "--layer",
+                    str(layer),
+                    "--source-target",
+                    str(layer),
+                    "--issue-tracker-ops",
+                    "--set",
+                    'issue_tracker_ops.github_token={"kind":"env","name":"GH_TOKEN"}',
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            )
+            self.assertIn(agent_equipment_config.REDACTED, plan_stdout)
+            stdout = io.StringIO()
+
+            exit_code = agent_equipment_config.run(
+                [
+                    "config",
+                    "apply",
+                    "--plan",
+                    "-",
+                    "--apply-authority",
+                    "operator",
+                ],
+                stdin=io.StringIO(plan_stdout),
+                stdout=stdout,
+            )
+            current_text = layer.read_text(encoding="utf-8")
+
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(exit_code, 1)
+        self.assertIn("secret_boundary_violation", payload["refusal_codes"])
+        self.assertNotIn(agent_equipment_config.REDACTED, current_text)
+
+    def test_cli_config_apply_refuses_tampered_source_category(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            plan = json.loads(agent_equipment_config.run(
+                [
+                    "config",
+                    "patch",
+                    "--layer",
+                    str(layer),
+                    "--source-target",
+                    str(layer),
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=execute",
+                    "--set",
+                    "issue_tracker_ops.external_disclosure=allowed",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            ))
+            plan["source_category"] = "local-only operator config"
+            stdout = io.StringIO()
+
+            exit_code = agent_equipment_config.run(
+                [
+                    "config",
+                    "apply",
+                    "--plan",
+                    "-",
+                    "--apply-authority",
+                    "operator",
+                ],
+                stdin=io.StringIO(json.dumps(plan)),
+                stdout=stdout,
+            )
+            current_text = layer.read_text(encoding="utf-8")
+
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(exit_code, 1)
+        self.assertIn("ownership_boundary_violation", payload["refusal_codes"])
+        self.assertFalse(payload["applied"])
+        self.assertIn('mode = "dry-run"', current_text)
+
+    def test_cli_config_apply_refuses_tampered_source_identity_path(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            other = self.write_layer(root, "other.toml", layer.read_text(encoding="utf-8"))
+            plan = json.loads(agent_equipment_config.run(
+                [
+                    "config",
+                    "patch",
+                    "--layer",
+                    str(layer),
+                    "--source-target",
+                    str(layer),
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=execute",
+                    "--set",
+                    "issue_tracker_ops.external_disclosure=allowed",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            ))
+            plan["source_target"] = str(other)
+            stdout = io.StringIO()
+
+            exit_code = agent_equipment_config.run(
+                [
+                    "config",
+                    "apply",
+                    "--plan",
+                    "-",
+                    "--apply-authority",
+                    "operator",
+                ],
+                stdin=io.StringIO(json.dumps(plan)),
+                stdout=stdout,
+            )
+            other_text = other.read_text(encoding="utf-8")
+
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(exit_code, 1)
+        self.assertIn("ownership_boundary_violation", payload["refusal_codes"])
+        self.assertFalse(payload["applied"])
+        self.assertIn('mode = "dry-run"', other_text)
+
+    def test_cli_config_apply_refuses_plan_kind_payload_type_mismatch(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            plan = json.loads(agent_equipment_config.run(
+                [
+                    "config",
+                    "patch",
+                    "--layer",
+                    str(layer),
+                    "--source-target",
+                    str(layer),
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=execute",
+                    "--set",
+                    "issue_tracker_ops.external_disclosure=allowed",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            ))
+            plan["change_payload"]["type"] = "create"
+            stdout = io.StringIO()
+
+            exit_code = agent_equipment_config.run(
+                [
+                    "config",
+                    "apply",
+                    "--plan",
+                    "-",
+                    "--apply-authority",
+                    "operator",
+                ],
+                stdin=io.StringIO(json.dumps(plan)),
+                stdout=stdout,
+            )
+            current_text = layer.read_text(encoding="utf-8")
+
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(exit_code, 1)
+        self.assertIn("validation_failed", payload["refusal_codes"])
+        self.assertFalse(payload["applied"])
+        self.assertIn('mode = "dry-run"', current_text)
+
+    def test_cli_config_apply_refuses_invalid_context_layer_for_create(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            invalid_layer = root / "invalid.toml"
+            invalid_layer.write_text("not toml", encoding="utf-8")
+            destination = root / "agent-equipment.toml"
+            plan_stdout = agent_equipment_config.run(
+                [
+                    "create-layer",
+                    "--destination",
+                    str(destination),
+                    "--layer-name",
+                    "repository policy",
+                    "--source-category",
+                    "committed durable config",
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=dry-run",
+                    "--set",
+                    "issue_tracker_ops.external_disclosure=blocked",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            )
+            stdout = io.StringIO()
+
+            exit_code = agent_equipment_config.run(
+                [
+                    "config",
+                    "apply",
+                    "--plan",
+                    "-",
+                    "--layer",
+                    str(invalid_layer),
+                    "--apply-authority",
+                    "operator",
+                ],
+                stdin=io.StringIO(plan_stdout),
+                stdout=stdout,
+            )
+
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(exit_code, 1)
+        self.assertIn("validation_failed", payload["refusal_codes"])
+        self.assertFalse(payload["applied"])
+        self.assertFalse(destination.exists())
+
+    def test_cli_config_apply_refuses_ineligible_source_plan(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            generated = self.write_layer(root, "generated.toml", """
+                [agent_equipment_config.layer]
+                name = "checkout-local state"
+                category = "generated cache or state"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            plan_path = root / "generated-plan.json"
+            plan_path.write_text(
+                agent_equipment_config.run(
+                    [
+                        "config",
+                        "patch",
+                        "--layer",
+                        str(generated),
+                        "--source-target",
+                        str(generated),
+                        "--issue-tracker-ops",
+                        "--set",
+                        "issue_tracker_ops.mode=execute",
+                        "--set",
+                        "issue_tracker_ops.external_disclosure=allowed",
+                        "--plan-authority",
+                        "operator",
+                    ],
+                    stdout_text=True,
+                ),
+                encoding="utf-8",
+            )
+            stdout = io.StringIO()
+
+            exit_code = agent_equipment_config.run(
+                [
+                    "config",
+                    "apply",
+                    "--plan",
+                    str(plan_path),
+                    "--apply-authority",
+                    "operator",
+                ],
+                stdout=stdout,
+            )
+
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(exit_code, 1)
+        self.assertIn("source_category_ineligible", payload["refusal_codes"])
+        self.assertFalse(payload["applied"])
+
+    def test_cli_config_apply_refuses_unsupported_plan_kind(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            plan_path = root / "bad-plan.json"
+            plan_path.write_text(
+                json.dumps(
+                    {
+                        "schema": "agent-armory.config.authoring-plan.v1",
+                        "plan_surface": "reviewed-plan",
+                        "plan_kind": "revise-layer",
+                        "source_target": str(root / "repo.toml"),
+                        "source_category": "committed durable config",
+                        "precondition_fingerprint": "absent",
+                        "change_payload": {"type": "revise", "changes": []},
+                        "authority_evidence": {"status": "accepted", "source": "operator"},
+                        "validation_result": {"passed": True},
+                        "refusal_codes": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            stdout = io.StringIO()
+
+            exit_code = agent_equipment_config.run(
+                [
+                    "config",
+                    "apply",
+                    "--plan",
+                    str(plan_path),
+                    "--apply-authority",
+                    "operator",
+                ],
+                stdout=stdout,
+            )
+
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(payload["refusal_codes"], ["unsupported_plan_kind"])
+        self.assertFalse(payload["applied"])
+
     def test_cli_config_diff_fluent_operation_outputs_json(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

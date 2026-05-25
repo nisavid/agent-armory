@@ -7,10 +7,10 @@ This Equipment Design Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for fluent CLI operations,
 effective-config, config-diff, diagnostics, plain handoff promotion, authority
 checks, projection classification, reusable consumer action decisions,
-read-only authoring proposal and plan-generation output, plus onboarding and
-migration apply output. It does not implement Agent Equipment beyond this
-runtime slice, publish assets, resolve secrets, mutate external systems, or
-implement harness controls.
+read-only authoring proposal and plan-generation output, reviewed
+plan-artifact apply behavior, plus onboarding and migration apply output. It
+does not implement Agent Equipment beyond this runtime slice, publish assets,
+resolve secrets, mutate external systems, or implement harness controls.
 
 ## Requirement
 
@@ -42,8 +42,9 @@ config-diff output, diagnostics, plain handoff promotion, authority checks,
 consumer action decisions, onboarding-plan load-contract proposals, and
 projection classification. It also emits read-only `config propose`,
 `config patch`, and `create-layer` artifacts for target-agnostic proposals,
-selected-source patch plans, and new-layer plans. Harness adapters, arbitrary
-CLI fragment registration, authoring MCP parity, non-migration apply, and
+selected-source patch plans, and new-layer plans, then applies reviewed
+`patch-layer` and `create-layer` artifacts through `config apply`. Harness
+adapters, arbitrary CLI fragment registration, authoring MCP parity, and
 blocking enforcement remain separate work.
 
 The consumption contract keeps the final action decision with the consuming
@@ -56,9 +57,10 @@ capability is supported.
 
 The current operation surface includes fluent CLI operations for
 `config resolve`, `config validate`, `config diff`, `config propose`,
-`config patch`, `create-layer`, `onboard config`, `migrate config preview`,
-and `migrate config apply`. MCP parity currently covers the safe read,
-onboarding, migration-preview, and migration-apply runtime slice through
+`config patch`, `create-layer`, `config apply`, `onboard config`,
+`migrate config preview`, and `migrate config apply`. MCP parity currently
+covers the safe read, onboarding, migration-preview, and migration-apply runtime
+slice through
 `config.resolve`, `config.validate`, `config.diff`, `onboard.config`,
 `migrate.config_preview`, and `migrate.config_apply`; MCP authoring parity is
 deferred.

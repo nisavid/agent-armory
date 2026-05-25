@@ -9,9 +9,9 @@ Python engine for loading authored TOML layers, composing schema fragments,
 explaining effective configuration, comparing config outputs, and preserving
 plain equipment-specific handoffs. It exposes fluent CLI operations for
 resolve, validate, diff, onboarding, read-only authoring proposal and plan
-generation, and migration flows, plus reusable consumer action decision output
-for importable consumers. The Config bundle also defines deliberate edit
-boundaries for revision and non-migration apply surfaces.
+generation, reviewed plan apply, and migration flows, plus reusable consumer
+action decision output for importable consumers. The Config bundle also defines
+deliberate edit boundaries for revision and MCP authoring surfaces.
 
 Use this guide when a Smith is making Config-aware equipment or when a Wielder
 needs to provide local or session configuration for equipment that already
@@ -39,26 +39,30 @@ and the current runtime.
 
 The runtime reads local files supplied by the caller and emits JSON to stdout.
 It does not discover files by itself, resolve secret values, mutate external
-systems, or enforce harness controls. The only source mutation surface is
+systems, or enforce harness controls. Source mutation surfaces are
 `migrate config apply`, which rewrites eligible local TOML sources after an
-explicit authority gate and records audit evidence. The implementation command
-`migration-apply --apply` remains available for debugging the same runtime
-path. Harnesses, skills, hooks, scripts, or operators choose which layer paths
-to pass in and what to do with the resulting classification.
+explicit authority gate, and `config apply`, which consumes reviewed
+`patch-layer` and `create-layer` artifacts from a file or stdin. Both write
+paths recheck preconditions and record audit evidence. The implementation
+command `migration-apply --apply` remains available for debugging the migration
+runtime path. Harnesses, skills, hooks, scripts, or operators choose which layer
+paths to pass in and what to do with the resulting classification.
 
-`config propose`, `config patch`, and `create-layer` emit read-only authoring
-proposal or reviewed plan artifacts. Revision and non-migration apply tooling
-must follow the edit boundary contract before it writes any source.
+`config propose`, `config patch`, and `create-layer` emit authoring proposal or
+reviewed plan artifacts. `config apply` is the only non-migration source write
+surface and must consume those reviewed artifacts. Revision writes must follow
+the edit boundary contract before they write any source.
 
 Use the fluent CLI operations as the supported invocation surface:
 `config resolve`, `config validate`, `config diff`, `config propose`,
-`config patch`, `create-layer`, `onboard config`, `migrate config preview`, and
-`migrate config apply`. The implementation command names remain available as
-the debugging path. When a harness exposes Config MCP tools, use
+`config patch`, `create-layer`, `config apply`, `onboard config`,
+`migrate config preview`, and `migrate config apply`. The implementation
+command names remain available as the debugging path. When a harness exposes
+Config MCP tools, use
 `config.resolve`, `config.validate`, `config.diff`, `onboard.config`,
 `migrate.config_preview`, and `migrate.config_apply` for the same safe runtime
 slice. MCP parity for authoring proposal, patch plan, create-layer plan, and
-non-migration apply is deferred. The importable runtime exposes tool metadata
+apply is deferred. The importable runtime exposes tool metadata
 through `mcp_tool_definitions()` and direct dispatch through `call_mcp_tool()`.
 
 ## Load contract
@@ -97,10 +101,10 @@ proposals, migration previews, refusals, and audit records.
 
 | Source category | Input surface | Caller responsibility | Core discovery | Notes |
 | --- | --- | --- | --- | --- |
-| `committed durable config` | `--layer` or `layer_paths` | Discover, select, order, and pass source paths | None | Eligible for migration apply after authority gates. |
-| `local-only operator config` | `--layer` or `layer_paths` | Discover, select, order, and pass source paths | None | Eligible for migration apply after authority gates; not project truth. |
-| `checkout-local state` | `--layer` or `layer_paths` | Discover, select, order, and pass source paths | None | Read-only for migration apply. |
-| `generated cache or state` | `--layer` or `layer_paths` | Discover, select, order, and pass source paths | None | Read-only for migration apply. |
+| `committed durable config` | `--layer` or `layer_paths` | Discover, select, order, and pass source paths | None | Eligible for migration apply and reviewed plan-artifact apply after authority gates. |
+| `local-only operator config` | `--layer` or `layer_paths` | Discover, select, order, and pass source paths | None | Eligible for migration apply and reviewed plan-artifact apply after authority gates; not project truth. |
+| `checkout-local state` | `--layer` or `layer_paths` | Discover, select, order, and pass source paths | None | Read-only for Config source writes. |
+| `generated cache or state` | `--layer` or `layer_paths` | Discover, select, order, and pass source paths | None | Read-only for Config source writes. |
 | `secret reference source` | `--layer` or `layer_paths` | Discover, select, order, and pass source paths | None | Carries unresolved secret metadata, not secret values. |
 | `session override` | `--layer`, `--plain-handoff`, `layer_paths`, or `plain_handoff_paths` | Discover, select, order, and pass source paths | None | Plain handoffs are promoted to session overrides with promotion provenance. |
 
@@ -109,9 +113,10 @@ namespace, schema fields, defaults, semantic validators, and migrations. Shared
 Config composes the fragments it receives; it does not discover fragments from
 equipment packages, hook directories, plugins, or repository files.
 
-The load contract does not resolve secrets, create or mutate config outside
-`migrate config apply`, enforce harness controls, define universal filenames, or
-decide whether a caller may proceed after a blocking classification.
+The load contract does not resolve secrets, create or mutate config outside the
+supported source-write operations, enforce harness controls, define universal
+filenames, or decide whether a caller may proceed after a blocking
+classification.
 
 ## Secret-reference provider boundary
 
@@ -350,7 +355,7 @@ supported edit intents are:
 | `patch` | Read-only `patch-layer` plan artifacts with source selection, validation, authority, virtual post-change effective Config, diff, and audit preview; no source write. |
 | `migrate` | Supported through `migrate config preview` and `migrate config apply` for registered schema migrations. |
 | `revise` | Supported as `onboard config` section selection; source writing is deferred. |
-| `apply` | Supported only for registered migrations on eligible TOML sources. Non-migration apply is deferred and must consume reviewed plan artifacts. |
+| `apply` | Supported for reviewed `patch-layer` and `create-layer` plan artifacts through `config apply`, and for registered migrations through `migrate config apply`. |
 
 Only `committed durable config` and `local-only operator config` are eligible
 for the current migration apply write path. `checkout-local state`, `generated
@@ -368,16 +373,18 @@ source, category, namespace, authority evidence, and reason. A write must stop
 when it would cross source ownership, secret, authority, validation, or
 harness-support boundaries.
 
-The current authoring plan-generation surfaces use deterministic JSON reviewed
-plan artifacts. `config propose` stays target-agnostic. `config patch` selects
-one existing source and emits a `patch-layer` artifact. `create-layer` emits a
-`create-layer` artifact for a new authored layer. These artifacts carry the
-plan kind, source target, source category, precondition fingerprint, diff or
-create payload, authority evidence, validation result, virtual post-change
-effective Config status, audit preview, refusal codes, durability
-classification, and rollback stance. Non-migration apply is deferred, must be
-all-or-nothing, and must write only eligible `committed durable config` or
-`local-only operator config`.
+The current authoring surfaces use deterministic JSON reviewed plan artifacts.
+`config propose` stays target-agnostic. `config patch` selects one existing
+source and emits a `patch-layer` artifact. `create-layer` emits a
+`create-layer` artifact for a new authored layer. These artifacts carry the plan
+kind, source target, source category, precondition fingerprint, diff or create
+payload, authority evidence, validation result, virtual post-change effective
+Config status, audit preview, refusal codes, durability classification, and
+rollback stance. `config apply` accepts a reviewed artifact from a file or
+stdin, rechecks the selected source or destination, authority, validation,
+semantic safety, and secret boundaries, then writes only eligible
+`committed durable config` or `local-only operator config` atomically with
+all-or-nothing audit evidence.
 
 Secret-reference authoring is limited to whole pointer objects in eligible
 authored config. Nested provider-metadata patch paths and direct secret values

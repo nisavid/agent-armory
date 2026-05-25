@@ -7,18 +7,20 @@ This Equipment Design Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for fluent CLI operations,
 effective-config, config-diff, diagnostics, plain handoff promotion, authority
 checks, projection classification, read-only authoring proposal and
-plan-generation surfaces, MCP parity tool definitions, plus reusable consumer
-action decisions. It does not implement Agent Equipment beyond this runtime
-slice, publish assets, resolve secrets, mutate external systems, or implement
-harness controls. Source mutation is limited to explicit migration apply for
+plan-generation surfaces, reviewed plan-artifact apply, MCP parity tool
+definitions, plus reusable consumer action decisions. It does not implement Agent Equipment
+beyond this runtime slice, publish assets, resolve secrets,
+mutate external systems, or implement harness controls. Source mutation is
+limited to explicit migration apply and reviewed plan-artifact apply for
 eligible local TOML sources.
 
 ## Scope
 
 This classification covers the v0 contract, bundle source shape, deliberate
-edit boundaries, and first portable parser, merge engine, and migration apply
-slice. It does not certify a hook, permission gate, sandbox, approval
-integration, plugin, harness control, external write, or secret provider.
+edit boundaries, and first portable parser, merge engine, migration apply, and
+reviewed plan-artifact apply slice. It does not certify a hook, permission
+gate, sandbox, approval integration, plugin, harness control, external write,
+or secret provider.
 
 ## Assets
 
@@ -60,7 +62,7 @@ integration, plugin, harness control, external write, or secret provider.
 | Migration preview | Read | Do not rewrite source config. |
 | Source migration apply | Local write | Require eligible source category, trusted provenance, dry-run-first output, explicit authority, and audit records. |
 | MCP Config parity tools | Read or local write | Mirror the safe CLI/runtime slice with typed schemas, MCP annotations, read/write classification, auth source, side-effect metadata, approval requirements, failure modes, and mutation gates. |
-| General config apply | Local write | Deferred; future surfaces must consume reviewed plan artifacts and satisfy edit intent, source eligibility, diff or create payload, authority, precondition fingerprint, all-or-nothing atomic write, durability classification, rollback stance, and audit controls before implementation. |
+| General config apply | Local write | `config apply` consumes reviewed `patch-layer` and `create-layer` plan artifacts and requires edit intent, source eligibility, diff or create payload, authority, precondition fingerprint, all-or-nothing atomic write, durability classification, rollback stance, and audit controls before writing. |
 | Consumer action decision | Policy decision | Fail closed for mutation-capable behavior unless effective Config is usable, authority and semantics pass, and the required capability is supported. |
 | Enforcement projection | Advisory or blocking control | Label blocking support versus advisory fallback. |
 | Secret reference resolution | Sensitive read | Report reference and status, never secret value. |

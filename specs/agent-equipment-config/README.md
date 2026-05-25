@@ -78,9 +78,10 @@ an explicit authority gate. It exposes typed MCP parity definitions and direct
 tool dispatch for the same safe operation families. It defines deliberate
 `propose`, `patch`, `migrate`, `revise`, and `apply` edit boundaries. It emits
 target-agnostic authoring proposals and read-only `patch-layer` or
-`create-layer` reviewed plan artifacts, but the only implemented source write
-remains registered migration apply. It does not resolve secrets, mutate
-external systems, or implement harness controls.
+`create-layer` reviewed plan artifacts. It applies those reviewed artifacts
+through `config apply` and applies registered migrations through
+`migrate config apply`. It does not resolve secrets, mutate external systems,
+or implement harness controls.
 
 Published runtime guidance lives in
 [docs/equipment/agent-equipment-config.md](../../docs/equipment/agent-equipment-config.md).
@@ -247,15 +248,17 @@ and propose do not authorize source mutation.
 
 The supported edit intents are `propose`, `patch`, `migrate`, `revise`, and
 `apply`. Current source writing is limited to `migrate config apply` for
-registered migrations on `committed durable config` and
-`local-only operator config`. General source patching, revision writes, and
-non-migration apply remain deferred to the Config Authoring Surfaces bucket. The
+registered migrations and `config apply` for reviewed `patch-layer` and
+`create-layer` artifacts on `committed durable config` and
+`local-only operator config`. General source patching outside reviewed plan
+artifacts, revision writes, and MCP authoring parity remain separate Config
+Authoring Surfaces work. The
 [authoring plan/apply model](authoring-plan-apply-model.md) defines the
 non-migration proposal, `patch-layer`, `create-layer`, reviewed plan artifacts,
 precondition fingerprint, virtual post-change effective Config,
 all-or-nothing apply, durability classification, and rollback stance contract.
-The current runtime implements the proposal and read-only plan-generation
-portion of that contract.
+The current runtime implements the proposal, plan-generation, and apply portions
+of that contract.
 
 ## Operation surfaces
 
@@ -270,6 +273,7 @@ target is a fluent CLI with MCP parity:
 | Authoring proposal | `config propose` | Deferred |
 | Authoring patch plan | `config patch` | Deferred |
 | Authoring create-layer plan | `create-layer` | Deferred |
+| Authoring apply | `config apply` | Deferred |
 | Onboard/revise planning | `onboard config` | `onboard.config` |
 | Migration preview | `migrate config preview` | `migrate.config_preview` |
 | Migration apply | `migrate config apply` | `migrate.config_apply` |
@@ -278,10 +282,10 @@ The fluent CLI commands are the supported invocation surface. Runtime commands
 remain available for implementation debugging and evidence comparison. MCP
 tool definitions live in [MCP tools](mcp-tools.md) and the importable runtime.
 Skills and docs route agents to CLI or MCP usage; they are not substitutes for
-those surfaces. Current CLI authoring operations stop at proposal or reviewed
-plan artifacts. General non-migration apply belongs to the deferred Config
-Authoring Surfaces bucket and must consume the reviewed plan artifact contract
-before any source write.
+those surfaces. Current CLI authoring operations produce reviewed plan artifacts
+and apply those artifacts through `config apply`. MCP authoring parity remains
+deferred and must preserve the reviewed plan artifact contract before exposing
+an MCP write surface.
 
 ## Harness projections
 
