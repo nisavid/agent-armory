@@ -58,7 +58,7 @@ Every authoring plan artifact includes:
 | `validation_result` | Schema and semantic validation outcome for the planned source shape. |
 | `virtual_post_change_effective_config` | Effective Config status, diagnostics, and relevant provenance after applying the planned change in memory. |
 | `audit_preview` | Durability, project-truth status, result expectation, refusal reasons, and rollback stance that apply will emit or refine. |
-| `refusal_codes` | Stable refusal codes when the plan is not applyable. |
+| `refusal_codes` | Stable refusal codes when the plan is not applicable. |
 | `durability_classification` | Whether the artifact is project truth, local-only operator evidence, instance-scoped scratch, or review-only output. |
 
 Plan artifacts are stable enough for tests and tools to parse without reading
