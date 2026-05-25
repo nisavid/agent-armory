@@ -44,7 +44,7 @@ Also inspected the raw Source Handoff before source retirement. The final tree p
   path, and reflection-driven Forge improvement loop.
 - `docs/README.md`: added the human-facing documentation map organized by
   reader intent and Diataxis type.
-- `CONTEXT.md`, `docs/ubiquitous-language.md`, `docs/prd/forge-seed.md`,
+- `CONTEXT.md`, `docs/prd/forge-seed.md`,
   `docs/security/threat-model.md`, and `templates/skill/SKILL.md`: aligned
   current prose with the definite-article form for the Armory while preserving
   role terminology.

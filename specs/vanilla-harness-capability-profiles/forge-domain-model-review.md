@@ -16,7 +16,6 @@ decisions and blockers that the prerequisite implementation story must apply.
 ## Inputs
 
 - `CONTEXT.md`
-- `docs/ubiquitous-language.md`
 - `docs/agent-equipment-forge.md`
 - `docs/smith-runbook.md`
 - `docs/forgewright-runbook.md`
@@ -126,8 +125,7 @@ surface.
 
 | Surface | Current classification | Notes |
 | --- | --- | --- |
-| `CONTEXT.md` | Armory and Forge vocabulary register | Project-wide vocabulary; not only Forge Canon. |
-| `docs/ubiquitous-language.md` | Forge Canon vocabulary surface | Forge-applied subset of the project vocabulary. |
+| `CONTEXT.md` | Armory and Forge vocabulary register | Project-wide glossary, relationships, precision rules, and ambiguity resolutions. |
 | `docs/agent-equipment-forge.md` | Forge Canon | Conceptual Forge overview and component model. |
 | `docs/vision.md` | Armory/Forge Canon input | Experience and architecture north star used by Forge and non-Forge Armory work. |
 | `docs/smith-runbook.md` | Forge Core contract documentation | Procedure for Smith work; describes enacted workflow expectations. |

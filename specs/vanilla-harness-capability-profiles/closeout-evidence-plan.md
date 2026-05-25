@@ -48,7 +48,6 @@ if it only performs local deterministic reads/writes and validation.
 Inspect and update affected docs near the end of each cohesive change set:
 
 - `CONTEXT.md`;
-- `docs/ubiquitous-language.md`;
 - `docs/harness-capabilities.md`;
 - `docs/agent-equipment-forge.md`;
 - `docs/smith-runbook.md`;

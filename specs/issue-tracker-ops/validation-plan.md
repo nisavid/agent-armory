@@ -49,7 +49,7 @@ paths.
 ## Documentation validation
 
 - Inspect affected agent-facing docs: `AGENTS.md`, `CONTEXT.md`,
-  `docs/ubiquitous-language.md`, `docs/agent-equipment-forge.md`,
+  `docs/agent-equipment-forge.md`,
   `docs/smith-runbook.md`, and `docs/agents/issue-tracker.md`.
 - Inspect affected human-facing docs: `README.md`, `docs/README.md`, and
   `docs/forge-tour.md`.

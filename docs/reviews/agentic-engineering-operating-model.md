@@ -98,7 +98,7 @@ missing discovery paths, and certification risks.
 | `docs/agent-equipment-forge.md` and Forge Canon docs | Forge Canon | Forgewrights | Durable conceptual and decision framework for Forge work | Smiths and Forgewrights | Checked by integrity validation, Forge review, and doc closeout; updated when accepted Forge decisions change |
 | `docs/smith-runbook.md` | Forge Core workflow | Forgewrights | Durable Smith process contract | Smiths creating Agent Equipment | Updated through Forge maintenance; references templates, specs, validation, and Story Closeout |
 | `docs/forgewright-runbook.md` | Forge Core workflow | Forgewrights | Durable Forge-maintenance process contract | Forgewrights | Updated through Forge maintenance; projects decisions into narrow live surfaces and hands work back to Smiths |
-| `CONTEXT.md` and `docs/ubiquitous-language.md` | Vocabulary surfaces | Armory and Forge language owners | Durable domain language | Agents and humans interpreting project terms | Updated when terminology decisions crystallize; integrity validation checks canonical vocabulary surfaces |
+| `CONTEXT.md` | Glossary and language surface | Armory and Forge language owners | Durable domain language | Agents and humans interpreting project terms | Updated when terminology decisions crystallize; integrity validation checks the glossary and language rules |
 | `docs/agents/*.md` | Agent-facing domain docs | Domain owners such as Issue Tracker Ops | Durable operational guidance | Agents working in a specific operational domain | Updated when domain operations change; some domains have supporting tools |
 | `tools/validate_armory_integrity.py` | Deterministic validation | Armory validation tooling | Executable enforcement surface | Agents, CI-like local checks, and reviewers | Enforces machine-checkable slices of readable contracts; updated when an invariant becomes or ceases to be machine-checkable |
 | `tools/issue_tracker_ops.py` | Bootstrap adapter tooling | Issue Tracker Ops | Executable issue-tracker surface | Agents performing supported GitHub issue operations | Defaults to dry-run; updated when Issue Tracker Ops needs new supported operations |
@@ -225,7 +225,7 @@ Validation performed during the review:
 - Local secret-pattern scan over changed files returned no matches:
 
   ```sh
-  rg -n --pcre2 "(AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9_]{36,}|sk-[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|-----BEGIN [A-Z ]*PRIVATE KEY-----)" AGENTS.md CONTEXT.md docs/README.md docs/story-closeout.md docs/ubiquitous-language.md docs/reviews/agentic-engineering-operating-model.md specs/vanilla-harness-capability-profiles/forge-domain-model-review.md tools/validate_armory_integrity.py
+  rg -n --pcre2 "(AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9_]{36,}|sk-[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|-----BEGIN [A-Z ]*PRIVATE KEY-----)" AGENTS.md CONTEXT.md docs/README.md docs/story-closeout.md docs/reviews/agentic-engineering-operating-model.md specs/vanilla-harness-capability-profiles/forge-domain-model-review.md tools/validate_armory_integrity.py
   ```
 
 - `python3.14 tools/validate_armory_integrity.py --final-closeout`
