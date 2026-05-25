@@ -41,6 +41,7 @@ Armory Integrity Validation must require:
 - `specs/agent-equipment-config/security-control-classification.md`
 - `specs/agent-equipment-config/mcp-tools.md`
 - `specs/agent-equipment-config/edit-boundaries.md`
+- `specs/agent-equipment-config/authoring-plan-apply-model.md`
 - `specs/agent-equipment-config/pressure-scenarios.md`
 - `specs/agent-equipment-config/validation-plan.md`
 - `specs/agent-equipment-config/closeout-evidence-plan.md`
@@ -66,6 +67,10 @@ Runtime coverage tracks these current and follow-on cases:
 - read-time schema migration preview;
 - explicit migration apply audit;
 - deliberate edit intents and refusal states;
+- target-agnostic `config propose` output and authoring plan artifacts for
+  `patch-layer`, `create-layer`, reviewed plan artifacts, precondition
+  fingerprint, virtual post-change effective Config, all-or-nothing apply,
+  durability classification, and rollback stance;
 - allowed current edit path for eligible migration apply;
 - refused current edit path for read-only, generated, untrusted, unsafe, or
   authority-blocked sources;

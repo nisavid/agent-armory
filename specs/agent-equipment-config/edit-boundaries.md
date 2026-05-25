@@ -100,6 +100,11 @@ route without parsing prose. The current contract includes:
 - `partial_write_blocked`: at least one candidate in an apply request refused,
   so no partial apply may proceed.
 
+The non-migration authoring plan/apply model adds narrower plan-artifact
+refusals for `unsupported_plan_kind`, `non_deterministic_plan`, and
+`unsupported_mcp_authoring`. Those codes preserve the same refusal contract:
+tools route stable codes, while humans receive readable detail.
+
 Existing runtime output may render these as human-readable `reason` strings.
 New edit surfaces should expose the stable reason code alongside the readable
 detail.
@@ -122,9 +127,12 @@ sections to revisit and marks unselected sections for preservation. It does not
 write source config.
 
 `propose` and `patch` are contract intents for the deferred Config Authoring
-Surfaces bucket. Until that bucket specifies the source-write contract and a
-child implementation issue exists, Config-aware equipment may emit proposals or
-diffs but must not perform general source patches.
+Surfaces bucket. The authoring plan/apply model specifies `config propose`,
+`config patch`, `create-layer`, reviewed plan artifacts, precondition
+fingerprint checks, virtual post-change effective Config validation,
+all-or-nothing apply, durability classification, and rollback stance. Until a
+child implementation issue implements that model, Config-aware equipment may
+emit proposals or diffs but must not perform general source patches.
 
 Issue [#78](https://github.com/nisavid/agent-armory/issues/78) owns published
 integration guidance for the settled MVP operation surface. General source

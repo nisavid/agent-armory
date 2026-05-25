@@ -51,6 +51,34 @@ covers the adapter projection for usable, incomplete, unsafe, conflicted,
 stale, untrusted, and missing-authority live mutation outputs. Harness-specific
 hook, permission, sandbox, and approval enforcement remains future work.
 
+## Issue Tracker Ops authoring
+
+Scenario:
+
+An Agent needs to move Issue Tracker Ops from advisory or dry-run behavior to
+authorized live mutation through Config. `config propose` emits target-agnostic
+candidate changes for the relevant policy fields. The operator chooses a
+committed durable config or local-only operator config source. `config patch`
+emits a `patch-layer` reviewed plan artifact with source target, source
+category, precondition fingerprint, diff, authority evidence, validation
+result, virtual post-change effective Config status, audit preview, refusal
+codes, durability classification, and rollback stance. `config apply` accepts
+that artifact from a file or stdin and writes only if the final precondition
+and all gates still pass.
+
+Expected Config behavior:
+
+- Proposal output stays target-agnostic.
+- Patch planning selects one eligible authored source.
+- The plan refuses ineligible source categories, missing authority, unsafe
+  Config, changed source preconditions, secret values, and provider mutation.
+- Apply is all-or-nothing and does not perform partial writes.
+- Mutation audit evidence distinguishes committed durable project truth from
+  local-only operator state.
+- Issue Tracker Ops live mutation still fails closed when effective Config is
+  blocking, unsupported, incomplete, unsafe, conflicted, stale, untrusted, or
+  missing authority.
+
 ## Partial onboarding
 
 Scenario:
