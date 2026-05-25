@@ -105,7 +105,7 @@ integration, plugin, harness control, external write, or secret provider.
   surface a diagnostic instead.
 - Harness projections must state whether controls are blocking or advisory.
 - Direct secret values or secret-reference tables with embedded value payloads
-  produce `secret boundary violation` diagnostics, redacted effective-config
+  produce `secret_boundary_violation` diagnostics, redacted effective-config
   output, and an `unsafe` Config Safety Status.
 
 ## Conflict diagnostics
