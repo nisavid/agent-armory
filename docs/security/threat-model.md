@@ -29,8 +29,9 @@ In scope:
 - Equipment docs, specs, templates, examples, and validation surfaces that
   future Smiths, Forgewrights, Outfitters, Wielders, or agents may rely on.
 - GitHub Issues state when accessed through `tools/issue_tracker_ops.py`.
-- Agent Equipment Config runtime, CLI, MCP parity helpers, and migration apply
-  surface in `tools/agent_equipment_config.py` and the related docs/specs.
+- Agent Equipment Config runtime, CLI, MCP parity helpers, migration apply, and
+  reviewed plan-artifact apply surfaces in `tools/agent_equipment_config.py`
+  and the related docs/specs.
 - Harness Capability Profile Manager Core and manual refresh workflow in
   `tools/harness_capability_profiles.py`.
 - Armory Integrity Validation in `tools/validate_armory_integrity.py`.
@@ -85,7 +86,7 @@ templates, examples, and closeout/review evidence. These are expanded in
 
 The primary trust boundaries are human/operator input to agent sessions,
 reviewed branch content to local tools, caller-supplied Config inputs to the
-Config runtime, Config migration apply to the local filesystem, Config runtime
+Config runtime, Config source writes to the local filesystem, Config runtime
 helpers to MCP surfaces, Issue Tracker Ops to GitHub Issues, manual harness
 refresh artifacts to canonical profile files, and repository evidence to
 external projection surfaces. These are expanded in
@@ -166,13 +167,15 @@ equipment, and transient scan artifacts are instance-scoped evidence.
   TypeScript files are parsed by validators and managers. Path, symlink, root
   escape, schema, and status checks are the primary controls.
 - Agent Equipment Config caller -> Config runtime: caller-supplied `--layer`,
-  `--plain-handoff`, `layer_paths`, fragment names, requested behavior, and
-  apply authority enter the runtime. Controls include explicit-load only,
-  schema validation, source category checks, trust flags, secret redaction,
-  safety status, migration gates, and source precondition checks.
-- Config runtime -> local filesystem: `migrate config apply` may rewrite only
-  eligible local TOML sources after explicit operator or configured authority,
-  trusted provenance, usable projected Config, and final precondition checks.
+  `--plain-handoff`, `--plan`, `layer_paths`, fragment names, requested
+  behavior, apply authority, and reviewed plan artifacts enter the runtime.
+  Controls include explicit-load only, schema validation, source category
+  checks, trust flags, secret redaction, safety status, migration gates,
+  reviewed-plan gates, and source precondition checks.
+- Config runtime -> local filesystem: `migrate config apply` and `config apply`
+  may rewrite only eligible local TOML sources after explicit operator or
+  configured authority, trusted provenance, usable projected Config, and final
+  precondition checks.
 - Config runtime -> MCP surface: `mcp_tool_definitions()` and
   `call_mcp_tool()` expose typed parity for the safe CLI slice. Controls include
   closed-world input schemas, read/write classification, per-call authority for
@@ -284,8 +287,9 @@ delegation.
   for required live surfaces.
 - `tools/agent_equipment_config.py` keeps source loading explicit, classifies
   Config Safety Status, redacts direct secret values, records secret references
-  as unresolved metadata, and gates migration apply with source category,
-  trust, authority, projected safety, and source precondition checks.
+  as unresolved metadata, and gates migration apply and reviewed plan-artifact
+  apply with source category, trust, authority, projected safety, secret
+  boundaries, all-or-nothing behavior, and source precondition checks.
 - `tools/issue_tracker_ops.py` defaults live read and write operations to
   dry-run output, uses `subprocess.run` with an argument list, sends JSON
   payloads on stdin, and summarizes GitHub results instead of emitting verbose
@@ -337,7 +341,7 @@ projection of private or stale security evidence.
 | Surface | How reached | Trust boundary | Notes | Evidence |
 | --- | --- | --- | --- | --- |
 | Armory Integrity Validation | `python3.14 tools/validate_armory_integrity.py` | Reviewed repo files -> validation decision | Reads Markdown/TOML/Python/TypeScript structure and validates path/link/status boundaries. | `tools/validate_armory_integrity.py` |
-| Agent Equipment Config CLI/runtime | `tools/agent_equipment_config.py` CLI or Python import | Caller-supplied config paths/fragments -> policy decision or local migration write | Explicit-load contract; no discovery; migration apply is the only source-write path. | `tools/agent_equipment_config.py`, `docs/equipment/agent-equipment-config.md` |
+| Agent Equipment Config CLI/runtime | `tools/agent_equipment_config.py` CLI or Python import | Caller-supplied config paths/fragments/plans -> policy decision or local Config write | Explicit-load contract; no discovery; source writes are limited to migration apply and reviewed plan-artifact apply. | `tools/agent_equipment_config.py`, `docs/equipment/agent-equipment-config.md` |
 | Config MCP parity helpers | `mcp_tool_definitions()` and `call_mcp_tool()` | MCP caller arguments -> typed Config operation | Closed-world schemas and per-call apply authority govern local write operation. | `tools/agent_equipment_config.py`, `specs/agent-equipment-config/mcp-tools.md` |
 | Issue Tracker Ops | `tools/issue_tracker_ops.py` CLI | Local command -> authenticated GitHub API read or mutation; Config preflight gates mutation-capable operations. | Defaults reads and writes to dry-run; `--execute` crosses network/auth boundary. | `tools/issue_tracker_ops.py`, `docs/agents/issue-tracker.md` |
 | Harness Capability Profile Manager Core | `tools/harness_capability_profiles.py` CLI | Scout/plan/replacement paths -> canonical profile writes | Root-relative path validation, symlink rejection, allowed mutation target checks. | `tools/harness_capability_profiles.py`, `specs/vanilla-harness-capability-profiles/` |
@@ -375,7 +379,7 @@ projection of private or stale security evidence.
 | Threat ID | Threat source | Prerequisites | Threat action | Impact | Impacted assets | Existing controls | Gaps | Recommended mitigations | Detection ideas | Likelihood | Impact severity | Priority |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | TM-001 | Malicious or mistaken repo change | Contributor changes validation or canonical docs; reviewer relies on validation output. | Make incomplete, stale, or unsafe equipment appear validated or published. | Future agents may grant permissions or publish unsafe equipment. | Validator, Forge Canon, templates, closeout evidence | `tools/validate_armory_integrity.py`; `docs/story-closeout.md`; security and documentation closeout policy | Validator logic is itself trusted and must be reviewed when changed. | Treat validator changes as security-sensitive; require focused tests and review for path, status, and evidence checks. | Diff scans on validator changes; final-closeout count changes; suspicious status wording churn | Medium | High | High |
-| TM-002 | Malicious Config input or unsafe local layer | Agent or operator passes attacker-influenced TOML/handoff paths to Config. | Authorize mutation with unsafe, stale, untrusted, conflicted, or secret-bearing Config. | Unauthorized local config writes or downstream mutation decisions. | Config layers, effective Config, secret references | Explicit-load contract; source categories; trust flags; `safety_status`; redaction; migration authority gates; read-only authoring proposal and plan-generation refusals | Non-migration authoring apply and MCP authoring parity are not yet implemented and need separate review. | Keep authoring apply under follow-up issue scope; require reviewed plan artifacts, source preconditions, and all-or-nothing writes. | Config tests; secret-boundary diagnostics; authoring refusal codes; migration refusal audit records | Medium | High | High |
+| TM-002 | Malicious Config input or unsafe local layer | Agent or operator passes attacker-influenced TOML/handoff paths or reviewed-plan artifacts to Config. | Authorize mutation with unsafe, stale, untrusted, conflicted, or secret-bearing Config. | Unauthorized local config writes or downstream mutation decisions. | Config layers, effective Config, secret references | Explicit-load contract; source categories; trust flags; `safety_status`; redaction; migration authority gates; read-only authoring proposal and plan-generation refusals; reviewed plan-artifact apply gates | MCP authoring parity still needs separate review. | Keep Config writes constrained to migration apply or reviewed plan-artifact apply; require source preconditions, authority, validation, secret-boundary checks, all-or-nothing writes, and mutation audit records. | Config tests; secret-boundary diagnostics; authoring refusal codes; migration and authoring apply audit records | Medium | High | High |
 | TM-003 | Mistaken or compromised agent/operator | `gh` is authenticated and `--execute` is used on the wrong target or with incomplete policy. | Mutate public issue state, labels, comments, or dependencies incorrectly. | Incorrect delegation, public notifications, stale readiness, or dependency misrouting. | GitHub Issues tracker state | Dry-run default; Config preflight; `audit-labels`; JSON request summaries; triage comment policy | The current adapter cannot verify the human intent behind the authenticated account. | Keep execute explicit; include repo/issue in command summaries; prefer Config-backed mutation preflight for live runs. | Label-axis audit; issue dependency readback; unexpected issue comment or label churn | Medium | Medium | Medium |
 | TM-004 | Malicious profile refresh artifact | Agent consumes an adversarial scout, analysis, replacement, or plan path. | Write outside approved profile targets or certify unsupported harness capability claims. | Misleading harness capability profile or unauthorized local file write. | Vanilla profiles, profile manager audit evidence | Root-relative path checks; symlink rejection; allowed mutation paths; validation and audit commands | First-party harness source quality varies and may be stale. | Keep checked dates, evidence class, uncertainty, and source URLs visible; rerun manager validation after refresh. | Profile diff/audit artifacts; validation failure on unsupported write targets | Medium | Medium | Medium |
 | TM-005 | Future equipment author or copied template | Smith copies a scaffold into real equipment without promotion checks. | Omit side-effect classification, approval gates, rollback, or secret controls. | Overpowered future hooks, MCP tools, scripts, or skills. | Templates, examples, future equipment | Template caveats; Equipment Promotion Path; Security and Control Canon | Templates are intentionally minimal and not full implementations. | Keep templates explicit about non-published status and enforce promotion requirements before inventory. | Validator template checks; review of new equipment surfaces | Medium | Medium | Medium |
@@ -393,8 +397,8 @@ mutation with attacker-controlled policy.
 High findings involve controls that could make unsafe equipment appear ready,
 publish secret values, authorize local writes across a trust boundary, or allow
 Issue Tracker Ops or Config to perform mutation under unsafe policy. Validator
-bypasses for promotion status, Config migration-apply gate bypasses, and MCP
-tool side-effect misclassification can reach high severity.
+bypasses for promotion status, Config write-gate bypasses, and MCP tool
+side-effect misclassification can reach high severity.
 
 Medium findings involve misleading or incomplete guidance that could lead to
 unsafe equipment after an additional Smith, reviewer, or operator decision.

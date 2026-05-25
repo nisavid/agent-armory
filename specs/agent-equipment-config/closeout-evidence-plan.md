@@ -40,8 +40,10 @@ Record:
   `config propose`, `patch-layer`, `create-layer`, reviewed plan artifacts,
   precondition fingerprint, virtual post-change effective Config, durability
   classification, refusal codes, and rollback stance;
-- follow-up evidence or issue projection for deferred non-migration apply and
-  MCP authoring parity;
+- non-migration authoring apply evidence for reviewed plan artifacts, including
+  source preconditions, authority, validation, secret-boundary refusals,
+  all-or-nothing behavior, atomic writes, and mutation audit records;
+- follow-up evidence or issue projection for MCP authoring parity;
 - validation commands and results;
 - security review scope, artifact disposition, and findings disposition;
 - documentation closeout scope and unchanged rationale where applicable;
@@ -69,10 +71,9 @@ After the bundle lands, #23 should gain child issues for:
 - onboarding, re-onboarding, resume, and handoff flows;
 - harness projection docs and enforcement support;
 - audit, migration, and security hardening;
-- plan-artifact apply under the Config Authoring Surfaces bucket;
 - fluent CLI and MCP parity operation surfaces required by the Config PRD;
 - Config Authoring Surfaces as the non-blocking follow-up bucket for
-  non-migration apply, MCP authoring parity, and richer audit/query behavior;
+  MCP authoring parity and richer audit/query behavior;
 - publication and pressure validation after runtime behavior exists.
 
 Each child issue should name the bundle files it depends on, the expected output

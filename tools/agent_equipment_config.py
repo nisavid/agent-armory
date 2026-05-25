@@ -554,8 +554,12 @@ def render_migration_source_from_text(text: str, layer: Layer, fragment: SchemaF
     return "".join(lines)
 
 
-def atomic_write_text(path: Path, text: str) -> None:
-    original_mode = stat.S_IMODE(path.stat().st_mode)
+def atomic_write_text(path: Path, text: str, *, mode: int | None = None) -> None:
+    if mode is None:
+        try:
+            mode = stat.S_IMODE(path.stat().st_mode)
+        except FileNotFoundError:
+            mode = 0o644
     temporary_path: str | None = None
     try:
         with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, delete=False) as temporary:
@@ -563,7 +567,7 @@ def atomic_write_text(path: Path, text: str) -> None:
             temporary.write(text)
             temporary.flush()
             os.fsync(temporary.fileno())
-        os.chmod(temporary_path, original_mode)
+        os.chmod(temporary_path, mode)
         os.replace(temporary_path, path)
     finally:
         if temporary_path is not None:
@@ -571,6 +575,61 @@ def atomic_write_text(path: Path, text: str) -> None:
                 os.unlink(temporary_path)
             except FileNotFoundError:
                 pass
+
+
+def toml_key(key: str) -> str:
+    if key and all(character.isalnum() or character in "_-" for character in key):
+        return key
+    return json.dumps(key)
+
+
+def toml_value(value: JSONValue) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, str):
+        return json.dumps(value)
+    if isinstance(value, int) and not isinstance(value, bool):
+        return str(value)
+    if isinstance(value, float):
+        return repr(value)
+    if isinstance(value, list):
+        return "[" + ", ".join(toml_value(item) for item in value) + "]"
+    raise ConfigError("Config apply can render only scalar and array TOML values")
+
+
+def toml_item_sort_key(item: tuple[str, Any]) -> tuple[int, str]:
+    key, _value = item
+    priorities = {
+        "agent_equipment_config": 0,
+        "layer": 0,
+        "fragment_versions": 1,
+    }
+    return (priorities.get(key, 10), key)
+
+
+def render_toml_document(document: dict[str, Any]) -> str:
+    lines: list[str] = []
+
+    def render_table(path: list[str], table: dict[str, Any]) -> None:
+        scalar_items = sorted(
+            ((key, value) for key, value in table.items() if not isinstance(value, dict)),
+            key=toml_item_sort_key,
+        )
+        child_items = sorted(
+            ((key, value) for key, value in table.items() if isinstance(value, dict)),
+            key=toml_item_sort_key,
+        )
+        if path:
+            if lines and lines[-1] != "\n":
+                lines.append("\n")
+            lines.append(f"[{'.'.join(toml_key(part) for part in path)}]\n")
+        for key, value in scalar_items:
+            lines.append(f"{toml_key(key)} = {toml_value(value)}\n")
+        for key, value in child_items:
+            render_table([*path, key], value)
+
+    render_table([], document)
+    return "".join(lines)
 
 
 def migration_refusal(
@@ -1947,6 +2006,8 @@ def authoring_secret_reference_violation(path: str, value: JSONValue) -> bool:
         return True
     if not isinstance(value, dict):
         return True
+    if secret_reference_candidate(value) and value.get("name") == REDACTED:
+        return True
     if secret_reference(value) is None:
         return True
     metadata_keys = {normalized_key(key) for key in value}
@@ -2626,6 +2687,612 @@ def create_layer_plan(
     )
 
 
+def read_authoring_plan(path: str, *, stdin: TextIO | None = None) -> dict[str, Any]:
+    text = (stdin or sys.stdin).read() if path == "-" else Path(path).read_text(encoding="utf-8")
+    payload = json.loads(text)
+    if not isinstance(payload, dict):
+        raise ConfigError("config apply plan must be a JSON object")
+    return payload
+
+
+def path_matches(left: Path, right: Path) -> bool:
+    try:
+        return left.resolve() == right.resolve()
+    except OSError:
+        return left.absolute() == right.absolute()
+
+
+def append_missing_layer_path(layer_paths: list[Path], target: Path) -> list[Path]:
+    if any(path_matches(path, target) for path in layer_paths):
+        return layer_paths
+    return [*layer_paths, target]
+
+
+def authoring_plan_schema_errors(plan: dict[str, Any]) -> list[dict[str, str]]:
+    errors: list[dict[str, str]] = []
+    plan_kind = plan.get("plan_kind")
+    if plan.get("schema") != AUTHORING_PLAN_SCHEMA:
+        errors.append({"path": "schema", "detail": f"expected {AUTHORING_PLAN_SCHEMA}"})
+    if plan.get("plan_surface") != "reviewed-plan":
+        errors.append({"path": "plan_surface", "detail": "expected reviewed-plan"})
+    if not isinstance(plan.get("source_target"), str) or not plan.get("source_target"):
+        errors.append({"path": "source_target", "detail": "required string"})
+    if not isinstance(plan.get("source_category"), str):
+        errors.append({"path": "source_category", "detail": "required string"})
+    if not isinstance(plan.get("precondition_fingerprint"), str):
+        errors.append({"path": "precondition_fingerprint", "detail": "required string"})
+    change_payload = plan.get("change_payload")
+    if not isinstance(change_payload, dict):
+        errors.append({"path": "change_payload", "detail": "required object"})
+    elif plan_kind == "patch-layer" and change_payload.get("type") != "diff":
+        errors.append({"path": "change_payload.type", "detail": "expected diff"})
+    elif plan_kind == "create-layer" and change_payload.get("type") != "create":
+        errors.append({"path": "change_payload.type", "detail": "expected create"})
+    if not isinstance(plan.get("validation_result"), dict):
+        errors.append({"path": "validation_result", "detail": "required object"})
+    if not isinstance(plan.get("authority_evidence"), dict):
+        errors.append({"path": "authority_evidence", "detail": "required object"})
+    refusal_codes = plan.get("refusal_codes")
+    if not isinstance(refusal_codes, list) or any(not isinstance(code, str) for code in refusal_codes):
+        errors.append({"path": "refusal_codes", "detail": "required string array"})
+    return errors
+
+
+def authoring_plan_namespaces(plan: dict[str, Any]) -> list[str]:
+    payload = plan.get("change_payload", {})
+    namespaces: set[str] = set()
+    if isinstance(payload, dict):
+        changes = payload.get("changes", [])
+        if isinstance(changes, list):
+            for change in changes:
+                if isinstance(change, dict) and isinstance(change.get("path"), str) and "." in change["path"]:
+                    namespaces.add(change["path"].split(".", 1)[0])
+        create_payload = payload.get("create_payload", {})
+        if isinstance(create_payload, dict):
+            namespaces.update(key for key in create_payload if key != "agent_equipment_config")
+    return sorted(namespaces)
+
+
+def authoring_fragments_for_apply(plan: dict[str, Any], fragments: list[SchemaFragment]) -> tuple[list[SchemaFragment], list[dict[str, str]]]:
+    if fragments:
+        return fragments, []
+    known = {name: builder() for name, builder in MCP_FRAGMENT_BUILDERS.items()}
+    namespaces = authoring_plan_namespaces(plan)
+    errors = [{"path": namespace, "detail": "unknown schema namespace"} for namespace in namespaces if namespace not in known]
+    selected = [known[namespace] for namespace in namespaces if namespace in known]
+    return selected, errors
+
+
+def authoring_patch_changes_from_plan(plan: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, str]]]:
+    payload = plan.get("change_payload", {})
+    changes_payload = payload.get("changes") if isinstance(payload, dict) else None
+    errors: list[dict[str, str]] = []
+    changes: list[dict[str, Any]] = []
+    if not isinstance(changes_payload, list):
+        return [], [{"path": "change_payload.changes", "detail": "required array"}]
+    for index, item in enumerate(changes_payload):
+        if not isinstance(item, dict):
+            errors.append({"path": f"change_payload.changes[{index}]", "detail": "required object"})
+            continue
+        path = item.get("path")
+        if not isinstance(path, str):
+            errors.append({"path": f"change_payload.changes[{index}].path", "detail": "required string"})
+            continue
+        if "after" not in item:
+            errors.append({"path": f"change_payload.changes[{index}].after", "detail": "required value"})
+            continue
+        changes.append({"path": path, "value": item["after"]})
+    return changes, errors
+
+
+def authoring_plan_refusal_codes(plan: dict[str, Any]) -> list[str]:
+    refusal_codes = plan.get("refusal_codes", [])
+    if not isinstance(refusal_codes, list):
+        return ["validation_failed"]
+    return [code for code in refusal_codes if isinstance(code, str)]
+
+
+def authoring_apply_audit_record(
+    *,
+    plan_kind: str | None,
+    source_target: str | None,
+    source_category: str | None,
+    authority_evidence: dict[str, Any],
+    decision: str,
+    result: str,
+    refusal_codes: list[str],
+    action: str = "config authoring apply decision",
+    write_performed: bool = False,
+) -> dict[str, Any]:
+    source_durability, project_truth = authoring_source_durability(source_category)
+    rollback = (
+        "atomic source write completed; rollback by reverting committed config or restoring the local operator file"
+        if write_performed
+        else "no source write occurred"
+    )
+    return {
+        "action": action,
+        "plan_kind": plan_kind,
+        "source": source_target,
+        "source_category": source_category,
+        "authority_evidence": authority_evidence,
+        "decision": decision,
+        "result": result,
+        "refusal_codes": refusal_codes,
+        "artifact_durability": "mutation audit record",
+        "source_artifact_durability": source_durability,
+        "project_truth_after_apply": project_truth and write_performed,
+        "rollback": rollback,
+        "write_performed": write_performed,
+    }
+
+
+def authoring_apply_result(
+    plan: dict[str, Any],
+    *,
+    result: str,
+    refusal_codes: list[str],
+    authority_evidence: dict[str, Any] | None = None,
+    validation_result: dict[str, Any] | None = None,
+    virtual_effective: dict[str, Any] | None = None,
+    current_fingerprint: str | None = None,
+    write_failures: list[dict[str, Any]] | None = None,
+    audit_records: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    plan_kind = plan.get("plan_kind") if isinstance(plan.get("plan_kind"), str) else None
+    source_target = plan.get("source_target") if isinstance(plan.get("source_target"), str) else None
+    source_category = plan.get("source_category") if isinstance(plan.get("source_category"), str) else None
+    authority = authority_evidence or (plan.get("authority_evidence") if isinstance(plan.get("authority_evidence"), dict) else {})
+    ordered_codes = ordered_refusal_codes(refusal_codes)
+    records = audit_records or [
+        authoring_apply_audit_record(
+            plan_kind=plan_kind,
+            source_target=source_target,
+            source_category=source_category,
+            authority_evidence=authority,
+            decision="refused" if ordered_codes else result,
+            result=result,
+            refusal_codes=ordered_codes,
+        )
+    ]
+    return {
+        "operation": "config apply",
+        "plan_kind": plan_kind,
+        "source_target": source_target,
+        "source_category": source_category,
+        "precondition_fingerprint": plan.get("precondition_fingerprint"),
+        "current_fingerprint": current_fingerprint,
+        "applied": result == "applied",
+        "result": result,
+        "refusal_codes": ordered_codes,
+        "authority_evidence": authority,
+        "validation_result": validation_result or plan.get("validation_result"),
+        "virtual_post_change_effective_config": virtual_effective or plan.get("virtual_post_change_effective_config"),
+        "write_failures": write_failures or [],
+        "audit_records": records,
+    }
+
+
+def source_identity_mismatch(expected: Any, actual: dict[str, Any] | None) -> bool:
+    if not isinstance(expected, dict) or actual is None:
+        return True
+    for key in ("name", "category", "trusted", "precedence", "source_order"):
+        if expected.get(key) != actual.get(key):
+            return True
+    if not isinstance(expected.get("path"), str) or not isinstance(actual.get("path"), str):
+        return True
+    if not path_matches(Path(expected["path"]), Path(actual["path"])):
+        return True
+    return False
+
+
+def source_metadata_mismatch(plan: dict[str, Any], layer: Layer | None) -> bool:
+    if layer is None:
+        return True
+    return (
+        source_identity_mismatch(plan.get("source_identity"), authoring_source_identity(layer))
+        or plan.get("source_category") != layer.category
+    )
+
+
+def apply_refusal_codes_for_validation(
+    *,
+    plan_codes: list[str],
+    schema_errors: list[dict[str, Any]],
+    authority_evidence: dict[str, Any],
+    validation_result: dict[str, Any],
+    virtual_effective: dict[str, Any],
+    source_category: str | None,
+    source_trusted: bool,
+    identity_mismatch: bool,
+) -> list[str]:
+    codes = [*plan_codes]
+    if schema_errors:
+        codes.append("validation_failed")
+    if source_category not in AUTHORING_TARGET_CATEGORIES:
+        codes.append("source_category_ineligible")
+    if not source_trusted:
+        codes.append("source_untrusted")
+    if identity_mismatch:
+        codes.append("ownership_boundary_violation")
+    if authority_evidence.get("status") != "accepted":
+        codes.append("missing_authority")
+    if not validation_result.get("passed"):
+        codes.append("validation_failed")
+    codes.extend(authoring_effective_refusal_codes(virtual_effective))
+    if codes:
+        codes.append("partial_write_blocked")
+    return ordered_refusal_codes(codes)
+
+
+def config_apply_plan(
+    plan: dict[str, Any],
+    layer_paths: list[Path],
+    fragments: list[SchemaFragment],
+    *,
+    apply_authority: str | None = None,
+) -> dict[str, Any]:
+    schema_errors = authoring_plan_schema_errors(plan)
+    plan_kind = plan.get("plan_kind")
+    if plan_kind not in {"patch-layer", "create-layer"}:
+        codes = ["unsupported_plan_kind"]
+        if schema_errors:
+            codes.append("validation_failed")
+        return authoring_apply_result(plan, result="refused", refusal_codes=codes)
+    fragments, fragment_errors = authoring_fragments_for_apply(plan, fragments)
+    schema_errors = [*schema_errors, *fragment_errors]
+    if not fragments:
+        schema_errors.append({"path": "change_payload", "detail": "no implemented schema fragment selected"})
+    source_target = Path(str(plan.get("source_target")))
+    plan_codes = authoring_plan_refusal_codes(plan)
+    if plan.get("validation_result", {}).get("passed") is not True:
+        plan_codes.append("validation_failed")
+    if plan.get("authority_evidence", {}).get("status") != "accepted":
+        plan_codes.append("missing_authority")
+
+    if plan_kind == "patch-layer":
+        return config_apply_patch_layer_plan(
+            plan,
+            layer_paths,
+            fragments,
+            source_target=source_target,
+            schema_errors=schema_errors,
+            plan_codes=plan_codes,
+            apply_authority=apply_authority,
+        )
+    return config_apply_create_layer_plan(
+        plan,
+        layer_paths,
+        fragments,
+        destination=source_target,
+        schema_errors=schema_errors,
+        plan_codes=plan_codes,
+        apply_authority=apply_authority,
+    )
+
+
+def config_apply_patch_layer_plan(
+    plan: dict[str, Any],
+    layer_paths: list[Path],
+    fragments: list[SchemaFragment],
+    *,
+    source_target: Path,
+    schema_errors: list[dict[str, Any]],
+    plan_codes: list[str],
+    apply_authority: str | None,
+) -> dict[str, Any]:
+    current_text: str | None = None
+    current_fingerprint: str | None = None
+    try:
+        current_text = source_target.read_text(encoding="utf-8")
+        current_fingerprint = source_fingerprint(current_text)
+    except OSError:
+        plan_codes.append("source_changed")
+    if current_fingerprint != plan.get("precondition_fingerprint"):
+        plan_codes.append("source_changed")
+    all_layer_paths = append_missing_layer_path(layer_paths, source_target)
+    try:
+        layers = load_layers(all_layer_paths)
+        target_layer = find_layer_by_path(layers, source_target)
+    except ConfigError:
+        layers = []
+        target_layer = None
+        plan_codes.append("validation_failed")
+    if target_layer is None:
+        plan_codes.append("source_changed")
+    changes, change_errors = authoring_patch_changes_from_plan(plan)
+    schema_errors = [*schema_errors, *change_errors]
+    change_codes = authoring_change_refusal_codes(changes) if changes else []
+    path_errors = authoring_change_path_errors(changes, fragments) if fragments else []
+    value_errors = authoring_change_value_errors(changes, fragments) if fragments else []
+    if path_errors or value_errors:
+        plan_codes.append("validation_failed")
+    authority_evidence = authoring_authority_evidence(layers, plan_authority=apply_authority, target_layer=target_layer)
+    if target_layer is None:
+        effective = effective_config_from_layers(layers, fragments, requested_behavior="mutation") if fragments else {}
+        validation_result = validation_result_from_effective(
+            effective,
+            projection_status="blocked",
+            path_errors=[*schema_errors, *path_errors],
+            value_errors=value_errors,
+            blocking_change_codes=[*plan_codes, *change_codes],
+        )
+        refusal_codes = ordered_refusal_codes([*plan_codes, *change_codes, "partial_write_blocked"])
+        return authoring_apply_result(
+            plan,
+            result="refused",
+            refusal_codes=refusal_codes,
+            authority_evidence=authority_evidence,
+            validation_result=validation_result,
+            virtual_effective=virtual_effective_with_status(effective, "blocked") if effective else None,
+            current_fingerprint=current_fingerprint,
+        )
+    projected_target_layer = projected_layer(target_layer, changes)
+    planned_source_diagnostics = layer_validation_diagnostics(
+        projected_target_layer,
+        fragments,
+        requested_behavior="mutation",
+    )
+    projected_layers = [projected_target_layer if layer is target_layer else layer for layer in layers]
+    virtual_effective = effective_config_from_layers(projected_layers, fragments, requested_behavior="mutation")
+    validation_result = validation_result_from_effective(
+        virtual_effective,
+        projection_status="projected" if not schema_errors else "blocked",
+        path_errors=[*schema_errors, *path_errors],
+        value_errors=value_errors,
+        blocking_change_codes=[*plan_codes, *change_codes],
+        planned_source_diagnostics=planned_source_diagnostics,
+    )
+    refusal_codes = apply_refusal_codes_for_validation(
+        plan_codes=[*plan_codes, *change_codes],
+        schema_errors=schema_errors,
+        authority_evidence=authority_evidence,
+        validation_result=validation_result,
+        virtual_effective=virtual_effective,
+        source_category=target_layer.category,
+        source_trusted=target_layer.trusted,
+        identity_mismatch=source_metadata_mismatch(plan, target_layer),
+    )
+    refusal_codes.extend(authoring_layer_refusal_codes(planned_source_diagnostics))
+    refusal_codes = ordered_refusal_codes(refusal_codes)
+    if refusal_codes:
+        return authoring_apply_result(
+            plan,
+            result="refused",
+            refusal_codes=refusal_codes,
+            authority_evidence=authority_evidence,
+            validation_result=validation_result,
+            virtual_effective=virtual_effective_with_status(virtual_effective, "blocked"),
+            current_fingerprint=current_fingerprint,
+        )
+    assert current_text is not None
+    document = parse_toml_text(source_target, current_text)
+    for change in changes:
+        nested_set(document, authoring_path_parts(change), change["value"])
+    next_text = render_toml_document(document)
+    return write_authoring_apply_result(
+        plan,
+        source_target,
+        next_text,
+        authority_evidence=authority_evidence,
+        validation_result=validation_result,
+        virtual_effective=virtual_effective,
+        current_fingerprint=current_fingerprint,
+    )
+
+
+def config_apply_create_layer_plan(
+    plan: dict[str, Any],
+    layer_paths: list[Path],
+    fragments: list[SchemaFragment],
+    *,
+    destination: Path,
+    schema_errors: list[dict[str, Any]],
+    plan_codes: list[str],
+    apply_authority: str | None,
+) -> dict[str, Any]:
+    current_fingerprint = "absent"
+    if destination.exists():
+        try:
+            current_fingerprint = source_fingerprint(destination.read_text(encoding="utf-8"))
+        except OSError:
+            current_fingerprint = "unreadable"
+    if current_fingerprint != plan.get("precondition_fingerprint"):
+        plan_codes.append("source_changed")
+    try:
+        layers = load_layers(layer_paths)
+    except ConfigError:
+        layers = []
+        plan_codes.append("validation_failed")
+    payload = plan.get("change_payload", {})
+    create_payload = payload.get("create_payload") if isinstance(payload, dict) else None
+    if not isinstance(create_payload, dict):
+        schema_errors.append({"path": "change_payload.create_payload", "detail": "required object"})
+        create_payload = {}
+    try:
+        planned_layer = layer_from_create_payload(destination, create_payload, len(layers))
+    except (KeyError, ValueError, TypeError):
+        schema_errors.append({"path": "change_payload.create_payload", "detail": "invalid layer metadata"})
+        planned_layer = None
+    changes, change_errors = authoring_patch_changes_from_plan(plan)
+    schema_errors = [*schema_errors, *change_errors]
+    change_codes = authoring_change_refusal_codes(changes) if changes else []
+    authority_evidence = authoring_authority_evidence(layers, plan_authority=apply_authority, target_layer=planned_layer)
+    if planned_layer is None:
+        virtual_effective = effective_config_from_layers(layers, fragments, requested_behavior="mutation") if fragments else {}
+        validation_result = validation_result_from_effective(
+            virtual_effective,
+            projection_status="blocked",
+            path_errors=schema_errors,
+            blocking_change_codes=[*plan_codes, *change_codes],
+        )
+        refusal_codes = ordered_refusal_codes([*plan_codes, *change_codes, "validation_failed", "partial_write_blocked"])
+        return authoring_apply_result(
+            plan,
+            result="refused",
+            refusal_codes=refusal_codes,
+            authority_evidence=authority_evidence,
+            validation_result=validation_result,
+            virtual_effective=virtual_effective_with_status(virtual_effective, "blocked") if virtual_effective else None,
+            current_fingerprint=current_fingerprint,
+        )
+    path_errors = authoring_change_path_errors(changes, fragments)
+    value_errors = authoring_change_value_errors(changes, fragments)
+    planned_source_diagnostics = layer_validation_diagnostics(planned_layer, fragments, requested_behavior="mutation")
+    virtual_effective = effective_config_from_layers([*layers, planned_layer], fragments, requested_behavior="mutation")
+    validation_result = validation_result_from_effective(
+        virtual_effective,
+        projection_status="projected" if not schema_errors else "blocked",
+        path_errors=[*schema_errors, *path_errors],
+        value_errors=value_errors,
+        blocking_change_codes=[*plan_codes, *change_codes],
+        planned_source_diagnostics=planned_source_diagnostics,
+    )
+    refusal_codes = apply_refusal_codes_for_validation(
+        plan_codes=[*plan_codes, *change_codes],
+        schema_errors=schema_errors,
+        authority_evidence=authority_evidence,
+        validation_result=validation_result,
+        virtual_effective=virtual_effective,
+        source_category=planned_layer.category,
+        source_trusted=planned_layer.trusted,
+        identity_mismatch=source_metadata_mismatch(plan, planned_layer),
+    )
+    refusal_codes.extend(authoring_layer_refusal_codes(planned_source_diagnostics))
+    refusal_codes = ordered_refusal_codes(refusal_codes)
+    if refusal_codes:
+        return authoring_apply_result(
+            plan,
+            result="refused",
+            refusal_codes=refusal_codes,
+            authority_evidence=authority_evidence,
+            validation_result=validation_result,
+            virtual_effective=virtual_effective_with_status(virtual_effective, "blocked"),
+            current_fingerprint=current_fingerprint,
+        )
+    return write_authoring_apply_result(
+        plan,
+        destination,
+        render_toml_document(create_payload),
+        authority_evidence=authority_evidence,
+        validation_result=validation_result,
+        virtual_effective=virtual_effective,
+        current_fingerprint=current_fingerprint,
+    )
+
+
+def write_authoring_apply_result(
+    plan: dict[str, Any],
+    path: Path,
+    text: str,
+    *,
+    authority_evidence: dict[str, Any],
+    validation_result: dict[str, Any],
+    virtual_effective: dict[str, Any],
+    current_fingerprint: str | None,
+) -> dict[str, Any]:
+    plan_kind = plan.get("plan_kind") if isinstance(plan.get("plan_kind"), str) else None
+    source_target = path.as_posix()
+    source_category = plan.get("source_category") if isinstance(plan.get("source_category"), str) else None
+    latest_fingerprint = "absent"
+    try:
+        if path.exists():
+            latest_fingerprint = source_fingerprint(path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        failure = {
+            "source": source_target,
+            "reason": exc.strerror if exc.strerror else str(exc),
+        }
+        audit = authoring_apply_audit_record(
+            plan_kind=plan_kind,
+            source_target=source_target,
+            source_category=source_category,
+            authority_evidence=authority_evidence,
+            decision="write-failed",
+            result="write-failed",
+            refusal_codes=[],
+        )
+        return authoring_apply_result(
+            plan,
+            result="write-failed",
+            refusal_codes=[],
+            authority_evidence=authority_evidence,
+            validation_result=validation_result,
+            virtual_effective=virtual_effective,
+            current_fingerprint=current_fingerprint,
+            write_failures=[failure],
+            audit_records=[audit],
+        )
+    if current_fingerprint is not None and latest_fingerprint != current_fingerprint:
+        audit = authoring_apply_audit_record(
+            plan_kind=plan_kind,
+            source_target=source_target,
+            source_category=source_category,
+            authority_evidence=authority_evidence,
+            decision="refused",
+            result="refused",
+            refusal_codes=["source_changed"],
+        )
+        return authoring_apply_result(
+            plan,
+            result="refused",
+            refusal_codes=["source_changed"],
+            authority_evidence=authority_evidence,
+            validation_result=validation_result,
+            virtual_effective=virtual_effective,
+            current_fingerprint=latest_fingerprint,
+            audit_records=[audit],
+        )
+    try:
+        atomic_write_text(path, text)
+    except OSError as exc:
+        failure = {
+            "source": source_target,
+            "reason": exc.strerror if exc.strerror else str(exc),
+        }
+        audit = authoring_apply_audit_record(
+            plan_kind=plan_kind,
+            source_target=source_target,
+            source_category=source_category,
+            authority_evidence=authority_evidence,
+            decision="write-failed",
+            result="write-failed",
+            refusal_codes=[],
+        )
+        return authoring_apply_result(
+            plan,
+            result="write-failed",
+            refusal_codes=[],
+            authority_evidence=authority_evidence,
+            validation_result=validation_result,
+            virtual_effective=virtual_effective,
+            current_fingerprint=current_fingerprint,
+            write_failures=[failure],
+            audit_records=[audit],
+        )
+    mutation_record = authoring_apply_audit_record(
+        plan_kind=plan_kind,
+        source_target=source_target,
+        source_category=source_category,
+        authority_evidence=authority_evidence,
+        decision="applied",
+        result="applied",
+        refusal_codes=[],
+        action="config authoring apply mutation",
+        write_performed=True,
+    )
+    return authoring_apply_result(
+        plan,
+        result="applied",
+        refusal_codes=[],
+        authority_evidence=authority_evidence,
+        validation_result=validation_result,
+        virtual_effective=virtual_effective_with_status(virtual_effective, "projected"),
+        current_fingerprint=current_fingerprint,
+        audit_records=[mutation_record],
+    )
+
+
 MCP_FRAGMENT_BUILDERS: dict[str, Callable[[], SchemaFragment]] = {
     "issue_tracker_ops": issue_tracker_ops_fragment,
 }
@@ -3192,6 +3859,13 @@ def add_create_layer_arguments(parser: argparse.ArgumentParser) -> None:
     add_authoring_plan_arguments(parser)
 
 
+def add_apply_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--plan", required=True, help="Reviewed authoring plan artifact JSON path, or '-' for stdin.")
+    parser.add_argument("--layer", action="append", default=[])
+    parser.add_argument("--apply-authority", choices=["operator"])
+    add_schema_fragment_arguments(parser)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Compute Agent Equipment Config v0 outputs.")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -3235,6 +3909,9 @@ def build_parser() -> argparse.ArgumentParser:
     config_patch = config_subparsers.add_parser("patch")
     add_patch_arguments(config_patch)
     config_patch.set_defaults(operation="config_patch", display_operation="config patch")
+    config_apply = config_subparsers.add_parser("apply")
+    add_apply_arguments(config_apply)
+    config_apply.set_defaults(operation="config_apply", display_operation="config apply")
 
     onboard = subparsers.add_parser("onboard")
     onboard_subparsers = onboard.add_subparsers(dest="onboard_operation", required=True)
@@ -3261,6 +3938,7 @@ def run(
     *,
     stdout: TextIO | None = None,
     stderr: TextIO | None = None,
+    stdin: TextIO | None = None,
     stdout_text: bool = False,
 ) -> int | str:
     parser = build_parser()
@@ -3306,6 +3984,15 @@ def run(
                 plan_authority=args.plan_authority,
                 requested_behavior=args.requested_behavior,
                 rationale=args.rationale,
+            )
+        elif operation == "config_apply":
+            plan = read_authoring_plan(args.plan, stdin=stdin)
+            fragments = [issue_tracker_ops_fragment()] if args.issue_tracker_ops else []
+            payload = config_apply_plan(
+                plan,
+                [Path(path) for path in args.layer],
+                fragments,
+                apply_authority=args.apply_authority,
             )
         else:
             fragments = [issue_tracker_ops_fragment()] if args.issue_tracker_ops else []
@@ -3354,6 +4041,8 @@ def run(
     # CLI output is redacted by redact_for_cli before this write boundary.
     output.writelines([text])
     if operation in {"config_propose", "config_patch", "create_layer"} and payload.get("refusal_codes"):
+        return 1
+    if operation == "config_apply" and not payload.get("applied"):
         return 1
     if operation == "config_validate" and not payload["passed"]:
         return 1

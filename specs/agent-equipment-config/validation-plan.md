@@ -10,8 +10,9 @@ checks, projection classification, reusable consumer action decisions,
 read-only authoring proposal and plan-generation surfaces, and MCP parity tool
 definitions. It does not implement Agent Equipment beyond this runtime slice,
 publish assets, resolve secrets, mutate external systems, implement harness
-controls, or expose general authoring writes. Source mutation is limited to
-explicit migration apply for eligible local TOML sources.
+controls, or expose MCP authoring tools. Source mutation is limited to explicit
+migration apply and reviewed plan-artifact apply for eligible local TOML
+sources.
 
 ## Scope
 
@@ -73,8 +74,11 @@ Runtime coverage tracks these current and follow-on cases:
   fingerprint, virtual post-change effective Config, durability
   classification, rollback stance, authority evidence, refusal codes, and
   secret-boundary refusals;
-- deferred non-migration apply behavior that must preserve all-or-nothing
-  semantics before any source write;
+- `config apply` behavior for reviewed `patch-layer` and `create-layer`
+  artifacts from file or stdin, including schema enforcement, source
+  preconditions, authority, source category/trust/ownership, virtual
+  post-change validation, semantic safety, secret-boundary refusals,
+  all-or-nothing refusal, atomic local writes, and mutation audit evidence;
 - allowed current edit path for eligible migration apply;
 - refused current edit path for read-only, generated, untrusted, unsafe, or
   authority-blocked sources;
@@ -163,8 +167,8 @@ and fail closed for live tracker mutation when Config Safety Status is not
 
 Each implementation slice that adds executable parsing, migration, mutation,
 secret resolution, hook behavior, tool definitions, network interaction,
-general source patching, revision writes, or enforcement projection needs Codex
-Security review or a documented narrower security action.
+reviewed plan apply, general source patching, revision writes, or enforcement
+projection needs Codex Security review or a documented narrower security action.
 
 ## Residual risk
 

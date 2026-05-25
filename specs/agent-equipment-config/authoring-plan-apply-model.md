@@ -6,9 +6,10 @@ Promotion state: planned
 This Equipment Design Bundle document describes desired behavior for
 non-migration Config authoring. It does not implement Agent Equipment, publish
 assets, expose a general source patcher, resolve secrets, mutate external
-systems, or implement harness controls. Current source mutation remains limited
-to `migrate config apply` for registered migrations on eligible local TOML
-sources.
+systems, implement harness controls, or expose MCP authoring tools. Current
+source mutation is limited to `migrate config apply` for registered migrations
+and `config apply` for reviewed `patch-layer` and `create-layer` plan artifacts
+on eligible local TOML sources.
 
 ## Purpose
 
@@ -16,7 +17,7 @@ Agent Equipment Config authoring changes policy that other Agent Equipment may
 use before advisory behavior, mutation, publication, external calls, hook
 execution, or workflow changes. The authoring model therefore makes proposed
 changes, source targeting, authority, validation, refusal, and audit evidence
-machine-visible before any non-migration Config write surface exists.
+machine-visible before an eligible non-migration Config write occurs.
 
 This model defines the shared contract for proposal, plan creation, and apply.
 Command-specific implementation issues may later build CLI, runtime, docs, or
@@ -205,11 +206,10 @@ stable in the CLI/runtime contract.
 
 ## Implementation slices
 
-The current CLI/runtime slice implements read-only proposal and plan-generation
-behavior for `config propose`, `config patch`, and `create-layer`. Remaining
-implementation work stays split by surface:
+The current CLI/runtime slice implements proposal, plan-generation, and apply
+behavior for `config propose`, `config patch`, `create-layer`, and
+`config apply`. Remaining implementation work stays split by surface:
 
-- apply runtime behavior for reviewed plan artifacts;
 - CLI documentation and integration guidance;
 - Issue Tracker Ops pressure validation;
 - later MCP authoring parity after CLI/runtime behavior is stable.

@@ -63,10 +63,9 @@ committed durable config or local-only operator config source. `config patch`
 emits a `patch-layer` reviewed plan artifact with source target, source
 category, precondition fingerprint, diff, authority evidence, validation
 result, virtual post-change effective Config status, audit preview, refusal
-codes, durability classification, and rollback stance. Non-migration
-`config apply` is deferred; when implemented it must accept the reviewed
-artifact from a file or stdin and write only if the final precondition and all
-gates still pass.
+codes, durability classification, and rollback stance. `config apply` accepts
+the reviewed artifact from a file or stdin and writes only if the final
+precondition and all gates still pass.
 
 Expected Config behavior:
 
@@ -74,7 +73,7 @@ Expected Config behavior:
 - Patch planning selects one eligible authored source.
 - The plan refuses ineligible source categories, missing authority, unsafe
   Config, changed source preconditions, secret values, and provider mutation.
-- Deferred apply must be all-or-nothing and must not perform partial writes.
+- Apply is all-or-nothing and does not perform partial writes.
 - Mutation audit evidence distinguishes committed durable project truth from
   local-only operator state.
 - Issue Tracker Ops live mutation still fails closed when effective Config is

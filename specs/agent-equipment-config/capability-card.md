@@ -8,8 +8,8 @@ standard-library runtime engine slice for fluent CLI operations,
 effective-config, config-diff, diagnostics, plain handoff promotion, authority
 checks, and projection classification, plus onboarding output for first-run and
 re-onboarding flows, explicit migration apply for eligible local TOML sources,
-read-only authoring proposal and plan-generation output, and MCP parity tool
-definitions for the same safe operation families.
+authoring proposal, plan-generation, reviewed plan-artifact apply behavior, and
+MCP parity tool definitions for the same safe operation families.
 It does not implement Agent Equipment beyond this runtime slice. It does not
 publish assets, resolve secrets, mutate external systems, or
 implement harness controls.
@@ -63,8 +63,8 @@ policy model without making Config depend on Issue Tracker Ops.
   records.
 - Scripts/tools: the portable fluent CLI slice for resolve, validate, diff,
   authoring proposal, patch-plan generation, create-layer plan generation,
-  onboarding, migration preview, and migration apply, plus implementation
-  commands and deliberate edit-boundary reference.
+  reviewed plan apply, onboarding, migration preview, and migration apply, plus
+  implementation commands and deliberate edit-boundary reference.
 - MCP/tools: typed parity tools for `config.resolve`, `config.validate`,
   `config.diff`, `onboard.config`, `migrate.config_preview`, and
   `migrate.config_apply`. MCP authoring parity is deferred.
@@ -106,6 +106,7 @@ Deterministic surfaces emit JSON-compatible objects for:
 - semantic validator diagnostics,
 - migration previews,
 - migration-apply decisions, refusals, mutations, and audit records,
+- authoring apply decisions, refusals, mutations, and audit records,
 - MCP tool metadata and structured tool-call results,
 - edit intent and refusal evidence for deliberate source changes,
 - secret reference resolution status,

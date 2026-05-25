@@ -28,14 +28,14 @@ Agent Equipment Config has an explicit-load contract:
 
 The runtime does not discover files, import equipment packages, resolve secret
 values, mutate external systems, or enforce harness controls. Source writes are
-limited to registered `migrate config apply` operations on eligible local TOML
-sources. `config propose`, `config patch`, and `create-layer` provide
-read-only non-migration authoring proposal and reviewed plan generation.
-Revision writes, non-migration apply, and MCP authoring parity belong to the
-Config Authoring Surfaces follow-up bucket. Non-migration apply must follow the
-reviewed plan artifact model in
-[`authoring-plan-apply-model.md`](../../specs/agent-equipment-config/authoring-plan-apply-model.md)
-before any source write surface exists.
+limited to registered `migrate config apply` operations and reviewed
+`config apply` operations on eligible local TOML sources. `config propose`,
+`config patch`, and `create-layer` provide non-migration authoring proposal and
+reviewed plan generation. `config apply` consumes those reviewed plan artifacts
+from a file or stdin and rechecks authority, source preconditions, validation,
+semantic safety, secret boundaries, all-or-nothing behavior, and mutation audit
+evidence before writing. Revision writes and MCP authoring parity belong to the
+Config Authoring Surfaces follow-up bucket.
 
 The product operation vocabulary is:
 
@@ -47,6 +47,7 @@ The product operation vocabulary is:
 | Propose authoring changes without a target | `config propose` | target-agnostic proposal artifact |
 | Plan an authored source patch | `config patch` | read-only `patch-layer` reviewed plan artifact |
 | Plan a new authored layer | `create-layer` | read-only `create-layer` reviewed plan artifact |
+| Apply a reviewed authored source plan | `config apply` | reviewed plan-artifact apply |
 | Plan first-run, resume, restart, or revise work | `onboard config` | `onboarding-plan` |
 | Preview registered source migrations | `migrate config preview` | `migration-apply` without `--apply` |
 | Apply registered source migrations | `migrate config apply` | `migration-apply --apply` |

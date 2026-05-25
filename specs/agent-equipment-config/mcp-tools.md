@@ -52,7 +52,8 @@ names and direct secret values.
 
 `config propose`, `config patch`, and `create-layer` are current read-only CLI
 surfaces, but they do not have MCP tool definitions in this slice.
-Non-migration apply and MCP authoring parity remain follow-up work.
+`config apply` is a current CLI/runtime write surface for reviewed plan
+artifacts. MCP authoring parity remains follow-up work.
 
 ## Shared inputs
 
