@@ -8618,6 +8618,7 @@ class ExampleValidationTests(unittest.TestCase):
 
 class SpecValidationTests(unittest.TestCase):
     config_prd_path = "docs/prd/agent-equipment-config.md"
+    existing_equipment_onboarding_prd_path = "docs/prd/existing-equipment-onboarding.md"
     config_bundle_paths = (
         "specs/agent-equipment-config/README.md",
         "specs/agent-equipment-config/capability-card.md",
@@ -8900,6 +8901,15 @@ class SpecValidationTests(unittest.TestCase):
 
         self.assertIn(
             CheckResult(f"required_path:{self.config_prd_path}", False, "missing", self.config_prd_path),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                f"required_path:{self.existing_equipment_onboarding_prd_path}",
+                False,
+                "missing",
+                self.existing_equipment_onboarding_prd_path,
+            ),
             results,
         )
         for relative_path in self.required_spec_paths:

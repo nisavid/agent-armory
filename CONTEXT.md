@@ -6,6 +6,11 @@ The Agent Armory defines a shared language for creating, cataloging, and maintai
 
 Keep glossary terms in this section sorted alphabetically by term name.
 
+**Advisory Mode**:
+A mode where Agent Equipment provides non-authoritative guidance, diagnostics,
+or plans without owning the behavior.
+_Avoid_: Shadow Mode, Operational Continuity
+
 **Agent**:
 The causal stream of reasoning, actions, tool calls, messages, and content mediated by an Agent Harness.
 _Avoid_: bot, model, profile when precision matters
@@ -169,6 +174,11 @@ configuration is usable, incomplete, unsafe, stale, untrusted, or conflicted
 for the requested behavior.
 _Avoid_: treating schema validity alone as write safety
 
+**Consumer Compatibility Entry**:
+A reviewed record of an integration contract or output shape that new or
+migrated equipment should preserve for existing consumers.
+_Avoid_: Equipment Disposition, behavior ownership decision
+
 **Cross-Boundary Coherence Ralph Review**:
 A Review Until Clean gate that checks whether process outputs agree across PRD, specs, plans, implementation, validation, security, documentation, projection, and release or handoff surfaces.
 _Avoid_: local-only consistency check
@@ -222,9 +232,53 @@ decision, security/control classification, pressure scenarios, validation plan,
 closeout evidence plan, and related design records.
 _Avoid_: Inventory, component implementation path, status dump
 
+**Equipment Discovery Scope**:
+A named boundary where Existing Equipment Onboarding searches for relevant
+prior equipment.
+_Avoid_: scanner implementation detail, implicit global search
+
+**Equipment Disposition**:
+A reviewed decision for how onboarding handles an Existing Equipment Surface or
+Equipment Facet.
+_Avoid_: installed state, inferred user intent, Source Material Disposition
+
+**Equipment Evidence Entry**:
+A structured evidence item that supports equipment dispositions, risk
+acceptances, compatibility decisions, or derived coverage claims.
+_Avoid_: free-form rationale, chat transcript, untraceable observation
+
+**Equipment Facet**:
+A separable behavior, policy, route, or integration within an Existing
+Equipment Surface that can receive its own disposition.
+_Avoid_: whole equipment item, source file
+
 **Equipment Promotion Path**:
 The lifecycle that moves an equipment idea from example or spec toward Published Agent Equipment.
 _Avoid_: treating example, specified, planned, implemented, validated, and published as interchangeable states
+
+**Equipment Review Record**:
+A structured reviewed artifact that records equipment dispositions,
+compatibility decisions, risk acceptances, unassessed areas, follow-up blockers,
+and supporting evidence.
+_Avoid_: active configuration, prose-only narrative, migration execution
+artifact
+
+**Existing Equipment Onboarding**:
+The onboarding work that discovers Existing Equipment Surfaces, establishes
+Onboarding Intent, and decides dispositions, compatibility, conflicts,
+follow-ups, and activation limits before claiming coverage or replacement.
+_Avoid_: automatic migration, source material extraction only
+
+**Existing Equipment Surface**:
+An equipment, component, or behavior-shaping surface present before an
+onboarding workflow, whether or not it is currently used or intended to remain.
+_Avoid_: installed equipment, retained equipment, legacy equipment when age or
+intent is not established
+
+**Follow-up Reminder Surface**:
+A harness-dependent surface that brings unresolved follow-up candidates into
+relevant agent sessions.
+_Avoid_: capability report only, chat memory
 
 **Foreign Policy Compatibility Surface**:
 A kept Foreign Policy Surface that remains usable while its policy or behavior
@@ -491,6 +545,16 @@ mutations, precondition hashes, planned content hashes, validation commands,
 evidence promotions, and follow-up issue candidates.
 _Avoid_: scout cache, implicit profile edit
 
+**Onboarding Intent**:
+The operator's session-level direction for equipment onboarding before
+individual surfaces and facets receive detailed dispositions.
+_Avoid_: installed state, per-facet disposition, inferred final decision
+
+**Operational Continuity**:
+A state where a capability can keep operating safely because target Agent
+Equipment is active or a verified retained owner remains authoritative.
+_Avoid_: Replacement Coverage, migration completion
+
 **Operator**:
 An intent-capable actor that initiates, routes, controls, or evaluates Agent
 work. An Operator may be a human or an orchestrator-agent.
@@ -541,6 +605,11 @@ observed friction, failure, pattern, or insight and the induced equipment,
 policy, validator, config, workflow, or documentation candidate.
 _Avoid_: final equipment design, untracked note
 
+**Replacement Coverage**:
+A state where target Agent Equipment owns active behavior equivalent to a prior
+Existing Equipment Surface or Equipment Facet for a declared scope.
+_Avoid_: Operational Continuity, redirected retained-owner behavior
+
 **Repo Draft PRD**:
 A worktree-authored PRD used for review and refinement before projection into the issue tracker.
 _Avoid_: treating the draft as the final issue-tracker record
@@ -575,6 +644,11 @@ _Avoid_: Armory Integrity Validation, Forge Integrity Validation, harness integr
 A historical standard-library Python script shape for completed Forge Seed
 checks. Current live checks run through Armory Integrity Validation tooling.
 _Avoid_: package-manager-dependent validator, harness-specific validator
+
+**Shadow Mode**:
+A mode where target Agent Equipment runs beside a retained authoritative owner
+for comparison or confidence-building.
+_Avoid_: Replacement Coverage, Advisory Mode
 
 **Skill Template**:
 A seed artifact that shows how Smiths should shape future skills without itself being equipped as a skill.
@@ -657,9 +731,20 @@ The evidence boundary that supports the current issue-triage recommendation,
 from semantic hygiene through deep issue-session analysis.
 _Avoid_: readiness state, work kind, priority
 
+**Unassessed Equipment Area**:
+A discovery scope, equipment group, or capability overlap not scanned or
+classified enough to support activation, continuity, or coverage claims.
+_Avoid_: warning-only note, scan success, hidden risk acceptance
+
 **Underlying Intent**:
 The stakeholder's actual current Intent: the direction they would want the project to move if a mismatch were brought to their attention. An agent does not directly know a stakeholder's or other intent-capable actor's Underlying Intent; it maintains an evidence-backed model that can be tested through questions, experiments, and observed corrections.
 _Avoid_: confusing the agent's model of intent with the intent itself
+
+**User Follow-up Registry**:
+A user-scoped durable home for user-specific follow-up candidates across Agent
+Equipment.
+_Avoid_: team issue tracker, repo issue tracker, equipment-specific follow-up
+store
 
 **Vanilla Harness Capability Profile**:
 A Harness Capability Profile for a Vanilla Harness Capability Surface. Vanilla
@@ -693,6 +778,23 @@ _Avoid_: Outfitter, Loadout, Agent Profile
   **Loadouts**.
 - **Wielders** use **Loadouts** to perform work.
 - **Equipment Candidates** may become **Published Agent Equipment** after validation and publication.
+- **Existing Equipment Onboarding** evaluates **Existing Equipment Surfaces**
+  through named **Equipment Discovery Scopes** before making activation,
+  continuity, or coverage claims.
+- An **Existing Equipment Surface** can contain multiple **Equipment Facets**;
+  **Equipment Dispositions** attach to the surface or facet that actually owns
+  the behavior being reviewed.
+- An **Equipment Review Record** stores **Equipment Evidence Entries**,
+  **Equipment Dispositions**, **Consumer Compatibility Entries**, unassessed
+  areas, risk acceptances, and follow-up blocker relationships.
+- **Replacement Coverage** requires target **Agent Equipment** to own the
+  active behavior; **Operational Continuity** can also come from a verified
+  retained owner.
+- **Shadow Mode** and **Advisory Mode** can support migration confidence, but
+  neither establishes **Replacement Coverage** by itself.
+- Team-wide follow-ups belong in the issue tracker when available; user-specific
+  follow-ups belong in a **User Follow-up Registry** and may surface through a
+  **Follow-up Reminder Surface**.
 - An **Agent** is **Strapped** when its reasoning and actions are mediated by an **Agent Harness**.
 - **Operators** initiate, route, control, or evaluate **Agent** work; human
   authority should be named explicitly when the distinction matters.
@@ -853,6 +955,13 @@ _Avoid_: Outfitter, Loadout, Agent Profile
   downstream recurring equipment.
 - "Example" can mean a teaching artifact or an installable package. Resolution: use **Forge Example** for annotated demonstrations and reserve **Agent Equipment** for promoted, validated equipment.
 - "Agent Equipment" can mean the broad category or a ready-to-equip surface. Resolution: use **Equipment Candidate** before validation/publication and **Published Agent Equipment** for ready-to-equip surfaces.
+- "Existing equipment" can mean prior surfaces, currently used equipment,
+  retained authority, or foreign policy material. Resolution: use **Existing
+  Equipment Surface** for prior equipment presence, **Equipment Disposition**
+  for the reviewed decision, **Operational Continuity** for safe ongoing
+  operation, **Replacement Coverage** for target-equipment ownership, and
+  **Foreign Policy Surface** only when the prior surface is external to the
+  Armory's preferred equipment model.
 - "PRD tracking" can mean worktree drafting or issue-tracker publication. Resolution: use **Repo Draft PRD** for reviewable drafts, **Published PRD Issue** for tracking, and re-project material draft changes into the issue.
 - "Issue projection" can mean publication timing or synchronization mechanics. Resolution: use **Issue Projection** for post-review publication and closeout synchronization.
 - "Reflection" can mean private thinking, a closeout habit, a durable finding, or future equipment. Resolution: use **Reflection Finding** when the output should be tracked, and **Cognition Enhancement Equipment** when the capability itself is being engineered.

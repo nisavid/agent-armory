@@ -145,6 +145,10 @@ The current roadmap includes these equipment lines:
 - [Issue Tracker Ops](specs/issue-tracker-ops/), for direct
   GitHub Issues bootstrap operations and future issue lifecycle equipment.
   Issue Ops is the accepted shorthand.
+- [Existing Equipment Onboarding](docs/prd/existing-equipment-onboarding.md),
+  a draft generic contract for discovering prior equipment, deciding
+  compatibility and disposition, and reporting activation limits before an
+  equipment line claims coverage.
 - [Repo Ops](specs/repo-ops.md), for repository operations performed by agents.
   Repo Ops is the planned core repository-operations layer for repositories
   that are not forks.
