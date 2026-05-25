@@ -8626,6 +8626,7 @@ class SpecValidationTests(unittest.TestCase):
         "specs/agent-equipment-config/security-control-classification.md",
         "specs/agent-equipment-config/mcp-tools.md",
         "specs/agent-equipment-config/edit-boundaries.md",
+        "specs/agent-equipment-config/authoring-plan-apply-model.md",
         "specs/agent-equipment-config/pressure-scenarios.md",
         "specs/agent-equipment-config/validation-plan.md",
         "specs/agent-equipment-config/closeout-evidence-plan.md",
@@ -8814,6 +8815,34 @@ class SpecValidationTests(unittest.TestCase):
                 Refusals name source category, trusted provenance, Policy
                 Authority, Config Safety Status, validation, and secret
                 boundary failures.
+                """,
+            ),
+            "specs/agent-equipment-config/authoring-plan-apply-model.md": bundle_doc(
+                "Authoring Plan/Apply Model: Agent Equipment Config",
+                """\
+                ## Purpose
+
+                The authoring model defines non-migration Config source changes
+                through deterministic JSON plan artifacts before any general
+                source patching surface writes source Config.
+
+                ## Plan surfaces
+
+                config propose is target-agnostic. config patch creates a
+                patch-layer plan for an eligible selected source. create-layer
+                creates a new authored source plan. config apply accepts only
+                reviewed plan artifacts.
+
+                ## Apply boundary
+
+                Plans preserve the source target, source category,
+                precondition fingerprint, diff or create payload, authority
+                evidence, validation result, virtual post-change effective Config
+                status, audit preview, refusal codes,
+                durability classification, and rollback stance. Apply is
+                all-or-nothing for committed durable config and local-only
+                operator config. Secret-reference pointer edits are allowed,
+                while secret values and secret-provider mutation are refused.
                 """,
             ),
             "specs/agent-equipment-config/pressure-scenarios.md": bundle_doc(
@@ -9046,6 +9075,15 @@ class SpecValidationTests(unittest.TestCase):
             "consumer action decision",
             "progressive fallback",
             "Issue Tracker Ops",
+            "config propose",
+            "patch-layer",
+            "create-layer",
+            "reviewed plan artifacts",
+            "precondition fingerprint",
+            "virtual post-change effective Config",
+            "all-or-nothing",
+            "durability classification",
+            "rollback stance",
             "python3.14 -m unittest tests.test_agent_equipment_config",
             "policy",
             "Codex",

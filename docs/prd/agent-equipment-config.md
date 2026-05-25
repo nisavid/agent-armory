@@ -91,7 +91,11 @@ comparison.
   are not the public Config operation surface.
 - General non-migration `config propose`, `config patch`, and `config apply`
   authoring surfaces are deferred into the **Config Authoring Surfaces** epic
-  bucket.
+  bucket. Their current design contract is the authoring plan/apply model:
+  target-agnostic proposals, `patch-layer` and `create-layer` reviewed plan
+  artifacts, precondition fingerprint checks, virtual post-change effective
+  Config validation, all-or-nothing apply, durability classification, rollback
+  stance, and deferred MCP parity.
 
 **Non-Goals**:
 
@@ -223,8 +227,8 @@ after their CLI and source-write contracts are specified.
   consuming equipment line; refine validation and onboarding examples from real
   use.
 - **v2.0**: Promote Config Authoring Surfaces for general proposal, patch,
-  source-target selection, general apply, richer audit/query behavior, and MCP
-  revisions for those capabilities.
+  source-target selection, reviewed plan artifacts, general apply, richer
+  audit/query behavior, and MCP revisions for those capabilities.
 
 **Blocker Map**:
 

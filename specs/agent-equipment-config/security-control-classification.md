@@ -54,11 +54,11 @@ integration, plugin, harness control, external write, or secret provider.
 | Effective-config generation | Read or policy decision | Explain value provenance, safety status, and diagnostics. |
 | Config-diff generation | Read | Explain changed values, policy effects, and unresolved conflicts. |
 | Edit proposal | Read | Emit candidate changes and diff evidence without selecting or writing a source target. |
-| Config patch or revise plan | Policy decision | Require selected sections or fields, eligible future surface, validation, authority evidence, and refusal output before any write. |
+| Config patch or revise plan | Policy decision | Require selected sections or fields, eligible future surface, reviewed plan artifacts, validation, virtual post-change effective Config, authority evidence, and refusal output before any write. |
 | Migration preview | Read | Do not rewrite source config. |
 | Source migration apply | Local write | Require eligible source category, trusted provenance, dry-run-first output, explicit authority, and audit records. |
 | MCP Config parity tools | Read or local write | Mirror the safe CLI/runtime slice with typed schemas, MCP annotations, read/write classification, auth source, side-effect metadata, approval requirements, failure modes, and mutation gates. |
-| General config apply | Local write | Deferred; future surfaces must satisfy edit intent, source eligibility, diff, authority, precondition, atomic write, and audit controls before implementation. |
+| General config apply | Local write | Deferred; future surfaces must consume reviewed plan artifacts and satisfy edit intent, source eligibility, diff or create payload, authority, precondition fingerprint, all-or-nothing atomic write, durability classification, rollback stance, and audit controls before implementation. |
 | Consumer action decision | Policy decision | Fail closed for mutation-capable behavior unless effective Config is usable, authority and semantics pass, and the required capability is supported. |
 | Enforcement projection | Advisory or blocking control | Label blocking support versus advisory fallback. |
 | Secret reference resolution | Sensitive read | Report reference and status, never secret value. |
@@ -78,8 +78,10 @@ integration, plugin, harness control, external write, or secret provider.
   publication and preserve runtime refusals, source category, authority, and
   audit evidence in structured output.
 - General source edits must identify intent, target, source category,
-  provenance, diff, authority, validation result, final precondition, and audit
-  record before writing.
+  provenance, diff or create payload, authority, validation result,
+  precondition fingerprint, virtual post-change effective Config,
+  all-or-nothing behavior, durability classification, rollback stance, and
+  audit record before writing.
 - Checkout-local state, generated cache or state, secret reference sources,
   session overrides, untrusted layers, and externally owned sources are
   read-only for Config source writes unless a future owner-specific surface

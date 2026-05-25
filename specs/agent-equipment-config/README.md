@@ -40,6 +40,7 @@ layer inside the shared system.
 - [Security and control classification](security-control-classification.md)
 - [MCP tools](mcp-tools.md)
 - [Edit boundaries](edit-boundaries.md)
+- [Authoring plan/apply model](authoring-plan-apply-model.md)
 - [Pressure scenarios](pressure-scenarios.md)
 - [Validation plan](validation-plan.md)
 - [Closeout evidence plan](closeout-evidence-plan.md)
@@ -244,7 +245,12 @@ The supported edit intents are `propose`, `patch`, `migrate`, `revise`, and
 `apply`. Current source writing is limited to `migrate config apply` for
 registered migrations on `committed durable config` and
 `local-only operator config`. General source patching and revision writes remain
-deferred to the Config Authoring Surfaces bucket.
+deferred to the Config Authoring Surfaces bucket. The
+[authoring plan/apply model](authoring-plan-apply-model.md) defines the
+non-migration proposal, `patch-layer`, `create-layer`, reviewed plan artifacts,
+precondition fingerprint, virtual post-change effective Config,
+all-or-nothing apply, durability classification, and rollback stance contract
+that later implementation slices must preserve.
 
 ## Operation surfaces
 
@@ -265,7 +271,8 @@ remain available for implementation debugging and evidence comparison. MCP
 tool definitions live in [MCP tools](mcp-tools.md) and the importable runtime.
 Skills and docs route agents to CLI or MCP usage; they are not substitutes for
 those surfaces. General authoring operations such as propose, patch, and
-general apply belong to the deferred Config Authoring Surfaces bucket.
+general apply belong to the deferred Config Authoring Surfaces bucket and must
+use the reviewed plan artifact contract before any source write.
 
 ## Harness projections
 

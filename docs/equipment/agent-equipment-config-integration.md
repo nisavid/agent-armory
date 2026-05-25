@@ -30,7 +30,10 @@ The runtime does not discover files, import equipment packages, resolve secret
 values, mutate external systems, or enforce harness controls. Source writes are
 limited to registered `migrate config apply` operations on eligible local TOML
 sources. General proposal, patch, revision, and apply workflows belong to the
-Config Authoring Surfaces follow-up bucket.
+Config Authoring Surfaces follow-up bucket. Non-migration authoring must follow
+the reviewed plan artifact model in
+[`authoring-plan-apply-model.md`](../../specs/agent-equipment-config/authoring-plan-apply-model.md)
+before any source write surface exists.
 
 The product operation vocabulary is:
 

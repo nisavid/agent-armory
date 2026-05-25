@@ -35,6 +35,10 @@ Record:
 - Agent Equipment Config MCP parity evidence for tool definitions, typed input
   and output contracts, read/write classification, failure modes, and migration
   apply gates;
+- non-migration authoring plan/apply evidence for `config propose`,
+  `patch-layer`, `create-layer`, reviewed plan artifacts, precondition
+  fingerprint, virtual post-change effective Config, all-or-nothing apply,
+  durability classification, and rollback stance;
 - validation commands and results;
 - security review scope, artifact disposition, and findings disposition;
 - documentation closeout scope and unchanged rationale where applicable;
@@ -63,6 +67,7 @@ After the bundle lands, #23 should gain child issues for:
 - harness projection docs and enforcement support;
 - audit, migration, and security hardening;
 - general edit operation surfaces under the Config Authoring Surfaces bucket;
+- implementation slices for authoring plan generation and plan-artifact apply;
 - fluent CLI and MCP parity operation surfaces required by the Config PRD;
 - Config Authoring Surfaces as the non-blocking follow-up bucket for general
   propose, patch, apply, source-target UX, and richer audit/query behavior;

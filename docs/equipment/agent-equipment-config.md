@@ -30,6 +30,8 @@ and the current runtime.
 - Blueprint: `specs/agent-equipment-config/`
 - MCP tool specs: `specs/agent-equipment-config/mcp-tools.md`
 - Edit boundaries: `specs/agent-equipment-config/edit-boundaries.md`
+- Authoring plan/apply model:
+  `specs/agent-equipment-config/authoring-plan-apply-model.md`
 - Example layer: `templates/config/agent-equipment-config-example.toml`
 - Plain Issue Tracker Ops handoff:
   `templates/config/issue-tracker-ops-plain-handoff.toml`
@@ -341,11 +343,11 @@ supported edit intents are:
 
 | Intent | Current boundary |
 | --- | --- |
-| `propose` | Emit a candidate change and diff only; no source write. |
-| `patch` | Deferred to Config Authoring Surfaces until source selection, validation, authority, diff, and audit are specified. |
+| `propose` | Target-agnostic candidate output only; no source write. |
+| `patch` | Deferred implementation. The authoring model defines `patch-layer` plan artifacts with source selection, validation, authority, virtual post-change effective Config, diff, and audit preview. |
 | `migrate` | Supported through `migrate config preview` and `migrate config apply` for registered schema migrations. |
 | `revise` | Supported as `onboard config` section selection; source writing is deferred. |
-| `apply` | Supported only for registered migrations on eligible TOML sources. |
+| `apply` | Supported only for registered migrations on eligible TOML sources. Non-migration apply is deferred and must consume reviewed plan artifacts. |
 
 Only `committed durable config` and `local-only operator config` are eligible
 for the current migration apply write path. `checkout-local state`, `generated
@@ -362,6 +364,14 @@ source precondition checking, and audit records. Refusals must identify the
 source, category, namespace, authority evidence, and reason. A write must stop
 when it would cross source ownership, secret, authority, validation, or
 harness-support boundaries.
+
+The deferred authoring model uses deterministic JSON reviewed plan artifacts.
+Those artifacts carry the plan kind, source target, source category,
+precondition fingerprint, diff or create payload, authority evidence,
+validation result, virtual post-change effective Config status, audit preview,
+refusal codes, durability classification, and rollback stance. Non-migration
+apply is all-or-nothing and writes only eligible `committed durable config` or
+`local-only operator config`.
 
 ## Migration apply
 
