@@ -65,6 +65,10 @@ Plan artifacts are stable enough for tests and tools to parse without reading
 human prose. Human-readable summaries may accompany the artifact, but they are
 not the contract apply consumes.
 
+Validation covers the planned source shape independently from the virtual
+effective Config so a higher-precedence layer cannot mask invalid data in the
+selected patch target or create payload.
+
 ## Source and authority boundary
 
 The first authoring model writes only:
@@ -90,9 +94,14 @@ Writes require:
 
 ## Secret-reference boundary
 
-Authoring may create or patch secret-reference pointers when the target remains
-an eligible authored Config layer. That allowance does not authorize writes to
-a separate `secret reference source`. Authoring must refuse:
+Authoring may create or patch secret-reference pointers as whole pointer
+objects when the target remains an eligible authored Config layer. Nested
+provider-metadata patch paths inside a pointer are refused in the current
+plan-generation slice so a plan cannot mutate provider identity piecemeal or
+blur pointer edits with provider operations. Pointer metadata must stay scalar:
+`scope` is a string when present and `required_for` is one of the supported
+behavior names. That allowance does not authorize writes to a separate
+`secret reference source`. Authoring must refuse:
 
 - secret values;
 - secret-reference tables with embedded value payloads;
@@ -194,12 +203,12 @@ Those tools stay deferred until plan artifact schemas, side-effect classes,
 auth source, approval requirements, failure modes, and mutation gates are
 stable in the CLI/runtime contract.
 
-## Follow-up slices
+## Implementation slices
 
-After this model lands, child issues should split implementation and validation
-work by surface:
+The current CLI/runtime slice implements read-only proposal and plan-generation
+behavior for `config propose`, `config patch`, and `create-layer`. Remaining
+implementation work stays split by surface:
 
-- proposal and plan-generation runtime behavior;
 - apply runtime behavior for reviewed plan artifacts;
 - CLI documentation and integration guidance;
 - Issue Tracker Ops pressure validation;

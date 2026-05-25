@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import argparse
+import copy
+import hashlib
 import json
 import os
 import stat
@@ -1028,7 +1030,14 @@ def lock_blocks_layer(lock: PolicyLock, layer: Layer, requested_behavior: str) -
     )
 
 
-def blocked_override_diagnostic(path: str, layer: Layer, lock: PolicyLock, candidate: JSONValue) -> Diagnostic:
+def blocked_override_diagnostic(
+    path: str,
+    layer: Layer,
+    lock: PolicyLock,
+    candidate: JSONValue,
+    *,
+    redact_blocked_value: bool = False,
+) -> Diagnostic:
     lock_reason = "non-overridable" if lock.non_overridable else f"authority-gated {lock.authority!r}"
     return diagnostic(
         "blocked override",
@@ -1036,7 +1045,7 @@ def blocked_override_diagnostic(path: str, layer: Layer, lock: PolicyLock, candi
         f"{layer.name} cannot override {lock_reason} value from {lock.layer.name}",
         layer,
         evidence={
-            "blocked_value": redacted_if_direct_secret(candidate, path),
+            "blocked_value": REDACTED if redact_blocked_value else redacted_if_direct_secret(candidate, path),
             "blocked_by": {
                 "layer": lock.layer.name,
                 "source": lock.layer.path,
@@ -1438,7 +1447,21 @@ def effective_config_from_layers(
                         )
                     )
                     if lock_blocks_candidate:
-                        diagnostics.append(blocked_override_diagnostic(path, layer, active_lock, candidate))
+                        blocked_candidate_secret = (
+                            (field_spec.type == "object" and authoring_secret_reference_violation(path, candidate))
+                            or direct_sensitive_value(candidate, path)
+                        )
+                        if blocked_candidate_secret:
+                            diagnostics.append(secret_boundary_violation_diagnostic(path, layer))
+                        diagnostics.append(
+                            blocked_override_diagnostic(
+                                path,
+                                layer,
+                                active_lock,
+                                candidate,
+                                redact_blocked_value=blocked_candidate_secret,
+                            )
+                        )
                     elif not (
                         active_lock is not None
                         and active_lock.required_for in {requested_behavior, "always"}
@@ -1452,7 +1475,21 @@ def effective_config_from_layers(
                 if layer.precedence in conflicted_precedences:
                     continue
                 if active_lock is not None and lock_blocks_layer(active_lock, layer, requested_behavior):
-                    diagnostics.append(blocked_override_diagnostic(path, layer, active_lock, candidate))
+                    blocked_candidate_secret = (
+                        (field_spec.type == "object" and authoring_secret_reference_violation(path, candidate))
+                        or direct_sensitive_value(candidate, path)
+                    )
+                    if blocked_candidate_secret:
+                        diagnostics.append(secret_boundary_violation_diagnostic(path, layer))
+                    diagnostics.append(
+                        blocked_override_diagnostic(
+                            path,
+                            layer,
+                            active_lock,
+                            candidate,
+                            redact_blocked_value=blocked_candidate_secret,
+                        )
+                    )
                     continue
                 value = candidate
                 source_layer = layer
@@ -1475,8 +1512,12 @@ def effective_config_from_layers(
                 diagnostics.extend(validate_field(value, field_spec, path, source_layer))
             reference = secret_reference(value)
             direct_secret_keys = direct_value_keys_in_secret_reference(value)
+            strict_secret_reference_violation = (
+                field_spec.type == "object" and authoring_secret_reference_violation(path, value)
+            )
             direct_secret_value = not unresolved_conflict and (
-                bool(direct_secret_keys) if secret_reference_candidate(value) else direct_sensitive_value(value, path)
+                strict_secret_reference_violation
+                or (bool(direct_secret_keys) if secret_reference_candidate(value) else direct_sensitive_value(value, path))
             )
             if direct_secret_value:
                 diagnostics.append(
@@ -1492,7 +1533,10 @@ def effective_config_from_layers(
                 "source": source_layer.path if source_layer else "schema default",
                 "layer": source_layer.name if source_layer else "schema default",
             }
-            if reference is not None:
+            if reference is not None and not direct_secret_value:
+                wrapped_value.pop("value", None)
+                wrapped_value["secret_reference"] = reference
+            elif reference is not None and direct_secret_keys:
                 wrapped_value.pop("value", None)
                 if direct_secret_keys:
                     reference = {
@@ -1839,6 +1883,742 @@ def config_validation_report(
     if include_effective_config:
         report["effective_config"] = effective
     return report
+
+
+AUTHORING_PLAN_SCHEMA = "agent-armory.config.authoring-plan.v1"
+AUTHORING_AUTHORITY = "config_authoring_plan"
+AUTHORING_TARGET_CATEGORIES = ["committed durable config", "local-only operator config"]
+AUTHORING_REFUSAL_CODE_ORDER = [
+    "unsupported_plan_kind",
+    "source_category_ineligible",
+    "source_untrusted",
+    "missing_authority",
+    "safety_status_blocking",
+    "validation_failed",
+    "secret_boundary_violation",
+    "ownership_boundary_violation",
+    "source_changed",
+    "partial_write_blocked",
+    "non_deterministic_plan",
+    "unsupported_mcp_authoring",
+]
+
+
+def parse_authoring_change(item: str) -> dict[str, Any]:
+    if "=" not in item:
+        raise ConfigError(f"authoring change {item!r} must use namespace.field=value")
+    path, raw_value = item.split("=", 1)
+    path = path.strip()
+    if "." not in path or not all(part.strip() for part in path.split(".")):
+        raise ConfigError(f"authoring change path {path!r} must use namespace.field")
+    try:
+        value: JSONValue = json.loads(raw_value)
+    except JSONDecodeError:
+        value = raw_value
+    return {"path": path, "value": value}
+
+
+def parse_authoring_changes(items: list[str]) -> list[dict[str, Any]]:
+    if not items:
+        raise ConfigError("authoring operations require at least one --set change")
+    changes = sorted((parse_authoring_change(item) for item in items), key=lambda item: item["path"])
+    return changes
+
+
+def authoring_duplicate_paths(changes: list[dict[str, Any]]) -> list[str]:
+    seen: set[str] = set()
+    duplicates: list[str] = []
+    for change in changes:
+        path = change["path"]
+        if path in seen:
+            duplicates.append(path)
+        seen.add(path)
+    return sorted(set(duplicates))
+
+
+def authoring_secret_reference_violation(path: str, value: JSONValue) -> bool:
+    if value is None:
+        return False
+    parts = path.split(".")
+    sensitive_parts = [part for part in parts[1:] if sensitive_key(part)]
+    if not sensitive_parts:
+        return direct_sensitive_value(value, path)
+    if len(parts) > 2:
+        return True
+    if not isinstance(value, dict):
+        return True
+    if secret_reference(value) is None:
+        return True
+    metadata_keys = {normalized_key(key) for key in value}
+    if not metadata_keys <= SECRET_REFERENCE_METADATA_KEYS:
+        return True
+    if not isinstance(value.get("scope", ""), str):
+        return True
+    required_for = value.get("required_for", "mutation")
+    if not isinstance(required_for, str) or required_for not in REQUIRED_FOR_VALUES:
+        return True
+    return bool(direct_value_keys_in_secret_reference(value))
+
+
+def ordered_refusal_codes(codes: Iterable[str]) -> list[str]:
+    code_set = set(codes)
+    known = [code for code in AUTHORING_REFUSAL_CODE_ORDER if code in code_set]
+    unknown = sorted(code for code in code_set if code not in AUTHORING_REFUSAL_CODE_ORDER)
+    return [*known, *unknown]
+
+
+def authoring_affected_fields(changes: list[dict[str, Any]]) -> list[str]:
+    return [change["path"] for change in changes]
+
+
+def authoring_affected_namespaces(changes: list[dict[str, Any]]) -> list[str]:
+    return sorted({change["path"].split(".", 1)[0] for change in changes})
+
+
+def authoring_change_refusal_codes(changes: list[dict[str, Any]]) -> list[str]:
+    codes: list[str] = []
+    if authoring_duplicate_paths(changes):
+        codes.append("non_deterministic_plan")
+    if any(authoring_secret_reference_violation(change["path"], change["value"]) for change in changes):
+        codes.append("secret_boundary_violation")
+    return ordered_refusal_codes(codes)
+
+
+def public_authoring_change(change: dict[str, Any]) -> dict[str, Any]:
+    path = change["path"]
+    return {"path": path, "value": public_authoring_value(path, change["value"])}
+
+
+def public_authoring_changes(changes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [public_authoring_change(change) for change in changes]
+
+
+def config_proposal(
+    changes: list[dict[str, Any]],
+    fragments: list[SchemaFragment],
+    *,
+    rationale: str | None = None,
+) -> dict[str, Any]:
+    affected_fields = authoring_affected_fields(changes)
+    affected_namespaces = authoring_affected_namespaces(changes)
+    public_changes = public_authoring_changes(changes)
+    path_errors = authoring_change_path_errors(changes, fragments)
+    value_errors = authoring_change_value_errors(changes, fragments)
+    refusal_codes = authoring_change_refusal_codes(changes)
+    if path_errors or value_errors:
+        refusal_codes.append("validation_failed")
+    refusal_codes = ordered_refusal_codes(refusal_codes)
+    candidate = {
+        "rationale": rationale or "requested Config authoring change",
+        "changes": public_changes,
+        "affected_namespaces": affected_namespaces,
+        "affected_fields": affected_fields,
+        "possible_target_categories": AUTHORING_TARGET_CATEGORIES,
+        "source_target": None,
+        "path_errors": path_errors,
+        "value_errors": value_errors,
+        "refusal_codes": refusal_codes,
+    }
+    return {
+        "operation": "config propose",
+        "plan_surface": "proposal",
+        "source_target": None,
+        "affected_namespaces": affected_namespaces,
+        "affected_fields": affected_fields,
+        "possible_target_categories": AUTHORING_TARGET_CATEGORIES,
+        "candidates": [candidate],
+        "path_errors": path_errors,
+        "value_errors": value_errors,
+        "refusal_codes": refusal_codes,
+    }
+
+
+def source_fingerprint(text: str) -> str:
+    return f"sha256:{hashlib.sha256(text.encode('utf-8')).hexdigest()}"
+
+
+def authoring_source_durability(category: str | None) -> tuple[str, bool]:
+    if category == "committed durable config":
+        return ("durable project evidence", True)
+    if category == "local-only operator config":
+        return ("local-only operator evidence", False)
+    return ("instance-scoped scratch", False)
+
+
+def authoring_source_identity(layer: Layer | None) -> dict[str, Any] | None:
+    if layer is None:
+        return None
+    return {
+        "name": layer.name,
+        "category": layer.category,
+        "path": layer.path,
+        "trusted": layer.trusted,
+        "precedence": layer.precedence,
+        "source_order": layer.source_order,
+    }
+
+
+def find_layer_by_path(layers: list[Layer], source_target: Path) -> Layer | None:
+    try:
+        requested = source_target.resolve()
+    except OSError:
+        requested = source_target.absolute()
+    for layer in layers:
+        path = Path(layer.path)
+        try:
+            if path.resolve() == requested:
+                return layer
+        except OSError:
+            if path.absolute() == requested:
+                return layer
+    return None
+
+
+def authoring_authority_evidence(
+    layers: list[Layer],
+    *,
+    plan_authority: str | None,
+    target_layer: Layer | None,
+) -> dict[str, Any]:
+    if plan_authority == "operator":
+        return {
+            "status": "accepted",
+            "source": "operator",
+            "authority": "operator",
+        }
+    if target_layer is not None:
+        for layer in layers:
+            if not layer.trusted:
+                continue
+            if layer.precedence > target_layer.precedence:
+                continue
+            if layer.precedence == target_layer.precedence and layer.source_order > target_layer.source_order:
+                continue
+            authority_table = layer.metadata.get("authority", {})
+            if isinstance(authority_table, dict) and authority_table.get(AUTHORING_AUTHORITY) == "usable":
+                return {
+                    "status": "accepted",
+                    "source": f"configured:{layer.name}:{layer.path}",
+                    "authority": AUTHORING_AUTHORITY,
+                }
+    return {
+        "status": "missing",
+        "source": "not supplied",
+        "authority": AUTHORING_AUTHORITY,
+    }
+
+
+def authoring_path_parts(change: dict[str, Any]) -> list[str]:
+    return change["path"].split(".")
+
+
+def authoring_change_path_errors(changes: list[dict[str, Any]], fragments: list[SchemaFragment]) -> list[dict[str, Any]]:
+    fragments_by_namespace = {fragment.namespace: fragment for fragment in fragments}
+    errors: list[dict[str, Any]] = []
+    for change in changes:
+        parts = authoring_path_parts(change)
+        namespace = parts[0]
+        field_name = parts[1] if len(parts) > 1 else ""
+        fragment = fragments_by_namespace.get(namespace)
+        if fragment is None:
+            errors.append({"path": change["path"], "detail": "unknown schema namespace"})
+            continue
+        field = fragment.fields.get(field_name)
+        if field is None:
+            errors.append({"path": change["path"], "detail": "unknown schema field"})
+            continue
+        if len(parts) > 2 and field.type != "object":
+            errors.append({"path": change["path"], "detail": "nested authoring path requires an object field"})
+    return errors
+
+
+def authoring_change_value_errors(changes: list[dict[str, Any]], fragments: list[SchemaFragment]) -> list[dict[str, Any]]:
+    fragments_by_namespace = {fragment.namespace: fragment for fragment in fragments}
+    errors: list[dict[str, Any]] = []
+    for change in changes:
+        parts = authoring_path_parts(change)
+        namespace = parts[0]
+        field_name = parts[1] if len(parts) > 1 else ""
+        fragment = fragments_by_namespace.get(namespace)
+        if fragment is None:
+            continue
+        field = fragment.fields.get(field_name)
+        if field is None:
+            continue
+        value = change["value"]
+        if len(parts) == 2 and value is None and field.required:
+            errors.append({"path": change["path"], "detail": "missing required value"})
+            continue
+        for item in validate_field(value, field, change["path"], None):
+            errors.append({"path": change["path"], "detail": item.detail})
+    return errors
+
+
+def nested_get(data: dict[str, Any], parts: list[str]) -> JSONValue | object:
+    current: Any = data
+    for part in parts:
+        if not isinstance(current, dict) or part not in current:
+            return MISSING
+        current = current[part]
+    return current
+
+
+def nested_set(data: dict[str, Any], parts: list[str], value: JSONValue) -> None:
+    current: dict[str, Any] = data
+    for part in parts[:-1]:
+        item = current.get(part)
+        if not isinstance(item, dict):
+            item = {}
+            current[part] = item
+        current = item
+    current[parts[-1]] = value
+
+
+def public_authoring_value(path: str, value: JSONValue | object) -> JSONValue | dict[str, Any]:
+    if value is MISSING:
+        return dict(ABSENT)
+    if authoring_secret_reference_violation(path, value):
+        return REDACTED
+    return redacted_if_direct_secret(value, path)
+
+
+def projected_layer(layer: Layer, changes: list[dict[str, Any]]) -> Layer:
+    data = copy.deepcopy(layer.data)
+    for change in changes:
+        nested_set(data, authoring_path_parts(change), change["value"])
+    return Layer(
+        name=layer.name,
+        category=layer.category,
+        path=layer.path,
+        precedence=layer.precedence,
+        source_order=layer.source_order,
+        data=data,
+        metadata=copy.deepcopy(layer.metadata),
+        trusted=layer.trusted,
+    )
+
+
+def authoring_change_diff(layer: Layer, changes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    diff: list[dict[str, Any]] = []
+    for change in changes:
+        path = change["path"]
+        diff.append(
+            {
+                "path": path,
+                "before": public_authoring_value(path, nested_get(layer.data, authoring_path_parts(change))),
+                "after": public_authoring_value(path, change["value"]),
+            }
+        )
+    return diff
+
+
+def authoring_effective_refusal_codes(effective: dict[str, Any]) -> list[str]:
+    diagnostic_kinds = {
+        item.get("kind")
+        for item in list_or_empty(effective.get("diagnostics", []))
+        if isinstance(item, dict)
+    }
+    codes: list[str] = []
+    if "missing authority" in diagnostic_kinds:
+        codes.append("missing_authority")
+    if effective.get("safety_status") != "usable":
+        codes.append("safety_status_blocking")
+    if diagnostic_kinds & {"schema conflict", "semantic conflict", "blocked override", "same-precedence collision"}:
+        codes.append("validation_failed")
+    if "secret boundary violation" in diagnostic_kinds:
+        codes.append("secret_boundary_violation")
+    return ordered_refusal_codes(codes)
+
+
+def layer_validation_diagnostics(
+    layer: Layer,
+    fragments: list[SchemaFragment],
+    *,
+    requested_behavior: str,
+) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    for fragment in fragments:
+        section = namespace_section(layer, fragment.namespace)
+        plain_values: dict[str, Any] = {}
+        for field_name, field in fragment.fields.items():
+            path = f"{fragment.namespace}.{field_name}"
+            if field_name not in section:
+                if field.required:
+                    diagnostics.append(diagnostic("schema conflict", path, "missing required value", layer))
+                    plain_values[field_name] = None
+                else:
+                    plain_values[field_name] = field.default
+                continue
+            value = section[field_name]
+            if value is None and field.required:
+                diagnostics.append(diagnostic("schema conflict", path, "missing required value", layer))
+                plain_values[field_name] = None
+                continue
+            diagnostics.extend(validate_field(value, field, path, layer))
+            reference = secret_reference(value)
+            direct_secret_keys = direct_value_keys_in_secret_reference(value)
+            strict_secret_reference_violation = field.type == "object" and authoring_secret_reference_violation(path, value)
+            direct_secret_value = strict_secret_reference_violation or (
+                bool(direct_secret_keys) if secret_reference_candidate(value) else direct_sensitive_value(value, path)
+            )
+            if direct_secret_value:
+                diagnostics.append(secret_boundary_violation_diagnostic(path, layer, keys=direct_secret_keys))
+            plain_values[field_name] = None if reference is not None or direct_secret_value else value
+        for field_name, value in section.items():
+            if field_name not in fragment.fields:
+                diagnostics.append(diagnostic("schema conflict", f"{fragment.namespace}.{field_name}", "unknown schema field", layer))
+                plain_values[field_name] = value
+        for validator in fragment.semantic_validators:
+            diagnostics.extend(validator(plain_values, requested_behavior))
+    return dedupe_diagnostics(diagnostics)
+
+
+def authoring_layer_refusal_codes(diagnostics: list[Diagnostic]) -> list[str]:
+    kinds = {item.kind for item in diagnostics}
+    codes: list[str] = []
+    if kinds & {"schema conflict", "semantic conflict"}:
+        codes.append("validation_failed")
+    if "secret boundary violation" in kinds:
+        codes.append("secret_boundary_violation")
+    return ordered_refusal_codes(codes)
+
+
+def validation_result_from_effective(
+    effective: dict[str, Any],
+    *,
+    projection_status: str,
+    path_errors: list[dict[str, Any]],
+    value_errors: list[dict[str, Any]] | None = None,
+    blocking_change_codes: Iterable[str],
+    planned_source_diagnostics: list[Diagnostic] | None = None,
+) -> dict[str, Any]:
+    value_errors = value_errors or []
+    planned_source_diagnostics = planned_source_diagnostics or []
+    diagnostic_kinds = sorted_present(
+        item.get("kind")
+        for item in list_or_empty(effective.get("diagnostics", []))
+        if isinstance(item, dict)
+    )
+    planned_source_diagnostic_kinds = sorted_present(item.kind for item in planned_source_diagnostics)
+    blocking_codes = list(blocking_change_codes)
+    passed = (
+        projection_status == "projected"
+        and not path_errors
+        and not value_errors
+        and not blocking_codes
+        and not planned_source_diagnostics
+        and effective.get("safety_status") == "usable"
+    )
+    return {
+        "passed": passed,
+        "projection_status": projection_status,
+        "safety_status": effective.get("safety_status"),
+        "diagnostic_kinds": diagnostic_kinds,
+        "planned_source_diagnostic_kinds": planned_source_diagnostic_kinds,
+        "planned_source_diagnostics": [asdict(item) for item in planned_source_diagnostics],
+        "path_errors": path_errors,
+        "value_errors": value_errors,
+        "blocking_change_codes": blocking_codes,
+    }
+
+
+def virtual_effective_with_status(effective: dict[str, Any], projection_status: str) -> dict[str, Any]:
+    virtual = copy.deepcopy(effective)
+    virtual["projection_status"] = projection_status
+    return virtual
+
+
+def authoring_audit_preview(
+    *,
+    plan_kind: str,
+    source_target: str,
+    source_category: str | None,
+    refusal_codes: list[str],
+) -> dict[str, Any]:
+    source_durability, project_truth = authoring_source_durability(source_category)
+    return {
+        "action": "config authoring plan preview",
+        "plan_kind": plan_kind,
+        "source": source_target,
+        "source_category": source_category,
+        "would_write": False,
+        "result": "refused" if refusal_codes else "planned",
+        "refusal_codes": refusal_codes,
+        "artifact_durability": "review-only output",
+        "source_artifact_durability": source_durability,
+        "project_truth_after_apply": project_truth,
+        "rollback": "no source write has occurred; apply rechecks the reviewed plan before mutation",
+    }
+
+
+def authoring_plan_artifact(
+    *,
+    operation: str,
+    plan_kind: str,
+    source_target: Path,
+    source_category: str | None,
+    source_identity: dict[str, Any] | None,
+    precondition_fingerprint: str | None,
+    change_payload: dict[str, Any],
+    authority_evidence: dict[str, Any],
+    validation_result: dict[str, Any],
+    virtual_effective: dict[str, Any],
+    refusal_codes: list[str],
+    rationale: str | None,
+) -> dict[str, Any]:
+    return {
+        "schema": AUTHORING_PLAN_SCHEMA,
+        "operation": operation,
+        "plan_surface": "reviewed-plan",
+        "plan_kind": plan_kind,
+        "source_target": source_target.as_posix(),
+        "source_category": source_category,
+        "source_identity": source_identity,
+        "precondition_fingerprint": precondition_fingerprint,
+        "change_payload": change_payload,
+        "authority_evidence": authority_evidence,
+        "validation_result": validation_result,
+        "virtual_post_change_effective_config": virtual_effective,
+        "audit_preview": authoring_audit_preview(
+            plan_kind=plan_kind,
+            source_target=source_target.as_posix(),
+            source_category=source_category,
+            refusal_codes=refusal_codes,
+        ),
+        "refusal_codes": refusal_codes,
+        "durability_classification": "review-only output",
+        "rationale": rationale or "requested Config authoring change",
+    }
+
+
+def config_patch_plan(
+    layer_paths: list[Path],
+    fragments: list[SchemaFragment],
+    *,
+    source_target: Path,
+    changes: list[dict[str, Any]],
+    plan_authority: str | None = None,
+    requested_behavior: str = "mutation",
+    rationale: str | None = None,
+) -> dict[str, Any]:
+    source_snapshots: dict[Path, str] = {}
+    layers = load_layers(layer_paths, source_snapshots=source_snapshots)
+    target_layer = find_layer_by_path(layers, source_target)
+    current_effective = effective_config_from_layers(layers, fragments, requested_behavior=requested_behavior)
+    change_codes = authoring_change_refusal_codes(changes)
+    path_errors = authoring_change_path_errors(changes, fragments)
+    value_errors = authoring_change_value_errors(changes, fragments)
+    refusal_codes: list[str] = [*change_codes]
+    if target_layer is None:
+        refusal_codes.append("source_changed")
+        authority_evidence = authoring_authority_evidence(layers, plan_authority=plan_authority, target_layer=None)
+        if authority_evidence["status"] != "accepted":
+            refusal_codes.append("missing_authority")
+        if path_errors or value_errors:
+            refusal_codes.append("validation_failed")
+        validation_result = validation_result_from_effective(
+            current_effective,
+            projection_status="blocked",
+            path_errors=path_errors,
+            value_errors=value_errors,
+            blocking_change_codes=change_codes,
+        )
+        refusal_codes = ordered_refusal_codes(refusal_codes)
+        return authoring_plan_artifact(
+            operation="config patch",
+            plan_kind="patch-layer",
+            source_target=source_target,
+            source_category=None,
+            source_identity=None,
+            precondition_fingerprint=None,
+            change_payload={"type": "diff", "changes": public_authoring_changes(changes)},
+            authority_evidence=authority_evidence,
+            validation_result=validation_result,
+            virtual_effective=virtual_effective_with_status(current_effective, "blocked"),
+            refusal_codes=refusal_codes,
+            rationale=rationale,
+        )
+    if target_layer.category not in AUTHORING_TARGET_CATEGORIES:
+        refusal_codes.append("source_category_ineligible")
+    if not target_layer.trusted:
+        refusal_codes.append("source_untrusted")
+    authority_evidence = authoring_authority_evidence(layers, plan_authority=plan_authority, target_layer=target_layer)
+    if authority_evidence["status"] != "accepted":
+        refusal_codes.append("missing_authority")
+    if path_errors:
+        refusal_codes.append("validation_failed")
+    can_project = not any(code in refusal_codes for code in ("non_deterministic_plan", "secret_boundary_violation"))
+    planned_source_diagnostics: list[Diagnostic] = []
+    if can_project:
+        projected_target_layer = projected_layer(target_layer, changes)
+        planned_source_diagnostics = layer_validation_diagnostics(
+            projected_target_layer,
+            fragments,
+            requested_behavior=requested_behavior,
+        )
+        projected_layers = [projected_target_layer if layer is target_layer else layer for layer in layers]
+        virtual_effective = effective_config_from_layers(projected_layers, fragments, requested_behavior=requested_behavior)
+        projection_status = "projected"
+    else:
+        virtual_effective = current_effective
+        projection_status = "blocked"
+    validation_result = validation_result_from_effective(
+        virtual_effective,
+        projection_status=projection_status,
+        path_errors=path_errors,
+        blocking_change_codes=change_codes,
+        planned_source_diagnostics=planned_source_diagnostics,
+    )
+    if projection_status == "projected":
+        refusal_codes.extend(authoring_effective_refusal_codes(virtual_effective))
+        refusal_codes.extend(authoring_layer_refusal_codes(planned_source_diagnostics))
+    refusal_codes = ordered_refusal_codes(refusal_codes)
+    snapshot = source_snapshots.get(Path(target_layer.path).resolve())
+    return authoring_plan_artifact(
+        operation="config patch",
+        plan_kind="patch-layer",
+        source_target=Path(target_layer.path),
+        source_category=target_layer.category,
+        source_identity=authoring_source_identity(target_layer),
+        precondition_fingerprint=source_fingerprint(snapshot) if snapshot is not None else None,
+        change_payload={"type": "diff", "changes": authoring_change_diff(target_layer, changes)},
+        authority_evidence=authority_evidence,
+        validation_result=validation_result,
+        virtual_effective=virtual_effective_with_status(virtual_effective, projection_status),
+        refusal_codes=refusal_codes,
+        rationale=rationale,
+    )
+
+
+def create_layer_payload(
+    layer_name: str,
+    source_category: str,
+    fragments: list[SchemaFragment],
+    changes: list[dict[str, Any]],
+    *,
+    redact: bool = False,
+) -> dict[str, Any]:
+    metadata: dict[str, Any] = {
+        "layer": {
+            "name": layer_name,
+            "category": source_category,
+            "trusted": True,
+        },
+        "fragment_versions": {fragment.namespace: fragment.version for fragment in fragments},
+    }
+    data: dict[str, Any] = {}
+    for change in changes:
+        value = public_authoring_value(change["path"], change["value"]) if redact else change["value"]
+        nested_set(data, authoring_path_parts(change), value)
+    return {
+        "agent_equipment_config": metadata,
+        **data,
+    }
+
+
+def layer_from_create_payload(destination: Path, payload: dict[str, Any], source_order: int) -> Layer:
+    root_metadata = payload["agent_equipment_config"]
+    layer_metadata = root_metadata["layer"]
+    data = {key: value for key, value in payload.items() if key != "agent_equipment_config"}
+    return Layer(
+        name=layer_metadata["name"],
+        category=layer_metadata["category"],
+        path=destination.as_posix(),
+        precedence=LAYER_PRECEDENCE.index(layer_metadata["name"]),
+        source_order=source_order,
+        data=data,
+        metadata=root_metadata,
+        trusted=True,
+    )
+
+
+def create_layer_plan(
+    layer_paths: list[Path],
+    fragments: list[SchemaFragment],
+    *,
+    destination: Path,
+    layer_name: str,
+    source_category: str,
+    changes: list[dict[str, Any]],
+    plan_authority: str | None = None,
+    requested_behavior: str = "mutation",
+    rationale: str | None = None,
+) -> dict[str, Any]:
+    layers = load_layers(layer_paths)
+    change_codes = authoring_change_refusal_codes(changes)
+    path_errors = authoring_change_path_errors(changes, fragments)
+    refusal_codes: list[str] = [*change_codes]
+    if destination.exists():
+        refusal_codes.append("source_changed")
+    if source_category not in AUTHORING_TARGET_CATEGORIES:
+        refusal_codes.append("source_category_ineligible")
+    if path_errors:
+        refusal_codes.append("validation_failed")
+    create_payload = create_layer_payload(layer_name, source_category, fragments, changes)
+    public_create_payload = create_layer_payload(layer_name, source_category, fragments, changes, redact=True)
+    planned_layer = layer_from_create_payload(destination, create_payload, len(layers))
+    planned_source_diagnostics = layer_validation_diagnostics(
+        planned_layer,
+        fragments,
+        requested_behavior=requested_behavior,
+    )
+    authority_evidence = authoring_authority_evidence(layers, plan_authority=plan_authority, target_layer=planned_layer)
+    if authority_evidence["status"] != "accepted":
+        refusal_codes.append("missing_authority")
+    source_blocking_codes = {"source_changed", "source_category_ineligible", "non_deterministic_plan", "secret_boundary_violation"}
+    if not any(code in refusal_codes for code in source_blocking_codes):
+        virtual_effective = effective_config_from_layers([*layers, planned_layer], fragments, requested_behavior=requested_behavior)
+        projection_status = "projected"
+    else:
+        virtual_effective = effective_config_from_layers(layers, fragments, requested_behavior=requested_behavior)
+        projection_status = "blocked"
+    validation_result = validation_result_from_effective(
+        virtual_effective,
+        projection_status=projection_status,
+        path_errors=path_errors,
+        blocking_change_codes=change_codes,
+        planned_source_diagnostics=planned_source_diagnostics,
+    )
+    if projection_status == "projected":
+        refusal_codes.extend(authoring_effective_refusal_codes(virtual_effective))
+    refusal_codes.extend(authoring_layer_refusal_codes(planned_source_diagnostics))
+    refusal_codes = ordered_refusal_codes(refusal_codes)
+    absent_or_fingerprint = "absent"
+    if destination.exists():
+        try:
+            absent_or_fingerprint = source_fingerprint(destination.read_text(encoding="utf-8"))
+        except OSError:
+            absent_or_fingerprint = "unreadable"
+    return authoring_plan_artifact(
+        operation="create-layer",
+        plan_kind="create-layer",
+        source_target=destination,
+        source_category=source_category,
+        source_identity=authoring_source_identity(planned_layer),
+        precondition_fingerprint=absent_or_fingerprint,
+        change_payload={
+            "type": "create",
+            "create_payload": public_create_payload,
+            "changes": authoring_change_diff(
+                Layer(
+                    name=layer_name,
+                    category=source_category,
+                    path=destination.as_posix(),
+                    precedence=LAYER_PRECEDENCE.index(layer_name),
+                    source_order=len(layers),
+                    data={},
+                    metadata=create_payload["agent_equipment_config"],
+                    trusted=True,
+                ),
+                changes,
+            ),
+        },
+        authority_evidence=authority_evidence,
+        validation_result=validation_result,
+        virtual_effective=virtual_effective_with_status(virtual_effective, projection_status),
+        refusal_codes=refusal_codes,
+        rationale=rationale,
+    )
 
 
 MCP_FRAGMENT_BUILDERS: dict[str, Callable[[], SchemaFragment]] = {
@@ -2370,6 +3150,43 @@ def add_diff_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--after", required=True)
 
 
+def add_schema_fragment_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--issue-tracker-ops", action="store_true")
+
+
+def add_authoring_change_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--set", action="append", default=[], dest="changes", help="Authoring change as namespace.field=value.")
+    parser.add_argument("--rationale")
+
+
+def add_authoring_plan_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--plan-authority", choices=["operator"])
+    parser.add_argument(
+        "--requested-behavior",
+        choices=["advisory", "mutation"],
+        default="mutation",
+        help="Behavior to evaluate for virtual post-change Config safety and readiness.",
+    )
+
+
+def add_patch_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--layer", action="append", default=[])
+    parser.add_argument("--source-target", required=True)
+    add_schema_fragment_arguments(parser)
+    add_authoring_change_arguments(parser)
+    add_authoring_plan_arguments(parser)
+
+
+def add_create_layer_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--layer", action="append", default=[])
+    parser.add_argument("--destination", required=True)
+    parser.add_argument("--layer-name", choices=LAYER_PRECEDENCE, required=True)
+    parser.add_argument("--source-category", choices=sorted(SOURCE_CATEGORIES), required=True)
+    add_schema_fragment_arguments(parser)
+    add_authoring_change_arguments(parser)
+    add_authoring_plan_arguments(parser)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Compute Agent Equipment Config v0 outputs.")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -2390,6 +3207,10 @@ def build_parser() -> argparse.ArgumentParser:
     add_diff_arguments(diff)
     diff.set_defaults(operation="config_diff", display_operation="config-diff")
 
+    create_layer = subparsers.add_parser("create-layer")
+    add_create_layer_arguments(create_layer)
+    create_layer.set_defaults(operation="create_layer", display_operation="create-layer")
+
     config = subparsers.add_parser("config")
     config_subparsers = config.add_subparsers(dest="config_operation", required=True)
     config_resolve = config_subparsers.add_parser("resolve")
@@ -2402,6 +3223,13 @@ def build_parser() -> argparse.ArgumentParser:
     config_diff = config_subparsers.add_parser("diff")
     add_diff_arguments(config_diff)
     config_diff.set_defaults(operation="config_diff", display_operation="config diff")
+    config_propose = config_subparsers.add_parser("propose")
+    add_schema_fragment_arguments(config_propose)
+    add_authoring_change_arguments(config_propose)
+    config_propose.set_defaults(operation="config_propose", display_operation="config propose")
+    config_patch = config_subparsers.add_parser("patch")
+    add_patch_arguments(config_patch)
+    config_patch.set_defaults(operation="config_patch", display_operation="config patch")
 
     onboard = subparsers.add_parser("onboard")
     onboard_subparsers = onboard.add_subparsers(dest="onboard_operation", required=True)
@@ -2441,6 +3269,39 @@ def run(
             before = json.loads(Path(args.before).read_text(encoding="utf-8"))
             after = json.loads(Path(args.after).read_text(encoding="utf-8"))
             payload = config_diff(before, after)
+        elif operation == "config_propose":
+            fragments = [issue_tracker_ops_fragment()] if args.issue_tracker_ops else []
+            if not fragments:
+                raise ConfigError(f"{display_operation} requires at least one schema fragment flag")
+            payload = config_proposal(parse_authoring_changes(args.changes), fragments, rationale=args.rationale)
+        elif operation == "config_patch":
+            fragments = [issue_tracker_ops_fragment()] if args.issue_tracker_ops else []
+            if not fragments:
+                raise ConfigError(f"{display_operation} requires at least one schema fragment flag")
+            payload = config_patch_plan(
+                [Path(path) for path in args.layer],
+                fragments,
+                source_target=Path(args.source_target),
+                changes=parse_authoring_changes(args.changes),
+                plan_authority=args.plan_authority,
+                requested_behavior=args.requested_behavior,
+                rationale=args.rationale,
+            )
+        elif operation == "create_layer":
+            fragments = [issue_tracker_ops_fragment()] if args.issue_tracker_ops else []
+            if not fragments:
+                raise ConfigError(f"{display_operation} requires at least one schema fragment flag")
+            payload = create_layer_plan(
+                [Path(path) for path in args.layer],
+                fragments,
+                destination=Path(args.destination),
+                layer_name=args.layer_name,
+                source_category=args.source_category,
+                changes=parse_authoring_changes(args.changes),
+                plan_authority=args.plan_authority,
+                requested_behavior=args.requested_behavior,
+                rationale=args.rationale,
+            )
         else:
             fragments = [issue_tracker_ops_fragment()] if args.issue_tracker_ops else []
             if not fragments:
@@ -2487,6 +3348,8 @@ def run(
         return text
     # CLI output is redacted by redact_for_cli before this write boundary.
     output.writelines([text])
+    if operation in {"config_propose", "config_patch", "create_layer"} and payload.get("refusal_codes"):
+        return 1
     if operation == "config_validate" and not payload["passed"]:
         return 1
     return 0

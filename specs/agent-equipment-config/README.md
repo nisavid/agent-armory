@@ -8,9 +8,11 @@ standard-library runtime engine slice for fluent CLI operations,
 effective-config, config-diff, diagnostics, plain handoff promotion, authority
 checks, projection classification, reusable consumer action decisions,
 onboarding output, explicit migration apply, MCP parity tool definitions,
-deliberate edit boundaries, and the published runtime guide. It does not
-resolve secrets, mutate external systems, or implement harness controls. This
-Blueprint does not implement Agent Equipment.
+deliberate edit boundaries, read-only authoring proposal and plan-generation
+surfaces, and the published runtime guide. It does not resolve secrets, mutate
+external systems, or implement harness controls. This Blueprint does not
+implement Agent Equipment.
+This spec describes desired behavior only. It does not implement Agent Equipment.
 The runtime guide names the currently published slice.
 
 Issue: [#23](https://github.com/nisavid/agent-armory/issues/23)
@@ -74,9 +76,11 @@ interrupted, resumed, and restarted configuration flows. It also applies
 registered source migrations to eligible TOML sources after dry-run review and
 an explicit authority gate. It exposes typed MCP parity definitions and direct
 tool dispatch for the same safe operation families. It defines deliberate
-`propose`, `patch`, `migrate`, `revise`, and `apply` edit boundaries, but the
-only implemented source write remains registered migration apply. It does not
-resolve secrets, mutate external systems, or implement harness controls.
+`propose`, `patch`, `migrate`, `revise`, and `apply` edit boundaries. It emits
+target-agnostic authoring proposals and read-only `patch-layer` or
+`create-layer` reviewed plan artifacts, but the only implemented source write
+remains registered migration apply. It does not resolve secrets, mutate
+external systems, or implement harness controls.
 
 Published runtime guidance lives in
 [docs/equipment/agent-equipment-config.md](../../docs/equipment/agent-equipment-config.md).
@@ -244,13 +248,14 @@ and propose do not authorize source mutation.
 The supported edit intents are `propose`, `patch`, `migrate`, `revise`, and
 `apply`. Current source writing is limited to `migrate config apply` for
 registered migrations on `committed durable config` and
-`local-only operator config`. General source patching and revision writes remain
-deferred to the Config Authoring Surfaces bucket. The
+`local-only operator config`. General source patching, revision writes, and
+non-migration apply remain deferred to the Config Authoring Surfaces bucket. The
 [authoring plan/apply model](authoring-plan-apply-model.md) defines the
 non-migration proposal, `patch-layer`, `create-layer`, reviewed plan artifacts,
 precondition fingerprint, virtual post-change effective Config,
-all-or-nothing apply, durability classification, and rollback stance contract
-that later implementation slices must preserve.
+all-or-nothing apply, durability classification, and rollback stance contract.
+The current runtime implements the proposal and read-only plan-generation
+portion of that contract.
 
 ## Operation surfaces
 
@@ -262,6 +267,9 @@ target is a fluent CLI with MCP parity:
 | Resolve/read/explain/trace | `config resolve` | `config.resolve` |
 | Validate | `config validate` | `config.validate` |
 | Compare | `config diff` | `config.diff` |
+| Authoring proposal | `config propose` | Deferred |
+| Authoring patch plan | `config patch` | Deferred |
+| Authoring create-layer plan | `create-layer` | Deferred |
 | Onboard/revise planning | `onboard config` | `onboard.config` |
 | Migration preview | `migrate config preview` | `migrate.config_preview` |
 | Migration apply | `migrate config apply` | `migrate.config_apply` |
@@ -270,9 +278,10 @@ The fluent CLI commands are the supported invocation surface. Runtime commands
 remain available for implementation debugging and evidence comparison. MCP
 tool definitions live in [MCP tools](mcp-tools.md) and the importable runtime.
 Skills and docs route agents to CLI or MCP usage; they are not substitutes for
-those surfaces. General authoring operations such as propose, patch, and
-general apply belong to the deferred Config Authoring Surfaces bucket and must
-use the reviewed plan artifact contract before any source write.
+those surfaces. Current CLI authoring operations stop at proposal or reviewed
+plan artifacts. General non-migration apply belongs to the deferred Config
+Authoring Surfaces bucket and must consume the reviewed plan artifact contract
+before any source write.
 
 ## Harness projections
 

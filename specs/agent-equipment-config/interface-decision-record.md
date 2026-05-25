@@ -6,10 +6,11 @@ Promotion state: planned
 This Equipment Design Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for fluent CLI operations,
 effective-config, config-diff, diagnostics, plain handoff promotion, authority
-checks, projection classification, reusable consumer action decisions, plus
-onboarding and migration apply output. It does not implement Agent Equipment
-beyond this runtime slice, publish assets, resolve secrets, mutate external
-systems, or implement harness controls.
+checks, projection classification, reusable consumer action decisions,
+read-only authoring proposal and plan-generation output, plus onboarding and
+migration apply output. It does not implement Agent Equipment beyond this
+runtime slice, publish assets, resolve secrets, mutate external systems, or
+implement harness controls.
 
 ## Requirement
 
@@ -39,8 +40,11 @@ validators, conflict diagnostics, and decision/mutation audit boundaries. The
 implemented runtime slice computes deterministic effective-config and
 config-diff output, diagnostics, plain handoff promotion, authority checks,
 consumer action decisions, onboarding-plan load-contract proposals, and
-projection classification; harness adapters, arbitrary CLI fragment
-registration, and blocking enforcement remain separate work.
+projection classification. It also emits read-only `config propose`,
+`config patch`, and `create-layer` artifacts for target-agnostic proposals,
+selected-source patch plans, and new-layer plans. Harness adapters, arbitrary
+CLI fragment registration, authoring MCP parity, non-migration apply, and
+blocking enforcement remain separate work.
 
 The consumption contract keeps the final action decision with the consuming
 equipment. Shared Config output supplies evidence; the consumer maps that
@@ -50,11 +54,14 @@ publication. Mutation-capable behavior fails closed unless effective Config is
 `usable`, required authority and semantic validators pass, and the required
 capability is supported.
 
-The MVP operation surface requires fluent CLI operations with MCP parity:
-`config resolve`, `config validate`, `config diff`, `onboard config`,
-`migrate config preview`, and `migrate config apply`, mirrored as
+The current operation surface includes fluent CLI operations for
+`config resolve`, `config validate`, `config diff`, `config propose`,
+`config patch`, `create-layer`, `onboard config`, `migrate config preview`,
+and `migrate config apply`. MCP parity currently covers the safe read,
+onboarding, migration-preview, and migration-apply runtime slice through
 `config.resolve`, `config.validate`, `config.diff`, `onboard.config`,
-`migrate.config_preview`, and `migrate.config_apply`.
+`migrate.config_preview`, and `migrate.config_apply`; MCP authoring parity is
+deferred.
 
 Use TOML for human-authored config layers and plain equipment-specific config
 handoff records. Use JSON-compatible objects for schemas, effective-config
@@ -73,11 +80,10 @@ output.
 - Config: authored TOML layers and source category discovery are input to the
   portable runtime slice.
 - Scripts/tools: `tools/agent_equipment_config.py` computes effective config,
-  config diff, validation diagnostics, migration previews, and projection
-  classification for the v0 slice. A fluent CLI wrapper is required for the MVP
-  product surface.
+  config diff, validation diagnostics, authoring proposals and plans,
+  migration previews, and projection classification for the v0 slice.
 - MCP/tools: typed MCP parity is required for the safe CLI/runtime slice before
-  #23 closes.
+  #23 closes. Authoring MCP parity remains deferred.
 - Load contract: callers discover paths, select sources, order same-precedence
   inputs, register schema fragments, and pass explicit layer or handoff paths
   into the runtime; the runtime preserves layer, source category, source path,

@@ -7,10 +7,11 @@ This Equipment Design Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for fluent CLI operations,
 effective-config, config-diff, diagnostics, plain handoff promotion, authority
 checks, and projection classification, plus onboarding, migration apply output,
-MCP parity tool definitions, and deliberate edit-boundary reference. The
-Config PRD owns the product requirements and CLI/MCP operation-surface parity.
-It does not implement Agent Equipment beyond this runtime slice, publish
-assets, resolve secrets, mutate external systems, or implement harness
+read-only authoring proposal and plan-generation output, MCP parity tool
+definitions, and deliberate edit-boundary reference. The Config PRD owns the
+product requirements and CLI/MCP operation-surface parity.
+It does not implement Agent Equipment beyond this runtime slice. It does not
+publish assets, resolve secrets, mutate external systems, or implement harness
 controls.
 
 ## Closeout scope
@@ -35,10 +36,12 @@ Record:
 - Agent Equipment Config MCP parity evidence for tool definitions, typed input
   and output contracts, read/write classification, failure modes, and migration
   apply gates;
-- non-migration authoring plan/apply evidence for `config propose`,
-  `patch-layer`, `create-layer`, reviewed plan artifacts, precondition
-  fingerprint, virtual post-change effective Config, all-or-nothing apply,
-  durability classification, and rollback stance;
+- read-only non-migration authoring plan-generation evidence for
+  `config propose`, `patch-layer`, `create-layer`, reviewed plan artifacts,
+  precondition fingerprint, virtual post-change effective Config, durability
+  classification, refusal codes, and rollback stance;
+- follow-up evidence or issue projection for deferred non-migration apply and
+  MCP authoring parity;
 - validation commands and results;
 - security review scope, artifact disposition, and findings disposition;
 - documentation closeout scope and unchanged rationale where applicable;
@@ -66,11 +69,10 @@ After the bundle lands, #23 should gain child issues for:
 - onboarding, re-onboarding, resume, and handoff flows;
 - harness projection docs and enforcement support;
 - audit, migration, and security hardening;
-- general edit operation surfaces under the Config Authoring Surfaces bucket;
-- implementation slices for authoring plan generation and plan-artifact apply;
+- plan-artifact apply under the Config Authoring Surfaces bucket;
 - fluent CLI and MCP parity operation surfaces required by the Config PRD;
-- Config Authoring Surfaces as the non-blocking follow-up bucket for general
-  propose, patch, apply, source-target UX, and richer audit/query behavior;
+- Config Authoring Surfaces as the non-blocking follow-up bucket for
+  non-migration apply, MCP authoring parity, and richer audit/query behavior;
 - publication and pressure validation after runtime behavior exists.
 
 Each child issue should name the bundle files it depends on, the expected output

@@ -8,8 +8,10 @@ standard-library runtime engine slice for fluent CLI operations,
 effective-config, config-diff, diagnostics, plain handoff promotion, authority
 checks, and projection classification, plus onboarding output for first-run and
 re-onboarding flows, explicit migration apply for eligible local TOML sources,
-and MCP parity tool definitions for the same safe operation families. It does not implement Agent Equipment beyond this runtime slice.
-It does not publish assets, resolve secrets, mutate external systems, or
+read-only authoring proposal and plan-generation output, and MCP parity tool
+definitions for the same safe operation families.
+It does not implement Agent Equipment beyond this runtime slice. It does not
+publish assets, resolve secrets, mutate external systems, or
 implement harness controls.
 
 ## Purpose
@@ -60,11 +62,12 @@ policy model without making Config depend on Issue Tracker Ops.
 - Config: TOML authored layers and plain equipment-specific config handoff
   records.
 - Scripts/tools: the portable fluent CLI slice for resolve, validate, diff,
+  authoring proposal, patch-plan generation, create-layer plan generation,
   onboarding, migration preview, and migration apply, plus implementation
   commands and deliberate edit-boundary reference.
 - MCP/tools: typed parity tools for `config.resolve`, `config.validate`,
   `config.diff`, `onboard.config`, `migrate.config_preview`, and
-  `migrate.config_apply`.
+  `migrate.config_apply`. MCP authoring parity is deferred.
 - Hooks, permissions, approvals, sandboxes, or tool gates: future enforcement
   projections for mutation-capable behavior.
 - Skills: future Smith and Wielder judgment around design, onboarding, and

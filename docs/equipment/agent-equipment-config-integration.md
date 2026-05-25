@@ -29,9 +29,11 @@ Agent Equipment Config has an explicit-load contract:
 The runtime does not discover files, import equipment packages, resolve secret
 values, mutate external systems, or enforce harness controls. Source writes are
 limited to registered `migrate config apply` operations on eligible local TOML
-sources. General proposal, patch, revision, and apply workflows belong to the
-Config Authoring Surfaces follow-up bucket. Non-migration authoring must follow
-the reviewed plan artifact model in
+sources. `config propose`, `config patch`, and `create-layer` provide
+read-only non-migration authoring proposal and reviewed plan generation.
+Revision writes, non-migration apply, and MCP authoring parity belong to the
+Config Authoring Surfaces follow-up bucket. Non-migration apply must follow the
+reviewed plan artifact model in
 [`authoring-plan-apply-model.md`](../../specs/agent-equipment-config/authoring-plan-apply-model.md)
 before any source write surface exists.
 
@@ -42,6 +44,9 @@ The product operation vocabulary is:
 | Read, explain, and trace effective Config | `config resolve` | `effective-config` |
 | Check readiness without dumping full output | `config validate` | effective-config validation and safety classification |
 | Compare two effective outputs | `config diff` | `config-diff` |
+| Propose authoring changes without a target | `config propose` | target-agnostic proposal artifact |
+| Plan an authored source patch | `config patch` | read-only `patch-layer` reviewed plan artifact |
+| Plan a new authored layer | `create-layer` | read-only `create-layer` reviewed plan artifact |
 | Plan first-run, resume, restart, or revise work | `onboard config` | `onboarding-plan` |
 | Preview registered source migrations | `migrate config preview` | `migration-apply` without `--apply` |
 | Apply registered source migrations | `migrate config apply` | `migration-apply --apply` |

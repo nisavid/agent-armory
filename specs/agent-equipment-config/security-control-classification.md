@@ -6,11 +6,12 @@ Promotion state: planned
 This Equipment Design Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for fluent CLI operations,
 effective-config, config-diff, diagnostics, plain handoff promotion, authority
-checks, projection classification, MCP parity tool definitions, plus reusable
-consumer action decisions. It does not implement Agent Equipment beyond this
-runtime slice, publish assets, resolve secrets, mutate external systems, or
-implement harness controls. Source mutation is limited to explicit migration
-apply for eligible local TOML sources.
+checks, projection classification, read-only authoring proposal and
+plan-generation surfaces, MCP parity tool definitions, plus reusable consumer
+action decisions. It does not implement Agent Equipment beyond this runtime
+slice, publish assets, resolve secrets, mutate external systems, or implement
+harness controls. Source mutation is limited to explicit migration apply for
+eligible local TOML sources.
 
 ## Scope
 
@@ -53,8 +54,9 @@ integration, plugin, harness control, external write, or secret provider.
 | Config discovery | Read | Classify source category and provenance. |
 | Effective-config generation | Read or policy decision | Explain value provenance, safety status, and diagnostics. |
 | Config-diff generation | Read | Explain changed values, policy effects, and unresolved conflicts. |
-| Edit proposal | Read | Emit candidate changes and diff evidence without selecting or writing a source target. |
-| Config patch or revise plan | Policy decision | Require selected sections or fields, eligible future surface, reviewed plan artifacts, validation, virtual post-change effective Config, authority evidence, and refusal output before any write. |
+| Edit proposal | Read | Emit candidate changes, rationale, affected namespaces and fields, and possible target categories without selecting or writing a source target. |
+| Config patch or revise plan | Policy decision | `config patch` emits read-only reviewed `patch-layer` plan artifacts with selected source, validation, virtual post-change effective Config, authority evidence, and refusal output before any write. `onboard config` emits revise plans without writing. |
+| Config create-layer plan | Policy decision | `create-layer` emits read-only reviewed `create-layer` plan artifacts for new eligible authored layers before any write. |
 | Migration preview | Read | Do not rewrite source config. |
 | Source migration apply | Local write | Require eligible source category, trusted provenance, dry-run-first output, explicit authority, and audit records. |
 | MCP Config parity tools | Read or local write | Mirror the safe CLI/runtime slice with typed schemas, MCP annotations, read/write classification, auth source, side-effect metadata, approval requirements, failure modes, and mutation gates. |
