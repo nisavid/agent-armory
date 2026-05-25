@@ -2145,6 +2145,8 @@ def authoring_change_value_errors(changes: list[dict[str, Any]], fragments: list
         field = fragment.fields.get(field_name)
         if field is None:
             continue
+        if len(parts) > 2:
+            continue
         value = change["value"]
         if len(parts) == 2 and value is None and field.required:
             errors.append({"path": change["path"], "detail": "missing required value"})
@@ -2240,24 +2242,24 @@ def layer_validation_diagnostics(
     for fragment in fragments:
         section = namespace_section(layer, fragment.namespace)
         plain_values: dict[str, Any] = {}
-        for field_name, field in fragment.fields.items():
+        for field_name, field_spec in fragment.fields.items():
             path = f"{fragment.namespace}.{field_name}"
             if field_name not in section:
-                if field.required:
+                if field_spec.required:
                     diagnostics.append(diagnostic("schema conflict", path, "missing required value", layer))
                     plain_values[field_name] = None
                 else:
-                    plain_values[field_name] = field.default
+                    plain_values[field_name] = field_spec.default
                 continue
             value = section[field_name]
-            if value is None and field.required:
+            if value is None and field_spec.required:
                 diagnostics.append(diagnostic("schema conflict", path, "missing required value", layer))
                 plain_values[field_name] = None
                 continue
-            diagnostics.extend(validate_field(value, field, path, layer))
+            diagnostics.extend(validate_field(value, field_spec, path, layer))
             reference = secret_reference(value)
             direct_secret_keys = direct_value_keys_in_secret_reference(value)
-            strict_secret_reference_violation = field.type == "object" and authoring_secret_reference_violation(path, value)
+            strict_secret_reference_violation = field_spec.type == "object" and authoring_secret_reference_violation(path, value)
             direct_secret_value = strict_secret_reference_violation or (
                 bool(direct_secret_keys) if secret_reference_candidate(value) else direct_sensitive_value(value, path)
             )
@@ -2445,7 +2447,7 @@ def config_patch_plan(
     authority_evidence = authoring_authority_evidence(layers, plan_authority=plan_authority, target_layer=target_layer)
     if authority_evidence["status"] != "accepted":
         refusal_codes.append("missing_authority")
-    if path_errors:
+    if path_errors or value_errors:
         refusal_codes.append("validation_failed")
     can_project = not any(code in refusal_codes for code in ("non_deterministic_plan", "secret_boundary_violation"))
     planned_source_diagnostics: list[Diagnostic] = []
@@ -2466,6 +2468,7 @@ def config_patch_plan(
         virtual_effective,
         projection_status=projection_status,
         path_errors=path_errors,
+        value_errors=value_errors,
         blocking_change_codes=change_codes,
         planned_source_diagnostics=planned_source_diagnostics,
     )
@@ -2547,12 +2550,13 @@ def create_layer_plan(
     layers = load_layers(layer_paths)
     change_codes = authoring_change_refusal_codes(changes)
     path_errors = authoring_change_path_errors(changes, fragments)
+    value_errors = authoring_change_value_errors(changes, fragments)
     refusal_codes: list[str] = [*change_codes]
     if destination.exists():
         refusal_codes.append("source_changed")
     if source_category not in AUTHORING_TARGET_CATEGORIES:
         refusal_codes.append("source_category_ineligible")
-    if path_errors:
+    if path_errors or value_errors:
         refusal_codes.append("validation_failed")
     create_payload = create_layer_payload(layer_name, source_category, fragments, changes)
     public_create_payload = create_layer_payload(layer_name, source_category, fragments, changes, redact=True)
@@ -2576,6 +2580,7 @@ def create_layer_plan(
         virtual_effective,
         projection_status=projection_status,
         path_errors=path_errors,
+        value_errors=value_errors,
         blocking_change_codes=change_codes,
         planned_source_diagnostics=planned_source_diagnostics,
     )

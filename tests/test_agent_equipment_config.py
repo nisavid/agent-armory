@@ -3027,6 +3027,7 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertNotIn("GH_TOKEN", stdout)
         provider_mutation = json.loads(provider_mutation_stdout)
         self.assertEqual(provider_mutation["refusal_codes"], ["secret_boundary_violation"])
+        self.assertEqual(provider_mutation["validation_result"]["value_errors"], [])
         self.assertNotIn("GH_TOKEN", provider_mutation_stdout)
 
     def test_cli_authoring_surfaces_refuse_and_redact_malformed_secret_reference_payloads(self):
@@ -3221,6 +3222,7 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         payload = json.loads(stdout)
         self.assertEqual(payload["refusal_codes"], ["validation_failed"])
         self.assertFalse(payload["validation_result"]["passed"])
+        self.assertEqual(payload["validation_result"]["value_errors"][0]["detail"], "expected one of ['dry-run', 'execute']")
         self.assertEqual(payload["validation_result"]["planned_source_diagnostic_kinds"], ["schema conflict"])
         self.assertEqual(payload["virtual_post_change_effective_config"]["safety_status"], "usable")
 
@@ -3314,6 +3316,7 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         payload = json.loads(stdout)
         self.assertEqual(payload["refusal_codes"], ["validation_failed"])
         self.assertFalse(payload["validation_result"]["passed"])
+        self.assertEqual(payload["validation_result"]["value_errors"][0]["detail"], "missing required value")
         self.assertEqual(payload["validation_result"]["planned_source_diagnostic_kinds"], ["schema conflict"])
         self.assertEqual(payload["virtual_post_change_effective_config"]["safety_status"], "usable")
 
@@ -3429,6 +3432,7 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         payload = json.loads(stdout)
         self.assertEqual(payload["refusal_codes"], ["validation_failed"])
         self.assertFalse(payload["validation_result"]["passed"])
+        self.assertEqual(payload["validation_result"]["value_errors"][0]["detail"], "expected one of ['dry-run', 'execute']")
         self.assertEqual(payload["validation_result"]["planned_source_diagnostic_kinds"], ["schema conflict"])
         self.assertEqual(payload["virtual_post_change_effective_config"]["safety_status"], "usable")
 
