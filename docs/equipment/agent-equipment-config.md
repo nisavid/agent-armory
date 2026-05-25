@@ -8,10 +8,10 @@ Equipment. The published runtime slice provides a local, standard-library
 Python engine for loading authored TOML layers, composing schema fragments,
 explaining effective configuration, comparing config outputs, and preserving
 plain equipment-specific handoffs. It exposes fluent CLI operations for
-resolve, validate, diff, onboarding, and migration flows, plus reusable
-consumer action decision output for importable consumers. The Config bundle
-also defines deliberate edit boundaries for future propose, patch, revise, and
-general apply surfaces.
+resolve, validate, diff, onboarding, read-only authoring proposal and plan
+generation, and migration flows, plus reusable consumer action decision output
+for importable consumers. The Config bundle also defines deliberate edit
+boundaries for revision and non-migration apply surfaces.
 
 Use this guide when a Smith is making Config-aware equipment or when a Wielder
 needs to provide local or session configuration for equipment that already
@@ -46,17 +46,20 @@ explicit authority gate and records audit evidence. The implementation command
 path. Harnesses, skills, hooks, scripts, or operators choose which layer paths
 to pass in and what to do with the resulting classification.
 
-General proposal, patch, revision, or apply tooling must follow the edit
-boundary contract before it writes any source.
+`config propose`, `config patch`, and `create-layer` emit read-only authoring
+proposal or reviewed plan artifacts. Revision and non-migration apply tooling
+must follow the edit boundary contract before it writes any source.
 
 Use the fluent CLI operations as the supported invocation surface:
-`config resolve`, `config validate`, `config diff`, `onboard config`,
-`migrate config preview`, and `migrate config apply`. The implementation
-command names remain available as the debugging path. When a harness exposes
-Config MCP tools, use `config.resolve`, `config.validate`, `config.diff`,
-`onboard.config`, `migrate.config_preview`, and `migrate.config_apply` for the
-same safe runtime slice. The importable runtime exposes tool metadata through
-`mcp_tool_definitions()` and direct dispatch through `call_mcp_tool()`.
+`config resolve`, `config validate`, `config diff`, `config propose`,
+`config patch`, `create-layer`, `onboard config`, `migrate config preview`, and
+`migrate config apply`. The implementation command names remain available as
+the debugging path. When a harness exposes Config MCP tools, use
+`config.resolve`, `config.validate`, `config.diff`, `onboard.config`,
+`migrate.config_preview`, and `migrate.config_apply` for the same safe runtime
+slice. MCP parity for authoring proposal, patch plan, create-layer plan, and
+non-migration apply is deferred. The importable runtime exposes tool metadata
+through `mcp_tool_definitions()` and direct dispatch through `call_mcp_tool()`.
 
 ## Load contract
 
@@ -344,7 +347,7 @@ supported edit intents are:
 | Intent | Current boundary |
 | --- | --- |
 | `propose` | Target-agnostic candidate output only; no source write. |
-| `patch` | Deferred implementation. The authoring model defines `patch-layer` plan artifacts with source selection, validation, authority, virtual post-change effective Config, diff, and audit preview. |
+| `patch` | Read-only `patch-layer` plan artifacts with source selection, validation, authority, virtual post-change effective Config, diff, and audit preview; no source write. |
 | `migrate` | Supported through `migrate config preview` and `migrate config apply` for registered schema migrations. |
 | `revise` | Supported as `onboard config` section selection; source writing is deferred. |
 | `apply` | Supported only for registered migrations on eligible TOML sources. Non-migration apply is deferred and must consume reviewed plan artifacts. |
@@ -365,13 +368,20 @@ source, category, namespace, authority evidence, and reason. A write must stop
 when it would cross source ownership, secret, authority, validation, or
 harness-support boundaries.
 
-The deferred authoring model uses deterministic JSON reviewed plan artifacts.
-Those artifacts carry the plan kind, source target, source category,
-precondition fingerprint, diff or create payload, authority evidence,
-validation result, virtual post-change effective Config status, audit preview,
-refusal codes, durability classification, and rollback stance. Non-migration
-apply is all-or-nothing and writes only eligible `committed durable config` or
+The current authoring plan-generation surfaces use deterministic JSON reviewed
+plan artifacts. `config propose` stays target-agnostic. `config patch` selects
+one existing source and emits a `patch-layer` artifact. `create-layer` emits a
+`create-layer` artifact for a new authored layer. These artifacts carry the
+plan kind, source target, source category, precondition fingerprint, diff or
+create payload, authority evidence, validation result, virtual post-change
+effective Config status, audit preview, refusal codes, durability
+classification, and rollback stance. Non-migration apply is deferred, must be
+all-or-nothing, and must write only eligible `committed durable config` or
 `local-only operator config`.
+
+Secret-reference authoring is limited to whole pointer objects in eligible
+authored config. Nested provider-metadata patch paths and direct secret values
+refuse with stable secret-boundary evidence.
 
 ## Migration apply
 

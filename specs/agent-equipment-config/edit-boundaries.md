@@ -5,6 +5,8 @@ Promotion state: planned
 
 This Equipment Design Bundle document defines deliberate Agent Equipment Config
 edit and mutation boundaries. It does not implement Agent Equipment. The current
+implemented authoring surfaces are `config propose`, `config patch`, and
+`create-layer` as read-only proposal and plan-generation output. The current
 implemented migrate surface is `migrate config preview` as dry-run output and
 `migrate config apply` as the only mutating path. Broader edit surfaces must
 follow this contract when later tools, MCP functions, skills, hooks, or guides
@@ -22,10 +24,10 @@ machine-visible before any source write.
 | Intent | Meaning | Write behavior |
 | --- | --- | --- |
 | `propose` | Produce a candidate config change, rationale, and diff without selecting a write target. | No source write. |
-| `patch` | Change specific fields in one selected authored config source. | Deferred until an approved surface implements source selection, validation, authority, diff, and audit. |
+| `patch` | Change specific fields in one selected authored config source. | Current runtime emits a read-only `patch-layer` plan artifact with source selection, validation, authority, diff, and audit preview. |
 | `migrate` | Translate stale schema metadata through a registered migration. | Current runtime supports dry-run preview and eligible source apply through `migrate config preview` and `migrate config apply`. |
 | `revise` | Re-open selected equipment namespaces for onboarding or re-onboarding while preserving unselected sections. | Current runtime reports a revision plan through `onboard config`; source writing is deferred. |
-| `apply` | Write a previously reviewed plan to an eligible source after explicit authority and final precondition checks. | Current runtime applies only registered migrations to eligible TOML sources. |
+| `apply` | Write a previously reviewed plan to an eligible source after explicit authority and final precondition checks. | Current runtime applies only registered migrations to eligible TOML sources. Non-migration apply is deferred. |
 
 An edit surface may also inspect, explain, trace, compare, or validate Config,
 but those read-only operations do not authorize source mutation.
@@ -126,13 +128,14 @@ detail.
 sections to revisit and marks unselected sections for preservation. It does not
 write source config.
 
-`propose` and `patch` are contract intents for the deferred Config Authoring
-Surfaces bucket. The authoring plan/apply model specifies `config propose`,
-`config patch`, `create-layer`, reviewed plan artifacts, precondition
-fingerprint checks, virtual post-change effective Config validation,
-all-or-nothing apply, durability classification, and rollback stance. Until a
-child implementation issue implements that model, Config-aware equipment may
-emit proposals or diffs but must not perform general source patches.
+`config propose`, `config patch`, and `create-layer` implement the read-only
+proposal and plan-generation portion of the Config Authoring Surfaces bucket.
+They emit target-agnostic proposals, selected-source `patch-layer` artifacts,
+or new-source `create-layer` artifacts with precondition fingerprints,
+virtual post-change effective Config validation, authority evidence, refusal
+codes, durability classification, and rollback stance. They do not perform
+general source patches. Non-migration apply remains deferred and must preserve
+all-or-nothing apply when implemented.
 
 Issue [#78](https://github.com/nisavid/agent-armory/issues/78) owns published
 integration guidance for the settled MVP operation surface. General source

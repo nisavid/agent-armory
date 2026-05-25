@@ -83,19 +83,22 @@ comparison.
 - `migrate config preview` and `migrate config apply` own registered migration
   dry-runs, authorized migration writes, refusal records, and mutation audit
   evidence for eligible local TOML sources.
+- `config propose`, `config patch`, and `create-layer` own read-only
+  non-migration authoring proposal and reviewed plan-generation output.
+  `config patch` creates `patch-layer` artifacts for one selected eligible
+  source; `create-layer` creates `create-layer` artifacts for a new authored
+  layer. These surfaces do not write source config.
 - `audit` remains attached to mutation-capable operations. The MVP does not
   introduce a standalone `config audit` operation.
 - Skills and docs route agents to CLI and MCP usage. They are not substitutes
   for the agent-facing operation surfaces.
 - Ad hoc scripts may support implementation, tests, or maintenance, but they
   are not the public Config operation surface.
-- General non-migration `config propose`, `config patch`, and `config apply`
-  authoring surfaces are deferred into the **Config Authoring Surfaces** epic
-  bucket. Their current design contract is the authoring plan/apply model:
-  target-agnostic proposals, `patch-layer` and `create-layer` reviewed plan
-  artifacts, precondition fingerprint checks, virtual post-change effective
-  Config validation, all-or-nothing apply, durability classification, rollback
-  stance, and deferred MCP parity.
+- Non-migration `config apply` remains deferred into the **Config Authoring
+  Surfaces** epic bucket. It must consume the reviewed plan artifacts produced
+  by the authoring surfaces and preserve precondition fingerprint checks,
+  virtual post-change effective Config validation, all-or-nothing apply,
+  durability classification, rollback stance, and deferred MCP parity.
 
 **Non-Goals**:
 
@@ -130,8 +133,10 @@ comparison.
   `python3.14 -m unittest tests.test_agent_equipment_config`.
 - Validate repository shape, links, and required Config surfaces with
   `python3.14 tools/validate_armory_integrity.py --final-closeout`.
-- Check CLI and MCP parity by mapping every MVP CLI operation to one MCP tool
-  and one underlying runtime behavior.
+- Check current safe MCP-slice parity by mapping each MCP-covered CLI
+  operation to one MCP tool and one underlying runtime behavior. Read-only
+  authoring CLI surfaces and non-migration apply track separately until MCP
+  authoring parity lands.
 - Check `config validate` with both passing and blocking Config examples,
   including usable, incomplete, unsafe, stale, untrusted, conflicted, missing
   authority, and unsupported capability outcomes.
@@ -167,6 +172,9 @@ Agent Equipment Config separates product surfaces from implementation contracts:
 | `config resolve` | `effective-config` | Full effective Config, provenance, diagnostics, safety status, enforcement projection, migration previews, and promoted handoff evidence. |
 | `config validate` | Effective-config validation and safety classification | Lower-noise diagnostics, safety status, authority readiness, fragment readiness, and pass/fail status. |
 | `config diff` | `config-diff` | Differences between effective Config outputs, including values, secret-reference identity, diagnostics, and status changes. |
+| `config propose` | Authoring proposal generation | Target-agnostic candidate changes, rationale, affected namespaces and fields, possible target categories, and refusal codes. |
+| `config patch` | Authoring patch-plan generation | Read-only `patch-layer` reviewed plan artifacts for one selected eligible source, including source identity, precondition fingerprint, validation, virtual effective Config, diff, audit preview, and refusal codes. |
+| `create-layer` | Authoring create-layer plan generation | Read-only `create-layer` reviewed plan artifacts for a new eligible authored source, including source identity, absent-source precondition, validation, virtual effective Config, create payload, audit preview, and refusal codes. |
 | `onboard config` | `onboarding-plan` | Missing, partial, interrupted, resumed, restarted, and revise-planning output. |
 | `migrate config preview` | `migration-apply` without apply | Dry-run migration plan, exact changes, refusals, audit preview, and no source write. |
 | `migrate config apply` | `migration-apply --apply` | Authorized registered migration writes for eligible TOML sources, refusal handling, source precondition checks, and mutation audit records. |
@@ -183,8 +191,8 @@ Agent Equipment Config separates product surfaces from implementation contracts:
 | `migrate config apply` | `migrate.config_apply` |
 
 MCP v1 stays constrained to parity with the current safe CLI/runtime slice.
-General edit planning, patching, and applying belong to later MCP revisions
-after their CLI and source-write contracts are specified.
+MCP authoring parity and non-migration apply belong to later MCP revisions
+after the reviewed plan artifact and source-write contracts are stable.
 
 **Integration Points**:
 
@@ -226,9 +234,9 @@ after their CLI and source-write contracts are specified.
 - **v1.1**: Prove consumption through Issue Tracker Ops or another concrete
   consuming equipment line; refine validation and onboarding examples from real
   use.
-- **v2.0**: Promote Config Authoring Surfaces for general proposal, patch,
-  source-target selection, reviewed plan artifacts, general apply, richer
-  audit/query behavior, and MCP revisions for those capabilities.
+- **v2.0**: Promote Config Authoring Surfaces for non-migration apply, richer
+  audit/query behavior, and MCP parity for proposal, patch plan, create-layer
+  plan, and apply capabilities.
 
 **Blocker Map**:
 

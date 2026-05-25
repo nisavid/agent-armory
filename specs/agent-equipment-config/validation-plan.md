@@ -6,11 +6,12 @@ Promotion state: planned
 This Equipment Design Bundle describes desired behavior and includes the first
 standard-library runtime engine slice for fluent Config CLI operations,
 effective-config, config-diff, diagnostics, plain handoff promotion, authority
-checks, projection classification, reusable consumer action decisions, and
-MCP parity tool definitions. It does not implement Agent Equipment beyond this
-runtime slice, publish assets, resolve secrets, mutate external systems,
-implement harness controls, or expose general authoring writes. Source mutation
-is limited to explicit migration apply for eligible local TOML sources.
+checks, projection classification, reusable consumer action decisions,
+read-only authoring proposal and plan-generation surfaces, and MCP parity tool
+definitions. It does not implement Agent Equipment beyond this runtime slice,
+publish assets, resolve secrets, mutate external systems, implement harness
+controls, or expose general authoring writes. Source mutation is limited to
+explicit migration apply for eligible local TOML sources.
 
 ## Scope
 
@@ -67,10 +68,13 @@ Runtime coverage tracks these current and follow-on cases:
 - read-time schema migration preview;
 - explicit migration apply audit;
 - deliberate edit intents and refusal states;
-- target-agnostic `config propose` output and authoring plan artifacts for
-  `patch-layer`, `create-layer`, reviewed plan artifacts, precondition
-  fingerprint, virtual post-change effective Config, all-or-nothing apply,
-  durability classification, and rollback stance;
+- target-agnostic `config propose` output and read-only authoring plan
+  artifacts for `patch-layer` and `create-layer`, including precondition
+  fingerprint, virtual post-change effective Config, durability
+  classification, rollback stance, authority evidence, refusal codes, and
+  secret-boundary refusals;
+- deferred non-migration apply behavior that must preserve all-or-nothing
+  semantics before any source write;
 - allowed current edit path for eligible migration apply;
 - refused current edit path for read-only, generated, untrusted, unsafe, or
   authority-blocked sources;
@@ -108,6 +112,8 @@ Implemented by the v0 engine slice:
 - schema fragment validation;
 - fluent CLI operations for resolve, validate, diff, onboarding, migration
   preview, and migration apply;
+- fluent CLI authoring operations for `config propose`, `config patch`, and
+  `create-layer` read-only proposal and plan-generation output;
 - effective-config output;
 - config-diff output for values, secret-reference identity, status changes, and diagnostic changes;
 - lower-noise config validation output with authority readiness, fragment

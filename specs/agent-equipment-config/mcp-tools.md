@@ -3,12 +3,16 @@
 Status: Equipment Blueprint
 Promotion state: planned
 
-Agent Equipment Config exposes MCP parity for the safe CLI/runtime slice through
-typed tool definitions and structured tool-call results. The importable runtime
-source is `tools.agent_equipment_config.mcp_tool_definitions()` for tool
-metadata and `tools.agent_equipment_config.call_mcp_tool()` for direct tool
-dispatch. A harness-specific MCP server can wrap those functions without
-redefining Config behavior.
+Agent Equipment Config exposes MCP parity for the safe read, onboarding,
+migration-preview, and migration-apply CLI/runtime slice through typed tool
+definitions and structured tool-call results. The CLI also exposes read-only
+authoring proposal and plan-generation surfaces through `config propose`,
+`config patch`, and `create-layer`; MCP authoring parity for those surfaces is
+deferred. The importable runtime source is
+`tools.agent_equipment_config.mcp_tool_definitions()` for tool metadata and
+`tools.agent_equipment_config.call_mcp_tool()` for direct tool dispatch. A
+harness-specific MCP server can wrap those functions without redefining Config
+behavior.
 
 This spec describes desired behavior and the current runtime boundary. It does not implement Agent Equipment.
 
@@ -45,6 +49,10 @@ All tools are closed-world local Config operations. They do not call networks,
 resolve secret values, mutate external systems, or discover config paths. MCP
 structured results use the same CLI redaction boundary for secret-reference
 names and direct secret values.
+
+`config propose`, `config patch`, and `create-layer` are current read-only CLI
+surfaces, but they do not have MCP tool definitions in this slice.
+Non-migration apply and MCP authoring parity remain follow-up work.
 
 ## Shared inputs
 

@@ -1760,7 +1760,7 @@ class AgentEquipmentConfigTests(unittest.TestCase):
                 kind = "env"
                 name = "GITHUB_TOKEN"
                 scope = "session"
-                required_for = "tracker write"
+                required_for = "mutation"
             """)
 
             result = agent_equipment_config.effective_config([layer], [fragment], requested_behavior="mutation")
@@ -1983,6 +1983,47 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         rendered = json.dumps(result, sort_keys=True)
         self.assertEqual(blocked["evidence"]["blocked_value"], agent_equipment_config.REDACTED)
         self.assertNotIn("raw-token", rendered)
+
+    def test_blocked_override_diagnostic_redacts_malformed_secret_reference_candidate(self):
+        fragment = agent_equipment_config.SchemaFragment(
+            namespace="issue_tracker_ops",
+            version=1,
+            fields={"github_token": agent_equipment_config.FieldSpec(type="object", required=True)},
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy = self.write_layer(root, "org.toml", """
+                [agent_equipment_config.layer]
+                name = "organization or tracker policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.policy.issue_tracker_ops.github_token]
+                non_overridable = true
+
+                [issue_tracker_ops.github_token]
+                kind = "env"
+                name = "POLICY_TOKEN"
+            """)
+            session = self.write_layer(root, "session.toml", """
+                [agent_equipment_config.layer]
+                name = "session overrides"
+                category = "session override"
+
+                [issue_tracker_ops.github_token]
+                kind = "env"
+                name = "GH_TOKEN"
+
+                [issue_tracker_ops.github_token.scope]
+                name = "GH_TOKEN"
+            """)
+
+            result = agent_equipment_config.effective_config([policy, session], [fragment], requested_behavior="mutation")
+
+        blocked = next(item for item in result["diagnostics"] if item["kind"] == "blocked override")
+        rendered = json.dumps(result, sort_keys=True)
+        self.assertEqual(blocked["evidence"]["blocked_value"], agent_equipment_config.REDACTED)
+        self.assertIn("secret boundary violation", [item["kind"] for item in result["diagnostics"]])
+        self.assertNotIn("GH_TOKEN", rendered)
 
     def test_direct_sensitive_value_is_blocked_from_effective_config(self):
         fragment = agent_equipment_config.SchemaFragment(
@@ -2550,6 +2591,929 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(payload["fragment_readiness"]["status"], "not_ready")
         self.assertEqual(payload["fragment_readiness"]["fragments"][0]["diagnostic_kinds"], ["semantic conflict"])
 
+    def test_cli_config_propose_emits_target_agnostic_candidate_changes(self):
+        stdout = agent_equipment_config.run(
+            [
+                "config",
+                "propose",
+                "--issue-tracker-ops",
+                "--set",
+                "issue_tracker_ops.mode=execute",
+                "--set",
+                "issue_tracker_ops.external_disclosure=allowed",
+                "--rationale",
+                "enable reviewed live tracker mutation",
+            ],
+            stdout_text=True,
+        )
+
+        payload = json.loads(stdout)
+        self.assertEqual(payload["operation"], "config propose")
+        self.assertEqual(payload["plan_surface"], "proposal")
+        self.assertIsNone(payload["source_target"])
+        self.assertEqual(payload["affected_namespaces"], ["issue_tracker_ops"])
+        self.assertEqual(payload["affected_fields"], ["issue_tracker_ops.external_disclosure", "issue_tracker_ops.mode"])
+        self.assertEqual(
+            payload["possible_target_categories"],
+            ["committed durable config", "local-only operator config"],
+        )
+        self.assertEqual(payload["candidates"][0]["rationale"], "enable reviewed live tracker mutation")
+        self.assertEqual(
+            payload["candidates"][0]["changes"],
+            [
+                {"path": "issue_tracker_ops.external_disclosure", "value": "allowed"},
+                {"path": "issue_tracker_ops.mode", "value": "execute"},
+            ],
+        )
+
+    def test_cli_config_propose_reports_nondeterministic_duplicate_changes(self):
+        stdout = io.StringIO()
+
+        exit_code = agent_equipment_config.run(
+            [
+                "config",
+                "propose",
+                "--issue-tracker-ops",
+                "--set",
+                "issue_tracker_ops.mode=dry-run",
+                "--set",
+                "issue_tracker_ops.mode=execute",
+            ],
+            stdout=stdout,
+        )
+
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(payload["refusal_codes"], ["non_deterministic_plan"])
+
+    def test_cli_config_propose_refuses_unknown_schema_paths(self):
+        stdout = io.StringIO()
+
+        exit_code = agent_equipment_config.run(
+            [
+                "config",
+                "propose",
+                "--issue-tracker-ops",
+                "--set",
+                "issue_tracker_ops.unknown=value",
+            ],
+            stdout=stdout,
+        )
+
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(payload["refusal_codes"], ["validation_failed"])
+        self.assertEqual(payload["path_errors"][0]["detail"], "unknown schema field")
+        self.assertEqual(payload["candidates"][0]["path_errors"], payload["path_errors"])
+
+    def test_cli_config_propose_refuses_schema_invalid_values(self):
+        stdout = io.StringIO()
+
+        exit_code = agent_equipment_config.run(
+            [
+                "config",
+                "propose",
+                "--issue-tracker-ops",
+                "--set",
+                "issue_tracker_ops.mode=bogus",
+            ],
+            stdout=stdout,
+        )
+
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(payload["refusal_codes"], ["validation_failed"])
+        self.assertEqual(payload["value_errors"][0]["detail"], "expected one of ['dry-run', 'execute']")
+        self.assertEqual(payload["candidates"][0]["value_errors"], payload["value_errors"])
+
+    def test_cli_config_propose_reports_known_value_errors_with_unknown_paths(self):
+        stdout = io.StringIO()
+
+        exit_code = agent_equipment_config.run(
+            [
+                "config",
+                "propose",
+                "--issue-tracker-ops",
+                "--set",
+                "issue_tracker_ops.unknown=value",
+                "--set",
+                "issue_tracker_ops.mode=bogus",
+            ],
+            stdout=stdout,
+        )
+
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(payload["refusal_codes"], ["validation_failed"])
+        self.assertEqual(payload["path_errors"][0]["detail"], "unknown schema field")
+        self.assertEqual(payload["value_errors"][0]["detail"], "expected one of ['dry-run', 'execute']")
+        self.assertEqual(payload["candidates"][0]["path_errors"], payload["path_errors"])
+        self.assertEqual(payload["candidates"][0]["value_errors"], payload["value_errors"])
+
+    def test_cli_config_patch_emits_read_only_patch_layer_plan(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            original_text = layer.read_text(encoding="utf-8")
+
+            stdout = agent_equipment_config.run(
+                [
+                    "config",
+                    "patch",
+                    "--layer",
+                    str(layer),
+                    "--source-target",
+                    str(layer),
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=execute",
+                    "--set",
+                    "issue_tracker_ops.external_disclosure=allowed",
+                    "--plan-authority",
+                    "operator",
+                    "--rationale",
+                    "enable reviewed live tracker mutation",
+                ],
+                stdout_text=True,
+            )
+            rewritten_text = layer.read_text(encoding="utf-8")
+
+        payload = json.loads(stdout)
+        self.assertEqual(rewritten_text, original_text)
+        self.assertEqual(payload["schema"], "agent-armory.config.authoring-plan.v1")
+        self.assertEqual(payload["operation"], "config patch")
+        self.assertEqual(payload["plan_kind"], "patch-layer")
+        self.assertEqual(payload["source_target"], str(layer))
+        self.assertEqual(payload["source_category"], "committed durable config")
+        self.assertTrue(payload["source_identity"]["trusted"])
+        self.assertRegex(payload["precondition_fingerprint"], r"^sha256:[0-9a-f]{64}$")
+        self.assertEqual(payload["authority_evidence"]["status"], "accepted")
+        self.assertEqual(payload["authority_evidence"]["source"], "operator")
+        self.assertTrue(payload["validation_result"]["passed"])
+        self.assertEqual(payload["virtual_post_change_effective_config"]["safety_status"], "usable")
+        self.assertEqual(payload["audit_preview"]["result"], "planned")
+        self.assertFalse(payload["audit_preview"]["would_write"])
+        self.assertEqual(payload["refusal_codes"], [])
+        self.assertEqual(
+            payload["change_payload"]["changes"],
+            [
+                {"path": "issue_tracker_ops.external_disclosure", "before": "blocked", "after": "allowed"},
+                {"path": "issue_tracker_ops.mode", "before": "dry-run", "after": "execute"},
+            ],
+        )
+
+    def test_cli_config_patch_refuses_ineligible_source_missing_authority_and_unsafe_config(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            generated = self.write_layer(root, "generated.toml", """
+                [agent_equipment_config.layer]
+                name = "checkout-local state"
+                category = "generated cache or state"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            repo = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+
+            ineligible = agent_equipment_config.run(
+                [
+                    "config",
+                    "patch",
+                    "--layer",
+                    str(generated),
+                    "--source-target",
+                    str(generated),
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=execute",
+                    "--set",
+                    "issue_tracker_ops.external_disclosure=allowed",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            )
+            missing_authority_stdout = io.StringIO()
+            missing_authority_exit = agent_equipment_config.run(
+                [
+                    "config",
+                    "patch",
+                    "--layer",
+                    str(repo),
+                    "--source-target",
+                    str(repo),
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=execute",
+                    "--set",
+                    "issue_tracker_ops.external_disclosure=allowed",
+                ],
+                stdout=missing_authority_stdout,
+            )
+            unsafe = agent_equipment_config.run(
+                [
+                    "config",
+                    "patch",
+                    "--layer",
+                    str(repo),
+                    "--source-target",
+                    str(repo),
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=execute",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            )
+
+        self.assertEqual(json.loads(ineligible)["refusal_codes"], ["source_category_ineligible"])
+        missing_authority = json.loads(missing_authority_stdout.getvalue())
+        self.assertEqual(missing_authority_exit, 1)
+        self.assertEqual(missing_authority["refusal_codes"], ["missing_authority"])
+        unsafe_codes = json.loads(unsafe)["refusal_codes"]
+        self.assertIn("safety_status_blocking", unsafe_codes)
+
+    def test_cli_config_patch_missing_target_reports_all_input_refusals(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            stdout = io.StringIO()
+
+            exit_code = agent_equipment_config.run(
+                [
+                    "config",
+                    "patch",
+                    "--source-target",
+                    str(root / "missing.toml"),
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.unknown=value",
+                ],
+                stdout=stdout,
+            )
+
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(payload["refusal_codes"], ["missing_authority", "validation_failed", "source_changed"])
+        self.assertEqual(payload["authority_evidence"]["status"], "missing")
+        self.assertEqual(payload["validation_result"]["path_errors"][0]["detail"], "unknown schema field")
+
+    def test_cli_config_patch_missing_target_reports_schema_invalid_values(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            stdout = io.StringIO()
+
+            exit_code = agent_equipment_config.run(
+                [
+                    "config",
+                    "patch",
+                    "--source-target",
+                    str(root / "missing.toml"),
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=bogus",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout=stdout,
+            )
+
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(payload["refusal_codes"], ["validation_failed", "source_changed"])
+        self.assertEqual(payload["authority_evidence"]["status"], "accepted")
+        self.assertEqual(payload["validation_result"]["value_errors"][0]["detail"], "expected one of ['dry-run', 'execute']")
+
+    def test_cli_config_patch_maps_existing_secret_diagnostics_to_secret_refusal_code(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+
+                [issue_tracker_ops.github_token]
+                token = "raw-token"
+            """)
+
+            stdout = agent_equipment_config.run(
+                [
+                    "config",
+                    "patch",
+                    "--layer",
+                    str(layer),
+                    "--source-target",
+                    str(layer),
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=execute",
+                    "--set",
+                    "issue_tracker_ops.external_disclosure=allowed",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            )
+
+        payload = json.loads(stdout)
+        self.assertEqual(payload["refusal_codes"], ["safety_status_blocking", "secret_boundary_violation"])
+        self.assertNotIn("raw-token", stdout)
+
+    def test_cli_config_patch_allows_whole_secret_reference_pointer_plan(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+
+            stdout = agent_equipment_config.run(
+                [
+                    "config",
+                    "patch",
+                    "--layer",
+                    str(layer),
+                    "--source-target",
+                    str(layer),
+                    "--issue-tracker-ops",
+                    "--set",
+                    'issue_tracker_ops.github_token={"kind":"env","name":"GH_TOKEN"}',
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            )
+
+        payload = json.loads(stdout)
+        self.assertEqual(payload["refusal_codes"], [])
+        token = payload["virtual_post_change_effective_config"]["effective"]["issue_tracker_ops"]["github_token"]
+        self.assertEqual(token["secret_reference"]["kind"], "env")
+        self.assertEqual(token["secret_reference"]["name"], agent_equipment_config.REDACTED)
+
+    def test_cli_config_patch_refuses_and_redacts_secret_values(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            stdout = agent_equipment_config.run(
+                [
+                    "config",
+                    "patch",
+                    "--layer",
+                    str(layer),
+                    "--source-target",
+                    str(layer),
+                    "--issue-tracker-ops",
+                    "--set",
+                    'issue_tracker_ops.github_token={"kind":"env","name":"GH_TOKEN","value":"raw-token"}',
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            )
+            provider_mutation_stdout = agent_equipment_config.run(
+                [
+                    "config",
+                    "patch",
+                    "--layer",
+                    str(layer),
+                    "--source-target",
+                    str(layer),
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.github_token.name=GH_TOKEN",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            )
+
+        payload = json.loads(stdout)
+        self.assertEqual(payload["refusal_codes"], ["secret_boundary_violation"])
+        self.assertNotIn("raw-token", stdout)
+        self.assertNotIn("GH_TOKEN", stdout)
+        provider_mutation = json.loads(provider_mutation_stdout)
+        self.assertEqual(provider_mutation["refusal_codes"], ["secret_boundary_violation"])
+        self.assertNotIn("GH_TOKEN", provider_mutation_stdout)
+
+    def test_cli_authoring_surfaces_refuse_and_redact_malformed_secret_reference_payloads(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            malformed_changes = [
+                'issue_tracker_ops.github_token={"name":"GH_TOKEN"}',
+                'issue_tracker_ops.github_token={"kind":"env","name":"GH_TOKEN","scope":{"name":"GH_TOKEN"}}',
+            ]
+
+            results: list[tuple[int, str]] = []
+            for index, malformed_change in enumerate(malformed_changes):
+                propose_stdout = io.StringIO()
+                patch_stdout = io.StringIO()
+                create_stdout = io.StringIO()
+                propose_exit = agent_equipment_config.run(
+                    [
+                        "config",
+                        "propose",
+                        "--issue-tracker-ops",
+                        "--set",
+                        malformed_change,
+                    ],
+                    stdout=propose_stdout,
+                )
+                patch_exit = agent_equipment_config.run(
+                    [
+                        "config",
+                        "patch",
+                        "--layer",
+                        str(layer),
+                        "--source-target",
+                        str(layer),
+                        "--issue-tracker-ops",
+                        "--set",
+                        malformed_change,
+                        "--plan-authority",
+                        "operator",
+                    ],
+                    stdout=patch_stdout,
+                )
+                create_exit = agent_equipment_config.run(
+                    [
+                        "create-layer",
+                        "--destination",
+                        str(root / f"agent-equipment-{index}.toml"),
+                        "--layer-name",
+                        "repository policy",
+                        "--source-category",
+                        "committed durable config",
+                        "--issue-tracker-ops",
+                        "--set",
+                        malformed_change,
+                        "--plan-authority",
+                        "operator",
+                    ],
+                    stdout=create_stdout,
+                )
+                results.extend(
+                    [
+                        (propose_exit, propose_stdout.getvalue()),
+                        (patch_exit, patch_stdout.getvalue()),
+                        (create_exit, create_stdout.getvalue()),
+                    ]
+                )
+
+        for exit_code, stdout in results:
+            payload = json.loads(stdout)
+            self.assertEqual(exit_code, 1)
+            self.assertIn("secret_boundary_violation", payload["refusal_codes"])
+            self.assertNotIn("GH_TOKEN", stdout)
+
+    def test_authoring_refusal_artifacts_do_not_expose_secret_values_to_runtime_callers(self):
+        changes = agent_equipment_config.parse_authoring_changes(
+            ['issue_tracker_ops.github_token={"kind":"env","name":"GH_TOKEN","value":"raw-token"}']
+        )
+        proposal = agent_equipment_config.config_proposal(changes, [agent_equipment_config.issue_tracker_ops_fragment()])
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            missing_target_plan = agent_equipment_config.config_patch_plan(
+                [],
+                [agent_equipment_config.issue_tracker_ops_fragment()],
+                source_target=root / "missing.toml",
+                changes=changes,
+                plan_authority="operator",
+            )
+            create_plan = agent_equipment_config.create_layer_plan(
+                [],
+                [agent_equipment_config.issue_tracker_ops_fragment()],
+                destination=root / "new.toml",
+                layer_name="repository policy",
+                source_category="committed durable config",
+                changes=changes,
+                plan_authority="operator",
+            )
+
+        for artifact in (proposal, missing_target_plan, create_plan):
+            serialized = json.dumps(artifact)
+            self.assertNotIn("raw-token", serialized)
+            self.assertNotIn("GH_TOKEN", serialized)
+
+    def test_cli_config_patch_refuses_and_redacts_malformed_existing_secret_reference(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+
+                [issue_tracker_ops.github_token]
+                name = "GH_TOKEN"
+            """)
+
+            stdout = agent_equipment_config.run(
+                [
+                    "config",
+                    "patch",
+                    "--layer",
+                    str(layer),
+                    "--source-target",
+                    str(layer),
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=dry-run",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            )
+
+        payload = json.loads(stdout)
+        self.assertEqual(payload["refusal_codes"], ["safety_status_blocking", "secret_boundary_violation"])
+        self.assertFalse(payload["validation_result"]["passed"])
+        self.assertIn("secret boundary violation", payload["validation_result"]["planned_source_diagnostic_kinds"])
+        self.assertNotIn("GH_TOKEN", stdout)
+
+    def test_cli_config_patch_validates_projected_source_when_effective_value_is_masked(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            repo = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            user = self.write_layer(root, "user.toml", """
+                [agent_equipment_config.layer]
+                name = "user/operator local overrides"
+                category = "local-only operator config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+
+            stdout = agent_equipment_config.run(
+                [
+                    "config",
+                    "patch",
+                    "--layer",
+                    str(repo),
+                    "--layer",
+                    str(user),
+                    "--source-target",
+                    str(repo),
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=bogus",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            )
+
+        payload = json.loads(stdout)
+        self.assertEqual(payload["refusal_codes"], ["validation_failed"])
+        self.assertFalse(payload["validation_result"]["passed"])
+        self.assertEqual(payload["validation_result"]["planned_source_diagnostic_kinds"], ["schema conflict"])
+        self.assertEqual(payload["virtual_post_change_effective_config"]["safety_status"], "usable")
+
+    def test_cli_config_patch_validates_missing_required_source_field_when_effective_value_is_masked(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            repo = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+            """)
+            user = self.write_layer(root, "user.toml", """
+                [agent_equipment_config.layer]
+                name = "user/operator local overrides"
+                category = "local-only operator config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+
+            stdout = agent_equipment_config.run(
+                [
+                    "config",
+                    "patch",
+                    "--layer",
+                    str(repo),
+                    "--layer",
+                    str(user),
+                    "--source-target",
+                    str(repo),
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=dry-run",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            )
+
+        payload = json.loads(stdout)
+        self.assertEqual(payload["refusal_codes"], ["validation_failed"])
+        self.assertFalse(payload["validation_result"]["passed"])
+        self.assertEqual(payload["validation_result"]["planned_source_diagnostic_kinds"], ["schema conflict"])
+        self.assertEqual(payload["virtual_post_change_effective_config"]["safety_status"], "usable")
+
+    def test_cli_config_patch_validates_null_required_source_field_when_effective_value_is_masked(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            repo = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            user = self.write_layer(root, "user.toml", """
+                [agent_equipment_config.layer]
+                name = "user/operator local overrides"
+                category = "local-only operator config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+
+            stdout = agent_equipment_config.run(
+                [
+                    "config",
+                    "patch",
+                    "--layer",
+                    str(repo),
+                    "--layer",
+                    str(user),
+                    "--source-target",
+                    str(repo),
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=null",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            )
+
+        payload = json.loads(stdout)
+        self.assertEqual(payload["refusal_codes"], ["validation_failed"])
+        self.assertFalse(payload["validation_result"]["passed"])
+        self.assertEqual(payload["validation_result"]["planned_source_diagnostic_kinds"], ["schema conflict"])
+        self.assertEqual(payload["virtual_post_change_effective_config"]["safety_status"], "usable")
+
+    def test_cli_create_layer_emits_read_only_create_layer_plan(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            destination = root / "agent-equipment.toml"
+
+            stdout = agent_equipment_config.run(
+                [
+                    "create-layer",
+                    "--destination",
+                    str(destination),
+                    "--layer-name",
+                    "repository policy",
+                    "--source-category",
+                    "committed durable config",
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=dry-run",
+                    "--set",
+                    "issue_tracker_ops.external_disclosure=blocked",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            )
+
+            self.assertFalse(destination.exists())
+
+        payload = json.loads(stdout)
+        self.assertEqual(payload["operation"], "create-layer")
+        self.assertEqual(payload["plan_kind"], "create-layer")
+        self.assertEqual(payload["source_target"], str(destination))
+        self.assertEqual(payload["source_category"], "committed durable config")
+        self.assertEqual(payload["precondition_fingerprint"], "absent")
+        self.assertTrue(payload["validation_result"]["passed"])
+        self.assertEqual(payload["virtual_post_change_effective_config"]["safety_status"], "usable")
+        self.assertEqual(payload["refusal_codes"], [])
+        self.assertEqual(
+            payload["change_payload"]["create_payload"]["agent_equipment_config"]["fragment_versions"],
+            {"issue_tracker_ops": 2},
+        )
+
+    def test_cli_create_layer_refuses_existing_destination(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            destination = self.write_layer(root, "agent-equipment.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+            """)
+            stdout = io.StringIO()
+
+            exit_code = agent_equipment_config.run(
+                [
+                    "create-layer",
+                    "--destination",
+                    str(destination),
+                    "--layer-name",
+                    "repository policy",
+                    "--source-category",
+                    "committed durable config",
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=dry-run",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout=stdout,
+            )
+
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(payload["refusal_codes"], ["validation_failed", "source_changed"])
+
+    def test_cli_create_layer_validates_new_source_when_effective_value_is_masked(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            user = self.write_layer(root, "user.toml", """
+                [agent_equipment_config.layer]
+                name = "user/operator local overrides"
+                category = "local-only operator config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            destination = root / "agent-equipment.toml"
+
+            stdout = agent_equipment_config.run(
+                [
+                    "create-layer",
+                    "--layer",
+                    str(user),
+                    "--destination",
+                    str(destination),
+                    "--layer-name",
+                    "repository policy",
+                    "--source-category",
+                    "committed durable config",
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=bogus",
+                    "--set",
+                    "issue_tracker_ops.external_disclosure=blocked",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            )
+
+        payload = json.loads(stdout)
+        self.assertEqual(payload["refusal_codes"], ["validation_failed"])
+        self.assertFalse(payload["validation_result"]["passed"])
+        self.assertEqual(payload["validation_result"]["planned_source_diagnostic_kinds"], ["schema conflict"])
+        self.assertEqual(payload["virtual_post_change_effective_config"]["safety_status"], "usable")
+
+    def test_cli_create_layer_validates_missing_required_source_field_when_effective_value_is_masked(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            user = self.write_layer(root, "user.toml", """
+                [agent_equipment_config.layer]
+                name = "user/operator local overrides"
+                category = "local-only operator config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            destination = root / "agent-equipment.toml"
+
+            stdout = agent_equipment_config.run(
+                [
+                    "create-layer",
+                    "--layer",
+                    str(user),
+                    "--destination",
+                    str(destination),
+                    "--layer-name",
+                    "repository policy",
+                    "--source-category",
+                    "committed durable config",
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=dry-run",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            )
+
+        payload = json.loads(stdout)
+        self.assertEqual(payload["refusal_codes"], ["validation_failed"])
+        self.assertFalse(payload["validation_result"]["passed"])
+        self.assertEqual(payload["validation_result"]["planned_source_diagnostic_kinds"], ["schema conflict"])
+        self.assertEqual(payload["virtual_post_change_effective_config"]["safety_status"], "usable")
+
+    def test_cli_create_layer_validates_null_required_source_field_when_effective_value_is_masked(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            user = self.write_layer(root, "user.toml", """
+                [agent_equipment_config.layer]
+                name = "user/operator local overrides"
+                category = "local-only operator config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            destination = root / "agent-equipment.toml"
+
+            stdout = agent_equipment_config.run(
+                [
+                    "create-layer",
+                    "--layer",
+                    str(user),
+                    "--destination",
+                    str(destination),
+                    "--layer-name",
+                    "repository policy",
+                    "--source-category",
+                    "committed durable config",
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=null",
+                    "--set",
+                    "issue_tracker_ops.external_disclosure=blocked",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            )
+
+        payload = json.loads(stdout)
+        self.assertEqual(payload["refusal_codes"], ["validation_failed"])
+        self.assertFalse(payload["validation_result"]["passed"])
+        self.assertEqual(payload["validation_result"]["planned_source_diagnostic_kinds"], ["schema conflict"])
+        self.assertEqual(payload["virtual_post_change_effective_config"]["safety_status"], "usable")
+
     def test_cli_config_diff_fluent_operation_outputs_json(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -3102,7 +4066,7 @@ class AgentEquipmentConfigTests(unittest.TestCase):
                 kind = "env"
                 name = "GITHUB_TOKEN"
                 scope = "session"
-                required_for = "tracker write"
+                required_for = "mutation"
             """)
             stdout = agent_equipment_config.run(["effective-config", "--layer", str(layer), "--issue-tracker-ops"], stdout_text=True)
 
