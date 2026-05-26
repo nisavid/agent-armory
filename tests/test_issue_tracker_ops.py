@@ -529,6 +529,36 @@ class IssueTrackerOpsTests(unittest.TestCase):
             "effective Config safety status did not authorize execute",
         )
 
+    def test_execute_config_with_allowed_decision_but_projection_safety_not_usable_fails_closed(self):
+        args = argparse.Namespace(operation="comment", execute=True)
+        for projection_effective_config in ({"safety_status": "unsafe"}, {}):
+            with self.subTest(projection_effective_config=projection_effective_config):
+                config = {
+                    "effective_config": {"safety_status": "usable"},
+                    "consumer_action_decision": {"state": "allowed"},
+                    "consumer_enforcement_projection": {
+                        "surface": "issue_tracker_ops.github_api_mutation_preflight",
+                        "mutation_requested": True,
+                        "adapter_action": "allow",
+                        "effective_config": projection_effective_config,
+                    },
+                }
+
+                self.assertTrue(issue_tracker_ops.config_refuses_execute(config, args))
+
+                payload = issue_tracker_ops.config_refusal_payload(
+                    "comment",
+                    issue_tracker_ops.RequestSpec("POST", "repos/OWNER/REPO/issues/11/comments", {"body": "x"}),
+                    config,
+                )
+
+                self.assertEqual(payload["error"]["state"], "allowed")
+                self.assertEqual(
+                    payload["error"]["message"],
+                    "Issue Tracker Ops Config did not authorize execute: "
+                    "effective Config safety status did not authorize execute",
+                )
+
     def test_execute_config_with_allowed_decision_but_malformed_projection_surface_fails_closed(self):
         args = argparse.Namespace(operation="comment", execute=True)
         config = {
