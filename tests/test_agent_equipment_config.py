@@ -4800,7 +4800,10 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(payload["plan_surface"], "proposal")
         self.assertIsNone(payload["source_target"])
         self.assertEqual(payload["possible_target_categories"], ["committed durable config", "local-only operator config"])
-        self.assertEqual(payload["affected_fields"], ["issue_tracker_ops.mode", "issue_tracker_ops.external_disclosure"])
+        self.assertEqual(
+            sorted(payload["affected_fields"]),
+            ["issue_tracker_ops.external_disclosure", "issue_tracker_ops.mode"],
+        )
         self.assertEqual(payload["refusal_codes"], [])
         self.assertEqual(result["content"][0]["text"], "config.propose: candidates=1 refusals=0")
 

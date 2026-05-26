@@ -1984,7 +1984,6 @@ AUTHORING_REFUSAL_CODE_ORDER = [
     "source_changed",
     "partial_write_blocked",
     "non_deterministic_plan",
-    "unsupported_mcp_authoring",
 ]
 
 

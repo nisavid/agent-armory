@@ -34,8 +34,8 @@ limited to registered `migrate config apply` operations and reviewed
 reviewed plan generation. `config apply` consumes those reviewed plan artifacts
 from a file or stdin and rechecks authority, source preconditions, validation,
 semantic safety, secret boundaries, all-or-nothing behavior, and mutation audit
-evidence before writing. Revision writes and MCP authoring parity belong to the
-Config Authoring Surfaces follow-up bucket.
+evidence before writing. Revision writes and richer audit/query behavior remain
+Config Authoring Surfaces follow-up work outside reviewed plan-artifact apply.
 
 The product operation vocabulary is:
 

@@ -59,11 +59,11 @@ Use the fluent CLI operations as the supported invocation surface:
 `migrate config preview`, and `migrate config apply`. The implementation
 command names remain available as the debugging path. When a harness exposes
 Config MCP tools, use
-`config.resolve`, `config.validate`, `config.diff`, `onboard.config`,
-`migrate.config_preview`, and `migrate.config_apply` for the same safe runtime
-slice. MCP parity for authoring proposal, patch plan, create-layer plan, and
-apply is deferred. The importable runtime exposes tool metadata
-through `mcp_tool_definitions()` and direct dispatch through `call_mcp_tool()`.
+`config.resolve`, `config.validate`, `config.diff`, `config.propose`,
+`config.patch`, `config.create_layer`, `config.apply`, `onboard.config`,
+`migrate.config_preview`, and `migrate.config_apply` for the same operation
+families. The importable runtime exposes tool metadata through
+`mcp_tool_definitions()` and direct dispatch through `call_mcp_tool()`.
 
 ## Load contract
 
@@ -365,10 +365,9 @@ the only non-migration authoring command that writes local TOML, and it accepts
 only reviewed `patch-layer` or `create-layer` JSON artifacts from `--plan PATH`
 or `--plan -`.
 
-This workflow documents current CLI/runtime behavior. It does not promote MCP
-authoring parity, revision writes, or richer audit/query behavior into the #23
-blocking path; those surfaces remain deferred unless the Config PRD scope
-changes.
+This workflow documents current CLI/runtime and MCP authoring parity behavior.
+Revision writes and richer audit/query behavior remain outside the #23 blocking
+path unless the Config PRD scope changes.
 
 Start with a target-agnostic proposal:
 

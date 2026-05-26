@@ -66,9 +66,10 @@ comparison.
 - The product surface names these MVP CLI operation families:
   `config resolve`, `config validate`, `config diff`, `onboard config`,
   `migrate config preview`, `migrate config apply`, and `config apply`.
-- MCP parity is required before #23 closes. MCP v1 mirrors the safe CLI/runtime
-  slice through `config.resolve`, `config.validate`, `config.diff`,
-  `onboard.config`, `migrate.config_preview`, and
+- MCP parity is required before #23 closes. MCP v1 mirrors the CLI/runtime
+  operation families through `config.resolve`, `config.validate`,
+  `config.diff`, `config.propose`, `config.patch`, `config.create_layer`,
+  `config.apply`, `onboard.config`, `migrate.config_preview`, and
   `migrate.config_apply`.
 - `config resolve` is the full read, explain, and trace surface. It returns
   effective values, provenance, diagnostics, safety status, enforcement
@@ -100,9 +101,6 @@ comparison.
   for the agent-facing operation surfaces.
 - Ad hoc scripts may support implementation, tests, or maintenance, but they
   are not the public Config operation surface.
-- MCP authoring parity for proposal, patch plan, create-layer plan, and apply
-  remains in the **Config Authoring Surfaces** epic bucket after the CLI/runtime
-  reviewed-plan contract is stable.
 
 **Non-Goals**:
 
@@ -137,9 +135,9 @@ comparison.
   `python3.14 -m unittest tests.test_agent_equipment_config`.
 - Validate repository shape, links, and required Config surfaces with
   `python3.14 tools/validate_armory_integrity.py --final-closeout`.
-- Check current safe MCP-slice parity by mapping each MCP-covered CLI
-  operation to one MCP tool and one underlying runtime behavior. Authoring CLI
-  surfaces track separately until MCP authoring parity lands.
+- Check MCP parity by mapping each MCP-covered CLI operation to one MCP tool
+  and one underlying runtime behavior, including authoring proposal, plan, and
+  reviewed plan-artifact apply surfaces.
 - Check `config validate` with both passing and blocking Config examples,
   including usable, incomplete, unsafe, stale, untrusted, conflicted, missing
   authority, and unsupported capability outcomes.
@@ -155,7 +153,7 @@ comparison.
 Agent Equipment Config separates product surfaces from implementation contracts:
 
 - The PRD states product requirements, user-facing operation vocabulary, MVP
-  blockers, and deferred epic buckets.
+  blockers, and follow-up epic buckets.
 - The Equipment Design Bundle under `specs/agent-equipment-config/` states
   exact runtime contracts, source ownership, security/control classification,
   pressure scenarios, validation, and closeout evidence.
@@ -198,7 +196,8 @@ Agent Equipment Config separates product surfaces from implementation contracts:
 | `migrate config preview` | `migrate.config_preview` |
 | `migrate config apply` | `migrate.config_apply` |
 
-MCP v1 stays constrained to parity with the current safe CLI/runtime slice.
+MCP v1 stays constrained to parity with the current CLI/runtime operation
+families.
 Authoring MCP parity preserves the reviewed plan artifact contract,
 side-effect classification, approval requirements, failure modes, mutation
 gates, secret/provider refusals, durability classification, project-truth
@@ -239,14 +238,15 @@ status, and rollback stance.
 **Phased Rollout**:
 
 - **MVP**: Maintain the current runtime slice and fluent CLI operation
-  vocabulary; add MCP parity for the safe runtime slice; publish integration
-  guides; preserve edit-boundary constraints.
+  vocabulary; add MCP parity for the read, authoring, onboarding, migration,
+  and reviewed plan-artifact apply surfaces; publish integration guides;
+  preserve edit-boundary constraints.
 - **v1.1**: Prove consumption through Issue Tracker Ops or another concrete
   consuming equipment line; refine validation and onboarding examples from real
   use.
-- **v2.0**: Promote Config Authoring Surfaces for richer audit/query behavior
-  and MCP parity for proposal, patch plan, create-layer plan, and apply
-  capabilities.
+- **v2.0**: Promote Config Authoring Surfaces for richer audit/query behavior,
+  revision writes, and general edit capabilities beyond reviewed plan
+  artifacts.
 
 **Blocker Map**:
 
@@ -254,8 +254,10 @@ status, and rollback stance.
   integration guide (#78) surfaces are complete.
 - #78 owns the integration-guide slice for the MVP operation surface. #91, #92,
   and #93 track CLI fluency, MCP parity, and Config Authoring Surfaces.
-- **Config Authoring Surfaces** is a non-blocking follow-up epic bucket unless
-  a child issue is explicitly promoted into MVP scope. #93 owns that bucket.
+- **Config Authoring Surfaces** remains a follow-up epic bucket for general
+  edit, revision-write, and richer audit/query capabilities beyond reviewed
+  plan artifacts unless a child issue is explicitly promoted into MVP scope.
+  #93 owns that bucket.
 
 **Technical Risks**:
 

@@ -251,8 +251,8 @@ The supported edit intents are `propose`, `patch`, `migrate`, `revise`, and
 registered migrations and `config apply` for reviewed `patch-layer` and
 `create-layer` artifacts on `committed durable config` and
 `local-only operator config`. General source patching outside reviewed plan
-artifacts, revision writes, and MCP authoring parity remain separate Config
-Authoring Surfaces work. The
+artifacts, revision writes, and richer audit/query behavior remain separate
+Config Authoring Surfaces work. The
 [authoring plan/apply model](authoring-plan-apply-model.md) defines the
 non-migration proposal, `patch-layer`, `create-layer`, reviewed plan artifacts,
 precondition fingerprint, virtual post-change effective Config,
@@ -282,10 +282,9 @@ The fluent CLI commands are the supported invocation surface. Runtime commands
 remain available for implementation debugging and evidence comparison. MCP
 tool definitions live in [MCP tools](mcp-tools.md) and the importable runtime.
 Skills and docs route agents to CLI or MCP usage; they are not substitutes for
-those surfaces. Current CLI authoring operations produce reviewed plan artifacts
-and apply those artifacts through `config apply`. MCP authoring parity preserves
-the reviewed plan artifact contract before exposing the `config.apply` write
-surface.
+those surfaces. Current CLI and MCP authoring operations produce reviewed plan
+artifacts and apply those artifacts through `config apply` / `config.apply`
+while preserving the reviewed plan artifact contract.
 
 ## Harness projections
 

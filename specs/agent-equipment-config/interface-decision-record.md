@@ -32,7 +32,7 @@ Use a Repo Draft PRD, Equipment Design Bundle, validator gate, and portable
 standard-library Python runtime slice for v0.
 
 The PRD owns product requirements, user-facing operation vocabulary, MVP
-blockers, and deferred epic buckets. The v0 contract defines typed schemas,
+blockers, and follow-up epic buckets. The v0 contract defines typed schemas,
 namespaced schema fragments, explicit
 load duties, Layer Precedence, Policy Authority, Config Safety Status, secret
 references, migrations, effective-config output, config-diff output, semantic
@@ -44,8 +44,8 @@ projection classification. It also emits read-only `config propose`,
 `config patch`, and `create-layer` artifacts for target-agnostic proposals,
 selected-source patch plans, and new-layer plans, then applies reviewed
 `patch-layer` and `create-layer` artifacts through `config apply`. Harness
-adapters, arbitrary CLI fragment registration, authoring MCP parity, and
-blocking enforcement remain separate work.
+adapters, arbitrary CLI fragment registration, blocking enforcement, and
+general edit surfaces beyond reviewed plan artifacts remain separate work.
 
 The consumption contract keeps the final action decision with the consuming
 equipment. Shared Config output supplies evidence; the consumer maps that
@@ -59,11 +59,10 @@ The current operation surface includes fluent CLI operations for
 `config resolve`, `config validate`, `config diff`, `config propose`,
 `config patch`, `create-layer`, `config apply`, `onboard config`,
 `migrate config preview`, and `migrate config apply`. MCP parity currently
-covers the safe read, onboarding, migration-preview, and migration-apply runtime
-slice through
-`config.resolve`, `config.validate`, `config.diff`, `onboard.config`,
-`migrate.config_preview`, and `migrate.config_apply`; MCP authoring parity is
-deferred.
+covers those operation families through `config.resolve`, `config.validate`,
+`config.diff`, `config.propose`, `config.patch`, `config.create_layer`,
+`config.apply`, `onboard.config`, `migrate.config_preview`, and
+`migrate.config_apply`.
 
 Use TOML for human-authored config layers and plain equipment-specific config
 handoff records. Use JSON-compatible objects for schemas, effective-config
@@ -84,8 +83,8 @@ output.
 - Scripts/tools: `tools/agent_equipment_config.py` computes effective config,
   config diff, validation diagnostics, authoring proposals and plans,
   migration previews, and projection classification for the v0 slice.
-- MCP/tools: typed MCP parity is required for the safe CLI/runtime slice and
-  Config Authoring Surfaces before #23 closes.
+- MCP/tools: typed MCP parity is required for the current operation families
+  before #23 closes.
 - Load contract: callers discover paths, select sources, order same-precedence
   inputs, register schema fragments, and pass explicit layer or handoff paths
   into the runtime; the runtime preserves layer, source category, source path,
