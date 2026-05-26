@@ -3530,26 +3530,18 @@ class AgentEquipmentConfigTests(unittest.TestCase):
                 mode = "dry-run"
                 external_disclosure = "blocked"
             """)
-            plan_stdout = agent_equipment_config.run(
-                [
-                    "config",
-                    "patch",
-                    "--layer",
-                    str(layer),
-                    "--source-target",
-                    str(layer),
-                    "--issue-tracker-ops",
-                    "--set",
-                    "issue_tracker_ops.mode=execute",
-                    "--set",
-                    "issue_tracker_ops.external_disclosure=allowed",
-                    "--plan-authority",
-                    "operator",
+            plan = agent_equipment_config.config_patch_plan(
+                [layer],
+                [agent_equipment_config.issue_tracker_ops_fragment()],
+                source_target=layer,
+                changes=[
+                    {"path": "issue_tracker_ops.mode", "value": "execute"},
+                    {"path": "issue_tracker_ops.external_disclosure", "value": "allowed"},
                 ],
-                stdout_text=True,
+                plan_authority="operator",
             )
             plan_path = root / "patch-plan.json"
-            plan_path.write_text(plan_stdout, encoding="utf-8")
+            plan_path.write_text(json.dumps(plan), encoding="utf-8")
 
             apply_stdout = agent_equipment_config.run(
                 [
@@ -3652,8 +3644,6 @@ class AgentEquipmentConfigTests(unittest.TestCase):
                 ],
                 stdout_text=True,
             )
-            plan_path = root / "patch-plan.json"
-            plan_path.write_text(plan_stdout, encoding="utf-8")
             layer.write_text(layer.read_text(encoding="utf-8").replace('mode = "dry-run"', 'mode = "execute"'), encoding="utf-8")
             stdout = io.StringIO()
 
@@ -3662,10 +3652,11 @@ class AgentEquipmentConfigTests(unittest.TestCase):
                     "config",
                     "apply",
                     "--plan",
-                    str(plan_path),
+                    "-",
                     "--apply-authority",
                     "operator",
                 ],
+                stdin=io.StringIO(plan_stdout),
                 stdout=stdout,
             )
             current_text = layer.read_text(encoding="utf-8")
@@ -3707,12 +3698,11 @@ class AgentEquipmentConfigTests(unittest.TestCase):
                 ],
                 stdout_text=True,
             )
-            plan_path = root / "patch-plan.json"
-            plan_path.write_text(plan_stdout, encoding="utf-8")
             stdout = io.StringIO()
 
             exit_code = agent_equipment_config.run(
-                ["config", "apply", "--plan", str(plan_path)],
+                ["config", "apply", "--plan", "-"],
+                stdin=io.StringIO(plan_stdout),
                 stdout=stdout,
             )
 
@@ -3755,8 +3745,6 @@ class AgentEquipmentConfigTests(unittest.TestCase):
             for change in plan["change_payload"]["changes"]:
                 if change["path"] == "issue_tracker_ops.mode":
                     change["after"] = "bogus"
-            plan_path = root / "tampered-plan.json"
-            plan_path.write_text(json.dumps(plan), encoding="utf-8")
             stdout = io.StringIO()
 
             exit_code = agent_equipment_config.run(
@@ -3764,10 +3752,11 @@ class AgentEquipmentConfigTests(unittest.TestCase):
                     "config",
                     "apply",
                     "--plan",
-                    str(plan_path),
+                    "-",
                     "--apply-authority",
                     "operator",
                 ],
+                stdin=io.StringIO(json.dumps(plan)),
                 stdout=stdout,
             )
             current_text = layer.read_text(encoding="utf-8")
@@ -4160,27 +4149,23 @@ class AgentEquipmentConfigTests(unittest.TestCase):
                 mode = "dry-run"
                 external_disclosure = "blocked"
             """)
-            plan_path = root / "generated-plan.json"
-            plan_path.write_text(
-                agent_equipment_config.run(
-                    [
-                        "config",
-                        "patch",
-                        "--layer",
-                        str(generated),
-                        "--source-target",
-                        str(generated),
-                        "--issue-tracker-ops",
-                        "--set",
-                        "issue_tracker_ops.mode=execute",
-                        "--set",
-                        "issue_tracker_ops.external_disclosure=allowed",
-                        "--plan-authority",
-                        "operator",
-                    ],
-                    stdout_text=True,
-                ),
-                encoding="utf-8",
+            plan_stdout = agent_equipment_config.run(
+                [
+                    "config",
+                    "patch",
+                    "--layer",
+                    str(generated),
+                    "--source-target",
+                    str(generated),
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=execute",
+                    "--set",
+                    "issue_tracker_ops.external_disclosure=allowed",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
             )
             stdout = io.StringIO()
 
@@ -4189,10 +4174,11 @@ class AgentEquipmentConfigTests(unittest.TestCase):
                     "config",
                     "apply",
                     "--plan",
-                    str(plan_path),
+                    "-",
                     "--apply-authority",
                     "operator",
                 ],
+                stdin=io.StringIO(plan_stdout),
                 stdout=stdout,
             )
 
