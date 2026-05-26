@@ -284,15 +284,14 @@ def migration_previews_for_layer(layer: Layer, fragment: SchemaFragment) -> list
             for old_name, new_name in migration.field_renames.items()
             if old_name in section
         ]
-        if not migration.field_renames:
-            changes.append(
-                {
-                    "operation": "update fragment version",
-                    "path": f"agent_equipment_config.fragment_versions.{fragment.namespace}",
-                    "from": source_version,
-                    "to": fragment.version,
-                }
-            )
+        changes.append(
+            {
+                "operation": "update fragment version",
+                "path": f"agent_equipment_config.fragment_versions.{fragment.namespace}",
+                "from": source_version,
+                "to": fragment.version,
+            }
+        )
         previews.append(
             {
                 "namespace": fragment.namespace,
