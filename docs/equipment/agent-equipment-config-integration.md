@@ -191,6 +191,33 @@ python3.14 tools/issue_tracker_ops.py comment \
 Plain handoffs are session overrides. They are useful for continuity and
 diagnostics, but they are not durable project policy.
 
+### Authoring reviewed changes
+
+Use the authoring CLI when a Wielder needs to change Config through the
+reviewed plan contract:
+
+1. Run `config propose` to describe the intended change without selecting a
+   source.
+2. Run `config patch` for an existing eligible layer, or `create-layer` for a
+   new eligible layer, and review the JSON artifact.
+3. Run `config apply --plan PATH --apply-authority operator`, or pass the
+   reviewed artifact on stdin with `--plan -`.
+
+The only eligible non-migration authoring targets are `committed durable
+config` and `local-only operator config`. A committed target becomes project
+truth after a successful apply and belongs in normal project review. A
+local-only operator target remains local evidence and must not be represented
+as durable project policy.
+
+The reviewed plan artifact carries the selected source target, source category,
+source identity, precondition fingerprint, authority evidence, validation
+result, virtual post-change effective Config, refusal codes, durability
+classification, and rollback stance. `config apply` rechecks those gates before
+writing. Stale sources, missing authority, ineligible categories, untrusted
+sources, invalid planned source shapes, unsafe virtual Config, direct secret
+values, provider-metadata patch paths, and provider mutation attempts refuse
+without changing sources.
+
 ## Outfitter path
 
 Outfitters decide where a harness or bundle discovers inputs and exposes Config

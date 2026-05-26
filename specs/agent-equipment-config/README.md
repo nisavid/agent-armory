@@ -270,10 +270,10 @@ target is a fluent CLI with MCP parity:
 | Resolve/read/explain/trace | `config resolve` | `config.resolve` |
 | Validate | `config validate` | `config.validate` |
 | Compare | `config diff` | `config.diff` |
-| Authoring proposal | `config propose` | Deferred |
-| Authoring patch plan | `config patch` | Deferred |
-| Authoring create-layer plan | `create-layer` | Deferred |
-| Authoring apply | `config apply` | Deferred |
+| Authoring proposal | `config propose` | Deferred authoring parity |
+| Authoring patch plan | `config patch` | Deferred authoring parity |
+| Authoring create-layer plan | `create-layer` | Deferred authoring parity |
+| Authoring apply | `config apply` | Deferred authoring parity |
 | Onboard/revise planning | `onboard config` | `onboard.config` |
 | Migration preview | `migrate config preview` | `migrate.config_preview` |
 | Migration apply | `migrate config apply` | `migrate.config_apply` |

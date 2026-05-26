@@ -343,6 +343,156 @@ authority. Re-onboarding should revise the selected section and preserve
 unselected sections unless a policy owner deliberately changes them. Unknown
 section names fail before emitting a plan.
 
+## Authoring CLI workflow
+
+Use the authoring CLI when a Smith or Wielder needs to propose or apply a
+non-migration Config source change. The workflow is proposal, reviewed plan,
+then apply. The proposal and plan commands write no sources. `config apply` is
+the only non-migration authoring command that writes local TOML, and it accepts
+only reviewed `patch-layer` or `create-layer` JSON artifacts from `--plan PATH`
+or `--plan -`.
+
+This workflow documents current CLI/runtime behavior. It does not promote MCP
+authoring parity, revision writes, or richer audit/query behavior into the #23
+blocking path; those surfaces remain deferred unless the Config PRD scope
+changes.
+
+Start with a target-agnostic proposal:
+
+```bash
+python3.14 tools/agent_equipment_config.py config propose \
+  --issue-tracker-ops \
+  --set issue_tracker_ops.mode=execute \
+  --set issue_tracker_ops.external_disclosure=allowed \
+  --rationale "enable reviewed live tracker mutation"
+```
+
+The proposal names affected fields and possible target categories, but it does
+not select a source:
+
+```json
+{
+  "operation": "config propose",
+  "plan_surface": "proposal",
+  "source_target": null,
+  "possible_target_categories": [
+    "committed durable config",
+    "local-only operator config"
+  ],
+  "refusal_codes": []
+}
+```
+
+After review, select one eligible authored source and emit a reviewed
+`patch-layer` plan artifact. A committed durable Config target is project truth
+after a successful apply:
+
+```bash
+python3.14 tools/agent_equipment_config.py config patch \
+  --layer configs/agent-equipment.toml \
+  --source-target configs/agent-equipment.toml \
+  --issue-tracker-ops \
+  --set issue_tracker_ops.mode=execute \
+  --set issue_tracker_ops.external_disclosure=allowed \
+  --plan-authority operator \
+  --rationale "enable reviewed live tracker mutation" \
+  > /tmp/config-patch-plan.json
+```
+
+A local-only operator target follows the same reviewed plan contract, but the
+source category and audit evidence classify it as local evidence, not project
+truth. Set `OPERATOR_CONFIG` to a caller-discovered local-only directory and do
+not commit it as project policy:
+
+```bash
+python3.14 tools/agent_equipment_config.py create-layer \
+  --destination "$OPERATOR_CONFIG/agent-equipment.toml" \
+  --layer-name "user/operator local overrides" \
+  --source-category "local-only operator config" \
+  --issue-tracker-ops \
+  --set issue_tracker_ops.mode=dry-run \
+  --set issue_tracker_ops.external_disclosure=blocked \
+  --plan-authority operator \
+  > /tmp/config-create-layer-plan.json
+```
+
+Plan artifacts are review records and apply inputs. They include the plan kind,
+source target, source category, source identity, precondition fingerprint, diff
+or create payload, authority evidence, validation result, virtual post-change
+effective Config, audit preview, refusal codes, durability classification, and
+rollback stance.
+
+Apply a reviewed plan from a file:
+
+```bash
+python3.14 tools/agent_equipment_config.py config apply \
+  --plan /tmp/config-patch-plan.json \
+  --apply-authority operator
+```
+
+Apply can also read the reviewed plan from stdin:
+
+```bash
+python3.14 tools/agent_equipment_config.py create-layer \
+  --destination "$OPERATOR_CONFIG/agent-equipment.toml" \
+  --layer-name "user/operator local overrides" \
+  --source-category "local-only operator config" \
+  --issue-tracker-ops \
+  --set issue_tracker_ops.mode=dry-run \
+  --set issue_tracker_ops.external_disclosure=blocked \
+  --plan-authority operator |
+python3.14 tools/agent_equipment_config.py config apply \
+  --plan - \
+  --apply-authority operator
+```
+
+Successful apply output records mutation audit evidence:
+
+```json
+{
+  "operation": "config apply",
+  "plan_kind": "patch-layer",
+  "applied": true,
+  "result": "applied",
+  "refusal_codes": [],
+  "audit_records": [
+    {
+      "action": "config authoring apply mutation",
+      "result": "applied",
+      "source_artifact_durability": "durable project evidence",
+      "project_truth_after_apply": true,
+      "rollback": "atomic source write completed; rollback by reverting committed config or restoring the local operator file"
+    }
+  ]
+}
+```
+
+Refusal output uses stable codes so tools can route failures without parsing
+prose. For example, a generated cache target refuses before any write:
+
+```json
+{
+  "operation": "config patch",
+  "plan_kind": "patch-layer",
+  "source_category": "generated cache or state",
+  "refusal_codes": ["source_category_ineligible"],
+  "audit_preview": {
+    "result": "refused",
+    "project_truth_after_apply": false,
+    "rollback": "no source write has occurred; apply rechecks the reviewed plan before mutation"
+  }
+}
+```
+
+Secret-reference authoring may write a whole pointer object in an eligible
+authored Config layer, such as `{"kind":"env","name":"GH_TOKEN"}`. Config
+redacts the provider-local name in CLI output. Direct secret values, value
+payloads inside a secret-reference object, and nested provider-metadata edits
+such as `issue_tracker_ops.github_token.name=GH_TOKEN` refuse with
+`secret_boundary_violation`. Config does not perform provider lookup,
+authentication, secret creation, rotation, deletion, or provider configuration
+mutation.
+
 ## Edit and mutation boundaries
 
 Use the edit-boundary contract when a Smith designs a Config-aware source edit
