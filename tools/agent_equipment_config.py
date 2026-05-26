@@ -617,9 +617,20 @@ def toml_item_sort_key(item: tuple[str, Any]) -> tuple[int, str]:
 def render_toml_document(document: dict[str, Any]) -> str:
     lines: list[str] = []
 
-    def render_table(path: list[str], table: dict[str, Any]) -> None:
+    def is_table_array(value: Any) -> bool:
+        return isinstance(value, list) and bool(value) and all(isinstance(item, dict) for item in value)
+
+    def render_table(path: list[str], table: dict[str, Any], *, header: str = "table") -> None:
         scalar_items = sorted(
-            ((key, value) for key, value in table.items() if not isinstance(value, dict)),
+            (
+                (key, value)
+                for key, value in table.items()
+                if not isinstance(value, dict) and not is_table_array(value)
+            ),
+            key=toml_item_sort_key,
+        )
+        array_table_items = sorted(
+            ((key, value) for key, value in table.items() if is_table_array(value)),
             key=toml_item_sort_key,
         )
         child_items = sorted(
@@ -629,9 +640,16 @@ def render_toml_document(document: dict[str, Any]) -> str:
         if path:
             if lines and lines[-1] != "\n":
                 lines.append("\n")
-            lines.append(f"[{'.'.join(toml_key(part) for part in path)}]\n")
+            table_path = ".".join(toml_key(part) for part in path)
+            if header == "array":
+                lines.append(f"[[{table_path}]]\n")
+            else:
+                lines.append(f"[{table_path}]\n")
         for key, value in scalar_items:
             lines.append(f"{toml_key(key)} = {toml_value(value)}\n")
+        for key, values in array_table_items:
+            for value in values:
+                render_table([*path, key], value, header="array")
         for key, value in child_items:
             render_table([*path, key], value)
 

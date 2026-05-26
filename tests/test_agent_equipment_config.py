@@ -3646,6 +3646,7 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         payload = json.loads(apply_stdout)
         reparsed = agent_equipment_config.tomllib.loads(applied_text)
         self.assertTrue(payload["applied"])
+        self.assertIn("[[tool.samples]]", applied_text)
         self.assertEqual(reparsed["tool"]["samples"][0]["name"], "first")
         self.assertTrue(reparsed["tool"]["samples"][0]["enabled"])
         self.assertEqual(reparsed["issue_tracker_ops"]["mode"], "execute")
