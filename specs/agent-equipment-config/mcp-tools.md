@@ -552,7 +552,17 @@ Output schema:
     "refusal_codes": {"type": "array", "items": {"type": "string"}},
     "validation_result": {"type": "object"},
     "audit_records": {"type": "array", "items": {"type": "object"}}
-  }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"result": {"const": "applied"}}},
+      "then": {"properties": {"applied": {"const": true}}}
+    },
+    {
+      "if": {"properties": {"result": {"not": {"const": "applied"}}}},
+      "then": {"properties": {"applied": {"const": false}}}
+    }
+  ]
 }
 ```
 
