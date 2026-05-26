@@ -464,7 +464,7 @@ def fallback_projection_request(record: dict, repo: str) -> RequestSpec:
         raise UsageError("fallback record endpoint does not match --repo")
     if endpoint.endswith("/comments"):
         return RequestSpec("GET", f"{endpoint}?per_page=100", paginate=True)
-    if endpoint.endswith("/sub_issue") or endpoint.endswith("/sub_issues/priority"):
+    if endpoint.endswith("/sub_issue") or endpoint.endswith("/sub_issues") or endpoint.endswith("/sub_issues/priority"):
         issue_path = endpoint.rsplit("/", 1)[0]
         if issue_path.endswith("/sub_issues"):
             issue_path = issue_path.rsplit("/", 1)[0]
