@@ -3785,6 +3785,62 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertIn('mode = "dry-run"', current_text)
         self.assertIn('external_disclosure = "blocked"', current_text)
 
+    def test_cli_config_apply_refuses_null_authoring_value_before_render(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            plan = json.loads(agent_equipment_config.run(
+                [
+                    "config",
+                    "patch",
+                    "--layer",
+                    str(layer),
+                    "--source-target",
+                    str(layer),
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=execute",
+                    "--set",
+                    "issue_tracker_ops.external_disclosure=allowed",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            ))
+            for change in plan["change_payload"]["changes"]:
+                if change["path"] == "issue_tracker_ops.external_disclosure":
+                    change["after"] = None
+            stdout = io.StringIO()
+
+            exit_code = agent_equipment_config.run(
+                [
+                    "config",
+                    "apply",
+                    "--plan",
+                    "-",
+                    "--apply-authority",
+                    "operator",
+                ],
+                stdin=io.StringIO(json.dumps(plan)),
+                stdout=stdout,
+            )
+            current_text = layer.read_text(encoding="utf-8")
+
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(exit_code, 1)
+        self.assertIn("validation_failed", payload["refusal_codes"])
+        self.assertIn("partial_write_blocked", payload["refusal_codes"])
+        self.assertFalse(payload["applied"])
+        self.assertIn('external_disclosure = "blocked"', current_text)
+
     def test_cli_config_apply_refuses_semantic_safety_regression(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
