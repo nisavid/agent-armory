@@ -968,6 +968,75 @@ class IssueTrackerOpsTests(unittest.TestCase):
         self.assertEqual(payload["failure"]["class"], "secondary-rate-limit")
         self.assertTrue(payload["failure"]["retryable"])
 
+    def test_execute_failure_does_not_classify_issue_number_4030_as_permission(self):
+        gh = FakeGh(
+            [
+                subprocess.CompletedProcess(["gh"], 0, stdout="[]", stderr=""),
+                subprocess.CompletedProcess(
+                    ["gh"],
+                    1,
+                    stdout='{"url":"/repos/OWNER/REPO/issues/4030/comments"}',
+                    stderr="connection reset by peer",
+                ),
+            ]
+        )
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "comment",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "4030",
+                "--body",
+                "Validation note",
+                "--mutation-policy-ref",
+                "issue-17-approved-plan",
+                "--execute",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(stderr, "")
+        payload = json.loads(stdout)
+        self.assertEqual(payload["failure"]["class"], "outage")
+        self.assertTrue(payload["failure"]["retryable"])
+
+    def test_execute_failure_fallback_record_omits_absent_idempotency_key(self):
+        gh = FakeGh(
+            [
+                subprocess.CompletedProcess(["gh"], 0, stdout="[]", stderr=""),
+                subprocess.CompletedProcess(["gh"], 1, stdout="", stderr="secondary rate limit exceeded"),
+            ]
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fallback_path = Path(tmpdir) / "issue-17-fallback.json"
+
+            exit_code, stdout, stderr = self.run_cli(
+                [
+                    "comment",
+                    "--repo",
+                    "OWNER/REPO",
+                    "--issue-number",
+                    "11",
+                    "--body",
+                    "Validation note",
+                    "--mutation-policy-ref",
+                    "issue-17-approved-plan",
+                    "--fallback-record-file",
+                    str(fallback_path),
+                    "--execute",
+                ],
+                gh=gh,
+            )
+
+            self.assertEqual(exit_code, 1)
+            self.assertEqual(stderr, "")
+            record = json.loads(fallback_path.read_text(encoding="utf-8"))
+
+        self.assertNotIn("idempotency_key", record)
+
     def test_reconcile_fallback_retire_record_after_projected_comment_is_verified(self):
         gh = FakeGh(
             [
@@ -1725,6 +1794,36 @@ class IssueTrackerOpsTests(unittest.TestCase):
         payload = json.loads(stdout)
         self.assertEqual(payload["result"]["status"], "idempotent_skip")
         self.assertEqual(payload["result"]["reason"], "blocked-by relation already exists")
+
+    def test_remove_blocked_by_execute_skips_when_relation_already_absent(self):
+        gh = FakeGh(
+            [
+                subprocess.CompletedProcess(["gh"], 0, stdout='{"id": 98765}', stderr=""),
+                subprocess.CompletedProcess(["gh"], 0, stdout="[]", stderr=""),
+            ]
+        )
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "remove-blocked-by",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "10",
+                "--blocking-issue-number",
+                "11",
+                "--mutation-policy-ref",
+                "issue-17-approved-plan",
+                "--execute",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(len(gh.calls), 2)
+        payload = json.loads(stdout)
+        self.assertEqual(payload["result"]["status"], "idempotent_skip")
+        self.assertEqual(payload["result"]["reason"], "blocked-by relation is already absent")
 
     def test_list_blocking_dry_run_uses_outgoing_dependency_relation(self):
         gh = FakeGh()
