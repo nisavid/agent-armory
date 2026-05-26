@@ -1334,8 +1334,16 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(rewritten_text, original_text)
         self.assertEqual(result["safety_status"], "stale")
         self.assertEqual(
-            result["migration_previews"][0]["changes"][0],
-            {"from": "issue_tracker_ops.operation_mode", "to": "issue_tracker_ops.mode", "value": "dry-run"},
+            result["migration_previews"][0]["changes"],
+            [
+                {"from": "issue_tracker_ops.operation_mode", "to": "issue_tracker_ops.mode", "value": "dry-run"},
+                {
+                    "operation": "update fragment version",
+                    "path": "agent_equipment_config.fragment_versions.issue_tracker_ops",
+                    "from": 1,
+                    "to": 2,
+                },
+            ],
         )
         self.assertEqual(result["migration_previews"][0]["audit_preview"]["action"], "migration apply preview")
         self.assertFalse(result["migration_previews"][0]["audit_preview"]["would_rewrite_source"])

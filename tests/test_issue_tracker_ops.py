@@ -2745,6 +2745,18 @@ class IssueTrackerOpsTests(unittest.TestCase):
         self.assertNotIn("state", payload["label_axes"])
         self.assertEqual(payload["config"]["effective_config"]["safety_status"], "usable")
 
+    def test_configured_label_axes_falls_back_when_effective_config_shape_is_malformed(self):
+        axes = issue_tracker_ops.configured_label_axes(
+            {
+                "effective_config": {
+                    "safety_status": "usable",
+                    "effective": [],
+                }
+            }
+        )
+
+        self.assertIs(axes, issue_tracker_ops.LABEL_AXES)
+
     def test_audit_labels_execute_uses_configured_label_axes_for_findings(self):
         issues = [
             {

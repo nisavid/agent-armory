@@ -494,7 +494,10 @@ def configured_label_axes(config: dict | None) -> tuple[LabelAxis, ...]:
     effective_config = config.get("effective_config")
     if not isinstance(effective_config, dict) or effective_config.get("safety_status") != "usable":
         return LABEL_AXES
-    issue_ops = effective_config.get("effective", {}).get("issue_tracker_ops")
+    effective = effective_config.get("effective")
+    if not isinstance(effective, dict):
+        return LABEL_AXES
+    issue_ops = effective.get("issue_tracker_ops")
     if not isinstance(issue_ops, dict):
         return LABEL_AXES
     label_axes = issue_ops.get("label_axes")
