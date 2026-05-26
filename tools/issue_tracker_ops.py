@@ -9,6 +9,7 @@ import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Callable, TextIO
+from urllib.parse import urlencode
 
 try:
     from . import agent_equipment_config, issue_tracker_core, issue_tracker_safety
@@ -21,7 +22,16 @@ except ImportError:
 DEFAULT_API_VERSION = "2026-03-10"
 DEFAULT_ACCEPT = "application/vnd.github+json"
 JSONValue = dict | list | str | int | float | bool | None
-MUTATION_OPERATIONS = {"create-issue", "update-issue", "comment", "add-blocked-by", "remove-blocked-by"}
+MUTATION_OPERATIONS = {
+    "create-issue",
+    "update-issue",
+    "comment",
+    "add-blocked-by",
+    "remove-blocked-by",
+    "add-sub-issue",
+    "remove-sub-issue",
+    "reprioritize-sub-issue",
+}
 CONFIG_EXECUTE_ALLOWED_STATES = {"allowed", "warning"}
 CONFIGURED_EXECUTE_CAPABILITY = "configured_execute_mode"
 TRACKER_READ_CAPABILITY = "tracker_read"
@@ -116,6 +126,13 @@ def issue_endpoint(repo: str, suffix: str) -> str:
     return f"repos/{owner}/{name}/{suffix.lstrip('/')}"
 
 
+def query_suffix(base: str, params: dict[str, object]) -> str:
+    filtered = {key: value for key, value in params.items() if value not in (None, "", [], ())}
+    if not filtered:
+        return base
+    return f"{base}?{urlencode(filtered)}"
+
+
 def read_body(args: argparse.Namespace) -> str | None:
     body = getattr(args, "body", None)
     body_file = getattr(args, "body_file", None)
@@ -193,9 +210,22 @@ def parse_json_output(completed: subprocess.CompletedProcess[str]) -> JSONValue:
         return output
 
 
-def summarize_result(result: JSONValue) -> JSONValue:
+def summarize_user(user: object) -> dict | object:
+    if isinstance(user, dict) and isinstance(user.get("login"), str):
+        return {"login": user["login"]}
+    return user
+
+
+def summarize_milestone(milestone: object) -> dict | object:
+    if not isinstance(milestone, dict):
+        return milestone
+    keep_keys = ["id", "number", "html_url", "title", "state", "due_on"]
+    return {key: milestone[key] for key in keep_keys if key in milestone}
+
+
+def summarize_result(result: JSONValue, *, include_body: bool = False) -> JSONValue:
     if isinstance(result, list):
-        return [summarize_result(item) for item in result]
+        return [summarize_result(item, include_body=include_body) for item in result]
     if not isinstance(result, dict):
         return result
     keep_keys = [
@@ -206,11 +236,30 @@ def summarize_result(result: JSONValue) -> JSONValue:
         "title",
         "state",
         "state_reason",
+        "comments",
+        "created_at",
+        "updated_at",
+        "closed_at",
+        "locked",
+        "active_lock_reason",
+        "author_association",
         "parent_issue_url",
         "issue_dependencies_summary",
         "sub_issues_summary",
     ]
     summary = {key: result[key] for key in keep_keys if key in result}
+    if include_body and "body" in result:
+        summary["body"] = result["body"]
+    if "labels" in result:
+        summary["labels"] = issue_tracker_safety.issue_labels(result)
+    if "assignees" in result:
+        summary["assignees"] = issue_tracker_safety.issue_assignees(result)
+    if "milestone" in result:
+        summary["milestone"] = summarize_milestone(result["milestone"])
+    if "user" in result:
+        summary["user"] = summarize_user(result["user"])
+    if "closed_by" in result:
+        summary["closed_by"] = summarize_user(result["closed_by"])
     return summary or result
 
 
@@ -227,6 +276,12 @@ def parse_request_output(completed: subprocess.CompletedProcess[str], request: R
     result = parse_json_output(completed)
     if request.paginate:
         return combine_paginated_result(result)
+    return result
+
+
+def postprocess_result(operation: str, args: argparse.Namespace, result: JSONValue) -> JSONValue:
+    if operation == "list-issues" and isinstance(result, list) and not args.include_pull_requests:
+        return [item for item in result if not (isinstance(item, dict) and "pull_request" in item)]
     return result
 
 
@@ -288,6 +343,33 @@ def issue_read_preflight_request(args: argparse.Namespace) -> RequestSpec:
     return RequestSpec("GET", issue_endpoint(args.repo, f"issues/{args.issue_number}"))
 
 
+def read_issue_request(args: argparse.Namespace) -> RequestSpec:
+    return RequestSpec("GET", issue_endpoint(args.repo, f"issues/{args.issue_number}"))
+
+
+def list_issues_request(args: argparse.Namespace) -> RequestSpec:
+    return RequestSpec(
+        "GET",
+        issue_endpoint(
+            args.repo,
+            query_suffix(
+                "issues",
+                {
+                    "state": args.issue_state,
+                    "per_page": args.per_page,
+                    "labels": ",".join(args.label) if args.label else None,
+                    "assignee": args.assignee,
+                    "milestone": args.milestone,
+                    "sort": args.sort,
+                    "direction": args.direction,
+                    "since": args.since,
+                },
+            ),
+        ),
+        paginate=args.paginate,
+    )
+
+
 def blocking_issue_id_request(args: argparse.Namespace) -> RequestSpec | None:
     if args.blocking_issue_id is not None:
         return None
@@ -317,6 +399,46 @@ def list_dependencies_request(args: argparse.Namespace, relation: str) -> Reques
     )
 
 
+def parent_issue_request(args: argparse.Namespace) -> RequestSpec:
+    return RequestSpec("GET", issue_endpoint(args.repo, f"issues/{args.issue_number}/parent"))
+
+
+def list_sub_issues_request(args: argparse.Namespace) -> RequestSpec:
+    return RequestSpec(
+        "GET",
+        issue_endpoint(args.repo, f"issues/{args.issue_number}/sub_issues"),
+        paginate=getattr(args, "paginate", False),
+    )
+
+
+def sub_issue_preflight_request(args: argparse.Namespace) -> RequestSpec:
+    return RequestSpec("GET", issue_endpoint(args.repo, f"issues/{args.issue_number}/sub_issues"), paginate=True)
+
+
+def sub_issue_id_request(args: argparse.Namespace, number: int) -> RequestSpec:
+    return RequestSpec("GET", issue_endpoint(args.repo, f"issues/{number}"), jq=".id")
+
+
+def add_sub_issue_request(args: argparse.Namespace, sub_issue_id: int | str) -> RequestSpec:
+    body: dict[str, object] = {"sub_issue_id": int(sub_issue_id)}
+    if getattr(args, "replace_parent", False):
+        body["replace_parent"] = True
+    return RequestSpec("POST", issue_endpoint(args.repo, f"issues/{args.issue_number}/sub_issues"), body)
+
+
+def remove_sub_issue_request(args: argparse.Namespace, sub_issue_id: int | str) -> RequestSpec:
+    return RequestSpec(
+        "DELETE",
+        issue_endpoint(args.repo, f"issues/{args.issue_number}/sub_issue"),
+        {"sub_issue_id": int(sub_issue_id)},
+    )
+
+
+def reprioritize_sub_issue_request(args: argparse.Namespace, sub_issue_id: int | str, position: dict[str, int]) -> RequestSpec:
+    body = {"sub_issue_id": int(sub_issue_id), **position}
+    return RequestSpec("PATCH", issue_endpoint(args.repo, f"issues/{args.issue_number}/sub_issues/priority"), body)
+
+
 def dependency_preflight_request(args: argparse.Namespace) -> RequestSpec:
     return RequestSpec(
         "GET",
@@ -342,6 +464,11 @@ def fallback_projection_request(record: dict, repo: str) -> RequestSpec:
         raise UsageError("fallback record endpoint does not match --repo")
     if endpoint.endswith("/comments"):
         return RequestSpec("GET", f"{endpoint}?per_page=100", paginate=True)
+    if endpoint.endswith("/sub_issue") or endpoint.endswith("/sub_issues/priority"):
+        issue_path = endpoint.rsplit("/", 1)[0]
+        if issue_path.endswith("/sub_issues"):
+            issue_path = issue_path.rsplit("/", 1)[0]
+        return RequestSpec("GET", f"{issue_path}/sub_issues", paginate=True)
     if "/dependencies/blocked_by" in endpoint:
         issue_path = endpoint.split("/dependencies/blocked_by", 1)[0]
         return RequestSpec("GET", f"{issue_path}/dependencies/blocked_by", paginate=True)
@@ -497,6 +624,8 @@ def planned_safety_preflight(args: argparse.Namespace) -> list[dict]:
         return [compact_request(issue_read_preflight_request(args))]
     if args.operation in {"add-blocked-by", "remove-blocked-by"}:
         return [compact_request(dependency_preflight_request(args))]
+    if args.operation in {"add-sub-issue", "remove-sub-issue", "reprioritize-sub-issue"}:
+        return [compact_request(sub_issue_preflight_request(args))]
     return []
 
 
@@ -544,6 +673,72 @@ def dry_run_dependency_payload(args: argparse.Namespace, *, config: dict | None 
     )
     payload = dry_run_payload(args.operation, mutation_request, config=config, args=args)
     payload["steps"] = [compact_request(resolve_request), compact_request(mutation_request)]
+    return payload
+
+
+def sub_issue_id_placeholder(args: argparse.Namespace) -> int | str:
+    if getattr(args, "sub_issue_id", None) is not None:
+        return args.sub_issue_id
+    return f"<resolved from issue #{args.sub_issue_number}>"
+
+
+def reprioritize_position_placeholder(args: argparse.Namespace) -> dict[str, int | str]:
+    if getattr(args, "after_id", None) is not None:
+        return {"after_id": args.after_id}
+    if getattr(args, "before_id", None) is not None:
+        return {"before_id": args.before_id}
+    if getattr(args, "after_issue_number", None) is not None:
+        return {"after_id": f"<resolved from issue #{args.after_issue_number}>"}
+    return {"before_id": f"<resolved from issue #{args.before_issue_number}>"}
+
+
+def add_sub_issue_dry_run_body(args: argparse.Namespace, sub_issue_id: int | str) -> dict[str, object]:
+    body: dict[str, object] = {"sub_issue_id": sub_issue_id}
+    if getattr(args, "replace_parent", False):
+        body["replace_parent"] = True
+    return body
+
+
+def dry_run_sub_issue_payload(args: argparse.Namespace, *, config: dict | None = None) -> dict:
+    sub_issue_id = sub_issue_id_placeholder(args)
+    if args.operation == "add-sub-issue":
+        request = (
+            add_sub_issue_request(args, sub_issue_id)
+            if isinstance(sub_issue_id, int)
+            else RequestSpec(
+                "POST",
+                issue_endpoint(args.repo, f"issues/{args.issue_number}/sub_issues"),
+                add_sub_issue_dry_run_body(args, sub_issue_id),
+            )
+        )
+    elif args.operation == "remove-sub-issue":
+        request = (
+            remove_sub_issue_request(args, sub_issue_id)
+            if isinstance(sub_issue_id, int)
+            else RequestSpec(
+                "DELETE",
+                issue_endpoint(args.repo, f"issues/{args.issue_number}/sub_issue"),
+                {"sub_issue_id": sub_issue_id},
+            )
+        )
+    else:
+        position = reprioritize_position_placeholder(args)
+        request = RequestSpec(
+            "PATCH",
+            issue_endpoint(args.repo, f"issues/{args.issue_number}/sub_issues/priority"),
+            {"sub_issue_id": sub_issue_id, **position},
+        )
+    payload = dry_run_payload(args.operation, request, config=config, args=args)
+    steps = []
+    if getattr(args, "sub_issue_number", None) is not None:
+        steps.append(compact_request(sub_issue_id_request(args, args.sub_issue_number)))
+    for number_attr in ("after_issue_number", "before_issue_number"):
+        number = getattr(args, number_attr, None)
+        if number is not None:
+            steps.append(compact_request(sub_issue_id_request(args, number)))
+    if steps:
+        steps.append(compact_request(request))
+        payload["steps"] = steps
     return payload
 
 
@@ -1010,12 +1205,12 @@ def execute_request(
             payload["resolved"] = resolved
         write_json(stdout, payload)
         return completed.returncode
-    result = parse_request_output(completed, request)
+    result = postprocess_result(operation, args, parse_request_output(completed, request))
     payload = {
         "mode": "execute",
         "operation": operation,
         "request": compact_request(request),
-        "result": summarize_result(result),
+        "result": summarize_result(result, include_body=operation == "read-issue"),
     }
     if resolved is not None:
         payload["resolved"] = resolved
@@ -1069,6 +1264,142 @@ def resolve_blocking_issue_id(
         except ValueError as exc:
             raise UsageError("could not resolve blocking issue id from GitHub response") from exc
     return resolved, 0
+
+
+def resolve_issue_id(
+    args: argparse.Namespace,
+    issue_number: int,
+    *,
+    gh: Callable[..., subprocess.CompletedProcess[str]],
+    stdout: TextIO,
+    operation: str = "resolve-issue",
+) -> tuple[int | None, int]:
+    request = sub_issue_id_request(args, issue_number)
+    completed = call_gh(gh, request, api_version=args.api_version)
+    if completed.returncode != 0:
+        write_json(
+            stdout,
+            {
+                "mode": "execute",
+                "operation": operation,
+                "request": compact_request(request),
+                "error": {
+                    "returncode": completed.returncode,
+                    "stderr": completed.stderr.strip(),
+                },
+            },
+        )
+        return None, completed.returncode
+    resolved = parse_json_output(completed)
+    if isinstance(resolved, dict) and "id" in resolved:
+        resolved = resolved["id"]
+    try:
+        return int(str(resolved).strip()), 0
+    except (TypeError, ValueError) as exc:
+        raise UsageError("could not resolve issue id from GitHub response") from exc
+
+
+def resolve_sub_issue_inputs(
+    args: argparse.Namespace,
+    *,
+    gh: Callable[..., subprocess.CompletedProcess[str]],
+    stdout: TextIO,
+) -> tuple[dict | None, int]:
+    resolved: dict[str, int] = {}
+    if getattr(args, "sub_issue_id", None) is not None:
+        resolved["sub_issue_id"] = args.sub_issue_id
+    else:
+        issue_id, exit_code = resolve_issue_id(args, args.sub_issue_number, gh=gh, stdout=stdout)
+        if exit_code != 0 or issue_id is None:
+            return None, exit_code
+        resolved["sub_issue_id"] = issue_id
+
+    if getattr(args, "after_id", None) is not None:
+        resolved["after_id"] = args.after_id
+    elif getattr(args, "after_issue_number", None) is not None:
+        issue_id, exit_code = resolve_issue_id(args, args.after_issue_number, gh=gh, stdout=stdout)
+        if exit_code != 0 or issue_id is None:
+            return None, exit_code
+        resolved["after_id"] = issue_id
+
+    if getattr(args, "before_id", None) is not None:
+        resolved["before_id"] = args.before_id
+    elif getattr(args, "before_issue_number", None) is not None:
+        issue_id, exit_code = resolve_issue_id(args, args.before_issue_number, gh=gh, stdout=stdout)
+        if exit_code != 0 or issue_id is None:
+            return None, exit_code
+        resolved["before_id"] = issue_id
+    return resolved, 0
+
+
+def sub_issue_mutation_request(args: argparse.Namespace, resolved: dict[str, int]) -> RequestSpec:
+    if args.operation == "add-sub-issue":
+        return add_sub_issue_request(args, resolved["sub_issue_id"])
+    if args.operation == "remove-sub-issue":
+        return remove_sub_issue_request(args, resolved["sub_issue_id"])
+    position = {
+        key: resolved[key]
+        for key in ("after_id", "before_id")
+        if key in resolved
+    }
+    return reprioritize_sub_issue_request(args, resolved["sub_issue_id"], position)
+
+
+def preflight_sub_issue_mutation(
+    args: argparse.Namespace,
+    request: RequestSpec,
+    resolved: dict[str, int],
+    *,
+    gh: Callable[..., subprocess.CompletedProcess[str]],
+    config: dict | None,
+) -> tuple[int, dict] | None:
+    preflight_request = sub_issue_preflight_request(args)
+    completed = call_gh(gh, preflight_request, api_version=args.api_version)
+    if completed.returncode != 0:
+        failure = issue_tracker_safety.classify_failure(
+            completed.returncode,
+            completed.stderr.strip(),
+            completed.stdout.strip(),
+        )
+        return completed.returncode, safety_failure_payload(args, request, failure, config=config)
+    result = parse_request_output(completed, preflight_request)
+    if not isinstance(result, list):
+        return 1, preflight_response_invalid_payload(
+            args,
+            request,
+            preflight_request,
+            "sub-issue preflight expected a list response",
+            resolved=resolved,
+            config=config,
+        )
+    existing = issue_tracker_safety.find_issue_by_id(result, resolved["sub_issue_id"])
+    if args.operation == "add-sub-issue" and existing is not None:
+        return 0, idempotent_skip_payload(
+            args,
+            request,
+            preflight_request,
+            "sub-issue relation already exists",
+            existing=existing,
+            config=config,
+        )
+    if args.operation == "remove-sub-issue" and existing is None:
+        return 0, idempotent_skip_payload(
+            args,
+            request,
+            preflight_request,
+            "sub-issue relation is already absent",
+            config=config,
+        )
+    if args.operation == "reprioritize-sub-issue" and existing is None:
+        return 1, preflight_response_invalid_payload(
+            args,
+            request,
+            preflight_request,
+            "sub-issue relation must exist before reprioritization",
+            resolved=resolved,
+            config=config,
+        )
+    return None
 
 
 def add_common_flags(parser: argparse.ArgumentParser, *, mutation: bool = True) -> None:
@@ -1152,6 +1483,23 @@ def build_parser() -> argparse.ArgumentParser:
     comment.add_argument("--issue-number", required=True, type=positive_int)
     add_body_flags(comment, required=True)
 
+    read_issue = subparsers.add_parser("read-issue", help="Read one issue.")
+    add_common_flags(read_issue, mutation=False)
+    read_issue.add_argument("--issue-number", required=True, type=positive_int)
+
+    list_issues = subparsers.add_parser("list-issues", help="List repository issues.")
+    add_common_flags(list_issues, mutation=False)
+    list_issues.add_argument("--issue-state", choices=["open", "closed", "all"], default="open")
+    list_issues.add_argument("--label", action="append", default=[])
+    list_issues.add_argument("--assignee")
+    list_issues.add_argument("--milestone")
+    list_issues.add_argument("--sort", choices=["created", "updated", "comments"])
+    list_issues.add_argument("--direction", choices=["asc", "desc"])
+    list_issues.add_argument("--since")
+    list_issues.add_argument("--per-page", type=positive_int, default=100)
+    list_issues.add_argument("--paginate", action="store_true")
+    list_issues.add_argument("--include-pull-requests", action="store_true")
+
     add_dep = subparsers.add_parser("add-blocked-by", help="Mark an issue as blocked by another issue.")
     add_common_flags(add_dep)
     add_dep.add_argument("--issue-number", required=True, type=positive_int)
@@ -1176,6 +1524,42 @@ def build_parser() -> argparse.ArgumentParser:
     list_blocking.add_argument("--issue-number", required=True, type=positive_int)
     list_blocking.add_argument("--paginate", action="store_true")
 
+    parent = subparsers.add_parser("get-parent-issue", help="Get the parent issue for an issue.")
+    add_common_flags(parent, mutation=False)
+    parent.add_argument("--issue-number", required=True, type=positive_int)
+
+    list_sub_issues = subparsers.add_parser("list-sub-issues", help="List sub-issues for an issue.")
+    add_common_flags(list_sub_issues, mutation=False)
+    list_sub_issues.add_argument("--issue-number", required=True, type=positive_int)
+    list_sub_issues.add_argument("--paginate", action="store_true")
+
+    add_sub_issue = subparsers.add_parser("add-sub-issue", help="Attach a sub-issue to a parent issue.")
+    add_common_flags(add_sub_issue)
+    add_sub_issue.add_argument("--issue-number", required=True, type=positive_int)
+    add_sub_issue_target = add_sub_issue.add_mutually_exclusive_group(required=True)
+    add_sub_issue_target.add_argument("--sub-issue-id", type=positive_int)
+    add_sub_issue_target.add_argument("--sub-issue-number", type=positive_int)
+    add_sub_issue.add_argument("--replace-parent", action="store_true")
+
+    remove_sub_issue = subparsers.add_parser("remove-sub-issue", help="Remove a sub-issue from a parent issue.")
+    add_common_flags(remove_sub_issue)
+    remove_sub_issue.add_argument("--issue-number", required=True, type=positive_int)
+    remove_sub_issue_target = remove_sub_issue.add_mutually_exclusive_group(required=True)
+    remove_sub_issue_target.add_argument("--sub-issue-id", type=positive_int)
+    remove_sub_issue_target.add_argument("--sub-issue-number", type=positive_int)
+
+    reprioritize = subparsers.add_parser("reprioritize-sub-issue", help="Move a sub-issue in parent issue order.")
+    add_common_flags(reprioritize)
+    reprioritize.add_argument("--issue-number", required=True, type=positive_int)
+    reprioritize_target = reprioritize.add_mutually_exclusive_group(required=True)
+    reprioritize_target.add_argument("--sub-issue-id", type=positive_int)
+    reprioritize_target.add_argument("--sub-issue-number", type=positive_int)
+    reprioritize_position = reprioritize.add_mutually_exclusive_group(required=True)
+    reprioritize_position.add_argument("--after-id", type=positive_int)
+    reprioritize_position.add_argument("--after-issue-number", type=positive_int)
+    reprioritize_position.add_argument("--before-id", type=positive_int)
+    reprioritize_position.add_argument("--before-issue-number", type=positive_int)
+
     audit_labels = subparsers.add_parser("audit-labels", help="Audit issue labels against baseline axes.")
     add_common_flags(audit_labels, mutation=False)
     audit_labels.add_argument("--issue-state", choices=["open", "closed", "all"], default="open")
@@ -1199,6 +1583,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def build_primary_request(args: argparse.Namespace) -> RequestSpec:
+    if args.operation == "read-issue":
+        return read_issue_request(args)
+    if args.operation == "list-issues":
+        return list_issues_request(args)
     if args.operation == "create-issue":
         return create_issue_request(args)
     if args.operation == "update-issue":
@@ -1209,6 +1597,10 @@ def build_primary_request(args: argparse.Namespace) -> RequestSpec:
         return list_dependencies_request(args, "blocked_by")
     if args.operation == "list-blocking":
         return list_dependencies_request(args, "blocking")
+    if args.operation == "get-parent-issue":
+        return parent_issue_request(args)
+    if args.operation == "list-sub-issues":
+        return list_sub_issues_request(args)
     raise UsageError(f"{args.operation} requires dependency resolution")
 
 
@@ -1420,6 +1812,60 @@ def fallback_projection_status(record: dict, result: JSONValue) -> tuple[str, di
         if existing is None:
             return "projected", {"issue_id": issue_id, "relation": "absent"}
         return "not_projected", existing
+    if operation == "add-sub-issue":
+        if not isinstance(result, list):
+            return "unknown", None
+        body = request.get("body", {})
+        issue_id = body.get("sub_issue_id") if isinstance(body, dict) else None
+        try:
+            existing = issue_tracker_safety.find_issue_by_id(result, int(str(issue_id)))
+        except (TypeError, ValueError):
+            return "unknown", None
+        if existing is not None:
+            return "projected", existing
+        return "not_projected", None
+    if operation == "remove-sub-issue":
+        if not isinstance(result, list):
+            return "unknown", None
+        body = request.get("body", {})
+        issue_id = body.get("sub_issue_id") if isinstance(body, dict) else None
+        try:
+            issue_id_int = int(str(issue_id))
+        except (TypeError, ValueError):
+            return "unknown", None
+        existing = issue_tracker_safety.find_issue_by_id(result, issue_id_int)
+        if existing is None:
+            return "projected", {"issue_id": issue_id_int, "relation": "absent"}
+        return "not_projected", existing
+    if operation == "reprioritize-sub-issue":
+        if not isinstance(result, list):
+            return "unknown", None
+        body = request.get("body", {})
+        issue_id = body.get("sub_issue_id") if isinstance(body, dict) else None
+        try:
+            issues = [item for item in result if isinstance(item, dict)]
+            index = next(
+                position
+                for position, issue in enumerate(issues)
+                if int(str(issue.get("id"))) == int(str(issue_id))
+            )
+        except (StopIteration, TypeError, ValueError):
+            return "not_projected", None
+        after_id = body.get("after_id") if isinstance(body, dict) else None
+        before_id = body.get("before_id") if isinstance(body, dict) else None
+        if after_id is not None and index > 0:
+            try:
+                if int(str(issues[index - 1].get("id"))) == int(str(after_id)):
+                    return "projected", issue_tracker_safety.summarize_issue(issues[index])
+            except (TypeError, ValueError):
+                return "unknown", None
+        if before_id is not None and index < len(issues) - 1:
+            try:
+                if int(str(issues[index + 1].get("id"))) == int(str(before_id)):
+                    return "projected", issue_tracker_safety.summarize_issue(issues[index])
+            except (TypeError, ValueError):
+                return "unknown", None
+        return "not_projected", issue_tracker_safety.summarize_issue(issues[index])
     return "unknown", None
 
 
@@ -1589,6 +2035,42 @@ def run(
                 stdout=stdout,
                 stderr=stderr,
                 resolved={"blocking_issue_id": blocking_issue_id},
+                config=config,
+            )
+
+        if args.operation in {"add-sub-issue", "remove-sub-issue", "reprioritize-sub-issue"}:
+            if not args.execute:
+                write_json(stdout, dry_run_sub_issue_payload(args, config=config))
+                return 0
+            if mutation_policy_missing(args, config):
+                write_json(stdout, mutation_policy_refusal_payload(args.operation, dry_run_sub_issue_payload(args)["request"]))
+                return 1
+            if config_refuses_execute(config, args):
+                write_json(stdout, config_refusal_payload(args.operation, dry_run_sub_issue_payload(args)["request"], config))
+                return 1
+            resolved, exit_code = resolve_sub_issue_inputs(args, gh=gh, stdout=stdout)
+            if exit_code != 0 or resolved is None:
+                return exit_code
+            request = sub_issue_mutation_request(args, resolved)
+            preflight_result = preflight_sub_issue_mutation(
+                args,
+                request,
+                resolved,
+                gh=gh,
+                config=config,
+            )
+            if preflight_result is not None:
+                exit_code, payload = preflight_result
+                write_json(stdout, payload)
+                return exit_code
+            return execute_request(
+                args.operation,
+                request,
+                args=args,
+                gh=gh,
+                stdout=stdout,
+                stderr=stderr,
+                resolved=resolved,
                 config=config,
             )
 

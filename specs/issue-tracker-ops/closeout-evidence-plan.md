@@ -46,8 +46,9 @@ conclusion.
 - Remaining work is decomposed into child issues or explicitly linked
   follow-ups.
 - GitHub Issues-only MVP is delivered and validated.
-- MVP covers direct issue create, update, comment, and dependency operations
-  under provisional policy.
+- MVP covers direct issue read, list, create, update, close or reopen through
+  update state, comment, dependency, and supported native parent/sub-issue
+  operations under provisional policy.
 - Validation evidence is recorded.
 
 ## Config profile and onboarding closeout

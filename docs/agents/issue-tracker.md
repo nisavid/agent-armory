@@ -11,15 +11,19 @@ long-term UX. Richer project fields remain future Issue Tracker Ops work. See
 
 Use `tools/issue_tracker_ops.py` for Issue Tracker Ops (Issue Ops) bootstrap
 modes that describe the tracker-neutral core, describe the GitHub Issues
-baseline adapter, plan neutral operations, create, update, comment on, add
-dependency relations, remove dependency relations, and list dependency
-relations for GitHub Issues, and reconcile explicit fallback records.
+baseline adapter, plan neutral operations, read, list, create, update, comment
+on, add dependency relations, remove dependency relations, list dependency
+relations, read parent relationships, manage supported native sub-issue
+relationships for GitHub Issues, audit labels, and reconcile explicit fallback
+records.
 
 Bootstrap adapter subcommands:
 
 - `describe-core`
 - `describe-adapter --adapter github-issues-baseline`
 - `plan-operation --adapter github-issues-baseline --operation <operation-id>`
+- `read-issue`
+- `list-issues`
 - `create-issue`
 - `update-issue`
 - `comment`
@@ -27,6 +31,11 @@ Bootstrap adapter subcommands:
 - `remove-blocked-by`
 - `list-blocked-by`
 - `list-blocking`
+- `get-parent-issue`
+- `list-sub-issues`
+- `add-sub-issue`
+- `remove-sub-issue`
+- `reprioritize-sub-issue`
 - `audit-labels`
 - `reconcile-fallback`
 
@@ -46,11 +55,17 @@ or unsupported consumer decisions fail closed before any `gh` call.
 
 Mutation commands perform live preflight reads under `--execute`. Exact
 duplicate issue titles and duplicate comment bodies are blocked by default,
-while exact no-op issue updates and already-applied or already-absent
-dependency changes return `idempotent_skip` without writing. Use
+while exact no-op issue updates, already-applied or already-absent dependency
+changes, and already-applied or already-absent sub-issue relationship changes
+return `idempotent_skip` without writing. Use
 `--if-duplicate return-existing` to return the matched item instead of failing,
 or `--if-duplicate allow-with-reason --duplicate-override-reason <text>` when
 the active policy explicitly allows a duplicate-prone write.
+
+`list-issues` uses GitHub's REST issues endpoint and skips pull requests by
+default because GitHub returns pull requests from issue list APIs. Use
+`--include-pull-requests` only when the caller intends to inspect that mixed
+endpoint output.
 
 Use `--fallback-record-file <path>` only when a failed live mutation needs a
 local record for later reconciliation. Fallback records use
@@ -59,8 +74,9 @@ intended tracker projection before retry or retirement, and `--retire-record`
 updates the supplied fallback record only after projection is verified.
 
 Use the `gh` CLI directly when a needed GitHub Issues operation is outside the
-bootstrap adapter's current modes, or when a skill needs a read-only query that
-is simpler through `gh`.
+bootstrap adapter's current modes, such as GitHub Projects custom fields or
+binary attachments, or when a skill needs a read-only query that is simpler
+through `gh`.
 
 Use `audit-labels` to dogfood the baseline label axes and detect missing or
 conflicting axis labels across open issues. The command is read-only, but it

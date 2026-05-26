@@ -28,6 +28,7 @@ class OperationClass(StrEnum):
 class OperationId(StrEnum):
     ISSUE_CREATE = "issue.create"
     ISSUE_READ = "issue.read"
+    ISSUE_LIST = "issue.list"
     ISSUE_UPDATE = "issue.update"
     ISSUE_CLOSE = "issue.close"
     COMMENT_CREATE = "comment.create"
@@ -37,7 +38,11 @@ class OperationId(StrEnum):
     DEPENDENCY_REMOVE_BLOCKED_BY = "dependency.remove_blocked_by"
     DEPENDENCY_LIST_BLOCKED_BY = "dependency.list_blocked_by"
     DEPENDENCY_LIST_BLOCKING = "dependency.list_blocking"
+    SUBISSUE_LIST = "subissue.list"
+    SUBISSUE_GET_PARENT = "subissue.get_parent"
     SUBISSUE_ADD = "subissue.add"
+    SUBISSUE_REMOVE = "subissue.remove"
+    SUBISSUE_REPRIORITIZE = "subissue.reprioritize"
     STATUS_SET = "status.set"
     PRIORITY_SET = "priority.set"
     EVIDENCE_LINK = "evidence.link"
@@ -194,6 +199,7 @@ DEPENDENCY_WRITE_AUDIT_REQUIREMENTS = (
     AuditRequirement.REQUEST_SHAPE,
     AuditRequirement.DRY_RUN_REQUIRED,
     AuditRequirement.EXPLICIT_EXECUTE_REQUIRED,
+    AuditRequirement.POLICY_DECISION,
     AuditRequirement.RESOLVED_IDS,
     AuditRequirement.RESULT_SUMMARY,
 )
@@ -222,6 +228,14 @@ CORE_OPERATIONS: tuple[OperationDefinition, ...] = (
         (SideEffectClass.EXTERNAL_NETWORK_READ,),
         READ_AUDIT_REQUIREMENTS,
         "Read one issue from the selected tracker.",
+    ),
+    OperationDefinition(
+        OperationId.ISSUE_LIST,
+        "List issues",
+        OperationClass.READ,
+        (SideEffectClass.EXTERNAL_NETWORK_READ,),
+        READ_AUDIT_REQUIREMENTS,
+        "List issues from the selected tracker.",
     ),
     OperationDefinition(
         OperationId.ISSUE_UPDATE,
@@ -300,12 +314,44 @@ CORE_OPERATIONS: tuple[OperationDefinition, ...] = (
         "List issues blocked by a selected issue.",
     ),
     OperationDefinition(
+        OperationId.SUBISSUE_LIST,
+        "List sub-issues",
+        OperationClass.READ,
+        (SideEffectClass.EXTERNAL_NETWORK_READ,),
+        READ_AUDIT_REQUIREMENTS,
+        "List sub-issues attached to a parent issue.",
+    ),
+    OperationDefinition(
+        OperationId.SUBISSUE_GET_PARENT,
+        "Get parent issue",
+        OperationClass.READ,
+        (SideEffectClass.EXTERNAL_NETWORK_READ,),
+        READ_AUDIT_REQUIREMENTS,
+        "Read the parent issue for a selected sub-issue.",
+    ),
+    OperationDefinition(
         OperationId.SUBISSUE_ADD,
         "Add sub-issue",
         OperationClass.WRITE,
         (SideEffectClass.EXTERNAL_NETWORK_WRITE,),
-        WRITE_AUDIT_REQUIREMENTS,
+        DEPENDENCY_WRITE_AUDIT_REQUIREMENTS,
         "Attach a child issue to a parent issue when the tracker supports it.",
+    ),
+    OperationDefinition(
+        OperationId.SUBISSUE_REMOVE,
+        "Remove sub-issue",
+        OperationClass.WRITE,
+        (SideEffectClass.EXTERNAL_NETWORK_WRITE,),
+        DEPENDENCY_WRITE_AUDIT_REQUIREMENTS,
+        "Remove a child issue from a parent issue when the tracker supports it.",
+    ),
+    OperationDefinition(
+        OperationId.SUBISSUE_REPRIORITIZE,
+        "Reprioritize sub-issue",
+        OperationClass.WRITE,
+        (SideEffectClass.EXTERNAL_NETWORK_WRITE,),
+        DEPENDENCY_WRITE_AUDIT_REQUIREMENTS,
+        "Move a child issue within its parent issue's sub-issue order.",
     ),
     OperationDefinition(
         OperationId.STATUS_SET,
@@ -386,11 +432,17 @@ GITHUB_ISSUES_BASELINE_ADAPTER = AdapterContract(
         ),
         CapabilityEntry(
             OperationId.ISSUE_READ,
-            CapabilityDisposition.FALLBACK,
-            None,
-            (),
-            ("The bootstrap CLI has targeted dependency reads but no neutral issue-read command yet.",),
-            "Use gh issue view until #15 expands the runtime adapter.",
+            CapabilityDisposition.NATIVE,
+            "read-issue",
+            ("read-issue",),
+            ("Reads one GitHub issue through the REST issues endpoint.",),
+        ),
+        CapabilityEntry(
+            OperationId.ISSUE_LIST,
+            CapabilityDisposition.NATIVE,
+            "list-issues",
+            ("list-issues",),
+            ("Lists GitHub Issues through the REST issues endpoint and skips pull requests by default.",),
         ),
         CapabilityEntry(
             OperationId.ISSUE_UPDATE,
@@ -456,11 +508,39 @@ GITHUB_ISSUES_BASELINE_ADAPTER = AdapterContract(
             ("Uses GitHub native issue dependencies.",),
         ),
         CapabilityEntry(
+            OperationId.SUBISSUE_LIST,
+            CapabilityDisposition.NATIVE,
+            "list-sub-issues",
+            ("list-sub-issues",),
+            ("Uses GitHub native sub-issue listing.",),
+        ),
+        CapabilityEntry(
+            OperationId.SUBISSUE_GET_PARENT,
+            CapabilityDisposition.NATIVE,
+            "get-parent-issue",
+            ("get-parent-issue",),
+            ("Uses GitHub native parent issue lookup.",),
+        ),
+        CapabilityEntry(
             OperationId.SUBISSUE_ADD,
-            CapabilityDisposition.UNSUPPORTED,
-            None,
-            (),
-            ("Sub-issue runtime operations are tracked as GitHub adapter expansion work.",),
+            CapabilityDisposition.NATIVE,
+            "add-sub-issue",
+            ("add-sub-issue",),
+            ("Uses GitHub native sub-issue creation.",),
+        ),
+        CapabilityEntry(
+            OperationId.SUBISSUE_REMOVE,
+            CapabilityDisposition.NATIVE,
+            "remove-sub-issue",
+            ("remove-sub-issue",),
+            ("Uses GitHub native sub-issue removal.",),
+        ),
+        CapabilityEntry(
+            OperationId.SUBISSUE_REPRIORITIZE,
+            CapabilityDisposition.NATIVE,
+            "reprioritize-sub-issue",
+            ("reprioritize-sub-issue",),
+            ("Uses GitHub native sub-issue reprioritization.",),
         ),
         CapabilityEntry(
             OperationId.STATUS_SET,
@@ -532,9 +612,10 @@ def operation_plan_payload(adapter_id: str, operation_id: str) -> dict | None:
         )
     available = capability.disposition != CapabilityDisposition.UNSUPPORTED
     write_operation = operation.operation_class == OperationClass.WRITE
+    network_operation = operation.operation_class in {OperationClass.READ, OperationClass.WRITE}
     safety = OperationSafety(
-        dry_run_default=write_operation and available,
-        execute_required=operation.operation_class in {OperationClass.READ, OperationClass.WRITE} and available,
+        dry_run_default=network_operation and available,
+        execute_required=network_operation and available,
         config_preflight_required=False,
         available=available,
         mutation_authority_required=write_operation and available,

@@ -107,15 +107,19 @@ def issue_matches_update(issue: object, body: dict) -> bool:
 
 
 def find_dependency_relation(relations: object, blocking_issue_id: int) -> dict | None:
-    if not isinstance(relations, list):
+    return find_issue_by_id(relations, blocking_issue_id)
+
+
+def find_issue_by_id(issues: object, issue_id: int) -> dict | None:
+    if not isinstance(issues, list):
         return None
-    for relation in relations:
-        if not isinstance(relation, dict):
+    for issue in issues:
+        if not isinstance(issue, dict):
             continue
-        relation_id = relation.get("id")
+        candidate_id = issue.get("id")
         try:
-            if int(str(relation_id)) == int(blocking_issue_id):
-                return summarize_issue(relation)
+            if int(str(candidate_id)) == int(issue_id):
+                return summarize_issue(issue)
         except (TypeError, ValueError):
             continue
     return None
@@ -202,6 +206,8 @@ def compensation_guidance(operation: str, failure: dict) -> str:
         return "Check issue comments before retrying to avoid duplicate notifications."
     if operation in {"add-blocked-by", "remove-blocked-by"}:
         return "Check the native dependency relation before retrying."
+    if operation in {"add-sub-issue", "remove-sub-issue", "reprioritize-sub-issue"}:
+        return "Check the native sub-issue relation before retrying."
     return "Check the target issue state before retrying or applying a compensating update."
 
 

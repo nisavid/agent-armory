@@ -68,7 +68,7 @@ expose typed inputs and outputs without relying on CLI command composition.
 
 ## Evidence category
 
-- Documentation-supported: GitHub REST and `gh api` docs checked on 2026-05-04.
+- Documentation-supported: GitHub REST and `gh api` docs checked on 2026-05-26.
 - Source-supported: adapter and unit tests in this repository.
 - Implementation inference: the bootstrap script can become the reference
   behavior for a later MCP/tool adapter without becoming the final interface.

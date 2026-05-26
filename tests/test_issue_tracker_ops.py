@@ -79,6 +79,10 @@ class IssueTrackerOpsTests(unittest.TestCase):
         issue_create = payload["operations"]["issue.create"]
         self.assertEqual(issue_create["operation_class"], "write")
         self.assertIn("dry_run_required", issue_create["audit_requirements"])
+        sub_issue_add = payload["operations"]["subissue.add"]
+        self.assertEqual(sub_issue_add["operation_class"], "write")
+        self.assertIn("resolved_ids", sub_issue_add["audit_requirements"])
+        self.assertIn("policy_decision", sub_issue_add["audit_requirements"])
 
     def test_describe_adapter_reports_github_baseline_capabilities_without_calling_gh(self):
         gh = FakeGh()
@@ -96,10 +100,13 @@ class IssueTrackerOpsTests(unittest.TestCase):
         self.assertEqual(payload["operation"], "describe-adapter")
         self.assertEqual(payload["adapter"], "github-issues-baseline")
         self.assertEqual(payload["capabilities"]["issue.create"]["disposition"], "native")
-        self.assertEqual(payload["capabilities"]["issue.read"]["disposition"], "fallback")
-        self.assertNotIn("runtime_command", payload["capabilities"]["issue.read"])
-        self.assertEqual(payload["capabilities"]["issue.read"]["fallback"], "Use gh issue view until #15 expands the runtime adapter.")
+        self.assertEqual(payload["capabilities"]["issue.read"]["disposition"], "native")
+        self.assertEqual(payload["capabilities"]["issue.read"]["runtime_command"], ["read-issue"])
+        self.assertEqual(payload["capabilities"]["issue.list"]["runtime_command"], ["list-issues"])
         self.assertEqual(payload["capabilities"]["dependency.add_blocked_by"]["runtime_command"], ["add-blocked-by"])
+        self.assertEqual(payload["capabilities"]["subissue.add"]["runtime_command"], ["add-sub-issue"])
+        self.assertEqual(payload["capabilities"]["subissue.remove"]["runtime_command"], ["remove-sub-issue"])
+        self.assertEqual(payload["capabilities"]["subissue.reprioritize"]["runtime_command"], ["reprioritize-sub-issue"])
         self.assertEqual(payload["capabilities"]["status.set"]["disposition"], "fallback")
         self.assertEqual(payload["capabilities"]["attachment.add"]["disposition"], "unsupported")
         self.assertIn("GitHub Projects fields are follow-up adapter work.", payload["notes"])
@@ -159,10 +166,395 @@ class IssueTrackerOpsTests(unittest.TestCase):
         self.assertEqual(payload["capability"]["disposition"], "native")
         self.assertEqual(payload["capability"]["runtime_command"], ["list-blocked-by"])
         self.assertEqual(payload["safety"]["available"], True)
-        self.assertEqual(payload["safety"]["dry_run_default"], False)
+        self.assertEqual(payload["safety"]["dry_run_default"], True)
         self.assertEqual(payload["safety"]["execute_required"], True)
         self.assertEqual(payload["safety"]["config_preflight_required"], False)
         self.assertIn("external_network_read", payload["side_effects"])
+
+    def test_read_issue_execute_fetches_one_issue(self):
+        gh = FakeGh(
+            [
+                subprocess.CompletedProcess(
+                    ["gh"],
+                    0,
+                    stdout=json.dumps(
+                        {
+                            "id": 44,
+                            "number": 15,
+                            "html_url": "https://github.com/OWNER/REPO/issues/15",
+                            "title": "Expand adapter",
+                            "state": "open",
+                            "body": "Issue body",
+                            "comments": 3,
+                            "created_at": "2026-05-04T21:40:00Z",
+                            "updated_at": "2026-05-26T08:24:44Z",
+                            "labels": [{"name": "ready-for-agent"}],
+                            "assignees": [{"login": "octocat"}],
+                            "milestone": {
+                                "number": 1,
+                                "title": "v1.0",
+                                "state": "open",
+                                "html_url": "https://github.com/OWNER/REPO/milestone/1",
+                            },
+                        }
+                    ),
+                    stderr="",
+                )
+            ]
+        )
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "read-issue",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "15",
+                "--execute",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(len(gh.calls), 1)
+        args, input_text = gh.calls[0]
+        self.assertEqual(args[:5], ["gh", "api", "-X", "GET", "repos/OWNER/REPO/issues/15"])
+        self.assertIsNone(input_text)
+        payload = json.loads(stdout)
+        self.assertEqual(payload["operation"], "read-issue")
+        self.assertEqual(payload["result"]["number"], 15)
+        self.assertEqual(payload["result"]["body"], "Issue body")
+        self.assertEqual(payload["result"]["labels"], ["ready-for-agent"])
+        self.assertEqual(payload["result"]["assignees"], ["octocat"])
+        self.assertEqual(payload["result"]["comments"], 3)
+        self.assertEqual(payload["result"]["milestone"]["title"], "v1.0")
+
+    def test_list_issues_execute_filters_pull_requests_by_default_from_paginated_response(self):
+        gh = FakeGh(
+            [
+                subprocess.CompletedProcess(
+                    ["gh"],
+                    0,
+                    stdout=json.dumps(
+                        [
+                            [
+                                {
+                                    "id": 44,
+                                    "number": 15,
+                                    "html_url": "https://github.com/OWNER/REPO/issues/15",
+                                    "title": "Expand adapter",
+                                    "state": "open",
+                                },
+                                {
+                                    "id": 45,
+                                    "number": 16,
+                                    "html_url": "https://github.com/OWNER/REPO/pull/16",
+                                    "title": "Pull request",
+                                    "state": "open",
+                                    "pull_request": {"url": "https://api.github.com/repos/OWNER/REPO/pulls/16"},
+                                },
+                            ]
+                        ]
+                    ),
+                    stderr="",
+                )
+            ]
+        )
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "list-issues",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-state",
+                "all",
+                "--label",
+                "ready-for-agent",
+                "--paginate",
+                "--execute",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(len(gh.calls), 1)
+        args, input_text = gh.calls[0]
+        self.assertEqual(args[:5], ["gh", "api", "-X", "GET", "repos/OWNER/REPO/issues?state=all&per_page=100&labels=ready-for-agent"])
+        self.assertIn("--paginate", args)
+        self.assertIn("--slurp", args)
+        self.assertIsNone(input_text)
+        payload = json.loads(stdout)
+        self.assertEqual(payload["operation"], "list-issues")
+        self.assertEqual([issue["number"] for issue in payload["result"]], [15])
+
+    def test_get_parent_issue_execute_uses_parent_endpoint(self):
+        gh = FakeGh([subprocess.CompletedProcess(["gh"], 0, stdout='{"number": 11, "title": "Parent"}', stderr="")])
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "get-parent-issue",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "15",
+                "--execute",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(len(gh.calls), 1)
+        args, input_text = gh.calls[0]
+        self.assertEqual(args[:5], ["gh", "api", "-X", "GET", "repos/OWNER/REPO/issues/15/parent"])
+        self.assertIsNone(input_text)
+        payload = json.loads(stdout)
+        self.assertEqual(payload["operation"], "get-parent-issue")
+        self.assertEqual(payload["result"]["number"], 11)
+
+    def test_add_sub_issue_execute_resolves_number_preflights_and_posts(self):
+        gh = FakeGh(
+            [
+                subprocess.CompletedProcess(["gh"], 0, stdout="98765", stderr=""),
+                subprocess.CompletedProcess(["gh"], 0, stdout="[]", stderr=""),
+                subprocess.CompletedProcess(["gh"], 0, stdout='{"number": 15, "title": "Parent"}', stderr=""),
+            ]
+        )
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "add-sub-issue",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "11",
+                "--sub-issue-number",
+                "15",
+                "--mutation-policy-ref",
+                "issue-15-approved-plan",
+                "--execute",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(len(gh.calls), 3)
+        resolve_args, resolve_input = gh.calls[0]
+        self.assertEqual(resolve_args[:5], ["gh", "api", "-X", "GET", "repos/OWNER/REPO/issues/15"])
+        self.assertIn("--jq", resolve_args)
+        self.assertIsNone(resolve_input)
+        preflight_args, preflight_input = gh.calls[1]
+        self.assertEqual(preflight_args[:5], ["gh", "api", "-X", "GET", "repos/OWNER/REPO/issues/11/sub_issues"])
+        self.assertIsNone(preflight_input)
+        args, input_text = gh.calls[2]
+        self.assertEqual(args[:5], ["gh", "api", "-X", "POST", "repos/OWNER/REPO/issues/11/sub_issues"])
+        self.assertEqual(json.loads(input_text), {"sub_issue_id": 98765})
+        payload = json.loads(stdout)
+        self.assertEqual(payload["operation"], "add-sub-issue")
+        self.assertEqual(payload["resolved"], {"sub_issue_id": 98765})
+        self.assertEqual(payload["mutation_policy"]["ref"], "issue-15-approved-plan")
+
+    def test_add_sub_issue_dry_run_previews_resolution_and_preflight(self):
+        gh = FakeGh()
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "add-sub-issue",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "11",
+                "--sub-issue-number",
+                "15",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(gh.calls, [])
+        payload = json.loads(stdout)
+        self.assertEqual(payload["request"]["endpoint"], "repos/OWNER/REPO/issues/11/sub_issues")
+        self.assertEqual(payload["planned_safety_preflight"][0]["endpoint"], "repos/OWNER/REPO/issues/11/sub_issues")
+        self.assertEqual(
+            [step["endpoint"] for step in payload["steps"]],
+            [
+                "repos/OWNER/REPO/issues/15",
+                "repos/OWNER/REPO/issues/11/sub_issues",
+            ],
+        )
+
+    def test_add_sub_issue_dry_run_preserves_replace_parent_in_placeholder_body(self):
+        gh = FakeGh()
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "add-sub-issue",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "11",
+                "--sub-issue-number",
+                "15",
+                "--replace-parent",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(gh.calls, [])
+        payload = json.loads(stdout)
+        self.assertEqual(
+            payload["request"]["body"],
+            {
+                "replace_parent": True,
+                "sub_issue_id": "<resolved from issue #15>",
+            },
+        )
+        self.assertEqual(payload["steps"][-1]["body"], payload["request"]["body"])
+
+    def test_add_sub_issue_execute_skips_existing_relation(self):
+        gh = FakeGh(
+            [
+                subprocess.CompletedProcess(
+                    ["gh"],
+                    0,
+                    stdout='[{"id": 98765, "number": 15, "html_url": "https://github.com/OWNER/REPO/issues/15", "title": "Child", "state": "open"}]',
+                    stderr="",
+                )
+            ]
+        )
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "add-sub-issue",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "11",
+                "--sub-issue-id",
+                "98765",
+                "--mutation-policy-ref",
+                "issue-15-approved-plan",
+                "--execute",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(len(gh.calls), 1)
+        payload = json.loads(stdout)
+        self.assertEqual(payload["result"]["status"], "idempotent_skip")
+        self.assertEqual(payload["result"]["reason"], "sub-issue relation already exists")
+        self.assertEqual(payload["result"]["existing"]["number"], 15)
+
+    def test_remove_sub_issue_execute_skips_absent_relation(self):
+        gh = FakeGh([subprocess.CompletedProcess(["gh"], 0, stdout="[]", stderr="")])
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "remove-sub-issue",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "11",
+                "--sub-issue-id",
+                "98765",
+                "--mutation-policy-ref",
+                "issue-15-approved-plan",
+                "--execute",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(len(gh.calls), 1)
+        payload = json.loads(stdout)
+        self.assertEqual(payload["result"]["status"], "idempotent_skip")
+        self.assertEqual(payload["result"]["reason"], "sub-issue relation is already absent")
+
+    def test_reprioritize_sub_issue_execute_posts_position_body(self):
+        gh = FakeGh(
+            [
+                subprocess.CompletedProcess(
+                    ["gh"],
+                    0,
+                    stdout='[{"id": 98765, "number": 15, "html_url": "https://github.com/OWNER/REPO/issues/15"}]',
+                    stderr="",
+                ),
+                subprocess.CompletedProcess(["gh"], 0, stdout='{"number": 11, "title": "Parent"}', stderr=""),
+            ]
+        )
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "reprioritize-sub-issue",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "11",
+                "--sub-issue-id",
+                "98765",
+                "--after-id",
+                "12345",
+                "--mutation-policy-ref",
+                "issue-15-approved-plan",
+                "--execute",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(len(gh.calls), 2)
+        args, input_text = gh.calls[1]
+        self.assertEqual(args[:5], ["gh", "api", "-X", "PATCH", "repos/OWNER/REPO/issues/11/sub_issues/priority"])
+        self.assertEqual(json.loads(input_text), {"after_id": 12345, "sub_issue_id": 98765})
+
+    def test_remove_sub_issue_fallback_reconciles_absent_relation(self):
+        gh = FakeGh([subprocess.CompletedProcess(["gh"], 0, stdout="[]", stderr="")])
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fallback_path = Path(tmpdir) / "fallback.json"
+            fallback_path.write_text(
+                json.dumps(
+                    {
+                        "schema": "issue_tracker_ops.fallback_record.v1alpha1",
+                        "status": "pending_reconciliation",
+                        "owner": "issue_tracker_ops_adapter",
+                        "operation": "remove-sub-issue",
+                        "repo": "OWNER/REPO",
+                        "request": {
+                            "method": "DELETE",
+                            "endpoint": "repos/OWNER/REPO/issues/11/sub_issue",
+                            "body": {"sub_issue_id": 98765},
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            exit_code, stdout, stderr = self.run_cli(
+                [
+                    "reconcile-fallback",
+                    "--repo",
+                    "OWNER/REPO",
+                    "--fallback-record-file",
+                    str(fallback_path),
+                    "--retire-record",
+                    "--retirement-note",
+                    "Verified sub-issue relation removal.",
+                    "--execute",
+                ],
+                gh=gh,
+            )
+            retired_record = json.loads(fallback_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(len(gh.calls), 1)
+        args, input_text = gh.calls[0]
+        self.assertEqual(args[:5], ["gh", "api", "-X", "GET", "repos/OWNER/REPO/issues/11/sub_issues"])
+        self.assertIsNone(input_text)
+        payload = json.loads(stdout)
+        self.assertEqual(payload["result"]["projection_status"], "projected")
+        self.assertEqual(payload["result"]["projected"], {"issue_id": 98765, "relation": "absent"})
+        self.assertEqual(retired_record["status"], "retired")
 
     def test_plan_operation_reports_fallback_and_unsupported_boundaries(self):
         cases = [

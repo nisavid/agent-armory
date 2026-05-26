@@ -119,7 +119,7 @@ The current roadmap points to equipment lines that still have future slices:
   [PRD](prd/agent-equipment-config.md) record the current user path and
   required CLI and MCP operation surfaces.
 - [Issue Tracker Ops](../specs/issue-tracker-ops/): direct GitHub
-  Issues bootstrap operations and future issue lifecycle equipment. Issue Ops
+  Issues baseline operations and future issue lifecycle equipment. Issue Ops
   is the accepted shorthand.
 - [Existing Equipment Onboarding](prd/existing-equipment-onboarding.md): draft
   generic contract for discovering prior equipment, deciding compatibility and
