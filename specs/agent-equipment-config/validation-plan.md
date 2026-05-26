@@ -137,6 +137,13 @@ Implemented by the v0 engine slice:
 - MCP tool-call dispatch for successful read-only resolution, config diff,
   onboarding, blocking validation, migration preview, refused apply, and
   allowed apply;
+- deferred MCP authoring parity design for `config.propose`, `config.patch`,
+  `config.create_layer`, and `config.apply`, including typed schemas,
+  read/write classification, side effects, auth source, approval requirements,
+  failure modes, reviewed plan artifacts, precondition fingerprints, virtual
+  post-change effective Config, refusal codes, all-or-nothing apply,
+  durability classification, project-truth status, rollback stance, and
+  secret/provider/source-category refusals;
 - plain Issue Tracker Ops handoff fallback and promotion;
 - consumer action decision helper for allowed, advisory, warning, blocking, and
   unsupported outcomes;

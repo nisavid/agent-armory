@@ -55,6 +55,15 @@ surfaces, but they do not have MCP tool definitions in this slice.
 `config apply` is a current CLI/runtime write surface for reviewed plan
 artifacts. MCP authoring parity remains follow-up work.
 
+Deferred MCP authoring parity must use these tool names when it is implemented:
+
+| CLI operation | Deferred MCP tool | Read/write classification |
+| --- | --- | --- |
+| `config propose` | `config.propose` | read-only |
+| `config patch` | `config.patch` | read-only policy decision |
+| `create-layer` | `config.create_layer` | read-only policy decision |
+| `config apply` | `config.apply` | local write |
+
 ## Shared inputs
 
 Read operations that load Config accept:
@@ -148,6 +157,364 @@ migration apply authority, ineligible source refusal, source precondition
 failure, partial local write failure.
 
 Rollback: restore the source file from version control or the recorded diff.
+
+## Deferred authoring parity contract
+
+MCP authoring parity is designed here but remains unimplemented. Runtime tool
+definitions must not expose `config.propose`, `config.patch`,
+`config.create_layer`, or `config.apply` until the implementation issue adds
+the corresponding dispatcher behavior and validation coverage, and until
+CLI/runtime authoring behavior is stable enough to treat as the source
+contract. Until then, callers use the fluent CLI authoring workflow and MCP
+wrappers return no authoring tool definition.
+
+The deferred authoring tools mirror the current CLI/runtime authoring contract:
+
+- plan-generation tools never write sources;
+- every output is structured, redacted, and stable enough for machine routing;
+- `config.patch` and `config.create_layer` emit reviewed plan artifacts with
+  schema `agent-armory.config.authoring-plan.v1`;
+- `config.apply` accepts only a reviewed plan artifact, not ad hoc source
+  changes;
+- apply rechecks precondition fingerprints, authority, source eligibility,
+  trust, ownership, schema, semantic safety, secret boundaries, and the virtual
+  post-change effective Config before writing;
+- apply is all-or-nothing for every supported local filesystem target;
+- mutation audit output classifies artifact durability, project-truth status,
+  result, refusal reasons, and rollback stance;
+- secret values, provider credential material, provider mutation, separate
+  secret-reference source writes, generated/cache writes, checkout-local state
+  writes, session override writes, untrusted layers, and unsupported source
+  categories refuse before any source change.
+
+All deferred authoring tools keep the current closed-world local boundary. They
+do not call networks, discover config paths, resolve secrets, read provider
+credential stores, mutate providers, or mutate external systems.
+
+### Shared authoring input shapes
+
+The MCP input schemas use typed JSON values instead of CLI `--set` strings.
+Every authoring tool that accepts changes uses this shape:
+
+```json
+{
+  "type": "object",
+  "required": ["path", "value"],
+  "properties": {
+    "path": {
+      "type": "string",
+      "description": "Namespace-qualified Config field path such as issue_tracker_ops.mode."
+    },
+    "value": {
+      "description": "JSON-compatible value to place at the Config field path."
+    }
+  },
+  "additionalProperties": false
+}
+```
+
+When a tool definition embeds the schemas below, this shape appears as
+`$defs.authoringChange`.
+
+`value` is schema-validated by the registered fragment. Null values, direct
+secret values, secret-reference objects with embedded value payloads, and
+nested provider-metadata edits refuse through stable refusal codes instead of
+being normalized into a write.
+
+Authoring inputs that load Config accept explicit `layer_paths` and
+`fragments`. The current fragment registry exposes `issue_tracker_ops`; later
+registries may add fragment names without changing the authoring control
+contract. Plain handoffs remain session overrides and are not eligible write
+targets.
+
+### Shared authoring output shapes
+
+Every deferred authoring tool-call result follows the existing MCP wrapper
+shape:
+
+```json
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "redacted human-readable summary"
+    }
+  ],
+  "structuredContent": {
+    "tool": "config.patch",
+    "operation": "config.patch",
+    "cli_operation": "config patch",
+    "read_write_classification": "read-only policy decision",
+    "result": {}
+  }
+}
+```
+
+`structuredContent.result` is the redacted runtime object that the paired CLI
+would emit. Human-readable text is never the contract that apply consumes.
+
+### `config.propose`
+
+Purpose: produce target-agnostic candidate Config changes, rationale, affected
+namespaces and fields, possible target categories, validation errors, and
+refusal codes. It does not select a source target and does not authorize a
+write.
+
+Input schema:
+
+```json
+{
+  "type": "object",
+  "required": ["fragments", "changes"],
+  "properties": {
+    "fragments": {
+      "type": "array",
+      "items": {"type": "string"},
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "changes": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/authoringChange"},
+      "minItems": 1
+    },
+    "rationale": {"type": "string"}
+  },
+  "additionalProperties": false
+}
+```
+
+Output schema:
+
+```json
+{
+  "type": "object",
+  "required": [
+    "operation",
+    "plan_surface",
+    "source_target",
+    "affected_namespaces",
+    "affected_fields",
+    "possible_target_categories",
+    "candidates",
+    "path_errors",
+    "value_errors",
+    "refusal_codes"
+  ],
+  "properties": {
+    "operation": {"const": "config propose"},
+    "plan_surface": {"const": "proposal"},
+    "source_target": {"type": "null"},
+    "affected_namespaces": {"type": "array", "items": {"type": "string"}},
+    "affected_fields": {"type": "array", "items": {"type": "string"}},
+    "possible_target_categories": {
+      "type": "array",
+      "items": {"enum": ["committed durable config", "local-only operator config"]}
+    },
+    "candidates": {"type": "array", "items": {"type": "object"}},
+    "path_errors": {"type": "array", "items": {"type": "object"}},
+    "value_errors": {"type": "array", "items": {"type": "object"}},
+    "refusal_codes": {"type": "array", "items": {"type": "string"}}
+  }
+}
+```
+
+Classification: read-only. MCP annotations: `readOnlyHint = true`,
+`openWorldHint = false`. Destructive and idempotent hints are unnecessary for
+this read-only tool.
+Auth source: none. Side effects: none. Approval requirements: none. Failure
+modes: MCP input validation failure, unknown fragment, malformed change path,
+unknown schema namespace or field, invalid value, non-deterministic duplicate
+paths, direct secret value, provider credential material, or provider mutation
+attempt.
+
+### `config.patch`
+
+Purpose: select one eligible existing authored source and turn reviewed changes
+into a `patch-layer` plan artifact. It reads the selected source, records a
+precondition fingerprint, validates the planned source shape, builds the
+virtual post-change effective Config, and emits an audit preview. It writes no
+source.
+
+Input schema:
+
+```json
+{
+  "type": "object",
+  "required": ["layer_paths", "fragments", "source_target", "changes"],
+  "properties": {
+    "layer_paths": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+    "fragments": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+    "source_target": {"type": "string"},
+    "changes": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/authoringChange"},
+      "minItems": 1
+    },
+    "plan_authority": {"enum": ["operator"]},
+    "requested_behavior": {"enum": ["advisory", "mutation"], "default": "mutation"},
+    "rationale": {"type": "string"}
+  },
+  "additionalProperties": false
+}
+```
+
+Output schema: the reviewed plan artifact with
+`schema = "agent-armory.config.authoring-plan.v1"`,
+`operation = "config patch"`, `plan_surface = "reviewed-plan"`, and
+`plan_kind = "patch-layer"`. The artifact includes `source_target`,
+`source_category`, `source_identity`, `precondition_fingerprint`,
+`change_payload`, `authority_evidence`, `validation_result`,
+`virtual_post_change_effective_config`, `audit_preview`, `refusal_codes`,
+`durability_classification`, and `rationale`.
+
+Classification: read-only policy decision. MCP annotations:
+`readOnlyHint = true`, `openWorldHint = false`. Destructive and idempotent
+hints are unnecessary for this read-only tool. Auth source: optional per-call
+`plan_authority` or configured `config_authoring_plan` Policy Authority
+evidence in the supplied layers. Side effects: local source reads only.
+Approval requirements: no write approval; human or harness review is required
+before the emitted plan is passed to `config.apply`. Failure modes: MCP input
+validation failure, config parse failure, unknown fragment, target not present
+in explicit `layer_paths`, ineligible source category, untrusted source,
+missing plan authority, safety status blocking, planned-source validation
+failure, secret-boundary violation, ownership-boundary violation,
+non-deterministic duplicate paths, and unsupported source categories.
+
+### `config.create_layer`
+
+Purpose: create a reviewed `create-layer` plan artifact for a new eligible
+authored Config layer. It verifies that the destination is an absent local
+source target, builds the proposed layer payload, validates the planned source
+shape, builds the virtual post-change effective Config, and emits an audit
+preview. It writes no source.
+
+Input schema:
+
+```json
+{
+  "type": "object",
+  "required": ["destination", "layer_name", "source_category", "fragments", "changes"],
+  "properties": {
+    "destination": {"type": "string"},
+    "layer_name": {"type": "string"},
+    "source_category": {"enum": ["committed durable config", "local-only operator config"]},
+    "fragments": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+    "changes": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/authoringChange"},
+      "minItems": 1
+    },
+    "layer_paths": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Existing explicit layers used only to build the virtual effective Config."
+    },
+    "plan_authority": {"enum": ["operator"]},
+    "requested_behavior": {"enum": ["advisory", "mutation"], "default": "mutation"},
+    "rationale": {"type": "string"}
+  },
+  "additionalProperties": false
+}
+```
+
+Output schema: the reviewed plan artifact with
+`schema = "agent-armory.config.authoring-plan.v1"`,
+`operation = "create-layer"`, `plan_surface = "reviewed-plan"`, and
+`plan_kind = "create-layer"`. The artifact includes an absent-source
+precondition fingerprint, the create payload, authority evidence, validation
+result, virtual post-change effective Config, audit preview, refusal codes,
+durability classification, project-truth projection, and rollback stance.
+
+Classification: read-only policy decision. MCP annotations:
+`readOnlyHint = true`, `openWorldHint = false`. Destructive and idempotent
+hints are unnecessary for this read-only tool. Auth source: optional per-call
+`plan_authority` or configured `config_authoring_plan` Policy Authority
+evidence from supplied context layers. Side effects: local destination
+existence check and optional explicit layer reads only. Approval requirements:
+no write approval; human or harness review is required before the emitted plan
+is passed to `config.apply`. Failure modes: MCP input validation failure,
+destination already exists, unsupported destination category, unknown fragment,
+malformed change path, missing plan authority, safety status blocking,
+planned-source validation failure, secret-boundary violation, provider mutation
+attempt, non-deterministic duplicate paths, and unsupported source categories.
+
+### `config.apply`
+
+Purpose: apply one reviewed `patch-layer` or `create-layer` authoring plan
+artifact after all final gates pass. It is the only deferred MCP authoring tool
+that writes Config sources.
+
+Input schema:
+
+```json
+{
+  "type": "object",
+  "required": ["plan", "apply_authority"],
+  "properties": {
+    "plan": {
+      "type": "object",
+      "description": "A reviewed agent-armory.config.authoring-plan.v1 artifact."
+    },
+    "apply_authority": {"enum": ["operator"]}
+  },
+  "additionalProperties": false
+}
+```
+
+Output schema:
+
+```json
+{
+  "type": "object",
+  "required": [
+    "operation",
+    "schema",
+    "plan_kind",
+    "source_target",
+    "applied",
+    "result",
+    "refusal_codes",
+    "audit_records"
+  ],
+  "properties": {
+    "operation": {"const": "config apply"},
+    "schema": {"const": "agent-armory.config.authoring-plan.v1"},
+    "plan_kind": {"enum": ["patch-layer", "create-layer"]},
+    "source_target": {"type": "string"},
+    "applied": {"type": "boolean"},
+    "result": {"enum": ["applied", "refused", "blocked", "write-failed"]},
+    "refusal_codes": {"type": "array", "items": {"type": "string"}},
+    "validation_result": {"type": "object"},
+    "audit_records": {"type": "array", "items": {"type": "object"}}
+  }
+}
+```
+
+Classification: local write. MCP annotations: `readOnlyHint = false`,
+`destructiveHint = true`, `idempotentHint = false`, `openWorldHint = false`.
+Auth source: per-call `apply_authority = "operator"`. Side effects: atomic
+rewrite or creation of one eligible local TOML source when all gates pass.
+Approval requirements: the MCP tool metadata must require explicit
+operator/harness approval before the call because the call is mutation-capable.
+Mutation gate: reviewed plan artifact schema, implemented plan kind, eligible
+source category, trusted provenance, source ownership, per-call apply authority,
+matching precondition fingerprint, valid planned source shape, usable virtual
+post-change effective Config for the requested behavior, secret-boundary
+validation, all-or-nothing refusal handling, atomic local write, and mutation
+audit emission.
+
+Failure modes: MCP input validation failure, malformed plan artifact,
+`unsupported_plan_kind`, `unsupported_mcp_authoring` while runtime support is
+absent, missing apply authority, source category ineligible, source untrusted,
+ownership boundary violation, `source_changed`, safety status blocking,
+validation failure, secret-boundary violation, provider mutation attempt,
+`partial_write_blocked`, and local filesystem write failure.
+
+Rollback: for committed durable config, revert the committed config change or
+restore the recorded diff from version control. For local-only operator config,
+restore the local operator file from the recorded diff or local backup. Refused
+and blocked results require no rollback because no source write occurred.
 
 ## Fallback path
 
