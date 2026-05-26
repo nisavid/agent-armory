@@ -227,7 +227,8 @@ by later product decision.
 ## Further Notes
 
 - This PRD is the stable requirements surface produced by #105 for #11 and #13.
-- #103 remains the tracked Issue Ops policy-doc migration work and should align
-  with the generic policy migration rule in #104.
+- #103 carries the Issue Ops policy-doc migration into
+  `config/agent-equipment.toml` and aligns with the generic policy migration
+  rule in #104.
 - Existing child issues #14 through #18 remain useful implementation buckets,
   but their exact scope should be checked against this PRD before closeout.

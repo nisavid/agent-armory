@@ -2697,6 +2697,110 @@ class IssueTrackerOpsTests(unittest.TestCase):
         self.assertEqual(payload["label_axes"]["category"]["cardinality"], "exactly_one")
         self.assertEqual(payload["label_axes"]["state"]["labels"], ["needs-triage", "needs-info", "ready-for-agent", "ready-for-human", "wontfix"])
 
+    def test_audit_labels_dry_run_uses_configured_label_axes_without_calling_gh(self):
+        gh = FakeGh()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_config_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.fragment_versions]
+                issue_tracker_ops = 3
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+
+                [[issue_tracker_ops.label_axes]]
+                name = "category"
+                cardinality = "exactly_one"
+                description = "coarse issue category role"
+                labels = ["bug", "enhancement"]
+
+                [[issue_tracker_ops.label_axes]]
+                name = "priority"
+                cardinality = "exactly_one"
+                description = "configured priority policy"
+                labels = ["priority:high", "priority:low"]
+            """)
+
+            exit_code, stdout, stderr = self.run_cli(
+                [
+                    "audit-labels",
+                    "--repo",
+                    "OWNER/REPO",
+                    "--config-layer",
+                    str(layer),
+                ],
+                gh=gh,
+            )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(gh.calls, [])
+        payload = json.loads(stdout)
+        self.assertEqual(payload["label_axes"]["priority"]["cardinality"], "exactly_one")
+        self.assertEqual(payload["label_axes"]["priority"]["labels"], ["priority:high", "priority:low"])
+        self.assertNotIn("state", payload["label_axes"])
+        self.assertEqual(payload["config"]["effective_config"]["safety_status"], "usable")
+
+    def test_audit_labels_execute_uses_configured_label_axes_for_findings(self):
+        issues = [
+            {
+                "number": 1,
+                "html_url": "https://github.com/OWNER/REPO/issues/1",
+                "title": "Configured axis miss",
+                "labels": [{"name": "bug"}],
+            }
+        ]
+        gh = FakeGh([subprocess.CompletedProcess(["gh"], 0, stdout=json.dumps([issues]), stderr="")])
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_config_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.fragment_versions]
+                issue_tracker_ops = 3
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+
+                [[issue_tracker_ops.label_axes]]
+                name = "category"
+                cardinality = "exactly_one"
+                description = "coarse issue category role"
+                labels = ["bug", "enhancement"]
+
+                [[issue_tracker_ops.label_axes]]
+                name = "priority"
+                cardinality = "exactly_one"
+                description = "configured priority policy"
+                labels = ["priority:high", "priority:low"]
+            """)
+
+            exit_code, stdout, stderr = self.run_cli(
+                [
+                    "audit-labels",
+                    "--repo",
+                    "OWNER/REPO",
+                    "--execute",
+                    "--config-layer",
+                    str(layer),
+                ],
+                gh=gh,
+            )
+
+        self.assertEqual(exit_code, 0, stderr)
+        payload = json.loads(stdout)
+        self.assertEqual(payload["result"]["summary"]["errors"], 1)
+        self.assertEqual(payload["result"]["issues"][0]["findings"][0]["axis"], "priority")
+        self.assertEqual(payload["result"]["issues"][0]["findings"][0]["code"], "missing")
+        self.assertEqual(payload["config"]["effective_config"]["safety_status"], "usable")
+
     def test_audit_labels_execute_reports_axis_findings_and_skips_prs(self):
         issues = [
             {

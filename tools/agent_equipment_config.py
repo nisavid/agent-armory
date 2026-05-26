@@ -284,6 +284,15 @@ def migration_previews_for_layer(layer: Layer, fragment: SchemaFragment) -> list
             for old_name, new_name in migration.field_renames.items()
             if old_name in section
         ]
+        if not migration.field_renames:
+            changes.append(
+                {
+                    "operation": "update fragment version",
+                    "path": f"agent_equipment_config.fragment_versions.{fragment.namespace}",
+                    "from": source_version,
+                    "to": fragment.version,
+                }
+            )
         previews.append(
             {
                 "namespace": fragment.namespace,
@@ -1826,6 +1835,72 @@ def safety_status_from_diagnostics(diagnostics: list[Diagnostic], *, requested_b
     return "usable"
 
 
+ISSUE_TRACKER_OPS_LABEL_AXIS_CARDINALITIES = {"exactly_one", "at_most_one", "prefer_one"}
+
+
+def issue_tracker_ops_label_axis_diagnostics(values: dict[str, Any], requested_behavior: str) -> list[Diagnostic]:
+    # Reserved for future behavior-specific policy gates; label axis shape is
+    # required for both advisory explanation and mutation preflight.
+    _ = requested_behavior
+    axes = values.get("label_axes")
+    if axes is None:
+        return []
+    if not isinstance(axes, list):
+        return []
+    diagnostics: list[Diagnostic] = []
+    seen_names: set[str] = set()
+    seen_labels: dict[str, str] = {}
+    for index, axis in enumerate(axes):
+        if not isinstance(axis, dict):
+            diagnostics.append(
+                Diagnostic("semantic conflict", "issue_tracker_ops.label_axes", f"axis {index} must be a table")
+            )
+            continue
+        name = axis.get("name")
+        if not isinstance(name, str) or not name:
+            diagnostics.append(
+                Diagnostic("semantic conflict", "issue_tracker_ops.label_axes", f"axis {index} name must be a non-empty string")
+            )
+        elif name in seen_names:
+            diagnostics.append(
+                Diagnostic("semantic conflict", "issue_tracker_ops.label_axes", f"axis {name!r} is duplicated")
+            )
+        else:
+            seen_names.add(name)
+        cardinality = axis.get("cardinality")
+        if cardinality not in ISSUE_TRACKER_OPS_LABEL_AXIS_CARDINALITIES:
+            diagnostics.append(
+                Diagnostic(
+                    "semantic conflict",
+                    "issue_tracker_ops.label_axes",
+                    f"axis {name or index} cardinality must be one of {sorted(ISSUE_TRACKER_OPS_LABEL_AXIS_CARDINALITIES)!r}",
+                )
+            )
+        labels = axis.get("labels")
+        if not isinstance(labels, list) or not labels or not all(isinstance(label, str) and label for label in labels):
+            diagnostics.append(
+                Diagnostic("semantic conflict", "issue_tracker_ops.label_axes", f"axis {name or index} labels must be a non-empty list of strings")
+            )
+        elif len(set(labels)) != len(labels):
+            diagnostics.append(
+                Diagnostic("semantic conflict", "issue_tracker_ops.label_axes", f"axis {name or index} labels must be unique")
+            )
+        else:
+            for label in labels:
+                existing_axis = seen_labels.get(label)
+                if existing_axis is not None and existing_axis != name:
+                    diagnostics.append(
+                        Diagnostic(
+                            "semantic conflict",
+                            "issue_tracker_ops.label_axes",
+                            f"label {label!r} appears in both {existing_axis} and {name or index} axes",
+                        )
+                    )
+                else:
+                    seen_labels[label] = str(name or index)
+    return diagnostics
+
+
 def issue_tracker_ops_fragment() -> SchemaFragment:
     def execute_requires_disclosure(values: dict[str, Any], requested_behavior: str) -> list[Diagnostic]:
         if requested_behavior == "mutation" and values.get("mode") == "execute" and values.get("external_disclosure") != "allowed":
@@ -1834,18 +1909,39 @@ def issue_tracker_ops_fragment() -> SchemaFragment:
 
     return SchemaFragment(
         namespace="issue_tracker_ops",
-        version=2,
+        version=3,
         fields={
             "mode": FieldSpec(type="string", required=True, enum=["dry-run", "execute"]),
             "external_disclosure": FieldSpec(type="string", required=True, enum=["blocked", "allowed"]),
             "github_token": FieldSpec(type="object", required=False),
+            "policy_profile_status": FieldSpec(
+                type="string",
+                required=False,
+                enum=["authoritative", "partial", "compatibility", "transitional"],
+            ),
+            "tracker": FieldSpec(type="object", required=False),
+            "adapter_operations": FieldSpec(type="array", required=False),
+            "label_axes": FieldSpec(type="array", required=False),
+            "role_mappings": FieldSpec(type="object", required=False),
+            "dependency_policy": FieldSpec(type="object", required=False),
+            "triage_records": FieldSpec(type="object", required=False),
+            "fallback_capture": FieldSpec(type="object", required=False),
+            "audit": FieldSpec(type="object", required=False),
+            "reflection_findings": FieldSpec(type="object", required=False),
+            "legacy_policy_surfaces": FieldSpec(type="array", required=False),
+            "semantic_policy": FieldSpec(type="object", required=False),
         },
-        semantic_validators=(execute_requires_disclosure,),
+        semantic_validators=(execute_requires_disclosure, issue_tracker_ops_label_axis_diagnostics),
         migrations=(
             MigrationPreview(
                 from_version=1,
                 field_renames={"operation_mode": "mode"},
-                note="rename operation_mode to mode",
+                note="rename operation_mode to mode and update Issue Ops policy profile version",
+            ),
+            MigrationPreview(
+                from_version=2,
+                field_renames={},
+                note="update Issue Ops policy profile version",
             ),
         ),
     )

@@ -8,7 +8,7 @@ import subprocess
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Callable, TextIO
+from typing import Callable, Iterable, TextIO
 from urllib.parse import urlencode
 
 try:
@@ -477,15 +477,50 @@ def fallback_projection_request(record: dict, repo: str) -> RequestSpec:
     return RequestSpec("GET", endpoint)
 
 
-def label_axes_payload() -> dict[str, dict[str, object]]:
+def label_axes_payload(axes: Iterable[LabelAxis] = LABEL_AXES) -> dict[str, dict[str, object]]:
     return {
         axis.name: {
             "labels": list(axis.labels),
             "cardinality": axis.cardinality,
             "description": axis.description,
         }
-        for axis in LABEL_AXES
+        for axis in axes
     }
+
+
+def configured_label_axes(config: dict | None) -> tuple[LabelAxis, ...]:
+    if not isinstance(config, dict):
+        return LABEL_AXES
+    effective_config = config.get("effective_config")
+    if not isinstance(effective_config, dict) or effective_config.get("safety_status") != "usable":
+        return LABEL_AXES
+    issue_ops = effective_config.get("effective", {}).get("issue_tracker_ops")
+    if not isinstance(issue_ops, dict):
+        return LABEL_AXES
+    label_axes = issue_ops.get("label_axes")
+    if not isinstance(label_axes, dict):
+        return LABEL_AXES
+    value = label_axes.get("value")
+    if not isinstance(value, list) or not value:
+        return LABEL_AXES
+    axes: list[LabelAxis] = []
+    for item in value:
+        if not isinstance(item, dict):
+            return LABEL_AXES
+        name = item.get("name")
+        labels = item.get("labels")
+        cardinality = item.get("cardinality")
+        description = item.get("description", "")
+        if (
+            not isinstance(name, str)
+            or not isinstance(labels, list)
+            or not all(isinstance(label, str) for label in labels)
+            or not isinstance(cardinality, str)
+            or not isinstance(description, str)
+        ):
+            return LABEL_AXES
+        axes.append(LabelAxis(name, tuple(labels), cardinality, description))
+    return tuple(axes)
 
 
 def issue_label_names(issue: dict) -> list[str]:
@@ -503,10 +538,10 @@ def issue_label_names(issue: dict) -> list[str]:
     return sorted(dict.fromkeys(label_names))
 
 
-def audit_label_findings(label_names: list[str]) -> list[dict[str, str]]:
+def audit_label_findings(label_names: list[str], axes: Iterable[LabelAxis] = LABEL_AXES) -> list[dict[str, str]]:
     label_set = set(label_names)
     findings: list[dict[str, str]] = []
-    for axis in LABEL_AXES:
+    for axis in axes:
         matches = [label for label in axis.labels if label in label_set]
         if axis.cardinality == "exactly_one":
             if not matches:
@@ -548,7 +583,7 @@ def audit_label_findings(label_names: list[str]) -> list[dict[str, str]]:
     return findings
 
 
-def audit_issue_labels(issues: JSONValue) -> dict[str, object]:
+def audit_issue_labels(issues: JSONValue, axes: Iterable[LabelAxis] = LABEL_AXES) -> dict[str, object]:
     if not isinstance(issues, list):
         issues = []
     checked_issues = 0
@@ -560,7 +595,7 @@ def audit_issue_labels(issues: JSONValue) -> dict[str, object]:
             continue
         checked_issues += 1
         label_names = issue_label_names(issue)
-        findings = audit_label_findings(label_names)
+        findings = audit_label_findings(label_names, axes)
         if not findings:
             continue
         errors += sum(1 for finding in findings if finding["severity"] == "error")
@@ -631,7 +666,7 @@ def planned_safety_preflight(args: argparse.Namespace) -> list[dict]:
 
 def dry_run_audit_labels_payload(args: argparse.Namespace, *, config: dict | None = None) -> dict:
     payload = dry_run_payload(args.operation, audit_labels_request(args), config=config)
-    payload["label_axes"] = label_axes_payload()
+    payload["label_axes"] = label_axes_payload(configured_label_axes(config))
     return payload
 
 
@@ -1172,7 +1207,7 @@ def execute_audit_labels(
         "mode": "execute",
         "operation": args.operation,
         "request": compact_request(request),
-        "result": audit_issue_labels(result),
+        "result": audit_issue_labels(result, configured_label_axes(config)),
     }
     if config is not None:
         payload["config"] = config

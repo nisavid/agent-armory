@@ -33,6 +33,7 @@ from tools.validate_armory_integrity import (
     validate_forge_routes,
     validate_harness_catalog,
     validate_markdown_links,
+    validate_issue_tracker_ops_policy_config,
     validate_projection_drafts,
     validate_python_runtime_declaration,
     validate_specs,
@@ -8611,6 +8612,168 @@ class ExampleValidationTests(unittest.TestCase):
                 False,
                 "forbidden readiness claim: is installable",
                 "examples/observability-investigation/interface-decision-record.md",
+            ),
+            results,
+        )
+
+
+class IssueTrackerOpsPolicyConfigValidationTests(unittest.TestCase):
+    config_path = "config/agent-equipment.toml"
+    issue_tracker_doc = "docs/agents/issue-tracker.md"
+    triage_labels_doc = "docs/agents/triage-labels.md"
+
+    def write_file(self, root: Path, relative_path: str, content: str) -> None:
+        path = root / relative_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(textwrap.dedent(content).lstrip(), encoding="utf-8")
+
+    def valid_policy_config(self, *, extra_axis: str = "") -> str:
+        return f"""
+            [agent_equipment_config.layer]
+            name = "repository policy"
+            category = "committed durable config"
+
+            [agent_equipment_config.authority]
+            repo-maintainers = "usable"
+
+            [agent_equipment_config.fragment_versions]
+            issue_tracker_ops = 3
+
+            [agent_equipment_config.policy.issue_tracker_ops.mode]
+            required_for = "always"
+            non_overridable = true
+            authority = "repo-maintainers"
+
+            [issue_tracker_ops]
+            mode = "dry-run"
+            external_disclosure = "blocked"
+            policy_profile_status = "authoritative"
+
+            [[issue_tracker_ops.label_axes]]
+            name = "category"
+            cardinality = "exactly_one"
+            description = "coarse issue category role"
+            labels = ["bug", "enhancement"]
+
+            [[issue_tracker_ops.label_axes]]
+            name = "state"
+            cardinality = "exactly_one"
+            description = "mutually exclusive triage state role"
+            labels = ["needs-triage", "ready-for-agent"]
+
+            {extra_axis}
+
+            [[issue_tracker_ops.legacy_policy_surfaces]]
+            path = "docs/agents/issue-tracker.md"
+            fate = "compatibility layer"
+            authority = "config/agent-equipment.toml"
+
+            [[issue_tracker_ops.legacy_policy_surfaces]]
+            path = "docs/agents/triage-labels.md"
+            fate = "compatibility layer"
+            authority = "config/agent-equipment.toml"
+        """
+
+    def valid_issue_tracker_doc(self) -> str:
+        return """
+            # Issue Tracker
+
+            Preferred policy authority: `config/agent-equipment.toml`.
+
+            This document is a compatibility layer for active dependents.
+        """
+
+    def valid_triage_labels_doc(self, extra_text: str = "") -> str:
+        return f"""
+            # Triage Labels
+
+            Preferred policy authority: `config/agent-equipment.toml`.
+
+            This document is a compatibility layer for active dependents.
+
+            Labels: bug, enhancement, needs-triage, ready-for-agent.
+
+            {extra_text}
+        """
+
+    def write_valid_policy_surface(self, root: Path, *, config: str | None = None, triage_doc: str | None = None) -> None:
+        self.write_file(root, self.config_path, config or self.valid_policy_config())
+        self.write_file(root, self.issue_tracker_doc, self.valid_issue_tracker_doc())
+        self.write_file(root, self.triage_labels_doc, triage_doc or self.valid_triage_labels_doc())
+
+    def test_validate_issue_tracker_ops_policy_config_requires_committed_layer(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = validate_issue_tracker_ops_policy_config(root)
+
+        self.assertIn(
+            CheckResult(
+                "issue_ops_policy_config:path:config/agent-equipment.toml",
+                False,
+                "missing",
+                "config/agent-equipment.toml",
+            ),
+            results,
+        )
+
+    def test_validate_issue_tracker_ops_policy_config_accepts_valid_layer_and_docs(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_valid_policy_surface(root)
+
+            results = validate_issue_tracker_ops_policy_config(root)
+
+        self.assertTrue(all(result.ok for result in results), results)
+
+    def test_validate_issue_tracker_ops_policy_config_requires_compatibility_doc_references(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_valid_policy_surface(
+                root,
+                triage_doc="""
+                    # Triage Labels
+
+                    Labels: bug, enhancement, needs-triage, ready-for-agent.
+                """,
+            )
+
+            results = validate_issue_tracker_ops_policy_config(root)
+
+        self.assertIn(
+            CheckResult(
+                "issue_ops_policy_config:doc:docs/agents/triage-labels.md:authority",
+                False,
+                "missing Config compatibility reference",
+                "docs/agents/triage-labels.md",
+            ),
+            results,
+        )
+
+    def test_validate_issue_tracker_ops_policy_config_detects_label_drift(self):
+        extra_axis = """
+            [[issue_tracker_ops.label_axes]]
+            name = "priority"
+            cardinality = "exactly_one"
+            description = "configured priority policy"
+            labels = ["priority:high", "priority:low"]
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_valid_policy_surface(
+                root,
+                config=self.valid_policy_config(extra_axis=extra_axis),
+                triage_doc=self.valid_triage_labels_doc(extra_text="priority:high"),
+            )
+
+            results = validate_issue_tracker_ops_policy_config(root)
+
+        self.assertIn(
+            CheckResult(
+                "issue_ops_policy_config:labels:docs/agents/triage-labels.md:priority:low",
+                False,
+                "missing configured label: priority:low",
+                "docs/agents/triage-labels.md",
             ),
             results,
         )

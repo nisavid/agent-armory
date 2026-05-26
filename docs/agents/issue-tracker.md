@@ -1,5 +1,13 @@
 # Issue Tracker
 
+Preferred policy authority: `config/agent-equipment.toml`.
+
+This document is a compatibility layer for active agent and skill dependents.
+Use the Config layer for Issue Tracker Ops policy predicates, label axes,
+operation dispositions, fallback rules, and audit expectations. Use this
+document for readable workflow guidance over that Config authority. If these
+surfaces conflict, the Config layer is authoritative.
+
 Issues and PRDs for this repo live in GitHub Issues for `nisavid/agent-armory`.
 
 The current Issue Tracker Ops baseline is GitHub Issues without GitHub Projects
@@ -81,7 +89,9 @@ through `gh`.
 Use `audit-labels` to dogfood the baseline label axes and detect missing or
 conflicting axis labels across open issues. The command is read-only, but it
 still follows the adapter convention: without `--execute`, it emits a dry-run
-preview of the GitHub read and the axis policy.
+preview of the GitHub read and the axis policy. Pass
+`--config-layer config/agent-equipment.toml` to audit the configured Issue Ops
+policy axes; without Config input, the command uses its bootstrap defaults.
 
 Use `describe-core` to inspect the tracker-neutral operation model, operation
 classes, side-effect classes, capability dispositions, and audit requirements.

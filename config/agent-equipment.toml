@@ -1,0 +1,221 @@
+[agent_equipment_config.layer]
+name = "repository policy"
+category = "committed durable config"
+
+[agent_equipment_config.authority]
+repo-maintainers = "usable"
+
+[agent_equipment_config.fragment_versions]
+issue_tracker_ops = 3
+
+[agent_equipment_config.policy.issue_tracker_ops.mode]
+required_for = "always"
+non_overridable = true
+authority = "repo-maintainers"
+
+[agent_equipment_config.policy.issue_tracker_ops.external_disclosure]
+required_for = "mutation"
+non_overridable = true
+authority = "repo-maintainers"
+
+[agent_equipment_config.policy.issue_tracker_ops.policy_profile_status]
+required_for = "always"
+non_overridable = true
+authority = "repo-maintainers"
+
+[issue_tracker_ops]
+mode = "dry-run"
+external_disclosure = "blocked"
+policy_profile_status = "authoritative"
+
+[issue_tracker_ops.tracker]
+platform = "github-issues"
+repo = "nisavid/agent-armory"
+system_of_record = "GitHub Issues"
+baseline = "github-issues-labels"
+projects_custom_fields = "not adopted"
+
+[[issue_tracker_ops.adapter_operations]]
+id = "issue.read"
+surface = "read-issue"
+disposition = "native"
+side_effect_class = "read"
+
+[[issue_tracker_ops.adapter_operations]]
+id = "issue.list"
+surface = "list-issues"
+disposition = "native"
+side_effect_class = "read"
+
+[[issue_tracker_ops.adapter_operations]]
+id = "issue.create"
+surface = "create-issue"
+disposition = "native"
+side_effect_class = "network_write"
+
+[[issue_tracker_ops.adapter_operations]]
+id = "issue.update"
+surface = "update-issue"
+disposition = "native"
+side_effect_class = "network_write"
+
+[[issue_tracker_ops.adapter_operations]]
+id = "issue.comment"
+surface = "comment"
+disposition = "native"
+side_effect_class = "network_write"
+
+[[issue_tracker_ops.adapter_operations]]
+id = "label.audit"
+surface = "audit-labels"
+disposition = "native"
+side_effect_class = "read"
+
+[[issue_tracker_ops.adapter_operations]]
+id = "dependency.add"
+surface = "add-blocked-by"
+disposition = "native"
+side_effect_class = "network_write"
+
+[[issue_tracker_ops.adapter_operations]]
+id = "dependency.remove"
+surface = "remove-blocked-by"
+disposition = "native"
+side_effect_class = "network_write"
+
+[[issue_tracker_ops.adapter_operations]]
+id = "fallback.reconcile"
+surface = "reconcile-fallback"
+disposition = "fallback"
+side_effect_class = "read_or_local_write"
+
+[[issue_tracker_ops.label_axes]]
+name = "category"
+cardinality = "exactly_one"
+description = "coarse issue category role"
+labels = ["bug", "enhancement"]
+
+[[issue_tracker_ops.label_axes]]
+name = "state"
+cardinality = "exactly_one"
+description = "mutually exclusive triage state role"
+labels = ["needs-triage", "needs-info", "ready-for-agent", "ready-for-human", "wontfix"]
+
+[[issue_tracker_ops.label_axes]]
+name = "depth"
+cardinality = "at_most_one"
+description = "deepest triage evidence boundary reached"
+labels = ["depth:L0", "depth:L1", "depth:L2", "depth:L3"]
+
+[[issue_tracker_ops.label_axes]]
+name = "work_kind"
+cardinality = "prefer_one"
+description = "primary kind of work required"
+labels = ["kind:research", "kind:design", "kind:documentation", "kind:implementation", "kind:epic", "kind:cleanup", "kind:reflection-finding"]
+
+[[issue_tracker_ops.label_axes]]
+name = "engagement_mode"
+cardinality = "at_most_one"
+description = "next expected handling shape"
+labels = ["mode:afk-implementation", "mode:agent-led-grill", "mode:human-decision", "mode:linked-context-triage", "mode:deep-session"]
+
+[[issue_tracker_ops.label_axes]]
+name = "brief_status"
+cardinality = "at_most_one"
+description = "handoff readiness for delegation"
+labels = ["brief:not-needed", "brief:needed", "brief:present", "brief:stale"]
+
+[[issue_tracker_ops.label_axes]]
+name = "dependency_disposition"
+cardinality = "at_most_one"
+description = "selection effect of known dependency state"
+labels = ["dependency:unblocked", "dependency:blocked", "dependency:unknown", "dependency:needs-recording"]
+
+[issue_tracker_ops.role_mappings.category]
+bug = "bug"
+enhancement = "enhancement"
+
+[issue_tracker_ops.role_mappings.state]
+needs_triage = "needs-triage"
+needs_info = "needs-info"
+ready_for_agent = "ready-for-agent"
+ready_for_human = "ready-for-human"
+wontfix = "wontfix"
+
+[issue_tracker_ops.role_mappings.depth]
+L0 = "depth:L0"
+L1 = "depth:L1"
+L2 = "depth:L2"
+L3 = "depth:L3"
+
+[issue_tracker_ops.role_mappings.work_kind]
+research = "kind:research"
+design = "kind:design"
+documentation = "kind:documentation"
+implementation = "kind:implementation"
+epic = "kind:epic"
+cleanup = "kind:cleanup"
+reflection_finding = "kind:reflection-finding"
+
+[issue_tracker_ops.dependency_policy]
+representation = "native dependency relations plus dependency disposition labels"
+feasibility_rule = "Dependency relations determine feasibility unless configured policy says they also affect priority."
+blocked_by_command = "list-blocked-by"
+blocking_command = "list-blocking"
+
+[issue_tracker_ops.triage_records]
+ai_disclaimer = "> *This was generated by AI during triage.*"
+template_reference = "docs/agents/triage-labels.md#triage-records"
+use_when = "labels, readiness, unresolved factors, or delegation path are not obvious from the issue body alone"
+evidence_boundary_required = true
+
+[issue_tracker_ops.fallback_capture]
+preferred_tracker = "GitHub Issues"
+local_path = "docs/follow-ups/<short-slug>.md"
+use_when = "durable repo note is needed before issue projection is available or appropriate"
+parallel_tracker = "forbidden after GitHub Issues carry the active work"
+reconciliation_command = "reconcile-fallback"
+
+[issue_tracker_ops.audit]
+label_audit_command = "audit-labels"
+read_without_execute = "dry-run preview"
+execute_read = "live GitHub query"
+mutation_default = "dry-run"
+mutation_requires = ["--execute", "usable Config authorization or --mutation-policy-ref"]
+
+[issue_tracker_ops.reflection_findings]
+route_to_issue_tracker = true
+generic_cognition_issue = 25
+privacy_review_required = true
+record_confidence_urgency_readiness = true
+
+[[issue_tracker_ops.legacy_policy_surfaces]]
+path = "docs/agents/issue-tracker.md"
+fate = "compatibility layer"
+authority = "config/agent-equipment.toml"
+compatibility_mechanism = "indirection"
+active_dependents = ["Matt Pocock-style issue tracker skills", "repo-local agent routing"]
+prose_only_reason = "Human and agent workflow guidance remains useful, but policy predicates are anchored in Config."
+
+[[issue_tracker_ops.legacy_policy_surfaces]]
+path = "docs/agents/triage-labels.md"
+fate = "compatibility layer"
+authority = "config/agent-equipment.toml"
+compatibility_mechanism = "indirection"
+active_dependents = ["triage skill", "label-axis audit users"]
+prose_only_reason = "Triage examples and record-writing guidance remain prose compatibility instructions over Config-backed axes."
+
+[issue_tracker_ops.semantic_policy]
+source_references = [
+  "docs/prd/issue-tracker-ops.md",
+  "specs/issue-tracker-ops/config-profile-and-onboarding.md",
+  "docs/smith-runbook.md",
+  "docs/agents/issue-tracker.md",
+  "docs/agents/triage-labels.md",
+]
+prose_only_policy = [
+  "Agent judgment for evidence boundaries and operator-sensitive decisions remains in skills and docs.",
+  "GitHub Projects custom fields are not adopted in the current baseline.",
+  "Assignee and priority choices require explicit policy or operator judgment.",
+]
+safety_status = "usable for advisory and dry-run Issue Ops policy explanation; live mutation remains blocked by mode and external disclosure defaults"

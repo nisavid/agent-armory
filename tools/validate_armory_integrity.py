@@ -27,6 +27,19 @@ except ModuleNotFoundError:
     sys.modules[spec.name] = harness_capability_profiles
     spec.loader.exec_module(harness_capability_profiles)
 
+try:
+    from tools import agent_equipment_config
+except ModuleNotFoundError:
+    spec = importlib.util.spec_from_file_location(
+        "agent_equipment_config",
+        Path(__file__).with_name("agent_equipment_config.py"),
+    )
+    if spec is None or spec.loader is None:
+        raise
+    agent_equipment_config = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = agent_equipment_config
+    spec.loader.exec_module(agent_equipment_config)
+
 
 @dataclass(frozen=True)
 class CheckResult:
@@ -101,6 +114,11 @@ VALIDATION_INVENTORY = [
         "check": "specs",
         "boundary": "equipment_candidate_shape",
         "relationship": "Equipment-candidate shape validation for Equipment Blueprints and bundles, not equipment-specific behavior validation.",
+    },
+    {
+        "check": "issue_ops_policy_config",
+        "boundary": "armory_integrity",
+        "relationship": "Top-level repository integrity check for the committed Issue Ops policy authority and compatibility docs.",
     },
     {
         "check": "markdown_links",
@@ -830,6 +848,11 @@ CONFIG_BUNDLE_PATH = "specs/agent-equipment-config"
 CONFIG_PRD_PATH = "docs/prd/agent-equipment-config.md"
 ISSUE_TRACKER_OPS_PRD_PATH = "docs/prd/issue-tracker-ops.md"
 ISSUE_TRACKER_OPS_CONFIG_PROFILE_PATH = "specs/issue-tracker-ops/config-profile-and-onboarding.md"
+ISSUE_TRACKER_OPS_POLICY_CONFIG_PATH = "config/agent-equipment.toml"
+ISSUE_TRACKER_OPS_COMPATIBILITY_DOCS = [
+    "docs/agents/issue-tracker.md",
+    "docs/agents/triage-labels.md",
+]
 EXISTING_EQUIPMENT_ONBOARDING_PRD_PATH = "docs/prd/existing-equipment-onboarding.md"
 ISSUE_TRACKER_OPS_CONFIG_PROFILE_REQUIRED_SECTIONS = [
     "Purpose",
@@ -4627,6 +4650,158 @@ def validate_examples(root: Path) -> list[CheckResult]:
     return results
 
 
+def effective_issue_tracker_ops_field(effective: dict, field_name: str) -> object:
+    field = effective.get("effective", {}).get("issue_tracker_ops", {}).get(field_name, {})
+    if isinstance(field, dict):
+        return field.get("value")
+    return None
+
+
+def configured_issue_tracker_ops_doc_paths(effective: dict) -> list[str]:
+    legacy_surfaces = effective_issue_tracker_ops_field(effective, "legacy_policy_surfaces")
+    configured_paths: list[str] = []
+    if isinstance(legacy_surfaces, list):
+        for surface in legacy_surfaces:
+            if isinstance(surface, dict) and isinstance(surface.get("path"), str):
+                configured_paths.append(surface["path"])
+    return unique_preserve_order([*ISSUE_TRACKER_OPS_COMPATIBILITY_DOCS, *configured_paths])
+
+
+def configured_issue_tracker_ops_labels(effective: dict) -> list[str]:
+    label_axes = effective_issue_tracker_ops_field(effective, "label_axes")
+    labels: list[str] = []
+    if not isinstance(label_axes, list):
+        return labels
+    for axis in label_axes:
+        if not isinstance(axis, dict):
+            continue
+        axis_labels = axis.get("labels")
+        if not isinstance(axis_labels, list):
+            continue
+        labels.extend(label for label in axis_labels if isinstance(label, str))
+    return unique_preserve_order(labels)
+
+
+def validate_issue_tracker_ops_policy_config(root: Path) -> list[CheckResult]:
+    results: list[CheckResult] = []
+    ok, detail, path = repo_relative_path_status(root, ISSUE_TRACKER_OPS_POLICY_CONFIG_PATH, "file")
+    if not ok:
+        results.append(
+            CheckResult(
+                f"issue_ops_policy_config:path:{ISSUE_TRACKER_OPS_POLICY_CONFIG_PATH}",
+                False,
+                detail,
+                ISSUE_TRACKER_OPS_POLICY_CONFIG_PATH,
+            )
+        )
+        return results
+
+    fragment = agent_equipment_config.issue_tracker_ops_fragment()
+    try:
+        raw_config = load_toml(path)
+        effective = agent_equipment_config.effective_config(
+            [path],
+            [fragment],
+            requested_behavior="advisory",
+        )
+    except (agent_equipment_config.ConfigError, OSError, tomllib.TOMLDecodeError) as exc:
+        results.append(
+            CheckResult(
+                f"issue_ops_policy_config:validate:{ISSUE_TRACKER_OPS_POLICY_CONFIG_PATH}",
+                False,
+                str(exc),
+                ISSUE_TRACKER_OPS_POLICY_CONFIG_PATH,
+            )
+        )
+        return results
+
+    fragment_version = (
+        raw_config.get("agent_equipment_config", {})
+        .get("fragment_versions", {})
+        .get("issue_tracker_ops")
+    )
+    if fragment_version != fragment.version:
+        results.append(
+            CheckResult(
+                f"issue_ops_policy_config:version:{ISSUE_TRACKER_OPS_POLICY_CONFIG_PATH}",
+                False,
+                f"issue_tracker_ops fragment version must be {fragment.version}",
+                ISSUE_TRACKER_OPS_POLICY_CONFIG_PATH,
+            )
+        )
+    if effective.get("safety_status") != "usable":
+        results.append(
+            CheckResult(
+                f"issue_ops_policy_config:safety:{ISSUE_TRACKER_OPS_POLICY_CONFIG_PATH}",
+                False,
+                f"safety_status={effective.get('safety_status')}",
+                ISSUE_TRACKER_OPS_POLICY_CONFIG_PATH,
+            )
+        )
+    if effective_issue_tracker_ops_field(effective, "policy_profile_status") != "authoritative":
+        results.append(
+            CheckResult(
+                f"issue_ops_policy_config:authority:{ISSUE_TRACKER_OPS_POLICY_CONFIG_PATH}",
+                False,
+                "policy_profile_status must be authoritative",
+                ISSUE_TRACKER_OPS_POLICY_CONFIG_PATH,
+            )
+        )
+    if not configured_issue_tracker_ops_labels(effective):
+        results.append(
+            CheckResult(
+                f"issue_ops_policy_config:labels:{ISSUE_TRACKER_OPS_POLICY_CONFIG_PATH}",
+                False,
+                "missing configured label axes",
+                ISSUE_TRACKER_OPS_POLICY_CONFIG_PATH,
+            )
+        )
+
+    doc_markdown: dict[str, str] = {}
+    for relative_path in configured_issue_tracker_ops_doc_paths(effective):
+        doc_ok, doc_detail, doc_path = repo_relative_path_status(root, relative_path, "file")
+        if not doc_ok:
+            results.append(CheckResult(f"issue_ops_policy_config:doc:{relative_path}:path", False, doc_detail, relative_path))
+            continue
+        markdown = doc_path.read_text(encoding="utf-8")
+        visible_markdown = markdown_visible_text(markdown)
+        normalized = " ".join(visible_markdown.casefold().split())
+        doc_markdown[relative_path] = visible_markdown
+        if ISSUE_TRACKER_OPS_POLICY_CONFIG_PATH not in visible_markdown or "compatibility layer" not in normalized:
+            results.append(
+                CheckResult(
+                    f"issue_ops_policy_config:doc:{relative_path}:authority",
+                    False,
+                    "missing Config compatibility reference",
+                    relative_path,
+                )
+            )
+
+    triage_markdown = doc_markdown.get("docs/agents/triage-labels.md")
+    if triage_markdown is not None:
+        for label in configured_issue_tracker_ops_labels(effective):
+            if label not in triage_markdown:
+                results.append(
+                    CheckResult(
+                        f"issue_ops_policy_config:labels:docs/agents/triage-labels.md:{label}",
+                        False,
+                        f"missing configured label: {label}",
+                        "docs/agents/triage-labels.md",
+                    )
+                )
+
+    if not any(result.name.startswith("issue_ops_policy_config:") and not result.ok for result in results):
+        results.append(
+            CheckResult(
+                "issue_ops_policy_config:config/agent-equipment.toml",
+                True,
+                "valid authoritative policy layer with compatible docs",
+                ISSUE_TRACKER_OPS_POLICY_CONFIG_PATH,
+            )
+        )
+    return results
+
+
 def validate_specs(root: Path) -> list[CheckResult]:
     results: list[CheckResult] = []
     config_bundle_markdown_parts: list[str] = []
@@ -4900,6 +5075,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
         EXISTING_EQUIPMENT_ONBOARDING_PRD_PATH,
         SOURCE_DISPOSITION_PATH,
         THREAT_MODEL_PATH,
+        ISSUE_TRACKER_OPS_POLICY_CONFIG_PATH,
         DOCUMENTATION_CLOSEOUT_PATH,
         SECURITY_CLOSEOUT_PATH,
         PROJECTION_DRAFTS_PATH,
@@ -4925,6 +5101,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
         *validate_templates(root),
         *validate_examples(root),
         *validate_specs(root),
+        *validate_issue_tracker_ops_policy_config(root),
         *validate_markdown_links(root),
     ]
     results.extend(validate_source_disposition(root))

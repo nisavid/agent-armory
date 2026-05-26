@@ -88,6 +88,27 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(mutation_result["effective"]["issue_tracker_ops"]["mode"]["value"], "dry-run")
         self.assertEqual(mutation_result["effective"]["issue_tracker_ops"]["external_disclosure"]["value"], "blocked")
 
+    def test_committed_agent_armory_issue_ops_policy_layer_validates(self):
+        root = Path(__file__).parents[1]
+        policy = root / "config/agent-equipment.toml"
+
+        result = agent_equipment_config.effective_config(
+            [policy],
+            [agent_equipment_config.issue_tracker_ops_fragment()],
+            requested_behavior="advisory",
+        )
+
+        self.assertEqual(result["safety_status"], "usable")
+        self.assertEqual(result["effective"]["issue_tracker_ops"]["mode"]["value"], "dry-run")
+        self.assertEqual(result["effective"]["issue_tracker_ops"]["external_disclosure"]["value"], "blocked")
+        self.assertEqual(result["effective"]["issue_tracker_ops"]["policy_profile_status"]["value"], "authoritative")
+        self.assertEqual(result["effective"]["issue_tracker_ops"]["tracker"]["value"]["repo"], "nisavid/agent-armory")
+        label_axes = result["effective"]["issue_tracker_ops"]["label_axes"]["value"]
+        self.assertIn(
+            {"name": "category", "cardinality": "exactly_one", "description": "coarse issue category role", "labels": ["bug", "enhancement"]},
+            label_axes,
+        )
+
     def test_onboarding_reports_missing_shared_config_handoff_behavior(self):
         result = agent_equipment_config.config_onboarding_plan(
             [],
@@ -658,6 +679,149 @@ class AgentEquipmentConfigTests(unittest.TestCase):
                     note="rename run_state to state",
                 ),
             ),
+        )
+
+    def test_issue_tracker_ops_fragment_v3_accepts_policy_profile_fields(self):
+        fragment = agent_equipment_config.issue_tracker_ops_fragment()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.fragment_versions]
+                issue_tracker_ops = 3
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+                policy_profile_status = "authoritative"
+
+                [issue_tracker_ops.tracker]
+                platform = "github-issues"
+                repo = "nisavid/agent-armory"
+
+                [[issue_tracker_ops.label_axes]]
+                name = "category"
+                cardinality = "exactly_one"
+                description = "coarse issue category role"
+                labels = ["bug", "enhancement"]
+            """)
+
+            result = agent_equipment_config.effective_config([layer], [fragment], requested_behavior="advisory")
+
+        self.assertEqual(fragment.version, 3)
+        self.assertEqual(result["safety_status"], "usable")
+        self.assertEqual(result["effective"]["issue_tracker_ops"]["policy_profile_status"]["value"], "authoritative")
+        self.assertEqual(result["effective"]["issue_tracker_ops"]["tracker"]["value"]["platform"], "github-issues")
+        self.assertEqual(result["effective"]["issue_tracker_ops"]["label_axes"]["value"][0]["labels"], ["bug", "enhancement"])
+
+    def test_issue_tracker_ops_fragment_v3_reports_malformed_label_axes(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.fragment_versions]
+                issue_tracker_ops = 3
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+
+                [[issue_tracker_ops.label_axes]]
+                name = "category"
+                cardinality = "exactly_one"
+                labels = []
+            """)
+
+            result = agent_equipment_config.effective_config(
+                [layer],
+                [agent_equipment_config.issue_tracker_ops_fragment()],
+                requested_behavior="advisory",
+            )
+
+        self.assertEqual(result["safety_status"], "unsafe")
+        self.assertEqual(result["diagnostics"][0]["kind"], "semantic conflict")
+        self.assertEqual(result["diagnostics"][0]["path"], "issue_tracker_ops.label_axes")
+        self.assertIn("labels must be a non-empty list", result["diagnostics"][0]["detail"])
+
+    def test_issue_tracker_ops_fragment_v3_reports_labels_reused_across_axes(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.fragment_versions]
+                issue_tracker_ops = 3
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+
+                [[issue_tracker_ops.label_axes]]
+                name = "category"
+                cardinality = "exactly_one"
+                labels = ["bug"]
+
+                [[issue_tracker_ops.label_axes]]
+                name = "priority"
+                cardinality = "at_most_one"
+                labels = ["bug"]
+            """)
+
+            result = agent_equipment_config.effective_config(
+                [layer],
+                [agent_equipment_config.issue_tracker_ops_fragment()],
+                requested_behavior="advisory",
+            )
+
+        self.assertEqual(result["safety_status"], "unsafe")
+        self.assertIn(
+            {
+                "kind": "semantic conflict",
+                "path": "issue_tracker_ops.label_axes",
+                "detail": "label 'bug' appears in both category and priority axes",
+                "layer": None,
+                "source": None,
+                "evidence": {},
+            },
+            result["diagnostics"],
+        )
+
+    def test_issue_tracker_ops_fragment_v3_previews_v2_migration(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.fragment_versions]
+                issue_tracker_ops = 2
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+
+            result = agent_equipment_config.effective_config(
+                [layer],
+                [agent_equipment_config.issue_tracker_ops_fragment()],
+                requested_behavior="advisory",
+            )
+
+        self.assertEqual(result["safety_status"], "stale")
+        self.assertEqual(result["migration_previews"][0]["from_version"], 2)
+        self.assertEqual(result["migration_previews"][0]["to_version"], 3)
+        self.assertEqual(
+            result["migration_previews"][0]["changes"],
+            [{"operation": "update fragment version", "path": "agent_equipment_config.fragment_versions.issue_tracker_ops", "from": 2, "to": 3}],
         )
 
     def test_later_layer_wins_when_not_locked(self):
@@ -3358,7 +3522,7 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(payload["refusal_codes"], [])
         self.assertEqual(
             payload["change_payload"]["create_payload"]["agent_equipment_config"]["fragment_versions"],
-            {"issue_tracker_ops": 2},
+            {"issue_tracker_ops": 3},
         )
 
     def test_cli_create_layer_refuses_existing_destination(self):
