@@ -2883,6 +2883,7 @@ def authoring_apply_result(
     ]
     return {
         "operation": "config apply",
+        "plan_schema": AUTHORING_PLAN_SCHEMA,
         "plan_kind": plan_kind,
         "source_target": source_target,
         "source_category": source_category,
@@ -3369,7 +3370,7 @@ def mcp_object_schema(description: str) -> dict[str, Any]:
     }
 
 
-def mcp_output_schema() -> dict[str, Any]:
+def mcp_output_schema(result_schema: dict[str, Any] | None = None) -> dict[str, Any]:
     return {
         "type": "object",
         "properties": {
@@ -3377,7 +3378,7 @@ def mcp_output_schema() -> dict[str, Any]:
             "operation": {"type": "string"},
             "cli_operation": {"type": "string"},
             "read_write_classification": {"type": "string"},
-            "result": {"type": "object"},
+            "result": result_schema or {"type": "object"},
         },
         "required": ["tool", "operation", "cli_operation", "read_write_classification", "result"],
         "additionalProperties": True,
@@ -3397,6 +3398,7 @@ def mcp_tool_spec(
     failure_modes: list[str],
     auth_source: str = "none",
     mutation_gate: str = "not mutation-capable",
+    output_schema: dict[str, Any] | None = None,
     read_only: bool = True,
     destructive: bool = False,
     idempotent: bool = True,
@@ -3413,7 +3415,7 @@ def mcp_tool_spec(
         "title": title,
         "description": description,
         "inputSchema": input_schema,
-        "outputSchema": mcp_output_schema(),
+        "outputSchema": mcp_output_schema(output_schema),
         "annotations": annotations,
         "x-agent-armory": {
             "cli_operation": cli_operation,
@@ -3427,9 +3429,139 @@ def mcp_tool_spec(
     }
 
 
+def mcp_authoring_change_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "required": ["path", "value"],
+        "properties": {
+            "path": {
+                "type": "string",
+                "description": "Namespace-qualified Config field path such as issue_tracker_ops.mode.",
+            },
+            "value": {
+                "description": "JSON-compatible value to place at the Config field path.",
+            },
+        },
+        "additionalProperties": False,
+    }
+
+
+def mcp_authoring_change_array_schema() -> dict[str, Any]:
+    return {
+        "type": "array",
+        "items": {"$ref": "#/$defs/authoringChange"},
+        "minItems": 1,
+    }
+
+
+def mcp_authoring_plan_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "required": [
+            "schema",
+            "operation",
+            "plan_surface",
+            "plan_kind",
+            "source_target",
+            "source_category",
+            "source_identity",
+            "precondition_fingerprint",
+            "change_payload",
+            "authority_evidence",
+            "validation_result",
+            "virtual_post_change_effective_config",
+            "audit_preview",
+            "refusal_codes",
+            "durability_classification",
+        ],
+        "properties": {
+            "schema": {"const": AUTHORING_PLAN_SCHEMA},
+            "operation": {"enum": ["config patch", "create-layer"]},
+            "plan_surface": {"const": "reviewed-plan"},
+            "plan_kind": {"enum": ["patch-layer", "create-layer"]},
+            "source_target": {"type": "string"},
+            "source_category": {"type": "string"},
+            "source_identity": {"type": ["object", "null"]},
+            "precondition_fingerprint": {"type": ["string", "null"]},
+            "change_payload": {"type": "object"},
+            "authority_evidence": {"type": "object"},
+            "validation_result": {"type": "object"},
+            "virtual_post_change_effective_config": {"type": "object"},
+            "audit_preview": {"type": "object"},
+            "refusal_codes": {"type": "array", "items": {"type": "string"}},
+            "durability_classification": {"type": "string"},
+            "rationale": {"type": "string"},
+        },
+        "additionalProperties": True,
+    }
+
+
+def mcp_authoring_proposal_output_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "required": [
+            "operation",
+            "plan_surface",
+            "source_target",
+            "affected_namespaces",
+            "affected_fields",
+            "possible_target_categories",
+            "candidates",
+            "path_errors",
+            "value_errors",
+            "refusal_codes",
+        ],
+        "properties": {
+            "operation": {"const": "config propose"},
+            "plan_surface": {"const": "proposal"},
+            "source_target": {"type": "null"},
+            "affected_namespaces": {"type": "array", "items": {"type": "string"}},
+            "affected_fields": {"type": "array", "items": {"type": "string"}},
+            "possible_target_categories": {"type": "array", "items": {"enum": AUTHORING_TARGET_CATEGORIES}},
+            "candidates": {"type": "array", "items": {"type": "object"}},
+            "path_errors": {"type": "array", "items": {"type": "object"}},
+            "value_errors": {"type": "array", "items": {"type": "object"}},
+            "refusal_codes": {"type": "array", "items": {"type": "string"}},
+        },
+        "additionalProperties": True,
+    }
+
+
+def mcp_authoring_plan_output_schema(plan_kind: str) -> dict[str, Any]:
+    operation = "config patch" if plan_kind == "patch-layer" else "create-layer"
+    return {
+        **mcp_authoring_plan_schema(),
+        "properties": {
+            **mcp_authoring_plan_schema()["properties"],
+            "operation": {"const": operation},
+            "plan_kind": {"const": plan_kind},
+        },
+    }
+
+
+def mcp_authoring_apply_output_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "required": ["operation", "plan_schema", "plan_kind", "source_target", "applied", "result", "refusal_codes", "audit_records"],
+        "properties": {
+            "operation": {"const": "config apply"},
+            "plan_schema": {"const": AUTHORING_PLAN_SCHEMA},
+            "plan_kind": {"enum": ["patch-layer", "create-layer"]},
+            "source_target": {"type": "string"},
+            "applied": {"type": "boolean"},
+            "result": {"enum": ["applied", "refused", "blocked", "write-failed"]},
+            "refusal_codes": {"type": "array", "items": {"type": "string"}},
+            "validation_result": {"type": "object"},
+            "audit_records": {"type": "array", "items": {"type": "object"}},
+        },
+        "additionalProperties": True,
+    }
+
+
 def mcp_tool_definitions() -> list[dict[str, Any]]:
     load_properties = mcp_load_input_properties(default_requested_behavior="advisory")
     validate_properties = mcp_load_input_properties(default_requested_behavior="mutation")
+    authoring_defs = {"authoringChange": mcp_authoring_change_schema()}
     return [
         mcp_tool_spec(
             "config.resolve",
@@ -3446,6 +3578,162 @@ def mcp_tool_definitions() -> list[dict[str, Any]]:
             side_effects=[],
             approval_requirements=[],
             failure_modes=["input validation failure", "config parse failure", "schema conflict", "policy diagnostic"],
+        ),
+        mcp_tool_spec(
+            "config.propose",
+            title="Config Propose",
+            description="Produce target-agnostic candidate Agent Equipment Config authoring changes without selecting or writing a source.",
+            cli_operation="config propose",
+            input_schema={
+                "type": "object",
+                "$defs": authoring_defs,
+                "properties": {
+                    "fragments": mcp_fragment_schema(),
+                    "changes": mcp_authoring_change_array_schema(),
+                    "rationale": {"type": "string"},
+                },
+                "required": ["fragments", "changes"],
+                "additionalProperties": False,
+            },
+            output_schema=mcp_authoring_proposal_output_schema(),
+            read_write_classification="read-only",
+            side_effects=[],
+            approval_requirements=[],
+            failure_modes=[
+                "MCP input validation failure",
+                "unknown fragment",
+                "malformed change path",
+                "unknown schema namespace or field",
+                "invalid value",
+                "non-deterministic duplicate paths",
+                "direct secret value",
+                "provider credential material",
+                "provider mutation attempt",
+            ],
+        ),
+        mcp_tool_spec(
+            "config.patch",
+            title="Config Patch",
+            description="Turn reviewed changes into a read-only patch-layer authoring plan artifact for one eligible existing source.",
+            cli_operation="config patch",
+            input_schema={
+                "type": "object",
+                "$defs": authoring_defs,
+                "properties": {
+                    "layer_paths": {**mcp_array_schema("Explicit authored TOML layer paths supplied by the caller."), "minItems": 1},
+                    "fragments": mcp_fragment_schema(),
+                    "source_target": {"type": "string"},
+                    "changes": mcp_authoring_change_array_schema(),
+                    "plan_authority": {"type": "string", "enum": ["operator"]},
+                    "requested_behavior": mcp_requested_behavior_schema("mutation"),
+                    "rationale": {"type": "string"},
+                },
+                "required": ["layer_paths", "fragments", "source_target", "changes"],
+                "additionalProperties": False,
+            },
+            output_schema=mcp_authoring_plan_output_schema("patch-layer"),
+            read_write_classification="read-only policy decision",
+            auth_source="optional per-call plan_authority or configured config_authoring_plan Policy Authority",
+            side_effects=["local source reads only"],
+            approval_requirements=["human or harness review required before config.apply"],
+            failure_modes=[
+                "MCP input validation failure",
+                "config parse failure",
+                "unknown fragment",
+                "target not present in explicit layer_paths",
+                "ineligible source category",
+                "untrusted source",
+                "missing plan authority",
+                "safety status blocking",
+                "planned-source validation failure",
+                "secret-boundary violation",
+                "ownership-boundary violation",
+                "non-deterministic duplicate paths",
+                "unsupported source categories",
+            ],
+        ),
+        mcp_tool_spec(
+            "config.create_layer",
+            title="Config Create Layer",
+            description="Turn reviewed changes into a read-only create-layer authoring plan artifact for a new eligible local source.",
+            cli_operation="create-layer",
+            input_schema={
+                "type": "object",
+                "$defs": authoring_defs,
+                "properties": {
+                    "destination": {"type": "string"},
+                    "layer_name": {"type": "string", "enum": LAYER_PRECEDENCE},
+                    "source_category": {"type": "string", "enum": AUTHORING_TARGET_CATEGORIES},
+                    "fragments": mcp_fragment_schema(),
+                    "changes": mcp_authoring_change_array_schema(),
+                    "layer_paths": mcp_array_schema("Existing explicit layers used only to build virtual effective Config."),
+                    "plan_authority": {"type": "string", "enum": ["operator"]},
+                    "requested_behavior": mcp_requested_behavior_schema("mutation"),
+                    "rationale": {"type": "string"},
+                },
+                "required": ["destination", "layer_name", "source_category", "fragments", "changes"],
+                "additionalProperties": False,
+            },
+            output_schema=mcp_authoring_plan_output_schema("create-layer"),
+            read_write_classification="read-only policy decision",
+            auth_source="optional per-call plan_authority or configured config_authoring_plan Policy Authority",
+            side_effects=["local destination existence check", "explicit local source reads only"],
+            approval_requirements=["human or harness review required before config.apply"],
+            failure_modes=[
+                "MCP input validation failure",
+                "destination already exists",
+                "unsupported destination category",
+                "unknown fragment",
+                "malformed change path",
+                "missing plan authority",
+                "safety status blocking",
+                "planned-source validation failure",
+                "secret-boundary violation",
+                "provider mutation attempt",
+                "non-deterministic duplicate paths",
+                "unsupported source categories",
+            ],
+        ),
+        mcp_tool_spec(
+            "config.apply",
+            title="Config Apply",
+            description="Apply a reviewed Agent Equipment Config authoring plan artifact after final mutation gates pass.",
+            cli_operation="config apply",
+            input_schema={
+                "type": "object",
+                "$defs": {"authoringPlanArtifact": mcp_authoring_plan_schema()},
+                "properties": {
+                    "plan": {"$ref": "#/$defs/authoringPlanArtifact"},
+                    "apply_authority": {"type": "string", "enum": ["operator"]},
+                },
+                "required": ["plan", "apply_authority"],
+                "additionalProperties": False,
+            },
+            output_schema=mcp_authoring_apply_output_schema(),
+            read_write_classification="local write",
+            auth_source="per-call apply_authority",
+            side_effects=["eligible local TOML source rewrite"],
+            approval_requirements=["explicit operator or host approval before mutation-capable call"],
+            failure_modes=[
+                "MCP input validation failure",
+                "malformed plan artifact",
+                "unsupported_plan_kind",
+                "missing apply authority",
+                "source category ineligible",
+                "source untrusted",
+                "ownership boundary violation",
+                "source_changed",
+                "safety status blocking",
+                "validation failure",
+                "secret-boundary violation",
+                "provider mutation attempt",
+                "partial_write_blocked",
+                "local filesystem write failure",
+            ],
+            mutation_gate="reviewed plan artifact schema, implemented plan kind, eligible source category, trusted provenance, source ownership, per-call apply authority, matching precondition fingerprint, valid planned source shape, usable virtual post-change effective Config, secret-boundary validation, all-or-nothing refusal handling, atomic local write, and mutation audit emission",
+            read_only=False,
+            destructive=True,
+            idempotent=False,
         ),
         mcp_tool_spec(
             "config.validate",
@@ -3580,8 +3868,64 @@ def mcp_tool_definition_by_name() -> dict[str, dict[str, Any]]:
     return {tool["name"]: tool for tool in mcp_tool_definitions()}
 
 
-def mcp_validate_schema_value(schema: dict[str, Any], value: Any, path: str, *, tool_name: str) -> None:
+def mcp_resolve_schema_ref(schema: dict[str, Any], root_schema: dict[str, Any]) -> dict[str, Any]:
+    ref = schema.get("$ref")
+    if not isinstance(ref, str):
+        return schema
+    prefix = "#/$defs/"
+    if not ref.startswith(prefix):
+        raise ConfigError(f"unsupported schema reference {ref!r}")
+    name = ref[len(prefix):]
+    defs = root_schema.get("$defs", {})
+    if not isinstance(defs, dict) or not isinstance(defs.get(name), dict):
+        raise ConfigError(f"unknown schema reference {ref!r}")
+    return defs[name]
+
+
+def mcp_json_type_matches(value: Any, expected_type: str) -> bool:
+    if expected_type == "object":
+        return isinstance(value, dict)
+    if expected_type == "array":
+        return isinstance(value, list)
+    if expected_type == "string":
+        return isinstance(value, str)
+    if expected_type == "boolean":
+        return isinstance(value, bool)
+    if expected_type == "null":
+        return value is None
+    if expected_type == "integer":
+        return isinstance(value, int) and not isinstance(value, bool)
+    if expected_type == "number":
+        return isinstance(value, (int, float)) and not isinstance(value, bool)
+    return True
+
+
+def mcp_type_description(expected_type: str | list[str]) -> str:
+    if isinstance(expected_type, list):
+        return " or ".join(expected_type)
+    return expected_type
+
+
+def mcp_validate_schema_value(
+    schema: dict[str, Any],
+    value: Any,
+    path: str,
+    *,
+    tool_name: str,
+    root_schema: dict[str, Any] | None = None,
+) -> None:
+    root_schema = root_schema or schema
+    schema = mcp_resolve_schema_ref(schema, root_schema)
+    if "const" in schema and value != schema["const"]:
+        raise ConfigError(f"{path} must be {schema['const']!r}")
     expected_type = schema.get("type")
+    if isinstance(expected_type, list):
+        matched_type = next((item for item in expected_type if mcp_json_type_matches(value, item)), None)
+        if matched_type is None:
+            raise ConfigError(f"{path} must be {mcp_type_description(expected_type)}")
+        if matched_type == "null":
+            return
+        expected_type = matched_type
     if expected_type == "object":
         if not isinstance(value, dict):
             raise ConfigError(f"{path} must be an object")
@@ -3600,7 +3944,7 @@ def mcp_validate_schema_value(schema: dict[str, Any], value: Any, path: str, *, 
         for key, item in value.items():
             property_schema = properties.get(key)
             if property_schema is not None:
-                mcp_validate_schema_value(property_schema, item, f"{path}.{key}", tool_name=tool_name)
+                mcp_validate_schema_value(property_schema, item, f"{path}.{key}", tool_name=tool_name, root_schema=root_schema)
         return
     if expected_type == "array":
         if not isinstance(value, list):
@@ -3625,13 +3969,16 @@ def mcp_validate_schema_value(schema: dict[str, Any], value: Any, path: str, *, 
         item_schema = schema.get("items")
         if isinstance(item_schema, dict):
             for index, item in enumerate(value):
-                mcp_validate_schema_value(item_schema, item, f"{path}[{index}]", tool_name=tool_name)
+                mcp_validate_schema_value(item_schema, item, f"{path}[{index}]", tool_name=tool_name, root_schema=root_schema)
     elif expected_type == "string":
         if not isinstance(value, str):
             raise ConfigError(f"{path} must be a string")
     elif expected_type == "boolean":
         if not isinstance(value, bool):
             raise ConfigError(f"{path} must be a boolean")
+    elif expected_type == "null":
+        if value is not None:
+            raise ConfigError(f"{path} must be null")
     enum_values = schema.get("enum")
     if isinstance(enum_values, list) and value not in enum_values:
         raise ConfigError(f"{path} must be one of {enum_values!r}")
@@ -3695,7 +4042,30 @@ def mcp_apply_authority(arguments: dict[str, Any]) -> str | None:
     return str(value)
 
 
+def mcp_authoring_changes(arguments: dict[str, Any]) -> list[dict[str, Any]]:
+    changes = arguments.get("changes")
+    if not isinstance(changes, list):
+        raise ConfigError("changes must be an array")
+    parsed: list[dict[str, Any]] = []
+    for index, change in enumerate(changes):
+        if not isinstance(change, dict):
+            raise ConfigError(f"changes[{index}] must be an object")
+        path = change.get("path")
+        if not isinstance(path, str):
+            raise ConfigError(f"changes[{index}].path must be a string")
+        if "value" not in change:
+            raise ConfigError(f"changes[{index}].value is required")
+        parsed.append({"path": path, "value": change["value"]})
+    return parsed
+
+
 def mcp_call_summary(tool_name: str, payload: dict[str, Any]) -> str:
+    if payload.get("operation") == "config propose":
+        return f"{tool_name}: candidates={len(payload.get('candidates', []))} refusals={len(payload.get('refusal_codes', []))}"
+    if payload.get("plan_surface") == "reviewed-plan":
+        return f"{tool_name}: plan_kind={payload.get('plan_kind')} refusals={len(payload.get('refusal_codes', []))}"
+    if payload.get("operation") == "config apply":
+        return f"{tool_name}: result={payload.get('result')} applied={payload.get('applied')} refusals={len(payload.get('refusal_codes', []))}"
     if "passed" in payload:
         return f"{tool_name}: passed={payload['passed']} safety_status={payload.get('safety_status')}"
     if "safety_status" in payload:
@@ -3768,6 +4138,46 @@ def call_mcp_tool(name: str, arguments: dict[str, Any] | None = None) -> dict[st
                 mcp_fragments(arguments),
                 requested_behavior=mcp_requested_behavior(arguments, "advisory"),
                 plain_handoff_paths=mcp_path_list(arguments, "plain_handoff_paths"),
+            )
+        elif name == "config.propose":
+            payload = config_proposal(
+                mcp_authoring_changes(arguments),
+                mcp_fragments(arguments),
+                rationale=arguments.get("rationale") if isinstance(arguments.get("rationale"), str) else None,
+            )
+        elif name == "config.patch":
+            plan_authority = arguments.get("plan_authority")
+            payload = config_patch_plan(
+                mcp_path_list(arguments, "layer_paths"),
+                mcp_fragments(arguments),
+                source_target=Path(str(arguments["source_target"])),
+                changes=mcp_authoring_changes(arguments),
+                plan_authority=str(plan_authority) if isinstance(plan_authority, str) else None,
+                requested_behavior=mcp_requested_behavior(arguments, "mutation"),
+                rationale=arguments.get("rationale") if isinstance(arguments.get("rationale"), str) else None,
+            )
+        elif name == "config.create_layer":
+            plan_authority = arguments.get("plan_authority")
+            payload = create_layer_plan(
+                mcp_path_list(arguments, "layer_paths"),
+                mcp_fragments(arguments),
+                destination=Path(str(arguments["destination"])),
+                layer_name=str(arguments["layer_name"]),
+                source_category=str(arguments["source_category"]),
+                changes=mcp_authoring_changes(arguments),
+                plan_authority=str(plan_authority) if isinstance(plan_authority, str) else None,
+                requested_behavior=mcp_requested_behavior(arguments, "mutation"),
+                rationale=arguments.get("rationale") if isinstance(arguments.get("rationale"), str) else None,
+            )
+        elif name == "config.apply":
+            plan = arguments.get("plan")
+            if not isinstance(plan, dict):
+                raise ConfigError("plan must be an authoring plan artifact object")
+            payload = config_apply_plan(
+                plan,
+                [],
+                [],
+                apply_authority=mcp_apply_authority(arguments),
             )
         elif name == "config.validate":
             payload = config_validation_report(

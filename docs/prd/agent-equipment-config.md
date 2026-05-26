@@ -27,8 +27,9 @@ comparison.
   required authority is present, and the chosen surface owns the write.
 - Smiths and Wielders can discover the right Config operation without reading
   the implementation code or reconstructing issue history.
-- Deferred authoring and general edit capabilities are tracked in a named
-  follow-up epic without blocking the MVP unless a child is explicitly promoted.
+- General edit capabilities beyond reviewed plan artifacts are tracked in a
+  named follow-up epic without blocking the MVP unless a child is explicitly
+  promoted.
 
 ## 2. User Experience And Functionality
 
@@ -189,22 +190,19 @@ Agent Equipment Config separates product surfaces from implementation contracts:
 | `config resolve` | `config.resolve` |
 | `config validate` | `config.validate` |
 | `config diff` | `config.diff` |
+| `config propose` | `config.propose` |
+| `config patch` | `config.patch` |
+| `create-layer` | `config.create_layer` |
+| `config apply` | `config.apply` |
 | `onboard config` | `onboard.config` |
 | `migrate config preview` | `migrate.config_preview` |
 | `migrate config apply` | `migrate.config_apply` |
 
 MCP v1 stays constrained to parity with the current safe CLI/runtime slice.
-MCP authoring parity for proposal, patch plan, create-layer plan, and apply
-belongs to later MCP revisions after the reviewed plan artifact and source-write
-contracts are stable.
-
-Deferred authoring parity reserves these MCP names for the Config Authoring
-Surfaces bucket: `config.propose`, `config.patch`, `config.create_layer`, and
-`config.apply`. The design for those deferred tools must preserve the reviewed
-plan artifact contract, side-effect classification, approval requirements,
-failure modes, mutation gates, secret/provider refusals, durability
-classification, project-truth status, and rollback stance before any runtime
-tool definitions are exposed.
+Authoring MCP parity preserves the reviewed plan artifact contract,
+side-effect classification, approval requirements, failure modes, mutation
+gates, secret/provider refusals, durability classification, project-truth
+status, and rollback stance.
 
 **Integration Points**:
 
@@ -255,7 +253,7 @@ tool definitions are exposed.
 - #23 remains blocked until the MVP CLI fluency (#91), MCP parity (#92), and
   integration guide (#78) surfaces are complete.
 - #78 owns the integration-guide slice for the MVP operation surface. #91, #92,
-  and #93 track CLI fluency, MCP parity, and deferred authoring follow-up work.
+  and #93 track CLI fluency, MCP parity, and Config Authoring Surfaces.
 - **Config Authoring Surfaces** is a non-blocking follow-up epic bucket unless
   a child issue is explicitly promoted into MVP scope. #93 owns that bucket.
 
@@ -269,6 +267,7 @@ tool definitions are exposed.
 - `config validate` can become noisy if it returns the full effective config by
   default. Mitigate with a lower-noise contract and an explicit full-output
   option when needed.
-- Deferred authoring work can leak into MVP. Mitigate by routing forward-looking
-  work into the Config Authoring Surfaces bucket and keeping current source
-  writes limited to migration apply or reviewed plan-artifact apply.
+- General edit work can leak into MVP. Mitigate by routing forward-looking work
+  beyond reviewed plan artifacts into the Config Authoring Surfaces bucket and
+  keeping current source writes limited to migration apply or reviewed
+  plan-artifact apply.

@@ -242,24 +242,20 @@ surface.
 When exposing MCP, wrap `tools.agent_equipment_config.mcp_tool_definitions()`
 and `tools.agent_equipment_config.call_mcp_tool()` rather than hand-copying
 the Config operation behavior. The current MCP layer classifies
-`config.resolve`, `config.validate`, `config.diff`, `onboard.config`, and
-`migrate.config_preview` as read-only. It classifies `migrate.config_apply` as
-a local write that requires per-call `apply_authority = "operator"` for the MCP
-tool, plus the migration apply contract's source category, trusted provenance,
-projected safety, precondition, and audit gates. See
+`config.resolve`, `config.validate`, `config.diff`, `config.propose`,
+`config.patch`, `config.create_layer`, `onboard.config`, and
+`migrate.config_preview` as read-only or read-only policy decision tools. It
+classifies `config.apply` and `migrate.config_apply` as local writes that
+require per-call `apply_authority = "operator"` for the MCP tool, plus their
+source category, trusted provenance, projected safety, precondition, and audit
+gates. See [`config.apply`](../../specs/agent-equipment-config/mcp-tools.md#configapply),
 [`migrate.config_apply`](../../specs/agent-equipment-config/mcp-tools.md#migrateconfig_apply)
 and [Migration apply](agent-equipment-config.md#migration-apply) for the full
-contract.
-
-Deferred MCP authoring parity is specified, not exposed, for
-`config.propose`, `config.patch`, `config.create_layer`, and `config.apply`.
-Do not advertise those tool definitions from a harness until the runtime
-implements them. When they are implemented, route them through the same reviewed
-plan contract as the CLI: typed changes for proposal and plan generation,
-reviewed `agent-armory.config.authoring-plan.v1` artifacts for apply,
-per-call apply authority for writes, stable refusal codes, all-or-nothing local
-source mutation, and audit output that records durability classification,
-project-truth status, and rollback stance.
+contracts. Authoring MCP tools use typed changes for proposal and plan
+generation, reviewed `agent-armory.config.authoring-plan.v1` artifacts for
+apply, stable refusal codes, all-or-nothing local source mutation, and audit
+output that records durability classification, project-truth status, and
+rollback stance.
 
 Before publishing an integration surface, document:
 

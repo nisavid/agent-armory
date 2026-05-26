@@ -74,7 +74,7 @@ output.
 
 - Product requirements: `docs/prd/agent-equipment-config.md` owns the
   human- and agent-facing Config product shape, including CLI/MCP parity and
-  deferred Config Authoring Surfaces.
+  Config Authoring Surfaces.
 - Local docs: this Equipment Design Bundle owns the current v0 behavior and
   runtime slice boundary.
 - Validator: `tools/validate_armory_integrity.py` recognizes the bundle and required
@@ -84,8 +84,8 @@ output.
 - Scripts/tools: `tools/agent_equipment_config.py` computes effective config,
   config diff, validation diagnostics, authoring proposals and plans,
   migration previews, and projection classification for the v0 slice.
-- MCP/tools: typed MCP parity is required for the safe CLI/runtime slice before
-  #23 closes. Authoring MCP parity remains deferred.
+- MCP/tools: typed MCP parity is required for the safe CLI/runtime slice and
+  Config Authoring Surfaces before #23 closes.
 - Load contract: callers discover paths, select sources, order same-precedence
   inputs, register schema fragments, and pass explicit layer or handoff paths
   into the runtime; the runtime preserves layer, source category, source path,

@@ -221,18 +221,22 @@ effects, approval requirements, mutation gates, and failure modes.
 | `config.resolve` | `config resolve` | read-only |
 | `config.validate` | `config validate` | read-only |
 | `config.diff` | `config diff` | read-only |
+| `config.propose` | `config propose` | read-only |
+| `config.patch` | `config patch` | read-only policy decision |
+| `config.create_layer` | `create-layer` | read-only policy decision |
+| `config.apply` | `config apply` | local write |
 | `onboard.config` | `onboard config` | read-only |
 | `migrate.config_preview` | `migrate config preview` | read-only |
 | `migrate.config_apply` | `migrate config apply` | local write |
 
-Deferred authoring MCP parity is designed under the same operation family:
-`config.propose`, `config.patch`, `config.create_layer`, and `config.apply`.
-Those names are reserved for future tool definitions and are not exposed by the
-current runtime. The deferred design requires reviewed plan artifacts,
-precondition fingerprints, virtual post-change effective Config validation,
-stable refusal codes, all-or-nothing apply, durability classification,
-project-truth status, rollback stance, and refusal of secret values, provider
-credential material, provider mutation, and unsupported source categories.
+Authoring MCP parity uses the same operation family as the fluent CLI.
+Proposal, patch-plan, and create-layer tools are read-only. `config.apply`
+accepts only a reviewed plan artifact and is a local write. The runtime
+preserves reviewed plan artifacts, precondition fingerprints, virtual
+post-change effective Config validation, stable refusal codes, all-or-nothing
+apply, durability classification, project-truth status, rollback stance, and
+refusal of secret values, provider credential material, provider mutation, and
+unsupported source categories.
 
 MCP callers pass explicit `layer_paths`, optional `plain_handoff_paths`,
 registered `fragments`, and the requested behavior. `config.diff` accepts

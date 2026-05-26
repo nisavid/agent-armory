@@ -43,17 +43,16 @@ Record:
 - non-migration authoring apply evidence for reviewed plan artifacts, including
   source preconditions, authority, validation, secret-boundary refusals,
   all-or-nothing behavior, atomic writes, and mutation audit records;
-- follow-up evidence or issue projection for MCP authoring parity;
-- MCP authoring parity design evidence for `config.propose`, `config.patch`,
-  `config.create_layer`, and `config.apply`, including schemas, metadata,
-  approval requirements, failure modes, mutation gates, deferral status, and
-  implementation issue projection;
+- MCP authoring parity implementation evidence for `config.propose`,
+  `config.patch`, `config.create_layer`, and `config.apply`, including
+  schemas, dispatch, metadata, approval requirements, failure modes, mutation
+  gates, and validation coverage;
 - validation commands and results;
 - security review scope, artifact disposition, and findings disposition;
 - documentation closeout scope and unchanged rationale where applicable;
 - child issue projection for follow-on implementation slices;
-- the Config PRD's MVP blocker map for fluent CLI operations, MCP parity,
-  integration guides, and deferred Config Authoring Surfaces;
+- the Config PRD's MVP blocker map for fluent CLI operations, MCP parity, and
+  integration guides;
 - Change Set Security Closeout for the runtime slice, including scope, action
   performed, artifact durability classification, finding disposition, fixes,
   suppressions, deferments, or explicit non-applicability notes.

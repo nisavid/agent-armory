@@ -3,12 +3,9 @@
 Status: Equipment Blueprint
 Promotion state: planned
 
-Agent Equipment Config exposes MCP parity for the safe read, onboarding,
-migration-preview, and migration-apply CLI/runtime slice through typed tool
-definitions and structured tool-call results. The CLI also exposes read-only
-authoring proposal and plan-generation surfaces through `config propose`,
-`config patch`, and `create-layer`; MCP authoring parity for those surfaces is
-deferred. The importable runtime source is
+Agent Equipment Config exposes MCP parity for the safe read, authoring,
+onboarding, migration-preview, and apply CLI/runtime slices through typed tool
+definitions and structured tool-call results. The importable runtime source is
 `tools.agent_equipment_config.mcp_tool_definitions()` for tool metadata and
 `tools.agent_equipment_config.call_mcp_tool()` for direct tool dispatch. A
 harness-specific MCP server can wrap those functions without redefining Config
@@ -41,6 +38,10 @@ requires every schema-required argument before invoking runtime behavior.
 | `config resolve` | `config.resolve` | read-only |
 | `config validate` | `config.validate` | read-only |
 | `config diff` | `config.diff` | read-only |
+| `config propose` | `config.propose` | read-only |
+| `config patch` | `config.patch` | read-only policy decision |
+| `create-layer` | `config.create_layer` | read-only policy decision |
+| `config apply` | `config.apply` | local write |
 | `onboard config` | `onboard.config` | read-only |
 | `migrate config preview` | `migrate.config_preview` | read-only |
 | `migrate config apply` | `migrate.config_apply` | local write |
@@ -49,20 +50,6 @@ All tools are closed-world local Config operations. They do not call networks,
 resolve secret values, mutate external systems, or discover config paths. MCP
 structured results use the same CLI redaction boundary for secret-reference
 names and direct secret values.
-
-`config propose`, `config patch`, and `create-layer` are current read-only CLI
-surfaces, but they do not have MCP tool definitions in this slice.
-`config apply` is a current CLI/runtime write surface for reviewed plan
-artifacts. MCP authoring parity remains follow-up work.
-
-Deferred MCP authoring parity must use these tool names when it is implemented:
-
-| CLI operation | Deferred MCP tool | Read/write classification |
-| --- | --- | --- |
-| `config propose` | `config.propose` | read-only |
-| `config patch` | `config.patch` | read-only policy decision |
-| `create-layer` | `config.create_layer` | read-only policy decision |
-| `config apply` | `config.apply` | local write |
 
 ## Shared inputs
 
@@ -158,17 +145,9 @@ failure, partial local write failure.
 
 Rollback: restore the source file from version control or the recorded diff.
 
-## Deferred authoring parity contract
+## Authoring parity contract
 
-MCP authoring parity is designed here but remains unimplemented. Runtime tool
-definitions must not expose `config.propose`, `config.patch`,
-`config.create_layer`, or `config.apply` until the implementation issue adds
-the corresponding dispatcher behavior and validation coverage, and until
-CLI/runtime authoring behavior is stable enough to treat as the source
-contract. Until then, callers use the fluent CLI authoring workflow and MCP
-wrappers return no authoring tool definition.
-
-The deferred authoring tools mirror the current CLI/runtime authoring contract:
+The MCP authoring tools mirror the CLI/runtime authoring contract:
 
 - plan-generation tools never write sources;
 - every output is structured, redacted, and stable enough for machine routing;
@@ -187,7 +166,7 @@ The deferred authoring tools mirror the current CLI/runtime authoring contract:
   writes, session override writes, untrusted layers, and unsupported source
   categories refuse before any source change.
 
-All deferred authoring tools keep the current closed-world local boundary. They
+All authoring tools keep the current closed-world local boundary. They
 do not call networks, discover config paths, resolve secrets, read provider
 credential stores, mutate providers, or mutate external systems.
 
@@ -229,8 +208,7 @@ targets.
 
 ### Shared authoring output shapes
 
-Every deferred authoring tool-call result follows the existing MCP wrapper
-shape:
+Every authoring tool-call result follows the existing MCP wrapper shape:
 
 ```json
 {
@@ -504,8 +482,8 @@ attempt, non-deterministic duplicate paths, and unsupported source categories.
 ### `config.apply`
 
 Purpose: apply one reviewed `patch-layer` or `create-layer` authoring plan
-artifact after all final gates pass. It is the only deferred MCP authoring tool
-that writes Config sources.
+artifact after all final gates pass. It is the only MCP authoring tool that
+writes Config sources.
 
 Input schema:
 
@@ -583,11 +561,7 @@ Failure modes: MCP input validation failure, malformed plan artifact,
 `unsupported_plan_kind`, missing apply authority, source category ineligible,
 source untrusted, ownership boundary violation, `source_changed`, safety status
 blocking, validation failure, secret-boundary violation, provider mutation
-attempt, `partial_write_blocked`, and local filesystem write failure. The
-`unsupported_mcp_authoring` refusal code is a defensive transitional guard only
-for a host or wrapper that reaches authoring dispatch before the authoring
-feature flag is enabled. It does not authorize publishing these tool
-definitions without dispatcher behavior and validation coverage.
+attempt, `partial_write_blocked`, and local filesystem write failure.
 
 Rollback: for committed durable config, revert the committed config change or
 restore the recorded diff from version control. For local-only operator config,
