@@ -508,6 +508,60 @@ class IssueTrackerOpsTests(unittest.TestCase):
         self.assertEqual(args[:5], ["gh", "api", "-X", "PATCH", "repos/OWNER/REPO/issues/11/sub_issues/priority"])
         self.assertEqual(json.loads(input_text), {"after_id": 12345, "sub_issue_id": 98765})
 
+    def test_add_sub_issue_fallback_reconciles_present_relation_with_paginated_lookup(self):
+        gh = FakeGh(
+            [
+                subprocess.CompletedProcess(
+                    ["gh"],
+                    0,
+                    stdout='[[{"id": 98765, "number": 15, "html_url": "https://github.com/OWNER/REPO/issues/15", "title": "Child", "state": "open"}]]',
+                    stderr="",
+                )
+            ]
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fallback_path = Path(tmpdir) / "fallback.json"
+            fallback_path.write_text(
+                json.dumps(
+                    {
+                        "schema": "issue_tracker_ops.fallback_record.v1alpha1",
+                        "status": "pending_reconciliation",
+                        "owner": "issue_tracker_ops_adapter",
+                        "operation": "add-sub-issue",
+                        "repo": "OWNER/REPO",
+                        "request": {
+                            "method": "POST",
+                            "endpoint": "repos/OWNER/REPO/issues/11/sub_issues",
+                            "body": {"sub_issue_id": 98765},
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            exit_code, stdout, stderr = self.run_cli(
+                [
+                    "reconcile-fallback",
+                    "--repo",
+                    "OWNER/REPO",
+                    "--fallback-record-file",
+                    str(fallback_path),
+                    "--execute",
+                ],
+                gh=gh,
+            )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(len(gh.calls), 1)
+        args, input_text = gh.calls[0]
+        self.assertEqual(args[:5], ["gh", "api", "-X", "GET", "repos/OWNER/REPO/issues/11/sub_issues"])
+        self.assertIn("--paginate", args)
+        self.assertIn("--slurp", args)
+        self.assertIsNone(input_text)
+        payload = json.loads(stdout)
+        self.assertEqual(payload["result"]["projection_status"], "projected")
+        self.assertEqual(payload["result"]["projected"]["number"], 15)
+
     def test_remove_sub_issue_fallback_reconciles_absent_relation(self):
         gh = FakeGh([subprocess.CompletedProcess(["gh"], 0, stdout="[]", stderr="")])
         with tempfile.TemporaryDirectory() as tmpdir:
