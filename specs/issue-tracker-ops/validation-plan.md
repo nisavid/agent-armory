@@ -26,6 +26,7 @@ python3.14 tools/issue_tracker_ops.py comment --repo nisavid/agent-armory --issu
 python3.14 tools/issue_tracker_ops.py audit-labels --repo nisavid/agent-armory
 python3.14 tools/issue_tracker_ops.py add-blocked-by --repo nisavid/agent-armory --issue-number 10 --blocking-issue-number 11
 python3.14 tools/issue_tracker_ops.py comment --repo nisavid/agent-armory --issue-number 11 --body "Config-aware dry-run comment" --config-layer templates/config/agent-equipment-config-example.toml
+python3.14 tools/issue_tracker_ops.py reconcile-fallback --repo nisavid/agent-armory --fallback-record-file <fallback-record.json>
 ```
 
 Run live validation only after dry-run output is inspected and the active session
@@ -35,6 +36,8 @@ allows tracker mutation:
 - comment on issue #11 with validation evidence;
 - run a read-only label-axis audit and record the summary;
 - add or verify a native dependency relation needed for the bootstrap gate.
+- reconcile and retire a deliberately safe fallback fixture, if fallback
+  validation is part of the change set.
 
 Record live validation by issue number, URL, operation type, command shape, and
 result summary. Do not record raw token, verbose HTTP logs, or private host
@@ -47,9 +50,14 @@ paths.
 - Confirm the adapter uses `subprocess.run` with an argument list and JSON stdin.
 - Confirm core and adapter description commands do not invoke `gh`.
 - Confirm mutation commands require `--execute`.
+- Confirm live mutation requires Config authorization or `--mutation-policy-ref`.
 - Confirm dry-run output records the operation without invoking `gh`.
 - Confirm Config-aware mutation refuses blocking, unsupported, malformed, or
   missing projection decisions before invoking `gh`.
+- Confirm live mutation preflights duplicate-prone writes and idempotent no-op
+  writes before invoking the write request.
+- Confirm failed live mutation can produce an explicit fallback record with
+  retry condition and compensation guidance when requested.
 
 ## Documentation validation
 
@@ -64,8 +72,9 @@ paths.
 
 Full closure of issue #11 needs additional validation for onboarding, Issue Ops
 config profile fields, configuration layering, policy conflicts, issue
-selection, issue repair, fallback reconciliation, permission failure, rate
-limiting, duplicate detection, subtask handling, and cross-issue orchestration.
+selection, issue repair, fallback compatibility beyond bootstrap records,
+permission failure, rate limiting, semantic duplicate detection, subtask
+handling, and cross-issue orchestration.
 
 Issue #13 validation specifically requires
 [Config profile and onboarding](config-profile-and-onboarding.md), validator

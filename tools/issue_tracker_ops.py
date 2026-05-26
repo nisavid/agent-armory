@@ -11,10 +11,11 @@ from pathlib import Path
 from typing import Callable, TextIO
 
 try:
-    from . import agent_equipment_config, issue_tracker_core
+    from . import agent_equipment_config, issue_tracker_core, issue_tracker_safety
 except ImportError:
     import agent_equipment_config  # type: ignore[no-redef]
     import issue_tracker_core  # type: ignore[no-redef]
+    import issue_tracker_safety  # type: ignore[no-redef]
 
 
 DEFAULT_API_VERSION = "2026-03-10"
@@ -222,6 +223,13 @@ def combine_paginated_result(result: JSONValue) -> JSONValue:
     return combined
 
 
+def parse_request_output(completed: subprocess.CompletedProcess[str], request: RequestSpec) -> JSONValue:
+    result = parse_json_output(completed)
+    if request.paginate:
+        return combine_paginated_result(result)
+    return result
+
+
 def write_json(stdout: TextIO, payload: dict) -> None:
     stdout.write(json.dumps(payload, indent=2, sort_keys=True))
     stdout.write("\n")
@@ -268,6 +276,18 @@ def comment_request(args: argparse.Namespace) -> RequestSpec:
     return RequestSpec("POST", issue_endpoint(args.repo, f"issues/{args.issue_number}/comments"), {"body": body})
 
 
+def comment_preflight_request(args: argparse.Namespace) -> RequestSpec:
+    return RequestSpec("GET", issue_endpoint(args.repo, f"issues/{args.issue_number}/comments?per_page=100"), paginate=True)
+
+
+def create_issue_preflight_request(args: argparse.Namespace) -> RequestSpec:
+    return RequestSpec("GET", issue_endpoint(args.repo, f"issues?state={args.duplicate_scope}&per_page=100"), paginate=True)
+
+
+def issue_read_preflight_request(args: argparse.Namespace) -> RequestSpec:
+    return RequestSpec("GET", issue_endpoint(args.repo, f"issues/{args.issue_number}"))
+
+
 def blocking_issue_id_request(args: argparse.Namespace) -> RequestSpec | None:
     if args.blocking_issue_id is not None:
         return None
@@ -293,12 +313,41 @@ def list_dependencies_request(args: argparse.Namespace, relation: str) -> Reques
     return RequestSpec(
         "GET",
         issue_endpoint(args.repo, f"issues/{args.issue_number}/dependencies/{relation}"),
-        paginate=args.paginate,
+        paginate=getattr(args, "paginate", False),
+    )
+
+
+def dependency_preflight_request(args: argparse.Namespace) -> RequestSpec:
+    return RequestSpec(
+        "GET",
+        issue_endpoint(args.repo, f"issues/{args.issue_number}/dependencies/blocked_by"),
+        paginate=True,
     )
 
 
 def audit_labels_request(args: argparse.Namespace) -> RequestSpec:
     return RequestSpec("GET", issue_endpoint(args.repo, f"issues?state={args.issue_state}&per_page=100"), paginate=True)
+
+
+def fallback_projection_request(record: dict, repo: str) -> RequestSpec:
+    request = record.get("request", {})
+    if not isinstance(request, dict):
+        raise UsageError("fallback record request must be an object")
+    endpoint = request.get("endpoint")
+    if not isinstance(endpoint, str):
+        raise UsageError("fallback record request endpoint must be a string")
+    owner, name = parse_repo(repo)
+    prefix = f"repos/{owner}/{name}/"
+    if not endpoint.startswith(prefix):
+        raise UsageError("fallback record endpoint does not match --repo")
+    if endpoint.endswith("/comments"):
+        return RequestSpec("GET", f"{endpoint}?per_page=100", paginate=True)
+    if "/dependencies/blocked_by" in endpoint:
+        issue_path = endpoint.split("/dependencies/blocked_by", 1)[0]
+        return RequestSpec("GET", f"{issue_path}/dependencies/blocked_by", paginate=True)
+    if endpoint.endswith("/issues"):
+        return RequestSpec("GET", issue_endpoint(repo, "issues?state=all&per_page=100"), paginate=True)
+    return RequestSpec("GET", endpoint)
 
 
 def label_axes_payload() -> dict[str, dict[str, object]]:
@@ -415,6 +464,7 @@ def dry_run_payload(
     *,
     resolved: dict | None = None,
     config: dict | None = None,
+    args: argparse.Namespace | None = None,
 ) -> dict:
     payload = {
         "mode": "dry-run",
@@ -430,12 +480,40 @@ def dry_run_payload(
         payload["resolved"] = resolved
     if config is not None:
         payload["config"] = config
+    if args is not None and operation in MUTATION_OPERATIONS:
+        payload["mutation_policy"] = issue_tracker_safety.mutation_policy(args, config)
+        if getattr(args, "idempotency_key", None):
+            payload["idempotency_key"] = args.idempotency_key
+        payload["planned_safety_preflight"] = planned_safety_preflight(args)
     return payload
+
+
+def planned_safety_preflight(args: argparse.Namespace) -> list[dict]:
+    if args.operation == "create-issue":
+        return [compact_request(create_issue_preflight_request(args))]
+    if args.operation == "comment":
+        return [compact_request(comment_preflight_request(args))]
+    if args.operation == "update-issue":
+        return [compact_request(issue_read_preflight_request(args))]
+    if args.operation in {"add-blocked-by", "remove-blocked-by"}:
+        return [compact_request(dependency_preflight_request(args))]
+    return []
 
 
 def dry_run_audit_labels_payload(args: argparse.Namespace, *, config: dict | None = None) -> dict:
     payload = dry_run_payload(args.operation, audit_labels_request(args), config=config)
     payload["label_axes"] = label_axes_payload()
+    return payload
+
+
+def dry_run_reconcile_fallback_payload(args: argparse.Namespace, record: dict, *, config: dict | None = None) -> dict:
+    payload = dry_run_payload(args.operation, fallback_projection_request(record, args.repo), config=config)
+    payload["fallback_record"] = {
+        "file": args.fallback_record_file,
+        "schema": record.get("schema"),
+        "status": record.get("status"),
+        "operation": record.get("operation"),
+    }
     return payload
 
 
@@ -446,7 +524,7 @@ def dry_run_dependency_payload(args: argparse.Namespace, *, config: dict | None 
             if args.operation == "add-blocked-by"
             else remove_blocked_by_request(args, args.blocking_issue_id)
         )
-        return dry_run_payload(args.operation, request, config=config)
+        return dry_run_payload(args.operation, request, config=config, args=args)
 
     resolve_request = blocking_issue_id_request(args)
     if resolve_request is None:
@@ -464,7 +542,7 @@ def dry_run_dependency_payload(args: argparse.Namespace, *, config: dict | None 
             issue_endpoint(args.repo, f"issues/{args.issue_number}/dependencies/blocked_by/{placeholder}"),
         )
     )
-    payload = dry_run_payload(args.operation, mutation_request, config=config)
+    payload = dry_run_payload(args.operation, mutation_request, config=config, args=args)
     payload["steps"] = [compact_request(resolve_request), compact_request(mutation_request)]
     return payload
 
@@ -595,6 +673,205 @@ def config_refuses_execute(config: dict | None, args: argparse.Namespace) -> boo
     return config_execute_refusal(config) is not None
 
 
+def mutation_policy_missing(args: argparse.Namespace, config: dict | None) -> bool:
+    if args.operation not in MUTATION_OPERATIONS or not args.execute:
+        return False
+    if config is not None:
+        return False
+    return not bool(getattr(args, "mutation_policy_ref", None))
+
+
+def mutation_policy_refusal_payload(operation: str, request: RequestSpec | dict) -> dict:
+    request_payload = compact_request(request) if isinstance(request, RequestSpec) else request
+    return {
+        "mode": "execute",
+        "operation": operation,
+        "request": request_payload,
+        "error": {
+            "code": "mutation_policy_required",
+            "message": "Issue Tracker Ops mutation execute requires Config authorization or --mutation-policy-ref.",
+        },
+    }
+
+
+def include_idempotency_key(payload: dict, args: argparse.Namespace) -> None:
+    if getattr(args, "idempotency_key", None):
+        payload["idempotency_key"] = args.idempotency_key
+
+
+def duplicate_refusal_payload(
+    args: argparse.Namespace,
+    request: RequestSpec,
+    preflight_request: RequestSpec,
+    existing: dict,
+    *,
+    config: dict | None = None,
+) -> dict:
+    payload = {
+        "mode": "execute",
+        "operation": args.operation,
+        "request": compact_request(request),
+        "mutation_policy": issue_tracker_safety.mutation_policy(args, config),
+        "preflight": {
+            "request": compact_request(preflight_request),
+        },
+        "duplicate_decision": issue_tracker_safety.duplicate_decision(args, existing),
+        "error": {
+            "code": "duplicate_detected",
+            "message": "Issue Tracker Ops duplicate preflight blocked this mutation.",
+        },
+    }
+    include_idempotency_key(payload, args)
+    if config is not None:
+        payload["config"] = config
+    return payload
+
+
+def duplicate_return_existing_payload(
+    args: argparse.Namespace,
+    request: RequestSpec,
+    preflight_request: RequestSpec,
+    existing: dict,
+    *,
+    config: dict | None = None,
+) -> dict:
+    payload = {
+        "mode": "execute",
+        "operation": args.operation,
+        "request": compact_request(request),
+        "mutation_policy": issue_tracker_safety.mutation_policy(args, config),
+        "preflight": {
+            "request": compact_request(preflight_request),
+        },
+        "duplicate_decision": issue_tracker_safety.duplicate_decision(args, existing),
+        "result": {
+            "status": "duplicate_returned",
+            "existing": existing,
+        },
+    }
+    include_idempotency_key(payload, args)
+    if config is not None:
+        payload["config"] = config
+    return payload
+
+
+def idempotent_skip_payload(
+    args: argparse.Namespace,
+    request: RequestSpec,
+    preflight_request: RequestSpec,
+    reason: str,
+    *,
+    existing: dict | None = None,
+    config: dict | None = None,
+) -> dict:
+    payload = {
+        "mode": "execute",
+        "operation": args.operation,
+        "request": compact_request(request),
+        "mutation_policy": issue_tracker_safety.mutation_policy(args, config),
+        "preflight": {
+            "request": compact_request(preflight_request),
+        },
+        "result": {
+            "status": "idempotent_skip",
+            "reason": reason,
+        },
+    }
+    if existing is not None:
+        payload["result"]["existing"] = existing
+    include_idempotency_key(payload, args)
+    if config is not None:
+        payload["config"] = config
+    return payload
+
+
+def preflight_response_invalid_payload(
+    args: argparse.Namespace,
+    request: RequestSpec,
+    preflight_request: RequestSpec,
+    message: str,
+    *,
+    resolved: dict | None = None,
+    config: dict | None = None,
+) -> dict:
+    payload = {
+        "mode": "execute",
+        "operation": args.operation,
+        "request": compact_request(request),
+        "mutation_policy": issue_tracker_safety.mutation_policy(args, config),
+        "preflight": {
+            "request": compact_request(preflight_request),
+        },
+        "error": {
+            "code": "preflight_response_invalid",
+            "message": message,
+        },
+    }
+    if resolved is not None:
+        payload["resolved"] = resolved
+    include_idempotency_key(payload, args)
+    if config is not None:
+        payload["config"] = config
+    return payload
+
+
+def safety_failure_payload(
+    args: argparse.Namespace,
+    request: RequestSpec | dict,
+    failure: dict,
+    *,
+    config: dict | None = None,
+) -> dict:
+    request_payload = compact_request(request) if isinstance(request, RequestSpec) else request
+    mutation_policy = issue_tracker_safety.mutation_policy(args, config)
+    fallback = None
+    fallback_write_error = None
+    fallback_path = getattr(args, "fallback_record_file", None)
+    if fallback_path:
+        fallback = issue_tracker_safety.fallback_record(
+            operation=args.operation,
+            repo=args.repo,
+            request=request_payload,
+            failure=failure,
+            mutation_policy=mutation_policy,
+            idempotency_key=getattr(args, "idempotency_key", None),
+        )
+        try:
+            issue_tracker_safety.write_fallback_record(fallback_path, fallback)
+        except OSError as exc:
+            fallback_write_error = {
+                "code": "fallback_record_write_failed",
+                "message": str(exc),
+            }
+    payload = {
+        "mode": "execute",
+        "operation": args.operation,
+        "request": request_payload,
+        "mutation_policy": mutation_policy,
+        "failure": failure,
+        "retry_condition": issue_tracker_safety.retry_condition(failure),
+        "compensation_guidance": issue_tracker_safety.compensation_guidance(args.operation, failure),
+        "error": {
+            "returncode": failure["returncode"],
+            "stderr": failure["stderr"],
+            "class": failure["class"],
+        },
+    }
+    if getattr(args, "idempotency_key", None):
+        payload["idempotency_key"] = args.idempotency_key
+    duplicate_decision = getattr(args, "_issue_tracker_duplicate_decision", None)
+    if duplicate_decision is not None:
+        payload["duplicate_decision"] = duplicate_decision
+    if fallback is not None:
+        payload["fallback_record"] = fallback
+        payload["fallback_record_file"] = fallback_path
+    if fallback_write_error is not None:
+        payload["fallback_record_error"] = fallback_write_error
+    if config is not None:
+        payload["config"] = config
+    return payload
+
+
 def config_execute_refusal(config: dict) -> tuple[str, str] | None:
     projection = config.get("consumer_enforcement_projection")
     if not isinstance(projection, dict):
@@ -723,24 +1000,17 @@ def execute_request(
 ) -> int:
     completed = call_gh(gh, request, api_version=args.api_version)
     if completed.returncode != 0:
-        payload = {
-            "mode": "execute",
-            "operation": operation,
-            "request": compact_request(request),
-            "error": {
-                "returncode": completed.returncode,
-                "stderr": completed.stderr.strip(),
-            },
-        }
+        failure = issue_tracker_safety.classify_failure(
+            completed.returncode,
+            completed.stderr.strip(),
+            completed.stdout.strip(),
+        )
+        payload = safety_failure_payload(args, request, failure, config=config)
         if resolved is not None:
             payload["resolved"] = resolved
-        if config is not None:
-            payload["config"] = config
         write_json(stdout, payload)
         return completed.returncode
-    result = parse_json_output(completed)
-    if request.paginate:
-        result = combine_paginated_result(result)
+    result = parse_request_output(completed, request)
     payload = {
         "mode": "execute",
         "operation": operation,
@@ -751,6 +1021,13 @@ def execute_request(
         payload["resolved"] = resolved
     if config is not None:
         payload["config"] = config
+    if operation in MUTATION_OPERATIONS:
+        payload["mutation_policy"] = issue_tracker_safety.mutation_policy(args, config)
+        if getattr(args, "idempotency_key", None):
+            payload["idempotency_key"] = args.idempotency_key
+        duplicate_decision = getattr(args, "_issue_tracker_duplicate_decision", None)
+        if duplicate_decision is not None:
+            payload["duplicate_decision"] = duplicate_decision
     write_json(stdout, payload)
     if completed.stderr:
         stderr.write(completed.stderr)
@@ -807,6 +1084,19 @@ def add_common_flags(parser: argparse.ArgumentParser, *, mutation: bool = True) 
             action="store_true",
             help="Perform the GitHub API mutation. Without this flag, the command emits a dry run.",
         )
+        parser.add_argument(
+            "--mutation-policy-ref",
+            help="Policy, approval, issue, PR, or session reference authorizing this live tracker mutation.",
+        )
+        parser.add_argument("--duplicate-scope", choices=["open", "all"], default="open")
+        parser.add_argument(
+            "--if-duplicate",
+            choices=["block", "return-existing", "allow-with-reason"],
+            default="block",
+        )
+        parser.add_argument("--duplicate-override-reason")
+        parser.add_argument("--idempotency-key")
+        parser.add_argument("--fallback-record-file")
     else:
         parser.add_argument(
             "--execute",
@@ -890,6 +1180,12 @@ def build_parser() -> argparse.ArgumentParser:
     add_common_flags(audit_labels, mutation=False)
     audit_labels.add_argument("--issue-state", choices=["open", "closed", "all"], default="open")
 
+    reconcile = subparsers.add_parser("reconcile-fallback", help="Inspect and optionally retire an Issue Ops fallback record.")
+    add_common_flags(reconcile, mutation=False)
+    reconcile.add_argument("--fallback-record-file", required=True)
+    reconcile.add_argument("--retire-record", action="store_true")
+    reconcile.add_argument("--retirement-note")
+
     subparsers.add_parser("describe-core", help="Describe the tracker-neutral Issue Tracker Ops core contract.")
 
     describe_adapter = subparsers.add_parser("describe-adapter", help="Describe an Issue Tracker Ops adapter contract.")
@@ -916,6 +1212,303 @@ def build_primary_request(args: argparse.Namespace) -> RequestSpec:
     raise UsageError(f"{args.operation} requires dependency resolution")
 
 
+def preflight_mutation(
+    args: argparse.Namespace,
+    request: RequestSpec,
+    *,
+    gh: Callable[..., subprocess.CompletedProcess[str]],
+    config: dict | None,
+) -> tuple[int, dict] | None:
+    if args.operation == "create-issue":
+        title = request.body.get("title") if isinstance(request.body, dict) else None
+        if not isinstance(title, str):
+            return None
+        preflight_request = create_issue_preflight_request(args)
+        completed = call_gh(gh, preflight_request, api_version=args.api_version)
+        if completed.returncode != 0:
+            failure = issue_tracker_safety.classify_failure(
+                completed.returncode,
+                completed.stderr.strip(),
+                completed.stdout.strip(),
+            )
+            return completed.returncode, safety_failure_payload(args, request, failure, config=config)
+        result = parse_request_output(completed, preflight_request)
+        if not isinstance(result, list):
+            return 1, preflight_response_invalid_payload(
+                args,
+                request,
+                preflight_request,
+                "issue duplicate preflight expected a list response",
+                config=config,
+            )
+        existing = issue_tracker_safety.find_duplicate_issue(result, title)
+        if existing is None:
+            return None
+        if args.if_duplicate == "allow-with-reason":
+            setattr(args, "_issue_tracker_duplicate_decision", issue_tracker_safety.duplicate_decision(args, existing))
+            return None
+        if args.if_duplicate == "return-existing":
+            return 0, duplicate_return_existing_payload(args, request, preflight_request, existing, config=config)
+        return 1, duplicate_refusal_payload(args, request, preflight_request, existing, config=config)
+
+    if args.operation == "comment":
+        body = request.body.get("body") if isinstance(request.body, dict) else None
+        if not isinstance(body, str):
+            return None
+        preflight_request = comment_preflight_request(args)
+        completed = call_gh(gh, preflight_request, api_version=args.api_version)
+        if completed.returncode != 0:
+            failure = issue_tracker_safety.classify_failure(
+                completed.returncode,
+                completed.stderr.strip(),
+                completed.stdout.strip(),
+            )
+            return completed.returncode, safety_failure_payload(args, request, failure, config=config)
+        result = parse_request_output(completed, preflight_request)
+        if not isinstance(result, list):
+            return 1, preflight_response_invalid_payload(
+                args,
+                request,
+                preflight_request,
+                "comment duplicate preflight expected a list response",
+                config=config,
+            )
+        existing = issue_tracker_safety.find_duplicate_comment(result, body)
+        if existing is None:
+            return None
+        if args.if_duplicate == "allow-with-reason":
+            setattr(args, "_issue_tracker_duplicate_decision", issue_tracker_safety.duplicate_decision(args, existing))
+            return None
+        if args.if_duplicate == "return-existing":
+            return 0, duplicate_return_existing_payload(args, request, preflight_request, existing, config=config)
+        return 1, duplicate_refusal_payload(args, request, preflight_request, existing, config=config)
+
+    if args.operation == "update-issue":
+        body = request.body if isinstance(request.body, dict) else None
+        if not body:
+            return None
+        preflight_request = issue_read_preflight_request(args)
+        completed = call_gh(gh, preflight_request, api_version=args.api_version)
+        if completed.returncode != 0:
+            failure = issue_tracker_safety.classify_failure(
+                completed.returncode,
+                completed.stderr.strip(),
+                completed.stdout.strip(),
+            )
+            return completed.returncode, safety_failure_payload(args, request, failure, config=config)
+        existing_issue = parse_request_output(completed, preflight_request)
+        if not isinstance(existing_issue, dict):
+            return 1, preflight_response_invalid_payload(
+                args,
+                request,
+                preflight_request,
+                "issue update preflight expected an object response",
+                config=config,
+            )
+        if issue_tracker_safety.issue_matches_update(existing_issue, body):
+            existing = issue_tracker_safety.summarize_issue(existing_issue) if isinstance(existing_issue, dict) else None
+            return 0, idempotent_skip_payload(
+                args,
+                request,
+                preflight_request,
+                "issue already matches requested fields",
+                existing=existing,
+                config=config,
+            )
+    return None
+
+
+def preflight_dependency_mutation(
+    args: argparse.Namespace,
+    request: RequestSpec,
+    blocking_issue_id: int,
+    *,
+    gh: Callable[..., subprocess.CompletedProcess[str]],
+    config: dict | None,
+) -> tuple[int, dict] | None:
+    preflight_request = dependency_preflight_request(args)
+    completed = call_gh(gh, preflight_request, api_version=args.api_version)
+    if completed.returncode != 0:
+        failure = issue_tracker_safety.classify_failure(
+            completed.returncode,
+            completed.stderr.strip(),
+            completed.stdout.strip(),
+        )
+        return completed.returncode, safety_failure_payload(args, request, failure, config=config)
+    result = parse_request_output(completed, preflight_request)
+    if not isinstance(result, list):
+        return 1, preflight_response_invalid_payload(
+            args,
+            request,
+            preflight_request,
+            "dependency preflight expected a list response",
+            resolved={"blocking_issue_id": blocking_issue_id},
+            config=config,
+        )
+    existing = issue_tracker_safety.find_dependency_relation(result, blocking_issue_id)
+    if args.operation == "add-blocked-by" and existing is not None:
+        return 0, idempotent_skip_payload(
+            args,
+            request,
+            preflight_request,
+            "blocked-by relation already exists",
+            existing=existing,
+            config=config,
+        )
+    if args.operation == "remove-blocked-by" and existing is None:
+        return 0, idempotent_skip_payload(
+            args,
+            request,
+            preflight_request,
+            "blocked-by relation is already absent",
+            config=config,
+        )
+    return None
+
+
+def fallback_projection_status(record: dict, result: JSONValue) -> tuple[str, dict | None]:
+    request = record.get("request", {})
+    if not isinstance(request, dict):
+        return "unknown", None
+    operation = record.get("operation")
+    if operation == "comment":
+        body = request.get("body", {})
+        comment_body = body.get("body") if isinstance(body, dict) else None
+        if isinstance(comment_body, str):
+            existing = issue_tracker_safety.find_duplicate_comment(result, comment_body)
+            if existing is not None:
+                return "projected", existing
+            return "not_projected", None
+    if operation == "create-issue":
+        body = request.get("body", {})
+        title = body.get("title") if isinstance(body, dict) else None
+        if isinstance(title, str):
+            existing = issue_tracker_safety.find_duplicate_issue(result, title)
+            if existing is not None:
+                return "projected", existing
+            return "not_projected", None
+    if operation == "update-issue":
+        body = request.get("body", {})
+        if isinstance(body, dict):
+            if issue_tracker_safety.issue_matches_update(result, body):
+                projected = issue_tracker_safety.summarize_issue(result) if isinstance(result, dict) else None
+                return "projected", projected
+            return "not_projected", None
+    if operation == "add-blocked-by":
+        if not isinstance(result, list):
+            return "unknown", None
+        body = request.get("body", {})
+        issue_id = body.get("issue_id") if isinstance(body, dict) else None
+        try:
+            existing = issue_tracker_safety.find_dependency_relation(result, int(str(issue_id)))
+        except (TypeError, ValueError):
+            return "unknown", None
+        if existing is not None:
+            return "projected", existing
+        return "not_projected", None
+    if operation == "remove-blocked-by":
+        if not isinstance(result, list):
+            return "unknown", None
+        endpoint = request.get("endpoint")
+        if not isinstance(endpoint, str):
+            return "unknown", None
+        try:
+            issue_id = int(endpoint.rsplit("/", 1)[1])
+        except (IndexError, ValueError):
+            return "unknown", None
+        existing = issue_tracker_safety.find_dependency_relation(result, issue_id)
+        if existing is None:
+            return "projected", {"issue_id": issue_id, "relation": "absent"}
+        return "not_projected", existing
+    return "unknown", None
+
+
+def execute_reconcile_fallback(
+    args: argparse.Namespace,
+    *,
+    gh: Callable[..., subprocess.CompletedProcess[str]],
+    stdout: TextIO,
+    config: dict | None = None,
+) -> int:
+    try:
+        record = issue_tracker_safety.load_fallback_record(args.fallback_record_file)
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        raise UsageError(f"could not load fallback record: {exc}") from exc
+    request = fallback_projection_request(record, args.repo)
+    if not args.execute:
+        write_json(stdout, dry_run_reconcile_fallback_payload(args, record, config=config))
+        return 0
+    completed = call_gh(gh, request, api_version=args.api_version)
+    if completed.returncode != 0:
+        failure = issue_tracker_safety.classify_failure(
+            completed.returncode,
+            completed.stderr.strip(),
+            completed.stdout.strip(),
+        )
+        payload = {
+            "mode": "execute",
+            "operation": args.operation,
+            "request": compact_request(request),
+            "fallback_record_file": args.fallback_record_file,
+            "failure": failure,
+            "error": {
+                "returncode": completed.returncode,
+                "stderr": failure["stderr"],
+                "class": failure["class"],
+            },
+        }
+        if config is not None:
+            payload["config"] = config
+        write_json(stdout, payload)
+        return completed.returncode
+    status, projected = fallback_projection_status(record, parse_request_output(completed, request))
+    recommended_action = {
+        "projected": "retire_record",
+        "not_projected": "retry_tracker_operation",
+    }.get(status, "manual_review")
+    result = {
+        "projection_status": status,
+        "recommended_action": recommended_action,
+    }
+    if projected is not None:
+        result["projected"] = projected
+    if args.retire_record:
+        if status != "projected":
+            write_json(
+                stdout,
+                {
+                    "mode": "execute",
+                    "operation": args.operation,
+                    "request": compact_request(request),
+                    "fallback_record_file": args.fallback_record_file,
+                    "result": result,
+                    "error": {
+                        "code": "retirement_not_allowed",
+                        "message": "Fallback record can only be retired after projection is verified.",
+                    },
+                },
+            )
+            return 1
+        if not args.retirement_note:
+            raise UsageError("--retirement-note is required with --retire-record")
+        result["retired_record"] = issue_tracker_safety.retire_fallback_record(
+            args.fallback_record_file,
+            record,
+            args.retirement_note,
+        )
+    payload = {
+        "mode": "execute",
+        "operation": args.operation,
+        "request": compact_request(request),
+        "fallback_record_file": args.fallback_record_file,
+        "result": result,
+    }
+    if config is not None:
+        payload["config"] = config
+    write_json(stdout, payload)
+    return 0
+
+
 def run(
     argv: list[str] | None = None,
     *,
@@ -930,6 +1523,17 @@ def run(
                 args = parser.parse_args(argv)
         except SystemExit as exc:
             return exc.code if isinstance(exc.code, int) else 1
+        if (
+            getattr(args, "if_duplicate", None) == "allow-with-reason"
+            and not getattr(args, "duplicate_override_reason", None)
+        ):
+            raise UsageError("--duplicate-override-reason is required with --if-duplicate allow-with-reason")
+        if (
+            getattr(args, "operation", None) == "reconcile-fallback"
+            and getattr(args, "retire_record", False)
+            and not getattr(args, "retirement_note", None)
+        ):
+            raise UsageError("--retirement-note is required with --retire-record")
         config = evaluate_issue_tracker_ops_config(args)
         if args.operation == "describe-core":
             write_json(stdout, issue_tracker_core.core_contract_payload())
@@ -946,10 +1550,15 @@ def run(
                 raise UsageError(f"could not plan {args.operation_id!r} for adapter {args.adapter!r}")
             write_json(stdout, payload)
             return 0
+        if args.operation == "reconcile-fallback":
+            return execute_reconcile_fallback(args, gh=gh, stdout=stdout, config=config)
         if args.operation in {"add-blocked-by", "remove-blocked-by"}:
             if not args.execute:
                 write_json(stdout, dry_run_dependency_payload(args, config=config))
                 return 0
+            if mutation_policy_missing(args, config):
+                write_json(stdout, mutation_policy_refusal_payload(args.operation, dry_run_dependency_payload(args)["request"]))
+                return 1
             if config_refuses_execute(config, args):
                 write_json(stdout, config_refusal_payload(args.operation, dry_run_dependency_payload(args)["request"], config))
                 return 1
@@ -961,6 +1570,17 @@ def run(
                 if args.operation == "add-blocked-by"
                 else remove_blocked_by_request(args, blocking_issue_id)
             )
+            preflight_result = preflight_dependency_mutation(
+                args,
+                request,
+                blocking_issue_id,
+                gh=gh,
+                config=config,
+            )
+            if preflight_result is not None:
+                exit_code, payload = preflight_result
+                write_json(stdout, payload)
+                return exit_code
             return execute_request(
                 args.operation,
                 request,
@@ -980,11 +1600,19 @@ def run(
 
         request = build_primary_request(args)
         if not args.execute:
-            write_json(stdout, dry_run_payload(args.operation, request, config=config))
+            write_json(stdout, dry_run_payload(args.operation, request, config=config, args=args))
             return 0
+        if mutation_policy_missing(args, config):
+            write_json(stdout, mutation_policy_refusal_payload(args.operation, request))
+            return 1
         if config_refuses_execute(config, args):
             write_json(stdout, config_refusal_payload(args.operation, request, config))
             return 1
+        preflight_result = preflight_mutation(args, request, gh=gh, config=config)
+        if preflight_result is not None:
+            exit_code, payload = preflight_result
+            write_json(stdout, payload)
+            return exit_code
         return execute_request(args.operation, request, args=args, gh=gh, stdout=stdout, stderr=stderr, config=config)
     except UsageError as exc:
         stderr.write(f"{exc}\n")

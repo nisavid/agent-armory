@@ -65,7 +65,9 @@ keep tracker mutations explicit and governable.
   create/remove operations.
 - External disclosure: issue bodies, comments, labels, links, and evidence sent
   to GitHub.
-- Local write: committed Equipment Design Bundle and adapter implementation.
+- Local write: committed Equipment Design Bundle and adapter implementation;
+  optional fallback-record retirement or creation only when explicitly
+  requested by path.
 
 ## Needed Harness Components
 
@@ -106,7 +108,8 @@ keep tracker mutations explicit and governable.
 - Adapter capabilities must declare native, emulated, unsupported, or fallback
   behavior.
 - Issue mutations must have an audit surface that names operation, target,
-  policy mode, request shape, and result or failure.
+  policy mode, request shape, result or failure, retry condition, compensation
+  guidance, and fallback record disposition when applicable.
 - The progressive config profile, onboarding states, Foreign Policy Surface
   discovery, migration fates, compatibility classification, and CLI/MCP parity
   expectations are defined in
@@ -131,14 +134,16 @@ classes, side-effect classes, adapter capability dispositions, audit
 requirements, and operation safety plan for a selected adapter.
 
 The bootstrap runtime adapter emits JSON for every tracker operation. Dry-run
-output records the request that would be sent and the provisional policy.
-Execute output records the request, result, resolved dependency IDs when
-applicable, and errors.
+output records the request that would be sent, provisional policy, and planned
+safety preflights. Execute output records the request, mutation policy source,
+result, resolved dependency IDs when applicable, idempotent skips, duplicate
+decisions, classified failures, retry conditions, compensation guidance, and
+explicit fallback records when requested.
 
 Full Equipment delivery will deepen the current Agent Equipment Config adapter
 projection with runtime support for the Issue Ops profile and onboarding
-contract, richer repair/orchestration modes, fallback reconciliation, MCP
-parity, and publication guidance.
+contract, richer repair/orchestration modes, semantic issue selection and
+repair, MCP parity, and publication guidance.
 
 ## Failure modes
 
@@ -148,8 +153,11 @@ parity, and publication guidance.
   disposition.
 - API outage or secondary rate limit: fail closed, preserve operation intent in
   audit output, and require retry or tracked deferment.
-- Duplicate-risk issue creation: default to dry-run; future duplicate detection
-  belongs in full Issue Ops delivery.
+- Duplicate-risk issue creation or commenting: block exact matches by default,
+  return the existing item when requested, or allow only with an explicit
+  override reason.
+- Exact no-op issue updates and already-applied or already-absent dependency
+  changes return `idempotent_skip` without writing.
 - Uncertain policy: use read-only, advisory, or dry-run behavior.
 
 ## Evidence

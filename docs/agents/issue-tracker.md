@@ -13,7 +13,7 @@ Use `tools/issue_tracker_ops.py` for Issue Tracker Ops (Issue Ops) bootstrap
 modes that describe the tracker-neutral core, describe the GitHub Issues
 baseline adapter, plan neutral operations, create, update, comment on, add
 dependency relations, remove dependency relations, and list dependency
-relations for GitHub Issues.
+relations for GitHub Issues, and reconcile explicit fallback records.
 
 Bootstrap adapter subcommands:
 
@@ -28,9 +28,13 @@ Bootstrap adapter subcommands:
 - `list-blocked-by`
 - `list-blocking`
 - `audit-labels`
+- `reconcile-fallback`
 
 The adapter defaults network operations to dry-run output; pass `--execute`
-only when the active session allows the GitHub tracker operation.
+only when the active session allows the GitHub tracker operation. Mutation
+`--execute` requires usable Config authorization or
+`--mutation-policy-ref <ref>`. Config inputs take precedence and can still fail
+closed.
 
 The adapter can consume explicit Agent Equipment Config inputs with
 `--config-layer <path>` and plain Issue Tracker Ops handoffs with
@@ -39,6 +43,20 @@ inputs are supplied, dry-run output includes the effective Config evidence and
 consumer action decision. For mutation subcommands, live `--execute` also
 requires the effective `issue_tracker_ops.mode` value to be `execute`; blocking
 or unsupported consumer decisions fail closed before any `gh` call.
+
+Mutation commands perform live preflight reads under `--execute`. Exact
+duplicate issue titles and duplicate comment bodies are blocked by default,
+while exact no-op issue updates and already-applied or already-absent
+dependency changes return `idempotent_skip` without writing. Use
+`--if-duplicate return-existing` to return the matched item instead of failing,
+or `--if-duplicate allow-with-reason --duplicate-override-reason <text>` when
+the active policy explicitly allows a duplicate-prone write.
+
+Use `--fallback-record-file <path>` only when a failed live mutation needs a
+local record for later reconciliation. Fallback records use
+`issue_tracker_ops.fallback_record.v1alpha1`; `reconcile-fallback` verifies the
+intended tracker projection before retry or retirement, and `--retire-record`
+updates the supplied fallback record only after projection is verified.
 
 Use the `gh` CLI directly when a needed GitHub Issues operation is outside the
 bootstrap adapter's current modes, or when a skill needs a read-only query that
