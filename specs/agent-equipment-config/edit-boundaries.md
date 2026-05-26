@@ -103,9 +103,9 @@ route without parsing prose. The current contract includes:
   so no partial apply may proceed.
 
 The non-migration authoring plan/apply model adds narrower plan-artifact
-refusals for `unsupported_plan_kind`, `non_deterministic_plan`, and
-`unsupported_mcp_authoring`. Those codes preserve the same refusal contract:
-tools route stable codes, while humans receive readable detail.
+refusals for `unsupported_plan_kind` and `non_deterministic_plan`. Those codes
+preserve the same refusal contract: tools route stable codes, while humans
+receive readable detail.
 
 Existing runtime output may render these as human-readable `reason` strings.
 New edit surfaces should expose the stable reason code alongside the readable

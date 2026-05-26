@@ -10,9 +10,9 @@ checks, projection classification, reusable consumer action decisions,
 read-only authoring proposal and plan-generation surfaces, and MCP parity tool
 definitions. It does not implement Agent Equipment beyond this runtime slice,
 publish assets, resolve secrets, mutate external systems, implement harness
-controls, or expose MCP authoring tools. Source mutation is limited to explicit
-migration apply and reviewed plan-artifact apply for eligible local TOML
-sources.
+controls, or expose general edit surfaces beyond reviewed plan artifacts.
+Source mutation is limited to explicit migration apply and reviewed
+plan-artifact apply for eligible local TOML sources.
 
 ## Scope
 

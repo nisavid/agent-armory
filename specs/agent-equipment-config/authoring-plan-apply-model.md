@@ -6,10 +6,10 @@ Promotion state: planned
 This Equipment Design Bundle document describes desired behavior for
 non-migration Config authoring. It does not implement Agent Equipment, publish
 assets, expose a general source patcher, resolve secrets, mutate external
-systems, implement harness controls, or expose MCP authoring tools. Current
-source mutation is limited to `migrate config apply` for registered migrations
-and `config apply` for reviewed `patch-layer` and `create-layer` plan artifacts
-on eligible local TOML sources.
+systems, or implement harness controls. Current source mutation is limited to
+`migrate config apply` for registered migrations and `config apply` /
+`config.apply` for reviewed `patch-layer` and `create-layer` plan artifacts on
+eligible local TOML sources.
 
 ## Purpose
 
@@ -19,9 +19,8 @@ execution, or workflow changes. The authoring model therefore makes proposed
 changes, source targeting, authority, validation, refusal, and audit evidence
 machine-visible before an eligible non-migration Config write occurs.
 
-This model defines the shared contract for proposal, plan creation, and apply.
-Command-specific implementation issues may later build CLI, runtime, docs, or
-MCP surfaces against this contract.
+This model defines the shared contract for proposal, plan creation, and apply
+across the CLI, runtime, docs, and MCP surfaces.
 
 ## Operation roles
 
@@ -154,8 +153,7 @@ Authoring surfaces use stable refusal codes alongside readable detail:
 - `ownership_boundary_violation`;
 - `source_changed`;
 - `partial_write_blocked`;
-- `non_deterministic_plan`;
-- `unsupported_mcp_authoring`.
+- `non_deterministic_plan`.
 
 The existing edit-boundary refusal states remain the shared vocabulary. New
 command-specific issues may add narrower codes only when tests and docs explain
@@ -214,9 +212,9 @@ The current CLI/runtime slice implements proposal, plan-generation, and apply
 behavior for `config propose`, `config patch`, `create-layer`, and
 `config apply`. Remaining implementation work stays split by surface:
 
-- CLI documentation and integration guidance;
 - Issue Tracker Ops pressure validation;
-- later MCP authoring parity after CLI/runtime behavior is stable.
+- richer audit/query behavior;
+- revision-write and general edit surfaces beyond reviewed plan artifacts.
 
 Existing issues should be reused or updated when they already own one of these
 slices.

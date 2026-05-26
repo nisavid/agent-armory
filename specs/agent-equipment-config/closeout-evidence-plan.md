@@ -76,7 +76,8 @@ After the bundle lands, #23 should gain child issues for:
 - audit, migration, and security hardening;
 - fluent CLI and MCP parity operation surfaces required by the Config PRD;
 - Config Authoring Surfaces as the non-blocking follow-up bucket for
-  MCP authoring parity and richer audit/query behavior;
+  richer audit/query behavior, revision writes, and general edit capabilities
+  beyond reviewed plan artifacts;
 - publication and pressure validation after runtime behavior exists.
 
 Each child issue should name the bundle files it depends on, the expected output
