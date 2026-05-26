@@ -44,6 +44,10 @@ Record:
   source preconditions, authority, validation, secret-boundary refusals,
   all-or-nothing behavior, atomic writes, and mutation audit records;
 - follow-up evidence or issue projection for MCP authoring parity;
+- MCP authoring parity design evidence for `config.propose`, `config.patch`,
+  `config.create_layer`, and `config.apply`, including schemas, metadata,
+  approval requirements, failure modes, mutation gates, deferral status, and
+  implementation issue projection;
 - validation commands and results;
 - security review scope, artifact disposition, and findings disposition;
 - documentation closeout scope and unchanged rationale where applicable;

@@ -198,6 +198,14 @@ MCP authoring parity for proposal, patch plan, create-layer plan, and apply
 belongs to later MCP revisions after the reviewed plan artifact and source-write
 contracts are stable.
 
+Deferred authoring parity reserves these MCP names for the Config Authoring
+Surfaces bucket: `config.propose`, `config.patch`, `config.create_layer`, and
+`config.apply`. The design for those deferred tools must preserve the reviewed
+plan artifact contract, side-effect classification, approval requirements,
+failure modes, mutation gates, secret/provider refusals, durability
+classification, project-truth status, and rollback stance before any runtime
+tool definitions are exposed.
+
 **Integration Points**:
 
 - Config-aware equipment registers schema fragments and consumes effective

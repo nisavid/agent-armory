@@ -61,7 +61,7 @@ or secret provider.
 | Config create-layer plan | Policy decision | `create-layer` emits read-only reviewed `create-layer` plan artifacts for new eligible authored layers before any write. |
 | Migration preview | Read | Do not rewrite source config. |
 | Source migration apply | Local write | Require eligible source category, trusted provenance, dry-run-first output, explicit authority, and audit records. |
-| MCP Config parity tools | Read or local write | Mirror the safe CLI/runtime slice with typed schemas, MCP annotations, read/write classification, auth source, side-effect metadata, approval requirements, failure modes, and mutation gates. |
+| MCP Config parity tools | Read or local write | Mirror the safe CLI/runtime slice with typed schemas, MCP annotations, read/write classification, auth source, side-effect metadata, approval requirements, failure modes, and mutation gates. Deferred MCP authoring parity is specified but not exposed until implementation adds tool definitions, dispatch, and validation. |
 | General config apply | Local write | `config apply` consumes reviewed `patch-layer` and `create-layer` plan artifacts and requires edit intent, source eligibility, diff or create payload, authority, precondition fingerprint, all-or-nothing atomic write, durability classification, rollback stance, and audit controls before writing. |
 | Consumer action decision | Policy decision | Fail closed for mutation-capable behavior unless effective Config is usable, authority and semantics pass, and the required capability is supported. |
 | Enforcement projection | Advisory or blocking control | Label blocking support versus advisory fallback. |
@@ -81,6 +81,10 @@ or secret provider.
 - MCP parity tools classify read-only versus mutation-capable behavior before
   publication and preserve runtime refusals, source category, authority, and
   audit evidence in structured output.
+- Deferred MCP authoring parity must keep `config.propose`, `config.patch`,
+  and `config.create_layer` read-only, and must classify `config.apply` as a
+  local write that requires per-call operator authority plus harness approval
+  when the MCP host supports approval friction.
 - General source edits must identify intent, target, source category,
   provenance, diff or create payload, authority, validation result,
   precondition fingerprint, virtual post-change effective Config,

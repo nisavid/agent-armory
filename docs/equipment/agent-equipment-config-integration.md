@@ -251,6 +251,16 @@ projected safety, precondition, and audit gates. See
 and [Migration apply](agent-equipment-config.md#migration-apply) for the full
 contract.
 
+Deferred MCP authoring parity is specified, not exposed, for
+`config.propose`, `config.patch`, `config.create_layer`, and `config.apply`.
+Do not advertise those tool definitions from a harness until the runtime
+implements them. When they are implemented, route them through the same reviewed
+plan contract as the CLI: typed changes for proposal and plan generation,
+reviewed `agent-armory.config.authoring-plan.v1` artifacts for apply,
+per-call apply authority for writes, stable refusal codes, all-or-nothing local
+source mutation, and audit output that records durability classification,
+project-truth status, and rollback stance.
+
 Before publishing an integration surface, document:
 
 - which layer categories the surface can discover;

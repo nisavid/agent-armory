@@ -192,17 +192,24 @@ Expected behavior:
 
 ## MCP boundary
 
-MCP authoring tools are later follow-up work. This issue defines the CLI and
-runtime plan/apply contract and only records the likely MCP parity shape:
+MCP authoring tools are later follow-up work. The CLI/runtime plan/apply
+contract is the source behavior that MCP must mirror through:
 
 - `config.propose`;
 - `config.patch`;
 - `config.create_layer`;
 - `config.apply`.
 
-Those tools stay deferred until plan artifact schemas, side-effect classes,
-auth source, approval requirements, failure modes, and mutation gates are
-stable in the CLI/runtime contract.
+Those tools stay deferred until the implementation slice exposes tool
+definitions and dispatch with validation coverage. The parity design in
+[MCP tools](mcp-tools.md) defines typed input and output schemas, read/write
+classification, side-effect metadata, approval requirements, auth source,
+failure modes, and mutation gates for the deferred tools. MCP parity must
+preserve reviewed plan artifacts, precondition fingerprints, virtual
+post-change effective Config validation, refusal codes, all-or-nothing apply,
+durability classification, project-truth status, rollback stance, and refusal
+of secret values, provider credential material, provider mutation, and
+unsupported source categories.
 
 ## Implementation slices
 
