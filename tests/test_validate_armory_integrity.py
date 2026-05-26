@@ -8619,6 +8619,7 @@ class ExampleValidationTests(unittest.TestCase):
 class SpecValidationTests(unittest.TestCase):
     config_prd_path = "docs/prd/agent-equipment-config.md"
     existing_equipment_onboarding_prd_path = "docs/prd/existing-equipment-onboarding.md"
+    issue_tracker_ops_config_profile_path = "specs/issue-tracker-ops/config-profile-and-onboarding.md"
     config_bundle_paths = (
         "specs/agent-equipment-config/README.md",
         "specs/agent-equipment-config/capability-card.md",
@@ -8633,6 +8634,7 @@ class SpecValidationTests(unittest.TestCase):
     )
     required_spec_paths = (
         *config_bundle_paths,
+        issue_tracker_ops_config_profile_path,
         "specs/repo-ops.md",
         "specs/periodic-actions.md",
         "specs/harness-capability-refresh.md",
@@ -8682,6 +8684,85 @@ class SpecValidationTests(unittest.TestCase):
                 extra_text,
                 "",
             ]
+        )
+
+    def valid_issue_tracker_ops_config_profile(self) -> str:
+        return textwrap.dedent(
+            """\
+            # Config Profile And Onboarding: Issue Tracker Ops
+
+            Status: Equipment Blueprint
+            Promotion state: planned
+
+            This spec describes desired behavior only. It does not implement Agent Equipment.
+
+            ## Purpose
+
+            Issue Tracker Ops defines its progressive config profile without
+            owning Agent Equipment Config.
+
+            ## Progressive Enhancement Boundary
+
+            Issue Tracker Ops can run session-scoped behavior without shared
+            Config, serialize a plain handoff, and later promote that handoff
+            into Agent Equipment Config.
+
+            ## Plain Handoff And Session Behavior
+
+            The plain handoff records mode, external disclosure, taxonomy,
+            priority scales, workflow status semantics, readiness signals,
+            WIP policy, stakeholder overrides, issue-set selection, dependency
+            semantics, mutation safety, and adapter capability assumptions.
+
+            ## Onboarding Flow
+
+            Onboarding covers first-run, interruption, resume, restart,
+            re-onboarding, incomplete sections, confidence, assumptions, and
+            unavailable config-equipment status.
+
+            ## Foreign Policy Surface Discovery And Migration Fates
+
+            Discovery covers repo-local and user-global Foreign Policy Surface
+            inputs. Migration fates include keep and establish compatibility,
+            remove and ingest policy, remove and discard policy, ignore,
+            defer for review, and split.
+
+            ## Compatibility Classification
+
+            Compatibility classification determines whether indirection,
+            generation, adapter behavior, or a mixed strategy preserves a
+            Foreign Policy Compatibility Surface.
+
+            ## Machine-Visible Output
+
+            Output includes Config Safety Status, safety status, assumptions,
+            incomplete sections, confidence, policy authority evidence,
+            conflict reporting, and effective next-work explanation.
+
+            ## CLI And MCP Parity
+
+            CLI and MCP parity expose the same typed contracts for dry-run
+            plans, validation, onboarding, migration preview, migration apply,
+            conflict reports, and adapter calls.
+
+            ## Security And Safety
+
+            User-global mutation requires explicit approval, unsafe writes
+            fail closed, and external disclosure remains blocked unless policy
+            allows it.
+
+            ## Validation And Closeout
+
+            Validation covers plain handoff ingestion, Config promotion,
+            onboarding states, migration fates, compatibility classification,
+            conflict reports, CLI and MCP parity, and tracker projection.
+
+            ## Non-goals
+
+            This design does not implement runtime onboarding, GitHub Projects,
+            policy-doc migration, Config authoring mechanics, or final
+            publication.
+            """
         )
 
     def valid_config_bundle(self) -> dict[str, str]:
@@ -8884,6 +8965,7 @@ class SpecValidationTests(unittest.TestCase):
 
     def write_all_specs(self, root: Path, overrides: dict[str, str] | None = None) -> None:
         specs = {
+            self.issue_tracker_ops_config_profile_path: self.valid_issue_tracker_ops_config_profile(),
             "specs/repo-ops.md": self.valid_spec(
                 "Repo Ops Spec",
                 """\
@@ -8955,6 +9037,55 @@ class SpecValidationTests(unittest.TestCase):
             results = validate_specs(root)
 
         self.assertTrue(all(result.ok for result in results), results)
+
+    def test_validate_specs_requires_issue_tracker_ops_config_profile_sections(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_specs(
+                root,
+                {
+                    self.issue_tracker_ops_config_profile_path: self.valid_issue_tracker_ops_config_profile().replace(
+                        "## Onboarding Flow\n",
+                        "",
+                    )
+                },
+            )
+
+            results = validate_specs(root)
+
+        self.assertIn(
+            CheckResult(
+                f"spec:section:{self.issue_tracker_ops_config_profile_path}:Onboarding Flow",
+                False,
+                "missing section: Onboarding Flow",
+                self.issue_tracker_ops_config_profile_path,
+            ),
+            results,
+        )
+
+    def test_validate_specs_requires_issue_tracker_ops_config_profile_terms(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_specs(
+                root,
+                {
+                    self.issue_tracker_ops_config_profile_path: self.valid_issue_tracker_ops_config_profile()
+                    .replace("CLI And MCP Parity", "Tool Surface Equivalence")
+                    .replace("CLI and MCP parity", "tool surface equivalence")
+                },
+            )
+
+            results = validate_specs(root)
+
+        self.assertIn(
+            CheckResult(
+                f"spec:text:{self.issue_tracker_ops_config_profile_path}:CLI and MCP parity",
+                False,
+                "missing CLI and MCP parity",
+                self.issue_tracker_ops_config_profile_path,
+            ),
+            results,
+        )
 
     def test_validate_specs_requires_promotion_state_specified(self):
         with tempfile.TemporaryDirectory() as tmpdir:

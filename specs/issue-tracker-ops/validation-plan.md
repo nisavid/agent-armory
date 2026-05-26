@@ -10,6 +10,7 @@ Run deterministic checks:
 ```sh
 python3.14 -m unittest tests.test_issue_tracker_ops
 python3.14 -m unittest tests.test_agent_equipment_config
+python3.14 -m unittest tests.test_validate_armory_integrity
 python3.14 tools/validate_armory_integrity.py
 ```
 
@@ -61,3 +62,9 @@ Full closure of issue #11 needs additional validation for onboarding, Issue Ops
 config profile fields, configuration layering, policy conflicts, issue
 selection, issue repair, fallback reconciliation, permission failure, rate
 limiting, duplicate detection, subtask handling, and cross-issue orchestration.
+
+Issue #13 validation specifically requires
+[Config profile and onboarding](config-profile-and-onboarding.md), validator
+coverage for that owner spec, bundle references from the other Issue Ops design
+records, tracker drift correction for #13, and closeout evidence that #103,
+#93/#99, #121, and #18 remain separate follow-ups.

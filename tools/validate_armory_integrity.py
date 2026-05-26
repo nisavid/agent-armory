@@ -829,7 +829,46 @@ EXAMPLE_REQUIRED_PATHS = [
 CONFIG_BUNDLE_PATH = "specs/agent-equipment-config"
 CONFIG_PRD_PATH = "docs/prd/agent-equipment-config.md"
 ISSUE_TRACKER_OPS_PRD_PATH = "docs/prd/issue-tracker-ops.md"
+ISSUE_TRACKER_OPS_CONFIG_PROFILE_PATH = "specs/issue-tracker-ops/config-profile-and-onboarding.md"
 EXISTING_EQUIPMENT_ONBOARDING_PRD_PATH = "docs/prd/existing-equipment-onboarding.md"
+ISSUE_TRACKER_OPS_CONFIG_PROFILE_REQUIRED_SECTIONS = [
+    "Purpose",
+    "Progressive Enhancement Boundary",
+    "Plain Handoff And Session Behavior",
+    "Onboarding Flow",
+    "Foreign Policy Surface Discovery And Migration Fates",
+    "Compatibility Classification",
+    "Machine-Visible Output",
+    "CLI And MCP Parity",
+    "Security And Safety",
+    "Validation And Closeout",
+    "Non-goals",
+]
+ISSUE_TRACKER_OPS_CONFIG_PROFILE_REQUIRED_TEXT = [
+    "session-scoped",
+    "plain handoff",
+    "Agent Equipment Config",
+    "Foreign Policy Surface",
+    "migration fates",
+    "keep and establish compatibility",
+    "remove and ingest policy",
+    "remove and discard policy",
+    "ignore",
+    "defer for review",
+    "split",
+    "compatibility classification",
+    "Config Safety Status",
+    "assumptions",
+    "incomplete sections",
+    "confidence",
+    "conflict reporting",
+    "effective next-work",
+    "CLI and MCP parity",
+    "user-global",
+    "explicit approval",
+    "fail closed",
+    "external disclosure",
+]
 CONFIG_BUNDLE_REQUIRED_PATHS = [
     f"{CONFIG_BUNDLE_PATH}/README.md",
     f"{CONFIG_BUNDLE_PATH}/capability-card.md",
@@ -4594,6 +4633,72 @@ def validate_examples(root: Path) -> list[CheckResult]:
 def validate_specs(root: Path) -> list[CheckResult]:
     results: list[CheckResult] = []
     config_bundle_markdown_parts: list[str] = []
+    ok, detail, path = repo_relative_path_status(root, ISSUE_TRACKER_OPS_CONFIG_PROFILE_PATH, "file")
+    if not ok:
+        if detail == "path contains symlink":
+            detail = "spec path contains symlink"
+        results.append(
+            CheckResult(
+                f"spec:path:{ISSUE_TRACKER_OPS_CONFIG_PROFILE_PATH}",
+                False,
+                detail,
+                ISSUE_TRACKER_OPS_CONFIG_PROFILE_PATH,
+            )
+        )
+    else:
+        markdown = path.read_text(encoding="utf-8")
+        visible_markdown = markdown_visible_text(markdown)
+        visible_markdown_normalized = " ".join(visible_markdown.casefold().split())
+        headings = markdown_heading_texts(markdown)
+        if "Promotion state: planned".casefold() not in visible_markdown.casefold():
+            results.append(
+                CheckResult(
+                    f"spec:promotion:{ISSUE_TRACKER_OPS_CONFIG_PROFILE_PATH}",
+                    False,
+                    "missing Promotion state: planned",
+                    ISSUE_TRACKER_OPS_CONFIG_PROFILE_PATH,
+                )
+            )
+        if "does not implement Agent Equipment".casefold() not in visible_markdown.casefold():
+            results.append(
+                CheckResult(
+                    f"spec:boundary:{ISSUE_TRACKER_OPS_CONFIG_PROFILE_PATH}",
+                    False,
+                    "missing non-implementation boundary",
+                    ISSUE_TRACKER_OPS_CONFIG_PROFILE_PATH,
+                )
+            )
+        for required_section in ISSUE_TRACKER_OPS_CONFIG_PROFILE_REQUIRED_SECTIONS:
+            if normalize_reference_label(required_section) not in headings:
+                results.append(
+                    CheckResult(
+                        f"spec:section:{ISSUE_TRACKER_OPS_CONFIG_PROFILE_PATH}:{required_section}",
+                        False,
+                        f"missing section: {required_section}",
+                        ISSUE_TRACKER_OPS_CONFIG_PROFILE_PATH,
+                    )
+                )
+        for required_text in ISSUE_TRACKER_OPS_CONFIG_PROFILE_REQUIRED_TEXT:
+            required_text_normalized = " ".join(required_text.casefold().split())
+            if required_text_normalized not in visible_markdown_normalized:
+                results.append(
+                    CheckResult(
+                        f"spec:text:{ISSUE_TRACKER_OPS_CONFIG_PROFILE_PATH}:{required_text}",
+                        False,
+                        f"missing {required_text}",
+                        ISSUE_TRACKER_OPS_CONFIG_PROFILE_PATH,
+                    )
+                )
+        for forbidden_claim in FORBIDDEN_SPEC_CLAIMS:
+            if forbidden_claim.casefold() in visible_markdown.casefold():
+                results.append(
+                    CheckResult(
+                        f"spec:claim:{ISSUE_TRACKER_OPS_CONFIG_PROFILE_PATH}:{forbidden_claim}",
+                        False,
+                        f"forbidden readiness claim: {forbidden_claim}",
+                        ISSUE_TRACKER_OPS_CONFIG_PROFILE_PATH,
+                    )
+                )
     for relative_path in CONFIG_BUNDLE_REQUIRED_PATHS:
         ok, detail, path = repo_relative_path_status(root, relative_path, "file")
         if not ok:
@@ -4806,6 +4911,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
         *TEMPLATE_REQUIRED_PATHS,
         *EXAMPLE_REQUIRED_PATHS,
         *CONFIG_BUNDLE_REQUIRED_PATHS,
+        ISSUE_TRACKER_OPS_CONFIG_PROFILE_PATH,
         *SPEC_REQUIRED_PATHS,
     ]
     results = [

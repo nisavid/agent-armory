@@ -40,7 +40,9 @@ shape.
   `issue_tracker_ops` fragment, plain handoff ingestion, and adapter semantics:
   dry-run is the default, live mutation still requires `--execute`, and
   config-aware live mutation requires the configured mode to be `execute` with
-  a non-blocking consumer decision.
+  a non-blocking consumer decision. The broader Issue Ops config profile and
+  onboarding contract is defined in
+  [Config profile and onboarding](config-profile-and-onboarding.md).
 - Local docs: this Equipment Design Bundle records current design, security,
   validation, and closeout expectations.
 
@@ -96,15 +98,16 @@ expose typed inputs and outputs without relying on CLI command composition.
 - `gh` authentication and permissions are external to the script.
 - GitHub API behavior may change; dependency and sub-issue features should be
   refreshed before promotion beyond the bootstrap MVP.
-- The MVP does not yet implement onboarding, layered policy, issue selection,
-  duplicate detection, fallback reconciliation, or issue-set orchestration.
+- The MVP does not yet implement runtime onboarding, issue selection, duplicate
+  detection, fallback reconciliation, or issue-set orchestration.
 - The Config consumer proof covers adapter execute-mode gating; broader Issue
-  Ops policy fields, selection behavior, and issue-set orchestration remain
-  outside this bootstrap surface.
+  Ops policy fields and onboarding behavior are specified but remain outside
+  this bootstrap runtime surface.
 
 ## Maintenance notes
 
 Review this decision when GitHub changes issue dependency or sub-issue APIs,
 when the GitHub MCP connector exposes equivalent dependency operations, when
-Issue Ops gains broader config-profile fields, or when repeated use shows the
-CLI contract is too narrow for real tracker orchestration.
+Issue Ops implements the config profile and onboarding contract, or when
+repeated use shows the CLI contract is too narrow for real tracker
+orchestration.
