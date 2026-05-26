@@ -501,6 +501,62 @@ class IssueTrackerOpsTests(unittest.TestCase):
             "consumer action decision did not authorize execute",
         )
 
+    def test_execute_config_with_allowed_decision_but_missing_usable_safety_evidence_fails_closed(self):
+        args = argparse.Namespace(operation="comment", execute=True)
+        config = {
+            "effective_config": {"safety_status": "unsafe"},
+            "consumer_action_decision": {"state": "allowed"},
+            "consumer_enforcement_projection": {
+                "surface": "issue_tracker_ops.github_api_mutation_preflight",
+                "mutation_requested": True,
+                "adapter_action": "allow",
+                "effective_config": {"safety_status": "usable"},
+            },
+        }
+
+        self.assertTrue(issue_tracker_ops.config_refuses_execute(config, args))
+
+        payload = issue_tracker_ops.config_refusal_payload(
+            "comment",
+            issue_tracker_ops.RequestSpec("POST", "repos/OWNER/REPO/issues/11/comments", {"body": "x"}),
+            config,
+        )
+
+        self.assertEqual(payload["error"]["state"], "allowed")
+        self.assertEqual(
+            payload["error"]["message"],
+            "Issue Tracker Ops Config did not authorize execute: "
+            "effective Config safety status did not authorize execute",
+        )
+
+    def test_execute_config_with_allowed_decision_but_malformed_projection_surface_fails_closed(self):
+        args = argparse.Namespace(operation="comment", execute=True)
+        config = {
+            "effective_config": {"safety_status": "usable"},
+            "consumer_action_decision": {"state": "allowed"},
+            "consumer_enforcement_projection": {
+                "surface": "other.surface",
+                "mutation_requested": True,
+                "adapter_action": "allow",
+                "effective_config": {"safety_status": "usable"},
+            },
+        }
+
+        self.assertTrue(issue_tracker_ops.config_refuses_execute(config, args))
+
+        payload = issue_tracker_ops.config_refusal_payload(
+            "comment",
+            issue_tracker_ops.RequestSpec("POST", "repos/OWNER/REPO/issues/11/comments", {"body": "x"}),
+            config,
+        )
+
+        self.assertEqual(payload["error"]["state"], "allowed")
+        self.assertEqual(
+            payload["error"]["message"],
+            "Issue Tracker Ops Config did not authorize execute: "
+            "consumer_enforcement_projection did not identify live mutation preflight",
+        )
+
     def test_enforcement_projection_with_malformed_decision_state_blocks(self):
         args = argparse.Namespace(operation="comment", execute=True)
 

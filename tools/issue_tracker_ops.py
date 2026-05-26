@@ -612,6 +612,20 @@ def config_execute_refusal(config: dict) -> tuple[str, str] | None:
         if not isinstance(reason, str) or not reason:
             reason = "consumer action decision did not authorize execute"
         return state or "unknown", reason
+    if (
+        projection.get("surface") != "issue_tracker_ops.github_api_mutation_preflight"
+        or projection.get("mutation_requested") is not True
+    ):
+        return state or "unknown", "consumer_enforcement_projection did not identify live mutation preflight"
+    effective_config = config.get("effective_config")
+    projection_effective_config = projection.get("effective_config")
+    if (
+        not isinstance(effective_config, dict)
+        or effective_config.get("safety_status") != "usable"
+        or not isinstance(projection_effective_config, dict)
+        or projection_effective_config.get("safety_status") != "usable"
+    ):
+        return state or "unknown", "effective Config safety status did not authorize execute"
     return None
 
 

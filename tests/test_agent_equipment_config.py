@@ -5614,3 +5614,101 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertIn("missing authority", [item["kind"] for item in result["diagnostics"]])
         self.assertEqual(result["enforcement_projection"]["classification"], "blocking")
         self.assertFalse(result["enforcement_projection"]["enforced_by_harness"])
+
+    def test_issue_tracker_ops_authoring_pressure_scenario_applies_reviewed_live_mutation_config(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            org = self.write_layer(root, "org.toml", """
+                [agent_equipment_config.layer]
+                name = "organization or tracker policy"
+                category = "committed durable config"
+
+                [agent_equipment_config.authority]
+                live_tracker_write = "usable"
+
+                [agent_equipment_config.policy.issue_tracker_ops.mode]
+                required_for = "mutation"
+                authority = "live_tracker_write"
+
+                [agent_equipment_config.policy.issue_tracker_ops.external_disclosure]
+                required_for = "mutation"
+                authority = "live_tracker_write"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            original_text = org.read_text(encoding="utf-8")
+
+            proposal = json.loads(agent_equipment_config.run(
+                [
+                    "config",
+                    "propose",
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=execute",
+                    "--set",
+                    "issue_tracker_ops.external_disclosure=allowed",
+                ],
+                stdout_text=True,
+            ))
+            plan_stdout = agent_equipment_config.run(
+                [
+                    "config",
+                    "patch",
+                    "--layer",
+                    str(org),
+                    "--source-target",
+                    str(org),
+                    "--issue-tracker-ops",
+                    "--set",
+                    "issue_tracker_ops.mode=execute",
+                    "--set",
+                    "issue_tracker_ops.external_disclosure=allowed",
+                    "--plan-authority",
+                    "operator",
+                ],
+                stdout_text=True,
+            )
+            planned_text = org.read_text(encoding="utf-8")
+            apply_stdout = io.StringIO()
+            apply_exit = agent_equipment_config.run(
+                [
+                    "config",
+                    "apply",
+                    "--plan",
+                    "-",
+                    "--apply-authority",
+                    "operator",
+                ],
+                stdin=io.StringIO(plan_stdout),
+                stdout=apply_stdout,
+            )
+            applied_text = org.read_text(encoding="utf-8")
+            effective = agent_equipment_config.effective_config(
+                [org],
+                [agent_equipment_config.issue_tracker_ops_fragment()],
+                requested_behavior="mutation",
+            )
+            decision = self.issue_tracker_ops_consumer_decision(effective, requested_behavior="mutation")
+
+        plan = json.loads(plan_stdout)
+        apply_payload = json.loads(apply_stdout.getvalue())
+        self.assertIsNone(proposal["source_target"])
+        self.assertEqual(proposal["possible_target_categories"], ["committed durable config", "local-only operator config"])
+        self.assertEqual(proposal["candidates"][0]["source_target"], None)
+        self.assertEqual(planned_text, original_text)
+        self.assertEqual(plan["plan_kind"], "patch-layer")
+        self.assertTrue(plan["validation_result"]["passed"])
+        self.assertEqual(plan["virtual_post_change_effective_config"]["safety_status"], "usable")
+        self.assertEqual(plan["audit_preview"]["source_artifact_durability"], "durable project evidence")
+        self.assertTrue(plan["audit_preview"]["project_truth_after_apply"])
+        self.assertEqual(apply_exit, 0)
+        self.assertTrue(apply_payload["applied"])
+        self.assertEqual(apply_payload["audit_records"][-1]["action"], "config authoring apply mutation")
+        self.assertTrue(apply_payload["audit_records"][-1]["write_performed"])
+        self.assertIn('mode = "execute"', applied_text)
+        self.assertIn('external_disclosure = "allowed"', applied_text)
+        self.assertEqual(effective["safety_status"], "usable")
+        self.assertEqual(effective["enforcement_projection"]["classification"], "advisory")
+        self.assertEqual(decision["state"], "allowed")
