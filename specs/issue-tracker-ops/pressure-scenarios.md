@@ -66,8 +66,23 @@ Expected evidence:
 
 ## Full-delivery scenarios
 
-- Missing config starts interruptible onboarding and leaves mutation modes
-  advisory or read-only until policy enables writes.
+- Missing config starts interruptible onboarding, as specified in
+  [Config profile and onboarding](config-profile-and-onboarding.md), and leaves
+  mutation modes advisory or read-only until policy enables writes.
+- A plain handoff carries session-scoped Issue Ops policy when shared Config is
+  absent, then promotes as a session override when Agent Equipment Config is
+  equipped.
+- Onboarding discovers repo-local and user-global Foreign Policy Surface
+  inputs, records migration fates, and refuses user-global mutation without
+  explicit approval.
+- Compatibility classification decides whether a kept foreign policy surface is
+  preserved through indirection, generation, adapter behavior, or a mixed
+  strategy.
+- Conflict reporting separates Config conflicts, Issue Ops semantic conflicts,
+  adapter capability conflicts, and unresolved judgment.
+- CLI and MCP parity expose the same typed contracts for onboarding, migration
+  preview, migration apply, compatibility classification, and tracker operation
+  plans.
 - Issue review recommends repairs without writing when policy is uncertain.
 - Duplicate-prone issue creation detects existing candidates and asks for a
   disposition.

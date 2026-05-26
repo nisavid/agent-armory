@@ -105,6 +105,10 @@ keep tracker mutations explicit and governable.
   behavior.
 - Issue mutations must have an audit surface that names operation, target,
   policy mode, request shape, and result or failure.
+- The progressive config profile, onboarding states, Foreign Policy Surface
+  discovery, migration fates, compatibility classification, and CLI/MCP parity
+  expectations are defined in
+  [Config profile and onboarding](config-profile-and-onboarding.md).
 
 ## Deterministic checks
 
@@ -123,10 +127,10 @@ The bootstrap adapter emits JSON for every operation. Dry-run output records the
 request that would be sent and the provisional policy. Execute output records
 the request, result, resolved dependency IDs when applicable, and errors.
 
-Full Equipment delivery will deepen the current Agent Equipment Config
-adapter projection with the broader Issue Ops profile, onboarding,
-tracker-neutral core contracts, richer repair/orchestration modes, fallback
-reconciliation, and publication guidance.
+Full Equipment delivery will deepen the current Agent Equipment Config adapter
+projection with runtime support for the Issue Ops profile and onboarding
+contract, tracker-neutral core contracts, richer repair/orchestration modes,
+fallback reconciliation, and publication guidance.
 
 ## Failure modes
 
@@ -147,10 +151,3 @@ reconciliation, and publication guidance.
 - Source-supported: local adapter implementation and tests in this repository.
 - Implementation inference: using `gh api --input -` keeps JSON payload handling
   deterministic and avoids shell interpolation.
-
-## Open questions
-
-- Which Issue Ops policy settings must exist in the first Issue Ops-specific
-  plain config shape before Agent Equipment Config integration lands?
-- Which child issues own GitHub Projects, duplicate detection, fallback
-  reconciliation, and tracker-neutral adapters after the bootstrap MVP?

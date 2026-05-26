@@ -7,8 +7,10 @@ Promotion state: implemented for bootstrap MVP; full delivery remains open
 
 This classification covers the bootstrap GitHub Issues adapter and the Issue
 Tracker Ops Equipment Design Bundle for issue #11. It does not certify the
-future tracker-neutral core, onboarding flow, full Issue Ops config profile,
-hooks, skills, Agent Profiles, plugins, or GitHub Projects extension.
+future tracker-neutral core, runtime onboarding implementation, hooks, skills,
+Agent Profiles, plugins, or GitHub Projects extension. The desired Issue Ops
+config profile and onboarding control contract is specified in
+[Config profile and onboarding](config-profile-and-onboarding.md).
 
 ## Operation classes
 
@@ -67,11 +69,12 @@ hooks, skills, Agent Profiles, plugins, or GitHub Projects extension.
 - Missing or uncertain auth, policy, adapter behavior, or tracker state fails
   closed for writes.
 
-## Known gaps
+## Known runtime gaps
 
 - Config consumption is limited to the Issue Ops fragment, explicit layers,
   plain handoff promotion, and adapter-owned GitHub API mutation preflight.
-- The broader Issue Ops config profile is not implemented yet.
+- The broader Issue Ops config profile and onboarding behavior are specified but
+  not implemented in the bootstrap adapter.
 - No duplicate detection or idempotency key behavior yet.
 - No rollback or compensation beyond recording the failed or successful
   operation.
@@ -88,4 +91,5 @@ The bootstrap MVP is acceptable for issue #11 only under provisional policy:
 agents may preview operations freely, but live tracker writes require explicit
 session intent and must be summarized in closeout evidence. Broader publication
 requires the full security and control requirements tracked in issue #11 or
-child issues.
+child issues, including the profile and onboarding controls defined for issue
+#13.

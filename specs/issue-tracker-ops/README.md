@@ -3,8 +3,9 @@
 Status: Equipment Candidate
 Promotion state: implemented for bootstrap MVP; full delivery remains open
 
-This Equipment Design Bundle records the bootstrap design for Issue Tracker Ops,
-also called Issue Ops, tracked by GitHub issue #11.
+This Equipment Design Bundle records the bootstrap design and planned
+full-delivery contracts for Issue Tracker Ops, also called Issue Ops, tracked by
+GitHub issue #11.
 
 ## Bundle contents
 
@@ -14,6 +15,7 @@ also called Issue Ops, tracked by GitHub issue #11.
 - [Pressure scenarios](pressure-scenarios.md)
 - [Validation plan](validation-plan.md)
 - [Closeout evidence plan](closeout-evidence-plan.md)
+- [Config profile and onboarding](config-profile-and-onboarding.md)
 
 ## Bootstrap surface
 
@@ -38,8 +40,9 @@ adapter invokes `gh`.
 
 Durable layered configuration belongs to Agent Equipment Config. Issue Ops owns
 the Issue Ops namespace, plain handoff shape, and behavior-specific semantics
-for the adapter. Full Issue Ops profile work remains tracked in issue #13 and
-broader issue #11 child work.
+for the adapter. The progressive config profile and onboarding contract is
+defined in [Config profile and onboarding](config-profile-and-onboarding.md). Full
+runtime delivery remains tracked by issue #11 child work.
 
 Issue Ops also provides the issue-tracked path for Reflection Findings until
 generic Reflection and cognition equipment can automate more of that capture,

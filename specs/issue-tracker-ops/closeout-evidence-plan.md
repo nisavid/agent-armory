@@ -50,10 +50,30 @@ conclusion.
   under provisional policy.
 - Validation evidence is recorded.
 
+## Config profile and onboarding closeout
+
+Issue #13 closes when the progressive config profile and onboarding contract is
+durable, validated, projected, reviewed, and merged. The closeout evidence
+must include:
+
+- the owner spec at
+  [Config profile and onboarding](config-profile-and-onboarding.md);
+- bundle references that route readers from the capability card, interface
+  decision, security/control classification, pressure scenarios, validation
+  plan, and closeout plan to that owner spec;
+- validator evidence for required owner-spec presence and section coverage;
+- security and documentation closeout scope;
+- Ralph Review cycles until clean, including Cross-Boundary Coherence and
+  Story Quality checks;
+- tracker drift correction that records #23 as closed, #107 as the PRD
+  reference, #103 as policy-doc migration, #93/#99 as Config authoring
+  mechanics, #121 as onboarding follow-up projection, and #18 as final
+  validation/publication.
+
 ## Full-delivery closeout
 
 Issue #11 remains open until the tracker-neutral core, full GitHub adapter,
-Projects extension or child issue, Issue Ops plain config profile, Agent
-Equipment Config integration, onboarding model, issue repair and orchestration
-modes, security controls, fallback reconciliation, docs, and full validation
-matrix are complete.
+Projects extension or child issue, runtime implementation of the Issue Ops
+plain config profile, Agent Equipment Config integration, onboarding model,
+issue repair and orchestration modes, security controls, fallback
+reconciliation, docs, and full validation matrix are complete.
