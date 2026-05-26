@@ -8726,6 +8726,9 @@ class SpecValidationTests(unittest.TestCase):
             inputs. Migration fates include keep and establish compatibility,
             remove and ingest policy, remove and discard policy, ignore,
             defer for review, and split.
+            `ignore` leaves a surface outside the migration scope. `defer for
+            review` records a blocking or judgment-heavy disposition. `split`
+            separates facets that need different fates.
 
             ## Compatibility Classification
 
@@ -9082,6 +9085,64 @@ class SpecValidationTests(unittest.TestCase):
                 f"spec:text:{self.issue_tracker_ops_config_profile_path}:CLI and MCP parity",
                 False,
                 "missing CLI and MCP parity",
+                self.issue_tracker_ops_config_profile_path,
+            ),
+            results,
+        )
+
+    def test_validate_specs_requires_issue_tracker_ops_config_profile_fate_context(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_specs(
+                root,
+                {
+                    self.issue_tracker_ops_config_profile_path: self.valid_issue_tracker_ops_config_profile().replace(
+                        "`ignore` leaves a surface outside the migration scope.",
+                        "The word ignore appears.",
+                    )
+                },
+            )
+
+            results = validate_specs(root)
+
+        self.assertIn(
+            CheckResult(
+                f"spec:text:{self.issue_tracker_ops_config_profile_path}:`ignore` leaves a surface outside the migration scope",
+                False,
+                "missing `ignore` leaves a surface outside the migration scope",
+                self.issue_tracker_ops_config_profile_path,
+            ),
+            results,
+        )
+
+    def test_validate_specs_allows_wrapped_issue_tracker_ops_config_profile_fixed_phrases(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_specs(
+                root,
+                {
+                    self.issue_tracker_ops_config_profile_path: self.valid_issue_tracker_ops_config_profile()
+                    .replace("Promotion state: planned", "Promotion state:\nplanned")
+                    .replace("does not implement Agent Equipment", "does not implement Agent\nEquipment")
+                },
+            )
+
+            results = validate_specs(root)
+
+        self.assertNotIn(
+            CheckResult(
+                f"spec:promotion:{self.issue_tracker_ops_config_profile_path}",
+                False,
+                "missing Promotion state: planned",
+                self.issue_tracker_ops_config_profile_path,
+            ),
+            results,
+        )
+        self.assertNotIn(
+            CheckResult(
+                f"spec:boundary:{self.issue_tracker_ops_config_profile_path}",
+                False,
+                "missing non-implementation boundary",
                 self.issue_tracker_ops_config_profile_path,
             ),
             results,
