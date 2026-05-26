@@ -26,11 +26,13 @@ audit requirements, adapter capability entries, and operation-plan output. The
 adapter exposes that contract through read-only JSON commands before callers
 use tracker-specific commands.
 
-The bootstrap scope covers direct issue create, issue update, issue comment,
-label-axis audit, issue dependency operations, fallback-record reconciliation,
-neutral core inspection, adapter capability inspection, and neutral operation
-planning for GitHub Issues without Projects. Full Issue Ops delivery remains
-tracked in issue #11 and child issues.
+The bootstrap scope covers direct issue read, issue list, issue create, issue
+update, issue close or reopen through update state, issue comment, label-axis
+audit, issue dependency operations, supported native parent and sub-issue
+operations, fallback-record reconciliation, neutral core inspection, adapter
+capability inspection, and neutral operation planning for GitHub Issues without
+Projects. Full Issue Ops delivery remains tracked in issue #11 and child
+issues.
 
 Inspection commands:
 
@@ -44,7 +46,12 @@ mutation requires either usable Config authorization or
 `--mutation-policy-ref <ref>`. Mutation commands perform live preflight reads
 under `--execute` to block duplicate issue creation and comments, skip exact
 no-op issue updates, and skip already-applied or already-absent dependency
-changes.
+and sub-issue relationship changes. Read commands also require `--execute`;
+without it they emit dry-run request previews.
+
+The GitHub Issues baseline adapter keeps GitHub Projects custom fields outside
+the bootstrap runtime. Workflow status and priority use the documented
+label/comment fallback policy until Projects support is designed and validated.
 
 The adapter consumes explicit Agent Equipment Config sources when callers pass
 `--config-layer` or `--config-plain-handoff`. Config-aware dry-runs include the

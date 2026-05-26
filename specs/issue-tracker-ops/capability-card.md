@@ -60,9 +60,11 @@ keep tracker mutations explicit and governable.
 
 ## Side effects
 
-- Read-only: issue reads, dependency lists, dry-run previews, local validation.
+- Read-only: issue reads, issue lists, dependency lists, parent and sub-issue
+  reads, dry-run previews, local validation.
 - Network write: issue creation, issue updates, issue comments, dependency
-  create/remove operations.
+  create/remove operations, and supported native sub-issue add/remove/reorder
+  operations.
 - External disclosure: issue bodies, comments, labels, links, and evidence sent
   to GitHub.
 - Local write: committed Equipment Design Bundle and adapter implementation;
@@ -136,9 +138,9 @@ requirements, and operation safety plan for a selected adapter.
 The bootstrap runtime adapter emits JSON for every tracker operation. Dry-run
 output records the request that would be sent, provisional policy, and planned
 safety preflights. Execute output records the request, mutation policy source,
-result, resolved dependency IDs when applicable, idempotent skips, duplicate
-decisions, classified failures, retry conditions, compensation guidance, and
-explicit fallback records when requested.
+result, resolved dependency or sub-issue IDs when applicable, idempotent skips,
+duplicate decisions, classified failures, retry conditions, compensation
+guidance, and explicit fallback records when requested.
 
 Full Equipment delivery will deepen the current Agent Equipment Config adapter
 projection with runtime support for the Issue Ops profile and onboarding
@@ -156,14 +158,15 @@ repair, MCP parity, and publication guidance.
 - Duplicate-risk issue creation or commenting: block exact matches by default,
   return the existing item when requested, or allow only with an explicit
   override reason.
-- Exact no-op issue updates and already-applied or already-absent dependency
-  changes return `idempotent_skip` without writing.
+- Exact no-op issue updates, already-applied or already-absent dependency
+  changes, and already-applied or already-absent sub-issue relationship changes
+  return `idempotent_skip` without writing.
 - Uncertain policy: use read-only, advisory, or dry-run behavior.
 
 ## Evidence
 
 - Documentation-supported: GitHub REST Issues, issue dependencies, sub-issues,
-  and GitHub CLI `gh api` behavior checked on 2026-05-04.
+  and GitHub CLI `gh api` behavior checked on 2026-05-26.
 - Source-supported: local adapter implementation and tests in this repository.
 - Implementation inference: using `gh api --input -` keeps JSON payload handling
   deterministic and avoids shell interpolation.

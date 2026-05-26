@@ -20,11 +20,20 @@ Run dry-run adapter smokes:
 python3.14 tools/issue_tracker_ops.py describe-core
 python3.14 tools/issue_tracker_ops.py describe-adapter --adapter github-issues-baseline
 python3.14 tools/issue_tracker_ops.py plan-operation --adapter github-issues-baseline --operation issue.create
+python3.14 tools/issue_tracker_ops.py plan-operation --adapter github-issues-baseline --operation issue.read
+python3.14 tools/issue_tracker_ops.py plan-operation --adapter github-issues-baseline --operation subissue.add
+python3.14 tools/issue_tracker_ops.py read-issue --repo nisavid/agent-armory --issue-number 15
+python3.14 tools/issue_tracker_ops.py list-issues --repo nisavid/agent-armory --issue-state open --label ready-for-agent --paginate
 python3.14 tools/issue_tracker_ops.py create-issue --repo nisavid/agent-armory --title "Dry-run issue" --body "Dry-run body" --label ready-for-agent
 python3.14 tools/issue_tracker_ops.py update-issue --repo nisavid/agent-armory --issue-number 11 --body "Dry-run update"
 python3.14 tools/issue_tracker_ops.py comment --repo nisavid/agent-armory --issue-number 11 --body "Dry-run comment"
 python3.14 tools/issue_tracker_ops.py audit-labels --repo nisavid/agent-armory
 python3.14 tools/issue_tracker_ops.py add-blocked-by --repo nisavid/agent-armory --issue-number 10 --blocking-issue-number 11
+python3.14 tools/issue_tracker_ops.py get-parent-issue --repo nisavid/agent-armory --issue-number 15
+python3.14 tools/issue_tracker_ops.py list-sub-issues --repo nisavid/agent-armory --issue-number 11 --paginate
+python3.14 tools/issue_tracker_ops.py add-sub-issue --repo nisavid/agent-armory --issue-number 11 --sub-issue-number 15
+python3.14 tools/issue_tracker_ops.py remove-sub-issue --repo nisavid/agent-armory --issue-number 11 --sub-issue-number 15
+python3.14 tools/issue_tracker_ops.py reprioritize-sub-issue --repo nisavid/agent-armory --issue-number 11 --sub-issue-number 15 --after-issue-number 14
 python3.14 tools/issue_tracker_ops.py comment --repo nisavid/agent-armory --issue-number 11 --body "Config-aware dry-run comment" --config-layer templates/config/agent-equipment-config-example.toml
 python3.14 tools/issue_tracker_ops.py reconcile-fallback --repo nisavid/agent-armory --fallback-record-file fallback-record.json
 ```
@@ -36,6 +45,8 @@ allows tracker mutation:
 - comment on issue #11 with validation evidence;
 - run a read-only label-axis audit and record the summary;
 - add or verify a native dependency relation needed for the bootstrap gate.
+- read selected issues, issue lists, parent relationships, and sub-issue lists
+  with `--execute` before relying on tracker state.
 - reconcile and retire a deliberately safe fallback fixture, if fallback
   validation is part of the change set.
 
@@ -56,6 +67,9 @@ paths.
   missing projection decisions before invoking `gh`.
 - Confirm live mutation preflights duplicate-prone writes and idempotent no-op
   writes before invoking the write request.
+- Confirm sub-issue writes resolve issue numbers to REST issue ids before
+  writing, preview planned preflights in dry-run output, and reconcile fallback
+  records through native sub-issue list reads.
 - Confirm failed live mutation can produce an explicit fallback record with
   retry condition and compensation guidance when requested.
 

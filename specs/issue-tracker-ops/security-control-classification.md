@@ -19,19 +19,22 @@ config profile and onboarding control contract is specified in
 | Core or adapter description | Advisory | Read-only local JSON; no `gh` call. |
 | Operation plan | Advisory | Read-only local JSON; no `gh` call. |
 | Dry-run adapter operation | Advisory | No network call; JSON request preview. |
+| Issue read/list | Read | Requires `--execute`; uses `gh api` with read permission. Issue lists skip pull requests by default. |
 | Dependency list | Read | Requires `--execute`; uses `gh api` with read permission. |
+| Parent and sub-issue list | Read | Requires `--execute`; uses `gh api` with read permission. |
 | Label-axis audit | Read | Requires `--execute`; uses `gh api` with read permission and reports missing or conflicting baseline labels without mutation. |
 | Issue create | Network write | Requires `--execute`; emits JSON audit output. |
 | Issue update | Network write | Requires `--execute`; emits JSON audit output. |
 | Issue comment | Network write and notification | Requires `--execute`; emits JSON audit output. |
 | Dependency add/remove | Network write | Requires `--execute`; resolves issue number to REST `id` when needed and emits JSON audit output. |
+| Sub-issue add/remove/reprioritize | Network write | Requires `--execute`; resolves issue numbers to REST `id` when needed and emits JSON audit output. |
 | Config-aware mutation | Policy decision and adapter preflight | Uses explicit Config inputs only; `consumer_enforcement_projection` maps consumer decisions to allow or block behavior, and blocking or unsupported decisions fail closed before `gh` runs. |
 | Fallback reconciliation | Read and optional local write | Reads tracker state under `--execute`; `--retire-record` updates only the explicitly supplied fallback record after projection is verified. |
 
 ## Assets
 
-- GitHub repository issues, comments, labels, dependency relations, and future
-  sub-issue relationships.
+- GitHub repository issues, comments, labels, dependency relations, and
+  supported native sub-issue relationships.
 - Local `gh` authentication state and token.
 - Issue bodies, comments, file references, source links, and validation evidence.
 - Stakeholder priority, workflow status, board-column placement, assignment,
@@ -65,7 +68,11 @@ config profile and onboarding control contract is specified in
   input takes precedence and can still fail closed.
 - Live mutation preflights block exact duplicate issue titles and comment
   bodies, skip exact no-op issue updates, and skip already-applied or
-  already-absent dependency changes before the write call.
+  already-absent dependency or sub-issue relationship changes before the write
+  call.
+- Sub-issue writes resolve issue-number inputs to REST issue ids before writes,
+  and dry-runs preview those resolution reads and the native sub-issue preflight
+  read.
 - Failed live mutations classify auth, permission, validation, conflict,
   rate-limit, secondary-rate-limit, outage, not-found, and unknown failures,
   and emit retry conditions and compensation guidance. The adapter does not
@@ -101,6 +108,8 @@ config profile and onboarding control contract is specified in
   idempotency store.
 - Compensation guidance is recorded for failed writes, but the adapter does not
   perform automatic rollback or repair mutations.
+- Status and priority remain label/comment fallback behavior until GitHub
+  Projects support is designed and validated.
 - No rate-limit backoff beyond surfacing `gh api` failure.
 - No redaction layer for body text in dry-run output.
 - No hook-enforced approval gate beyond explicit `--execute`.

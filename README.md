@@ -143,7 +143,7 @@ The current roadmap includes these equipment lines:
   covers current integration paths, and follow-up cards carry enforcement,
   secret-reference provider, and broader authoring boundaries.
 - [Issue Tracker Ops](specs/issue-tracker-ops/), for direct
-  GitHub Issues bootstrap operations and future issue lifecycle equipment.
+  GitHub Issues baseline operations and future issue lifecycle equipment.
   Issue Ops is the accepted shorthand.
 - [Existing Equipment Onboarding](docs/prd/existing-equipment-onboarding.md),
   a draft generic contract for discovering prior equipment, deciding
