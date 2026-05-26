@@ -10,6 +10,15 @@ ADAPTER_CONTRACT_SCHEMA = "issue_tracker_ops.adapter_contract.v1alpha1"
 OPERATION_PLAN_SCHEMA = "issue_tracker_ops.operation_plan.v1alpha1"
 
 
+def contract_payload(schema: str, mode: str, operation: str, body: dict) -> dict:
+    return {
+        "schema": schema,
+        "mode": mode,
+        "operation": operation,
+        **body,
+    }
+
+
 class OperationClass(StrEnum):
     ADVISORY = "advisory"
     READ = "read"
@@ -127,19 +136,21 @@ class OperationPlan:
     safety: OperationSafety
 
     def to_json(self) -> dict:
-        return {
-            "schema": OPERATION_PLAN_SCHEMA,
-            "mode": "plan",
-            "operation": "plan-operation",
-            "adapter": self.adapter,
-            "operation_id": self.operation.operation_id.value,
-            "title": self.operation.title,
-            "operation_class": self.operation.operation_class.value,
-            "side_effects": [side_effect.value for side_effect in self.operation.side_effects],
-            "audit_requirements": [requirement.value for requirement in self.operation.audit_requirements],
-            "capability": self.capability.to_json(),
-            "safety": self.safety.to_json(),
-        }
+        return contract_payload(
+            OPERATION_PLAN_SCHEMA,
+            "plan",
+            "plan-operation",
+            {
+                "adapter": self.adapter,
+                "operation_id": self.operation.operation_id.value,
+                "title": self.operation.title,
+                "operation_class": self.operation.operation_class.value,
+                "side_effects": [side_effect.value for side_effect in self.operation.side_effects],
+                "audit_requirements": [requirement.value for requirement in self.operation.audit_requirements],
+                "capability": self.capability.to_json(),
+                "safety": self.safety.to_json(),
+            },
+        )
 
 
 @dataclass(frozen=True)
@@ -153,7 +164,6 @@ class AdapterContract:
 
     def to_json(self) -> dict:
         return {
-            "schema": ADAPTER_CONTRACT_SCHEMA,
             "adapter": self.adapter_id,
             "title": self.title,
             "tracker": self.tracker,
@@ -332,20 +342,22 @@ def core_operations_by_id() -> dict[str, OperationDefinition]:
 
 def core_contract_payload() -> dict:
     operations = core_operations_by_id()
-    return {
-        "schema": CORE_CONTRACT_SCHEMA,
-        "mode": "describe",
-        "operation": "describe-core",
-        "operation_ids": sorted(operations),
-        "operation_classes": sorted(item.value for item in OperationClass),
-        "audit_requirements": sorted(item.value for item in AuditRequirement),
-        "capability_dispositions": sorted(item.value for item in CapabilityDisposition),
-        "side_effect_classes": sorted(item.value for item in SideEffectClass),
-        "operations": {
-            operation_id: operations[operation_id].to_json()
-            for operation_id in sorted(operations)
+    return contract_payload(
+        CORE_CONTRACT_SCHEMA,
+        "describe",
+        "describe-core",
+        {
+            "operation_ids": sorted(operations),
+            "operation_classes": sorted(item.value for item in OperationClass),
+            "audit_requirements": sorted(item.value for item in AuditRequirement),
+            "capability_dispositions": sorted(item.value for item in CapabilityDisposition),
+            "side_effect_classes": sorted(item.value for item in SideEffectClass),
+            "operations": {
+                operation_id: operations[operation_id].to_json()
+                for operation_id in sorted(operations)
+            },
         },
-    }
+    )
 
 
 GITHUB_ISSUES_BASELINE_ADAPTER = AdapterContract(
@@ -489,10 +501,12 @@ def adapter_contract_payload(adapter_id: str) -> dict | None:
     adapter = adapter_contract(adapter_id)
     if adapter is None:
         return None
-    payload = adapter.to_json()
-    payload["mode"] = "describe"
-    payload["operation"] = "describe-adapter"
-    return payload
+    return contract_payload(
+        ADAPTER_CONTRACT_SCHEMA,
+        "describe",
+        "describe-adapter",
+        adapter.to_json(),
+    )
 
 
 def operation_plan_payload(adapter_id: str, operation_id: str) -> dict | None:

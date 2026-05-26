@@ -133,6 +133,33 @@ class IssueTrackerOpsTests(unittest.TestCase):
         self.assertEqual(payload["safety"]["execute_required"], True)
         self.assertIn("external_network_write", payload["side_effects"])
 
+    def test_plan_operation_reports_native_read_safety_without_calling_gh(self):
+        gh = FakeGh()
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "plan-operation",
+                "--adapter",
+                "github-issues-baseline",
+                "--operation",
+                "dependency.list_blocked_by",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(gh.calls, [])
+        payload = json.loads(stdout)
+        self.assertEqual(payload["operation_id"], "dependency.list_blocked_by")
+        self.assertEqual(payload["operation_class"], "read")
+        self.assertEqual(payload["capability"]["disposition"], "native")
+        self.assertEqual(payload["capability"]["runtime_command"], ["list-blocked-by"])
+        self.assertEqual(payload["safety"]["available"], True)
+        self.assertEqual(payload["safety"]["dry_run_default"], False)
+        self.assertEqual(payload["safety"]["execute_required"], True)
+        self.assertEqual(payload["safety"]["config_preflight_required"], False)
+        self.assertIn("external_network_read", payload["side_effects"])
+
     def test_plan_operation_reports_fallback_and_unsupported_boundaries(self):
         cases = [
             ("status.set", "fallback", True, True, "Represent workflow status with configured labels or tracker comments until Projects support lands."),

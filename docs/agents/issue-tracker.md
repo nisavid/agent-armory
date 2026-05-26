@@ -18,8 +18,8 @@ relations for GitHub Issues.
 Bootstrap adapter subcommands:
 
 - `describe-core`
-- `describe-adapter`
-- `plan-operation`
+- `describe-adapter --adapter github-issues-baseline`
+- `plan-operation --adapter github-issues-baseline --operation <operation-id>`
 - `create-issue`
 - `update-issue`
 - `comment`
