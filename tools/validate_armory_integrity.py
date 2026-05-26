@@ -853,14 +853,11 @@ ISSUE_TRACKER_OPS_CONFIG_PROFILE_REQUIRED_TEXT = [
     "keep and establish compatibility",
     "remove and ingest policy",
     "remove and discard policy",
-    "ignore",
-    "defer for review",
-    "split",
+    "`ignore` leaves a surface outside the migration scope",
+    "`defer for review` records a blocking or judgment-heavy disposition",
+    "`split` separates facets that need different fates",
     "compatibility classification",
-    "Config Safety Status",
-    "assumptions",
-    "incomplete sections",
-    "confidence",
+    "Config Safety Status, safety status, assumptions, incomplete sections, confidence",
     "conflict reporting",
     "effective next-work",
     "CLI and MCP parity",
@@ -4650,7 +4647,7 @@ def validate_specs(root: Path) -> list[CheckResult]:
         visible_markdown = markdown_visible_text(markdown)
         visible_markdown_normalized = " ".join(visible_markdown.casefold().split())
         headings = markdown_heading_texts(markdown)
-        if "Promotion state: planned".casefold() not in visible_markdown.casefold():
+        if " ".join("Promotion state: planned".casefold().split()) not in visible_markdown_normalized:
             results.append(
                 CheckResult(
                     f"spec:promotion:{ISSUE_TRACKER_OPS_CONFIG_PROFILE_PATH}",
@@ -4659,7 +4656,7 @@ def validate_specs(root: Path) -> list[CheckResult]:
                     ISSUE_TRACKER_OPS_CONFIG_PROFILE_PATH,
                 )
             )
-        if "does not implement Agent Equipment".casefold() not in visible_markdown.casefold():
+        if " ".join("does not implement Agent Equipment".casefold().split()) not in visible_markdown_normalized:
             results.append(
                 CheckResult(
                     f"spec:boundary:{ISSUE_TRACKER_OPS_CONFIG_PROFILE_PATH}",
