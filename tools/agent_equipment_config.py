@@ -584,6 +584,8 @@ def toml_key(key: str) -> str:
 
 
 def toml_value(value: JSONValue) -> str:
+    if value is None:
+        raise ConfigError("Config apply cannot render null TOML values")
     if isinstance(value, bool):
         return "true" if value else "false"
     if isinstance(value, str):
@@ -2209,8 +2211,9 @@ def authoring_change_value_errors(changes: list[dict[str, Any]], fragments: list
         if len(parts) > 2:
             continue
         value = change["value"]
-        if len(parts) == 2 and value is None and field.required:
-            errors.append({"path": change["path"], "detail": "missing required value"})
+        if value is None:
+            detail = "missing required value" if len(parts) == 2 and field.required else "null authoring values are not representable in TOML"
+            errors.append({"path": change["path"], "detail": detail})
             continue
         for item in validate_field(value, field, change["path"], None):
             errors.append({"path": change["path"], "detail": item.detail})
