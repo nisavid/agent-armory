@@ -10,11 +10,16 @@ long-term UX. Richer project fields remain future Issue Tracker Ops work. See
 `docs/agents/triage-labels.md` for the current label axes.
 
 Use `tools/issue_tracker_ops.py` for Issue Tracker Ops (Issue Ops) bootstrap
-modes that create, update, comment on, add dependency relations, remove
-dependency relations, and list dependency relations for GitHub Issues.
+modes that describe the tracker-neutral core, describe the GitHub Issues
+baseline adapter, plan neutral operations, create, update, comment on, add
+dependency relations, remove dependency relations, and list dependency
+relations for GitHub Issues.
 
 Bootstrap adapter subcommands:
 
+- `describe-core`
+- `describe-adapter`
+- `plan-operation`
 - `create-issue`
 - `update-issue`
 - `comment`
@@ -43,6 +48,14 @@ Use `audit-labels` to dogfood the baseline label axes and detect missing or
 conflicting axis labels across open issues. The command is read-only, but it
 still follows the adapter convention: without `--execute`, it emits a dry-run
 preview of the GitHub read and the axis policy.
+
+Use `describe-core` to inspect the tracker-neutral operation model, operation
+classes, side-effect classes, capability dispositions, and audit requirements.
+Use `describe-adapter --adapter github-issues-baseline` to inspect how the
+current GitHub Issues baseline maps those operations to native, emulated,
+unsupported, or fallback behavior. Use
+`plan-operation --adapter github-issues-baseline --operation <operation-id>` to
+inspect one operation plan before invoking adapter-specific commands.
 
 ## Triage Comments And Records
 

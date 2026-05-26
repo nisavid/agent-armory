@@ -19,22 +19,24 @@ layered config keep tracker mutations out of vague model preference.
 
 ## Decision
 
-Use a thin bootstrap script for GitHub Issues operations, an Equipment Design Bundle
-for design and validation planning, Agent Equipment Config for durable layered
-policy, future skills for review and orchestration judgment, and future
-MCP/tools for the tracker-neutral contract once the MVP proves the operation
-shape.
+Use a tracker-neutral core module, a thin bootstrap script for GitHub Issues
+operations, an Equipment Design Bundle for design and validation planning,
+Agent Equipment Config for durable layered policy, future skills for review and
+orchestration judgment, and future MCP/tools that expose the same typed
+contracts as the core and CLI inspection surfaces.
 
 ## Chosen surface
 
 - Skill: deferred; will carry issue review, repair, enrichment, and orchestration
   judgment.
-- MCP/tool: deferred for the tracker-neutral contract; the bootstrap adapter
-  defines the operation shape first.
+- MCP/tool: deferred for publication; the tracker-neutral core and CLI
+  inspection commands define the typed operation shape first.
 - Hook: deferred mutation gate for approval and audit enforcement.
 - Agent Profile: deferred issue reviewer or orchestrator profile.
 - Plugin: deferred portable bundle.
-- Script: `tools/issue_tracker_ops.py` for the GitHub Issues-only bootstrap MVP.
+- Script: `tools/issue_tracker_core.py` for the tracker-neutral contract and
+  `tools/issue_tracker_ops.py` for GitHub Issues-only bootstrap runtime
+  operations plus read-only contract inspection.
 - Config: Agent Equipment Config supplies explicit layer loading, effective
   Config evidence, and reusable consumer action decisions. Issue Ops owns the
   `issue_tracker_ops` fragment, plain handoff ingestion, and adapter semantics:
@@ -48,10 +50,11 @@ shape.
 
 ## Rationale
 
-The bootstrap gate requires working direct GitHub Issues operations now. A
-standard-library script is the narrowest reliable surface available in the
-current repository because it can validate request construction, enforce dry-run
-default behavior, use the operator's existing `gh` authentication, and avoid
+The bootstrap gate requires working direct GitHub Issues operations and an
+inspectable neutral contract. Standard-library Python is the narrowest reliable
+surface available in the current repository because it can validate request
+construction, enforce dry-run default behavior, use the operator's existing
+`gh` authentication, expose stable JSON contract descriptions, and avoid
 introducing a server or plugin before the tracker-neutral contract is stable.
 
 Issue review and orchestration require model judgment, so they belong in skills
@@ -93,13 +96,14 @@ expose typed inputs and outputs without relying on CLI command composition.
 
 ## Risks
 
-- The script is GitHub-specific and not yet a tracker-neutral core.
+- The runtime adapter remains GitHub-specific; the tracker-neutral core
+  describes operations and plans but does not execute them directly.
 - Dry-run output can expose issue body content in the terminal or logs.
 - `gh` authentication and permissions are external to the script.
 - GitHub API behavior may change; dependency and sub-issue features should be
   refreshed before promotion beyond the bootstrap MVP.
 - The MVP does not yet implement runtime onboarding, issue selection, duplicate
-  detection, fallback reconciliation, or issue-set orchestration.
+  detection, fallback reconciliation, issue-set orchestration, or MCP parity.
 - The Config consumer proof covers adapter execute-mode gating; broader Issue
   Ops policy fields and onboarding behavior are specified but remain outside
   this bootstrap runtime surface.

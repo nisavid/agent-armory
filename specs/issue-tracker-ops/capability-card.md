@@ -71,11 +71,13 @@ keep tracker mutations explicit and governable.
 
 - Skills: issue review, repair, enrichment, issue selection, orchestration, and
   session pickup judgment.
-- MCP/tools: tracker-neutral operations plus GitHub Issues adapter.
+- MCP/tools: future MCP parity for the tracker-neutral operations and GitHub
+  Issues adapter.
 - Hooks: future mutation gates for policy enforcement and audit capture.
 - Agent Profiles: future bounded issue reviewer or orchestrator profiles.
 - Plugins: future portable Issue Tracker Ops bundle.
-- Scripts: bootstrap GitHub Issues adapter and deterministic validation.
+- Scripts: tracker-neutral core, GitHub Issues baseline adapter, read-only
+  contract inspection, operation planning, and deterministic validation.
 - Config: Agent Equipment Config for durable layered policy, plus an Issue
   Ops-specific plain config shape for session-scoped operation, handoff, and
   later ingestion when Agent Equipment Config is unavailable.
@@ -123,14 +125,20 @@ keep tracker mutations explicit and governable.
 
 ## Output contract
 
-The bootstrap adapter emits JSON for every operation. Dry-run output records the
-request that would be sent and the provisional policy. Execute output records
-the request, result, resolved dependency IDs when applicable, and errors.
+The tracker-neutral core emits JSON for `describe-core`, `describe-adapter`, and
+`plan-operation`. These outputs describe the current operation ids, operation
+classes, side-effect classes, adapter capability dispositions, audit
+requirements, and operation safety plan for a selected adapter.
+
+The bootstrap runtime adapter emits JSON for every tracker operation. Dry-run
+output records the request that would be sent and the provisional policy.
+Execute output records the request, result, resolved dependency IDs when
+applicable, and errors.
 
 Full Equipment delivery will deepen the current Agent Equipment Config adapter
 projection with runtime support for the Issue Ops profile and onboarding
-contract, tracker-neutral core contracts, richer repair/orchestration modes,
-fallback reconciliation, and publication guidance.
+contract, richer repair/orchestration modes, fallback reconciliation, MCP
+parity, and publication guidance.
 
 ## Failure modes
 
@@ -141,7 +149,7 @@ fallback reconciliation, and publication guidance.
 - API outage or secondary rate limit: fail closed, preserve operation intent in
   audit output, and require retry or tracked deferment.
 - Duplicate-risk issue creation: default to dry-run; future duplicate detection
-  belongs in the full tracker-neutral core.
+  belongs in full Issue Ops delivery.
 - Uncertain policy: use read-only, advisory, or dry-run behavior.
 
 ## Evidence

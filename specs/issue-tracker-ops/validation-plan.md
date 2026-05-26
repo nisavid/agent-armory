@@ -17,6 +17,9 @@ python3.14 tools/validate_armory_integrity.py
 Run dry-run adapter smokes:
 
 ```sh
+python3.14 tools/issue_tracker_ops.py describe-core
+python3.14 tools/issue_tracker_ops.py describe-adapter --adapter github-issues-baseline
+python3.14 tools/issue_tracker_ops.py plan-operation --adapter github-issues-baseline --operation issue.create
 python3.14 tools/issue_tracker_ops.py create-issue --repo nisavid/agent-armory --title "Dry-run issue" --body "Dry-run body" --label ready-for-agent
 python3.14 tools/issue_tracker_ops.py update-issue --repo nisavid/agent-armory --issue-number 11 --body "Dry-run update"
 python3.14 tools/issue_tracker_ops.py comment --repo nisavid/agent-armory --issue-number 11 --body "Dry-run comment"
@@ -42,6 +45,7 @@ paths.
 - Run Codex Security diff-focused review for the adapter and changed policy docs,
   or record why a narrower action is sufficient.
 - Confirm the adapter uses `subprocess.run` with an argument list and JSON stdin.
+- Confirm core and adapter description commands do not invoke `gh`.
 - Confirm mutation commands require `--execute`.
 - Confirm dry-run output records the operation without invoking `gh`.
 - Confirm Config-aware mutation refuses blocking, unsupported, malformed, or

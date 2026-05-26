@@ -72,8 +72,9 @@ must include:
 
 ## Full-delivery closeout
 
-Issue #11 remains open until the tracker-neutral core, full GitHub adapter,
-Projects extension or child issue, runtime implementation of the Issue Ops
-plain config profile, Agent Equipment Config integration, onboarding model,
-issue repair and orchestration modes, security controls, fallback
-reconciliation, docs, and full validation matrix are complete.
+Issue #11 remains open after the tracker-neutral core inspection surface until
+the full GitHub adapter, Projects extension or child issue, runtime
+implementation of the Issue Ops plain config profile, Agent Equipment Config
+integration, onboarding model, issue repair and orchestration modes, security
+controls, fallback reconciliation, docs, and full validation matrix are
+complete.
