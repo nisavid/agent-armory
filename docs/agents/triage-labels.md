@@ -1,5 +1,14 @@
 # Triage Labels
 
+Preferred policy authority: `config/agent-equipment.toml`.
+
+This document is a compatibility layer for active triage skills and human
+readers. Use the Config layer for the machine-readable label axes,
+cardinalities, role mappings, dependency-disposition policy, and audit
+expectations. Use this document for readable role meanings and triage-record
+guidance over that Config authority. If these surfaces conflict, the Config
+layer is authoritative.
+
 The engineering skills use two issue category roles and five canonical triage
 state roles.
 
@@ -175,8 +184,8 @@ Run the label-axis audit before bulk dogfooding or when label drift is
 suspected:
 
 ```sh
-python3.14 tools/issue_tracker_ops.py audit-labels --repo nisavid/agent-armory
-python3.14 tools/issue_tracker_ops.py audit-labels --repo nisavid/agent-armory --execute
+python3.14 tools/issue_tracker_ops.py audit-labels --repo nisavid/agent-armory --config-layer config/agent-equipment.toml
+python3.14 tools/issue_tracker_ops.py audit-labels --repo nisavid/agent-armory --config-layer config/agent-equipment.toml --execute
 ```
 
 The first command previews the read and axis policy. The second performs the

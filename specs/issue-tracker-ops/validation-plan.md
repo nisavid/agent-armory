@@ -93,5 +93,5 @@ handling, and cross-issue orchestration.
 Issue #13 validation specifically requires
 [Config profile and onboarding](config-profile-and-onboarding.md), validator
 coverage for that owner spec, bundle references from the other Issue Ops design
-records, tracker drift correction for #13, and closeout evidence that #103,
-#93/#99, #121, and #18 remain separate follow-ups.
+records, tracker drift correction for #13, #103 policy-migration evidence, and
+confirmation that #93/#99, #121, and #18 remain separate follow-ups.

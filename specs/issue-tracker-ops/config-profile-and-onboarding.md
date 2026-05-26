@@ -251,10 +251,10 @@ until clean, issue tracker drift correction, and a merged PR that closes #13.
 
 This design does not implement runtime onboarding, GitHub Projects custom
 fields, full GitLab live mutation, live non-GitHub tracker mutation,
-policy-doc migration, Config authoring mechanics, Existing Equipment
-Onboarding follow-up projection, final Issue Ops packaging, or publication.
+Config authoring mechanics, Existing Equipment Onboarding follow-up projection,
+final Issue Ops packaging, or publication.
 
-Those remain owned by their focused issues: #103 for policy-doc
-migration, #93 and #99 for Config authoring mechanics, #121 for onboarding
-follow-up projection, and #18 for validation, documentation, packaging, and
-publication.
+The initial Issue Ops policy-doc authority migration is carried by
+`config/agent-equipment.toml` under #103. The remaining focused issues are #93
+and #99 for Config authoring mechanics, #121 for onboarding follow-up
+projection, and #18 for validation, documentation, packaging, and publication.

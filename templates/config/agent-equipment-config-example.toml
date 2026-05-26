@@ -6,7 +6,7 @@ category = "committed durable config"
 repo-maintainers = "usable"
 
 [agent_equipment_config.fragment_versions]
-issue_tracker_ops = 2
+issue_tracker_ops = 3
 
 [agent_equipment_config.policy.issue_tracker_ops.mode]
 required_for = "always"
@@ -21,9 +21,4 @@ authority = "repo-maintainers"
 [issue_tracker_ops]
 mode = "dry-run"
 external_disclosure = "blocked"
-
-[issue_tracker_ops.github_token]
-kind = "env"
-name = "GITHUB_TOKEN"
-scope = "session"
-required_for = "tracker write"
+policy_profile_status = "partial"

@@ -67,9 +67,9 @@ must include:
 - Ralph Review cycles until clean, including Cross-Boundary Coherence and
   Story Quality checks;
 - tracker drift correction that records #23 as closed, #107 as the PRD
-  reference, #103 as policy-doc migration, #93/#99 as Config authoring
-  mechanics, #121 as onboarding follow-up projection, and #18 as final
-  validation/publication.
+  reference, #103 as policy-doc migration evidence, #93/#99 as Config
+  authoring mechanics, #121 as onboarding follow-up projection, and #18 as
+  final validation/publication.
 
 ## Full-delivery closeout
 
