@@ -19,15 +19,27 @@ GitHub issue #11.
 
 ## Bootstrap surface
 
-The bootstrap MVP is the GitHub Issues adapter at
-`tools/issue_tracker_ops.py`. It uses the local `gh` CLI as the authenticated
-transport and defaults write modes to dry-run output unless `--execute` is
-provided.
+The bootstrap MVP is the tracker-neutral core at `tools/issue_tracker_core.py`
+and the GitHub Issues adapter at `tools/issue_tracker_ops.py`. The core defines
+operation ids, operation classes, side-effect classes, capability dispositions,
+audit requirements, adapter capability entries, and operation-plan output. The
+adapter exposes that contract through read-only JSON commands before callers
+use tracker-specific commands.
 
 The bootstrap scope covers direct issue create, issue update, issue comment,
-label-axis audit, and issue dependency operations for GitHub Issues without
+label-axis audit, issue dependency operations, neutral core inspection, adapter
+capability inspection, and neutral operation planning for GitHub Issues without
 Projects. Full Issue Ops delivery remains tracked in issue #11 and child
 issues.
+
+Inspection commands:
+
+- `describe-core`
+- `describe-adapter --adapter github-issues-baseline`
+- `plan-operation --adapter github-issues-baseline --operation <operation-id>`
+
+Runtime adapter commands use the local `gh` CLI as the authenticated transport
+and default write modes to dry-run output unless `--execute` is provided.
 
 The adapter consumes explicit Agent Equipment Config sources when callers pass
 `--config-layer` or `--config-plain-handoff`. Config-aware dry-runs include the

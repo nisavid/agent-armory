@@ -11,9 +11,10 @@ from pathlib import Path
 from typing import Callable, TextIO
 
 try:
-    from . import agent_equipment_config
+    from . import agent_equipment_config, issue_tracker_core
 except ImportError:
     import agent_equipment_config  # type: ignore[no-redef]
+    import issue_tracker_core  # type: ignore[no-redef]
 
 
 DEFAULT_API_VERSION = "2026-03-10"
@@ -889,6 +890,15 @@ def build_parser() -> argparse.ArgumentParser:
     add_common_flags(audit_labels, mutation=False)
     audit_labels.add_argument("--issue-state", choices=["open", "closed", "all"], default="open")
 
+    subparsers.add_parser("describe-core", help="Describe the tracker-neutral Issue Tracker Ops core contract.")
+
+    describe_adapter = subparsers.add_parser("describe-adapter", help="Describe an Issue Tracker Ops adapter contract.")
+    describe_adapter.add_argument("--adapter", required=True, choices=sorted(issue_tracker_core.ADAPTERS))
+
+    plan_operation = subparsers.add_parser("plan-operation", help="Plan one tracker-neutral operation for an adapter.")
+    plan_operation.add_argument("--adapter", required=True, choices=sorted(issue_tracker_core.ADAPTERS))
+    plan_operation.add_argument("--operation", dest="operation_id", required=True, choices=sorted(issue_tracker_core.core_operations_by_id()))
+
     return parser
 
 
@@ -921,6 +931,21 @@ def run(
         except SystemExit as exc:
             return exc.code if isinstance(exc.code, int) else 1
         config = evaluate_issue_tracker_ops_config(args)
+        if args.operation == "describe-core":
+            write_json(stdout, issue_tracker_core.core_contract_payload())
+            return 0
+        if args.operation == "describe-adapter":
+            payload = issue_tracker_core.adapter_contract_payload(args.adapter)
+            if payload is None:
+                raise UsageError(f"unknown adapter {args.adapter!r}")
+            write_json(stdout, payload)
+            return 0
+        if args.operation == "plan-operation":
+            payload = issue_tracker_core.operation_plan_payload(args.adapter, args.operation_id)
+            if payload is None:
+                raise UsageError(f"could not plan {args.operation_id!r} for adapter {args.adapter!r}")
+            write_json(stdout, payload)
+            return 0
         if args.operation in {"add-blocked-by", "remove-blocked-by"}:
             if not args.execute:
                 write_json(stdout, dry_run_dependency_payload(args, config=config))

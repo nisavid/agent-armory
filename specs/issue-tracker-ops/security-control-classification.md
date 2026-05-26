@@ -5,10 +5,10 @@ Promotion state: implemented for bootstrap MVP; full delivery remains open
 
 ## Scope
 
-This classification covers the bootstrap GitHub Issues adapter and the Issue
-Tracker Ops Equipment Design Bundle for issue #11. It does not certify the
-future tracker-neutral core, runtime onboarding implementation, hooks, skills,
-Agent Profiles, plugins, or GitHub Projects extension. The desired Issue Ops
+This classification covers the tracker-neutral core, bootstrap GitHub Issues
+adapter, and Issue Tracker Ops Equipment Design Bundle for issue #11. It does
+not certify runtime onboarding implementation, hooks, skills, Agent Profiles,
+plugins, MCP publication, or GitHub Projects extension. The desired Issue Ops
 config profile and onboarding control contract is specified in
 [Config profile and onboarding](config-profile-and-onboarding.md).
 
@@ -16,6 +16,8 @@ config profile and onboarding control contract is specified in
 
 | Operation | Class | Bootstrap control |
 | --- | --- | --- |
+| Core or adapter description | Advisory | Read-only local JSON; no `gh` call. |
+| Operation plan | Advisory | Read-only local JSON; no `gh` call. |
 | Dry-run adapter operation | Advisory | No network call; JSON request preview. |
 | Dependency list | Read | Requires `--execute`; uses `gh api` with read permission. |
 | Label-axis audit | Read | Requires `--execute`; uses `gh api` with read permission and reports missing or conflicting baseline labels without mutation. |
@@ -57,6 +59,10 @@ config profile and onboarding control contract is specified in
   explicit.
 - The adapter emits JSON audit output for request shape, result, resolved IDs,
   and failure.
+- The tracker-neutral core emits read-only JSON for operation ids, operation
+  classes, side-effect classes, capability dispositions, adapter capabilities,
+  audit requirements, and operation plans. These inspection commands do not
+  invoke `gh`.
 - When explicit Config inputs are supplied, mutation subcommands evaluate the
   Issue Ops Config fragment before side effects. Live mutation requires the
   configured mode to be `execute`, a consumer decision that is not `blocking`
@@ -84,6 +90,8 @@ config profile and onboarding control contract is specified in
 - No hook-enforced approval gate beyond explicit `--execute`.
 - No Reflection Finding redaction or routing policy beyond current issue
   projection discipline.
+- Core JSON output is additive and remains pre-publication until final Issue Ops
+  validation and packaging.
 
 ## Bootstrap security decision
 

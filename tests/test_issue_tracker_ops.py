@@ -58,6 +58,114 @@ class IssueTrackerOpsTests(unittest.TestCase):
         if diagnostic_kind is not None:
             self.assertIn(diagnostic_kind, projection["effective_config"]["diagnostic_kinds"])
 
+    def test_describe_core_reports_tracker_neutral_contract_without_calling_gh(self):
+        gh = FakeGh()
+
+        exit_code, stdout, stderr = self.run_cli(["describe-core"], gh=gh)
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(gh.calls, [])
+        payload = json.loads(stdout)
+        self.assertEqual(payload["schema"], "issue_tracker_ops.core_contract.v1alpha1")
+        self.assertEqual(payload["mode"], "describe")
+        self.assertEqual(payload["operation"], "describe-core")
+        self.assertIn("issue.create", payload["operation_ids"])
+        self.assertIn("dependency.list_blocked_by", payload["operation_ids"])
+        self.assertEqual(payload["operation_classes"], ["advisory", "read", "write"])
+        self.assertIn("request_shape", payload["audit_requirements"])
+        self.assertIn("result_summary", payload["audit_requirements"])
+        self.assertEqual(payload["capability_dispositions"], ["emulated", "fallback", "native", "unsupported"])
+        self.assertIn("external_network_write", payload["side_effect_classes"])
+        issue_create = payload["operations"]["issue.create"]
+        self.assertEqual(issue_create["operation_class"], "write")
+        self.assertIn("dry_run_required", issue_create["audit_requirements"])
+
+    def test_describe_adapter_reports_github_baseline_capabilities_without_calling_gh(self):
+        gh = FakeGh()
+
+        exit_code, stdout, stderr = self.run_cli(
+            ["describe-adapter", "--adapter", "github-issues-baseline"],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(gh.calls, [])
+        payload = json.loads(stdout)
+        self.assertEqual(payload["schema"], "issue_tracker_ops.adapter_contract.v1alpha1")
+        self.assertEqual(payload["mode"], "describe")
+        self.assertEqual(payload["operation"], "describe-adapter")
+        self.assertEqual(payload["adapter"], "github-issues-baseline")
+        self.assertEqual(payload["capabilities"]["issue.create"]["disposition"], "native")
+        self.assertEqual(payload["capabilities"]["issue.read"]["disposition"], "fallback")
+        self.assertNotIn("runtime_command", payload["capabilities"]["issue.read"])
+        self.assertEqual(payload["capabilities"]["issue.read"]["fallback"], "Use gh issue view until #15 expands the runtime adapter.")
+        self.assertEqual(payload["capabilities"]["dependency.add_blocked_by"]["runtime_command"], ["add-blocked-by"])
+        self.assertEqual(payload["capabilities"]["status.set"]["disposition"], "fallback")
+        self.assertEqual(payload["capabilities"]["attachment.add"]["disposition"], "unsupported")
+        self.assertIn("GitHub Projects fields are follow-up adapter work.", payload["notes"])
+
+    def test_plan_operation_reports_native_write_plan_without_calling_gh(self):
+        gh = FakeGh()
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "plan-operation",
+                "--adapter",
+                "github-issues-baseline",
+                "--operation",
+                "issue.create",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(gh.calls, [])
+        payload = json.loads(stdout)
+        self.assertEqual(payload["schema"], "issue_tracker_ops.operation_plan.v1alpha1")
+        self.assertEqual(payload["mode"], "plan")
+        self.assertEqual(payload["operation"], "plan-operation")
+        self.assertEqual(payload["adapter"], "github-issues-baseline")
+        self.assertEqual(payload["operation_id"], "issue.create")
+        self.assertEqual(payload["operation_class"], "write")
+        self.assertEqual(payload["capability"]["disposition"], "native")
+        self.assertEqual(payload["capability"]["runtime_command"], ["create-issue"])
+        self.assertEqual(payload["safety"]["dry_run_default"], True)
+        self.assertEqual(payload["safety"]["execute_required"], True)
+        self.assertIn("external_network_write", payload["side_effects"])
+
+    def test_plan_operation_reports_fallback_and_unsupported_boundaries(self):
+        cases = [
+            ("status.set", "fallback", True, True, "Represent workflow status with configured labels or tracker comments until Projects support lands."),
+            ("attachment.add", "unsupported", False, False, None),
+        ]
+        for operation_id, disposition, available, execute_required, fallback in cases:
+            with self.subTest(operation_id=operation_id):
+                gh = FakeGh()
+
+                exit_code, stdout, stderr = self.run_cli(
+                    [
+                        "plan-operation",
+                        "--adapter",
+                        "github-issues-baseline",
+                        "--operation",
+                        operation_id,
+                    ],
+                    gh=gh,
+                )
+
+                self.assertEqual(exit_code, 0, stderr)
+                self.assertEqual(gh.calls, [])
+                payload = json.loads(stdout)
+                self.assertEqual(payload["operation_id"], operation_id)
+                self.assertEqual(payload["capability"]["disposition"], disposition)
+                self.assertEqual(payload["safety"]["available"], available)
+                self.assertEqual(payload["safety"]["execute_required"], execute_required)
+                self.assertEqual(payload["safety"]["dry_run_default"], available)
+                if fallback is None:
+                    self.assertNotIn("fallback", payload["capability"])
+                else:
+                    self.assertEqual(payload["capability"]["fallback"], fallback)
+
     def test_create_issue_defaults_to_dry_run_without_calling_gh(self):
         gh = FakeGh()
 
