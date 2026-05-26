@@ -578,14 +578,14 @@ def atomic_write_text(path: Path, text: str, *, mode: int | None = None) -> None
 
 
 def toml_key(key: str) -> str:
-    if key and all(character.isalnum() or character in "_-" for character in key):
+    if key and all(character.isascii() and (character.isalnum() or character in "_-") for character in key):
         return key
     return json.dumps(key)
 
 
 def toml_value(value: JSONValue) -> str:
     if value is None:
-        raise ConfigError("Config apply cannot render null TOML values")
+        raise ConfigError("null TOML value")
     if isinstance(value, bool):
         return "true" if value else "false"
     if isinstance(value, str):
@@ -596,7 +596,12 @@ def toml_value(value: JSONValue) -> str:
         return repr(value)
     if isinstance(value, list):
         return "[" + ", ".join(toml_value(item) for item in value) + "]"
-    raise ConfigError("Config apply can render only scalar and array TOML values")
+    if isinstance(value, dict):
+        items = [f"{toml_key(key)} = {toml_value(item)}" for key, item in sorted(value.items(), key=toml_item_sort_key)]
+        if not items:
+            return "{}"
+        return "{ " + ", ".join(items) + " }"
+    raise ConfigError("unsupported TOML value")
 
 
 def toml_item_sort_key(item: tuple[str, Any]) -> tuple[int, str]:

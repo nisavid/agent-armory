@@ -3585,6 +3585,78 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(payload["audit_records"][-1]["result"], "applied")
         self.assertTrue(payload["audit_records"][-1]["project_truth_after_apply"])
 
+    def test_cli_config_apply_preserves_array_of_tables_source_shape(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+
+                [[tool.samples]]
+                name = "first"
+                enabled = true
+            """)
+            plan = {
+                "schema": agent_equipment_config.AUTHORING_PLAN_SCHEMA,
+                "operation": "config patch",
+                "plan_surface": "reviewed-plan",
+                "plan_kind": "patch-layer",
+                "source_target": str(layer),
+                "source_category": "committed durable config",
+                "source_identity": {
+                    "name": "repository policy",
+                    "category": "committed durable config",
+                    "path": str(layer),
+                    "trusted": True,
+                    "precedence": agent_equipment_config.LAYER_PRECEDENCE.index("repository policy"),
+                    "source_order": 0,
+                },
+                "precondition_fingerprint": agent_equipment_config.source_fingerprint(layer.read_text(encoding="utf-8")),
+                "change_payload": {
+                    "type": "diff",
+                    "changes": [
+                        {"path": "issue_tracker_ops.mode", "before": "dry-run", "after": "execute"},
+                        {"path": "issue_tracker_ops.external_disclosure", "before": "blocked", "after": "allowed"},
+                    ],
+                },
+                "authority_evidence": {"status": "accepted", "source": "operator", "authority": "operator"},
+                "validation_result": {"passed": True},
+                "refusal_codes": [],
+            }
+
+            apply_stdout = agent_equipment_config.run(
+                [
+                    "config",
+                    "apply",
+                    "--plan",
+                    "-",
+                    "--apply-authority",
+                    "operator",
+                ],
+                stdin=io.StringIO(json.dumps(plan)),
+                stdout_text=True,
+            )
+            applied_text = layer.read_text(encoding="utf-8")
+
+        payload = json.loads(apply_stdout)
+        reparsed = agent_equipment_config.tomllib.loads(applied_text)
+        self.assertTrue(payload["applied"])
+        self.assertEqual(reparsed["tool"]["samples"][0]["name"], "first")
+        self.assertTrue(reparsed["tool"]["samples"][0]["enabled"])
+        self.assertEqual(reparsed["issue_tracker_ops"]["mode"], "execute")
+
+    def test_render_toml_document_quotes_non_ascii_keys(self):
+        rendered = agent_equipment_config.render_toml_document({"caf\u00e9": True})
+
+        reparsed = agent_equipment_config.tomllib.loads(rendered)
+        self.assertIn('"caf\\u00e9" = true', rendered)
+        self.assertTrue(reparsed["caf\u00e9"])
+
     def test_cli_config_apply_creates_reviewed_layer_plan_from_stdin(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -3839,6 +3911,7 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertIn("validation_failed", payload["refusal_codes"])
         self.assertIn("partial_write_blocked", payload["refusal_codes"])
         self.assertFalse(payload["applied"])
+        self.assertIn('mode = "dry-run"', current_text)
         self.assertIn('external_disclosure = "blocked"', current_text)
 
     def test_cli_config_apply_refuses_semantic_safety_regression(self):
