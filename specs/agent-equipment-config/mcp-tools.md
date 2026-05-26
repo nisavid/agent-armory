@@ -253,6 +253,51 @@ shape:
 `structuredContent.result` is the redacted runtime object that the paired CLI
 would emit. Human-readable text is never the contract that apply consumes.
 
+When a tool definition embeds the schemas below, the reviewed authoring plan
+artifact appears as `$defs.authoringPlanArtifact`:
+
+```json
+{
+  "type": "object",
+  "required": [
+    "schema",
+    "operation",
+    "plan_surface",
+    "plan_kind",
+    "source_target",
+    "source_category",
+    "source_identity",
+    "precondition_fingerprint",
+    "change_payload",
+    "authority_evidence",
+    "validation_result",
+    "virtual_post_change_effective_config",
+    "audit_preview",
+    "refusal_codes",
+    "durability_classification"
+  ],
+  "properties": {
+    "schema": {"const": "agent-armory.config.authoring-plan.v1"},
+    "operation": {"enum": ["config patch", "create-layer"]},
+    "plan_surface": {"const": "reviewed-plan"},
+    "plan_kind": {"enum": ["patch-layer", "create-layer"]},
+    "source_target": {"type": "string"},
+    "source_category": {"type": "string"},
+    "source_identity": {"type": ["object", "null"]},
+    "precondition_fingerprint": {"type": ["string", "null"]},
+    "change_payload": {"type": "object"},
+    "authority_evidence": {"type": "object"},
+    "validation_result": {"type": "object"},
+    "virtual_post_change_effective_config": {"type": "object"},
+    "audit_preview": {"type": "object"},
+    "refusal_codes": {"type": "array", "items": {"type": "string"}},
+    "durability_classification": {"type": "string"},
+    "rationale": {"type": "string"}
+  },
+  "additionalProperties": true
+}
+```
+
 ### `config.propose`
 
 Purpose: produce target-agnostic candidate Config changes, rationale, affected
@@ -359,14 +404,22 @@ Input schema:
 }
 ```
 
-Output schema: the reviewed plan artifact with
-`schema = "agent-armory.config.authoring-plan.v1"`,
-`operation = "config patch"`, `plan_surface = "reviewed-plan"`, and
-`plan_kind = "patch-layer"`. The artifact includes `source_target`,
-`source_category`, `source_identity`, `precondition_fingerprint`,
-`change_payload`, `authority_evidence`, `validation_result`,
-`virtual_post_change_effective_config`, `audit_preview`, `refusal_codes`,
-`durability_classification`, and `rationale`.
+Output schema:
+
+```json
+{
+  "allOf": [
+    {"$ref": "#/$defs/authoringPlanArtifact"},
+    {
+      "type": "object",
+      "properties": {
+        "operation": {"const": "config patch"},
+        "plan_kind": {"const": "patch-layer"}
+      }
+    }
+  ]
+}
+```
 
 Classification: read-only policy decision. MCP annotations:
 `readOnlyHint = true`, `openWorldHint = false`. Destructive and idempotent
@@ -418,13 +471,22 @@ Input schema:
 }
 ```
 
-Output schema: the reviewed plan artifact with
-`schema = "agent-armory.config.authoring-plan.v1"`,
-`operation = "create-layer"`, `plan_surface = "reviewed-plan"`, and
-`plan_kind = "create-layer"`. The artifact includes an absent-source
-precondition fingerprint, the create payload, authority evidence, validation
-result, virtual post-change effective Config, audit preview, refusal codes,
-durability classification, project-truth projection, and rollback stance.
+Output schema:
+
+```json
+{
+  "allOf": [
+    {"$ref": "#/$defs/authoringPlanArtifact"},
+    {
+      "type": "object",
+      "properties": {
+        "operation": {"const": "create-layer"},
+        "plan_kind": {"const": "create-layer"}
+      }
+    }
+  ]
+}
+```
 
 Classification: read-only policy decision. MCP annotations:
 `readOnlyHint = true`, `openWorldHint = false`. Destructive and idempotent
@@ -453,7 +515,7 @@ Input schema:
   "required": ["plan", "apply_authority"],
   "properties": {
     "plan": {
-      "type": "object",
+      "$ref": "#/$defs/authoringPlanArtifact",
       "description": "A reviewed agent-armory.config.authoring-plan.v1 artifact."
     },
     "apply_authority": {"enum": ["operator"]}
@@ -469,7 +531,7 @@ Output schema:
   "type": "object",
   "required": [
     "operation",
-    "schema",
+    "plan_schema",
     "plan_kind",
     "source_target",
     "applied",
@@ -479,10 +541,13 @@ Output schema:
   ],
   "properties": {
     "operation": {"const": "config apply"},
-    "schema": {"const": "agent-armory.config.authoring-plan.v1"},
+    "plan_schema": {"const": "agent-armory.config.authoring-plan.v1"},
     "plan_kind": {"enum": ["patch-layer", "create-layer"]},
     "source_target": {"type": "string"},
-    "applied": {"type": "boolean"},
+    "applied": {
+      "type": "boolean",
+      "description": "Must equal true when result is applied and false for every other result."
+    },
     "result": {"enum": ["applied", "refused", "blocked", "write-failed"]},
     "refusal_codes": {"type": "array", "items": {"type": "string"}},
     "validation_result": {"type": "object"},
@@ -505,11 +570,14 @@ validation, all-or-nothing refusal handling, atomic local write, and mutation
 audit emission.
 
 Failure modes: MCP input validation failure, malformed plan artifact,
-`unsupported_plan_kind`, `unsupported_mcp_authoring` while runtime support is
-absent, missing apply authority, source category ineligible, source untrusted,
-ownership boundary violation, `source_changed`, safety status blocking,
-validation failure, secret-boundary violation, provider mutation attempt,
-`partial_write_blocked`, and local filesystem write failure.
+`unsupported_plan_kind`, missing apply authority, source category ineligible,
+source untrusted, ownership boundary violation, `source_changed`, safety status
+blocking, validation failure, secret-boundary violation, provider mutation
+attempt, `partial_write_blocked`, and local filesystem write failure. The
+`unsupported_mcp_authoring` refusal code is a defensive transitional guard only
+for a host or wrapper that reaches authoring dispatch before the authoring
+feature flag is enabled. It does not authorize publishing these tool
+definitions without dispatcher behavior and validation coverage.
 
 Rollback: for committed durable config, revert the committed config change or
 restore the recorded diff from version control. For local-only operator config,
