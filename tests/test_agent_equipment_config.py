@@ -3530,16 +3530,33 @@ class AgentEquipmentConfigTests(unittest.TestCase):
                 mode = "dry-run"
                 external_disclosure = "blocked"
             """)
-            plan = agent_equipment_config.config_patch_plan(
-                [layer],
-                [agent_equipment_config.issue_tracker_ops_fragment()],
-                source_target=layer,
-                changes=[
-                    {"path": "issue_tracker_ops.mode", "value": "execute"},
-                    {"path": "issue_tracker_ops.external_disclosure", "value": "allowed"},
-                ],
-                plan_authority="operator",
-            )
+            plan = {
+                "schema": agent_equipment_config.AUTHORING_PLAN_SCHEMA,
+                "operation": "config patch",
+                "plan_surface": "reviewed-plan",
+                "plan_kind": "patch-layer",
+                "source_target": str(layer),
+                "source_category": "committed durable config",
+                "source_identity": {
+                    "name": "repository policy",
+                    "category": "committed durable config",
+                    "path": str(layer),
+                    "trusted": True,
+                    "precedence": agent_equipment_config.LAYER_PRECEDENCE.index("repository policy"),
+                    "source_order": 0,
+                },
+                "precondition_fingerprint": agent_equipment_config.source_fingerprint(layer.read_text(encoding="utf-8")),
+                "change_payload": {
+                    "type": "diff",
+                    "changes": [
+                        {"path": "issue_tracker_ops.mode", "before": "dry-run", "after": "execute"},
+                        {"path": "issue_tracker_ops.external_disclosure", "before": "blocked", "after": "allowed"},
+                    ],
+                },
+                "authority_evidence": {"status": "accepted", "source": "operator", "authority": "operator"},
+                "validation_result": {"passed": True},
+                "refusal_codes": [],
+            }
             plan_path = root / "patch-plan.json"
             plan_path.write_text(json.dumps(plan), encoding="utf-8")
 
