@@ -131,6 +131,10 @@ class IssueTrackerOpsTests(unittest.TestCase):
         self.assertEqual(payload["capability"]["runtime_command"], ["create-issue"])
         self.assertEqual(payload["safety"]["dry_run_default"], True)
         self.assertEqual(payload["safety"]["execute_required"], True)
+        self.assertEqual(payload["safety"]["config_preflight_required"], False)
+        self.assertEqual(payload["safety"]["mutation_authority_required"], True)
+        self.assertEqual(payload["safety"]["config_authorization_supported"], True)
+        self.assertEqual(payload["safety"]["mutation_policy_ref_supported"], True)
         self.assertIn("external_network_write", payload["side_effects"])
 
     def test_plan_operation_reports_native_read_safety_without_calling_gh(self):
@@ -228,7 +232,12 @@ class IssueTrackerOpsTests(unittest.TestCase):
         )
 
     def test_comment_execute_posts_issue_comment_with_audit_output(self):
-        gh = FakeGh([subprocess.CompletedProcess(["gh"], 0, stdout='{"id": 44}', stderr="")])
+        gh = FakeGh(
+            [
+                subprocess.CompletedProcess(["gh"], 0, stdout="[]", stderr=""),
+                subprocess.CompletedProcess(["gh"], 0, stdout='{"id": 44}', stderr=""),
+            ]
+        )
 
         exit_code, stdout, stderr = self.run_cli(
             [
@@ -239,20 +248,26 @@ class IssueTrackerOpsTests(unittest.TestCase):
                 "11",
                 "--body",
                 "Validation note",
+                "--mutation-policy-ref",
+                "issue-17-approved-plan",
                 "--execute",
             ],
             gh=gh,
         )
 
         self.assertEqual(exit_code, 0, stderr)
-        self.assertEqual(len(gh.calls), 1)
-        args, input_text = gh.calls[0]
+        self.assertEqual(len(gh.calls), 2)
+        preflight_args, preflight_input = gh.calls[0]
+        self.assertEqual(preflight_args[:5], ["gh", "api", "-X", "GET", "repos/OWNER/REPO/issues/11/comments?per_page=100"])
+        self.assertIsNone(preflight_input)
+        args, input_text = gh.calls[1]
         self.assertEqual(args[:5], ["gh", "api", "-X", "POST", "repos/OWNER/REPO/issues/11/comments"])
         self.assertEqual(json.loads(input_text), {"body": "Validation note"})
         payload = json.loads(stdout)
         self.assertEqual(payload["mode"], "execute")
         self.assertEqual(payload["operation"], "comment")
         self.assertEqual(payload["result"], {"id": 44})
+        self.assertEqual(payload["mutation_policy"]["ref"], "issue-17-approved-plan")
 
     def test_comment_dry_run_with_config_layer_reports_advisory_config_decision(self):
         gh = FakeGh()
@@ -331,7 +346,12 @@ class IssueTrackerOpsTests(unittest.TestCase):
         )
 
     def test_comment_execute_with_configured_execute_mode_reports_config_decision(self):
-        gh = FakeGh([subprocess.CompletedProcess(["gh"], 0, stdout='{"id": 44}', stderr="")])
+        gh = FakeGh(
+            [
+                subprocess.CompletedProcess(["gh"], 0, stdout="[]", stderr=""),
+                subprocess.CompletedProcess(["gh"], 0, stdout='{"id": 44}', stderr=""),
+            ]
+        )
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             layer = self.write_config_layer(root, "repo.toml", """
@@ -361,7 +381,7 @@ class IssueTrackerOpsTests(unittest.TestCase):
             )
 
         self.assertEqual(exit_code, 0, stderr)
-        self.assertEqual(len(gh.calls), 1)
+        self.assertEqual(len(gh.calls), 2)
         payload = json.loads(stdout)
         self.assertEqual(payload["mode"], "execute")
         self.assertEqual(payload["config"]["consumer_action_decision"]["state"], "allowed")
@@ -576,6 +596,653 @@ class IssueTrackerOpsTests(unittest.TestCase):
             payload["config"]["consumer_action_decision"]["evidence"]["unsupported_capabilities"],
         )
 
+    def test_mutation_execute_without_config_or_policy_ref_fails_closed_before_gh(self):
+        gh = FakeGh()
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "comment",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "11",
+                "--body",
+                "Validation note",
+                "--execute",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(stderr, "")
+        self.assertEqual(gh.calls, [])
+        payload = json.loads(stdout)
+        self.assertEqual(payload["mode"], "execute")
+        self.assertEqual(payload["operation"], "comment")
+        self.assertEqual(payload["error"]["code"], "mutation_policy_required")
+        self.assertEqual(
+            payload["error"]["message"],
+            "Issue Tracker Ops mutation execute requires Config authorization or --mutation-policy-ref.",
+        )
+
+    def test_comment_execute_with_policy_ref_blocks_duplicate_body_before_posting(self):
+        gh = FakeGh(
+            [
+                subprocess.CompletedProcess(
+                    ["gh"],
+                    0,
+                    stdout=json.dumps(
+                        [
+                            {
+                                "id": 100,
+                                "html_url": "https://github.com/OWNER/REPO/issues/11#issuecomment-100",
+                                "body": "Validation note",
+                            }
+                        ]
+                    ),
+                    stderr="",
+                )
+            ]
+        )
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "comment",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "11",
+                "--body",
+                "Validation note",
+                "--mutation-policy-ref",
+                "issue-17-approved-plan",
+                "--idempotency-key",
+                "comment-validation-note",
+                "--execute",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(stderr, "")
+        self.assertEqual(len(gh.calls), 1)
+        args, input_text = gh.calls[0]
+        self.assertEqual(args[:5], ["gh", "api", "-X", "GET", "repos/OWNER/REPO/issues/11/comments?per_page=100"])
+        self.assertIsNone(input_text)
+        payload = json.loads(stdout)
+        self.assertEqual(payload["error"]["code"], "duplicate_detected")
+        self.assertEqual(payload["duplicate_decision"]["action"], "block")
+        self.assertEqual(payload["duplicate_decision"]["existing"]["id"], 100)
+        self.assertEqual(payload["mutation_policy"]["ref"], "issue-17-approved-plan")
+        self.assertEqual(payload["idempotency_key"], "comment-validation-note")
+
+    def test_comment_execute_blocks_duplicate_body_from_paginated_preflight(self):
+        gh = FakeGh(
+            [
+                subprocess.CompletedProcess(
+                    ["gh"],
+                    0,
+                    stdout=json.dumps(
+                        [
+                            [],
+                            [
+                                {
+                                    "id": 100,
+                                    "html_url": "https://github.com/OWNER/REPO/issues/11#issuecomment-100",
+                                    "body": "Validation note",
+                                }
+                            ],
+                        ]
+                    ),
+                    stderr="",
+                )
+            ]
+        )
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "comment",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "11",
+                "--body",
+                "Validation note",
+                "--mutation-policy-ref",
+                "issue-17-approved-plan",
+                "--execute",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(stderr, "")
+        self.assertEqual(len(gh.calls), 1)
+        args, input_text = gh.calls[0]
+        self.assertEqual(args[:5], ["gh", "api", "-X", "GET", "repos/OWNER/REPO/issues/11/comments?per_page=100"])
+        self.assertIn("--paginate", args)
+        self.assertIn("--slurp", args)
+        self.assertIsNone(input_text)
+        payload = json.loads(stdout)
+        self.assertEqual(payload["error"]["code"], "duplicate_detected")
+        self.assertEqual(payload["duplicate_decision"]["existing"]["id"], 100)
+
+    def test_comment_execute_fails_closed_on_unexpected_preflight_response(self):
+        gh = FakeGh([subprocess.CompletedProcess(["gh"], 0, stdout='{"message": "unexpected"}', stderr="")])
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "comment",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "11",
+                "--body",
+                "Validation note",
+                "--mutation-policy-ref",
+                "issue-17-approved-plan",
+                "--execute",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(stderr, "")
+        self.assertEqual(len(gh.calls), 1)
+        payload = json.loads(stdout)
+        self.assertEqual(payload["error"]["code"], "preflight_response_invalid")
+        self.assertEqual(payload["preflight"]["request"]["endpoint"], "repos/OWNER/REPO/issues/11/comments?per_page=100")
+
+    def test_create_issue_execute_blocks_duplicate_title_before_posting(self):
+        gh = FakeGh(
+            [
+                subprocess.CompletedProcess(
+                    ["gh"],
+                    0,
+                    stdout=json.dumps(
+                        [
+                            {
+                                "id": 200,
+                                "number": 17,
+                                "html_url": "https://github.com/OWNER/REPO/issues/17",
+                                "title": "Implement issue ops safety",
+                                "state": "open",
+                            }
+                        ]
+                    ),
+                    stderr="",
+                )
+            ]
+        )
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "create-issue",
+                "--repo",
+                "OWNER/REPO",
+                "--title",
+                "  implement   ISSUE OPS safety  ",
+                "--body",
+                "Issue body",
+                "--mutation-policy-ref",
+                "issue-17-approved-plan",
+                "--execute",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(stderr, "")
+        self.assertEqual(len(gh.calls), 1)
+        args, input_text = gh.calls[0]
+        self.assertEqual(args[:5], ["gh", "api", "-X", "GET", "repos/OWNER/REPO/issues?state=open&per_page=100"])
+        self.assertIsNone(input_text)
+        payload = json.loads(stdout)
+        self.assertEqual(payload["error"]["code"], "duplicate_detected")
+        self.assertEqual(payload["duplicate_decision"]["existing"]["number"], 17)
+        self.assertEqual(payload["duplicate_decision"]["action"], "block")
+
+    def test_comment_execute_with_duplicate_override_records_audit_decision(self):
+        gh = FakeGh(
+            [
+                subprocess.CompletedProcess(
+                    ["gh"],
+                    0,
+                    stdout=json.dumps(
+                        [
+                            {
+                                "id": 100,
+                                "html_url": "https://github.com/OWNER/REPO/issues/11#issuecomment-100",
+                                "body": "Validation note",
+                            }
+                        ]
+                    ),
+                    stderr="",
+                ),
+                subprocess.CompletedProcess(["gh"], 0, stdout='{"id": 101}', stderr=""),
+            ]
+        )
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "comment",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "11",
+                "--body",
+                "Validation note",
+                "--mutation-policy-ref",
+                "issue-17-approved-plan",
+                "--if-duplicate",
+                "allow-with-reason",
+                "--duplicate-override-reason",
+                "Second note is intentionally sent after reopening the issue.",
+                "--execute",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(len(gh.calls), 2)
+        payload = json.loads(stdout)
+        self.assertEqual(payload["result"], {"id": 101})
+        self.assertEqual(payload["duplicate_decision"]["action"], "allow-with-reason")
+        self.assertEqual(payload["duplicate_decision"]["existing"]["id"], 100)
+        self.assertEqual(
+            payload["duplicate_decision"]["override_reason"],
+            "Second note is intentionally sent after reopening the issue.",
+        )
+
+    def test_execute_failure_with_fallback_file_writes_reconciliation_record(self):
+        gh = FakeGh(
+            [
+                subprocess.CompletedProcess(["gh"], 0, stdout="[]", stderr=""),
+                subprocess.CompletedProcess(["gh"], 1, stdout="", stderr="secondary rate limit exceeded"),
+            ]
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fallback_path = Path(tmpdir) / "issue-17-fallback.json"
+
+            exit_code, stdout, stderr = self.run_cli(
+                [
+                    "comment",
+                    "--repo",
+                    "OWNER/REPO",
+                    "--issue-number",
+                    "11",
+                    "--body",
+                    "Validation note",
+                    "--mutation-policy-ref",
+                    "issue-17-approved-plan",
+                    "--idempotency-key",
+                    "comment-validation-note",
+                    "--fallback-record-file",
+                    str(fallback_path),
+                    "--execute",
+                ],
+                gh=gh,
+            )
+
+            self.assertEqual(exit_code, 1)
+            self.assertEqual(stderr, "")
+            self.assertEqual(len(gh.calls), 2)
+            payload = json.loads(stdout)
+            record = json.loads(fallback_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(payload["failure"]["class"], "secondary-rate-limit")
+        self.assertEqual(payload["retry_condition"], "retry after the API condition clears and rerun reconciliation first")
+        self.assertEqual(payload["fallback_record_file"], str(fallback_path))
+        self.assertEqual(record["schema"], "issue_tracker_ops.fallback_record.v1alpha1")
+        self.assertEqual(record["status"], "pending_reconciliation")
+        self.assertEqual(record["operation"], "comment")
+        self.assertEqual(record["idempotency_key"], "comment-validation-note")
+        self.assertEqual(record["request"]["endpoint"], "repos/OWNER/REPO/issues/11/comments")
+        self.assertTrue(record["reconciliation"]["required"])
+
+    def test_execute_failure_reports_unwritable_fallback_record_file(self):
+        gh = FakeGh(
+            [
+                subprocess.CompletedProcess(["gh"], 0, stdout="[]", stderr=""),
+                subprocess.CompletedProcess(["gh"], 1, stdout="", stderr="secondary rate limit exceeded"),
+            ]
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            exit_code, stdout, stderr = self.run_cli(
+                [
+                    "comment",
+                    "--repo",
+                    "OWNER/REPO",
+                    "--issue-number",
+                    "11",
+                    "--body",
+                    "Validation note",
+                    "--mutation-policy-ref",
+                    "issue-17-approved-plan",
+                    "--fallback-record-file",
+                    tmpdir,
+                    "--execute",
+                ],
+                gh=gh,
+            )
+
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(stderr, "")
+        payload = json.loads(stdout)
+        self.assertEqual(payload["failure"]["class"], "secondary-rate-limit")
+        self.assertEqual(payload["fallback_record_file"], tmpdir)
+        self.assertEqual(payload["fallback_record_error"]["code"], "fallback_record_write_failed")
+
+    def test_execute_failure_classifies_secondary_rate_limit_before_permission_403(self):
+        gh = FakeGh(
+            [
+                subprocess.CompletedProcess(["gh"], 0, stdout="[]", stderr=""),
+                subprocess.CompletedProcess(
+                    ["gh"],
+                    1,
+                    stdout="",
+                    stderr="HTTP 403: You have exceeded a secondary rate limit.",
+                ),
+            ]
+        )
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "comment",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "11",
+                "--body",
+                "Validation note",
+                "--mutation-policy-ref",
+                "issue-17-approved-plan",
+                "--execute",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(stderr, "")
+        payload = json.loads(stdout)
+        self.assertEqual(payload["failure"]["class"], "secondary-rate-limit")
+        self.assertTrue(payload["failure"]["retryable"])
+
+    def test_reconcile_fallback_retire_record_after_projected_comment_is_verified(self):
+        gh = FakeGh(
+            [
+                subprocess.CompletedProcess(
+                    ["gh"],
+                    0,
+                    stdout=json.dumps(
+                        [
+                            {
+                                "id": 100,
+                                "html_url": "https://github.com/OWNER/REPO/issues/11#issuecomment-100",
+                                "body": "Validation note",
+                            }
+                        ]
+                    ),
+                    stderr="",
+                )
+            ]
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fallback_path = Path(tmpdir) / "fallback.json"
+            fallback_path.write_text(
+                json.dumps(
+                    {
+                        "schema": "issue_tracker_ops.fallback_record.v1alpha1",
+                        "status": "pending_reconciliation",
+                        "owner": "issue_tracker_ops_adapter",
+                        "operation": "comment",
+                        "repo": "OWNER/REPO",
+                        "request": {
+                            "method": "POST",
+                            "endpoint": "repos/OWNER/REPO/issues/11/comments",
+                            "body": {"body": "Validation note"},
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            exit_code, stdout, stderr = self.run_cli(
+                [
+                    "reconcile-fallback",
+                    "--repo",
+                    "OWNER/REPO",
+                    "--fallback-record-file",
+                    str(fallback_path),
+                    "--retire-record",
+                    "--retirement-note",
+                    "Verified projected comment.",
+                    "--execute",
+                ],
+                gh=gh,
+            )
+            retired_record = json.loads(fallback_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(len(gh.calls), 1)
+        args, input_text = gh.calls[0]
+        self.assertEqual(args[:5], ["gh", "api", "-X", "GET", "repos/OWNER/REPO/issues/11/comments?per_page=100"])
+        self.assertIsNone(input_text)
+        payload = json.loads(stdout)
+        self.assertEqual(payload["operation"], "reconcile-fallback")
+        self.assertEqual(payload["result"]["projection_status"], "projected")
+        self.assertEqual(payload["result"]["recommended_action"], "retire_record")
+        self.assertEqual(retired_record["status"], "retired")
+        self.assertEqual(retired_record["retirement_note"], "Verified projected comment.")
+
+    def test_reconcile_fallback_retire_record_after_projected_update_is_verified(self):
+        gh = FakeGh(
+            [
+                subprocess.CompletedProcess(
+                    ["gh"],
+                    0,
+                    stdout=json.dumps(
+                        {
+                            "id": 44,
+                            "number": 11,
+                            "html_url": "https://github.com/OWNER/REPO/issues/11",
+                            "title": "Updated title",
+                            "body": "Updated body",
+                            "state": "open",
+                        }
+                    ),
+                    stderr="",
+                )
+            ]
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fallback_path = Path(tmpdir) / "fallback.json"
+            fallback_path.write_text(
+                json.dumps(
+                    {
+                        "schema": "issue_tracker_ops.fallback_record.v1alpha1",
+                        "status": "pending_reconciliation",
+                        "owner": "issue_tracker_ops_adapter",
+                        "operation": "update-issue",
+                        "repo": "OWNER/REPO",
+                        "request": {
+                            "method": "PATCH",
+                            "endpoint": "repos/OWNER/REPO/issues/11",
+                            "body": {"title": "Updated title", "body": "Updated body"},
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            exit_code, stdout, stderr = self.run_cli(
+                [
+                    "reconcile-fallback",
+                    "--repo",
+                    "OWNER/REPO",
+                    "--fallback-record-file",
+                    str(fallback_path),
+                    "--retire-record",
+                    "--retirement-note",
+                    "Verified projected issue update.",
+                    "--execute",
+                ],
+                gh=gh,
+            )
+            retired_record = json.loads(fallback_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(len(gh.calls), 1)
+        args, input_text = gh.calls[0]
+        self.assertEqual(args[:5], ["gh", "api", "-X", "GET", "repos/OWNER/REPO/issues/11"])
+        self.assertIsNone(input_text)
+        payload = json.loads(stdout)
+        self.assertEqual(payload["result"]["projection_status"], "projected")
+        self.assertEqual(payload["result"]["projected"]["number"], 11)
+        self.assertEqual(retired_record["status"], "retired")
+
+    def test_reconcile_fallback_retire_record_after_projected_dependency_is_verified(self):
+        gh = FakeGh(
+            [
+                subprocess.CompletedProcess(
+                    ["gh"],
+                    0,
+                    stdout='[{"id": 98765, "number": 11, "html_url": "https://github.com/OWNER/REPO/issues/11"}]',
+                    stderr="",
+                )
+            ]
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fallback_path = Path(tmpdir) / "fallback.json"
+            fallback_path.write_text(
+                json.dumps(
+                    {
+                        "schema": "issue_tracker_ops.fallback_record.v1alpha1",
+                        "status": "pending_reconciliation",
+                        "owner": "issue_tracker_ops_adapter",
+                        "operation": "add-blocked-by",
+                        "repo": "OWNER/REPO",
+                        "request": {
+                            "method": "POST",
+                            "endpoint": "repos/OWNER/REPO/issues/10/dependencies/blocked_by",
+                            "body": {"issue_id": 98765},
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            exit_code, stdout, stderr = self.run_cli(
+                [
+                    "reconcile-fallback",
+                    "--repo",
+                    "OWNER/REPO",
+                    "--fallback-record-file",
+                    str(fallback_path),
+                    "--retire-record",
+                    "--retirement-note",
+                    "Verified projected dependency relation.",
+                    "--execute",
+                ],
+                gh=gh,
+            )
+            retired_record = json.loads(fallback_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(len(gh.calls), 1)
+        args, input_text = gh.calls[0]
+        self.assertEqual(args[:5], ["gh", "api", "-X", "GET", "repos/OWNER/REPO/issues/10/dependencies/blocked_by"])
+        self.assertIsNone(input_text)
+        payload = json.loads(stdout)
+        self.assertEqual(payload["result"]["projection_status"], "projected")
+        self.assertEqual(payload["result"]["projected"]["number"], 11)
+        self.assertEqual(retired_record["status"], "retired")
+
+    def test_reconcile_fallback_refuses_to_retire_removed_dependency_on_unexpected_response(self):
+        gh = FakeGh([subprocess.CompletedProcess(["gh"], 0, stdout='{"message": "unexpected"}', stderr="")])
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fallback_path = Path(tmpdir) / "fallback.json"
+            fallback_path.write_text(
+                json.dumps(
+                    {
+                        "schema": "issue_tracker_ops.fallback_record.v1alpha1",
+                        "status": "pending_reconciliation",
+                        "owner": "issue_tracker_ops_adapter",
+                        "operation": "remove-blocked-by",
+                        "repo": "OWNER/REPO",
+                        "request": {
+                            "method": "DELETE",
+                            "endpoint": "repos/OWNER/REPO/issues/10/dependencies/blocked_by/98765",
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            exit_code, stdout, stderr = self.run_cli(
+                [
+                    "reconcile-fallback",
+                    "--repo",
+                    "OWNER/REPO",
+                    "--fallback-record-file",
+                    str(fallback_path),
+                    "--retire-record",
+                    "--retirement-note",
+                    "Verified relation removal.",
+                    "--execute",
+                ],
+                gh=gh,
+            )
+            record = json.loads(fallback_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(stderr, "")
+        payload = json.loads(stdout)
+        self.assertEqual(payload["result"]["projection_status"], "unknown")
+        self.assertEqual(payload["result"]["recommended_action"], "manual_review")
+        self.assertEqual(payload["error"]["code"], "retirement_not_allowed")
+        self.assertEqual(record["status"], "pending_reconciliation")
+
+    def test_reconcile_fallback_retire_record_requires_note_before_gh(self):
+        gh = FakeGh()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fallback_path = Path(tmpdir) / "fallback.json"
+            fallback_path.write_text(
+                json.dumps(
+                    {
+                        "schema": "issue_tracker_ops.fallback_record.v1alpha1",
+                        "status": "pending_reconciliation",
+                        "owner": "issue_tracker_ops_adapter",
+                        "operation": "comment",
+                        "repo": "OWNER/REPO",
+                        "request": {
+                            "method": "POST",
+                            "endpoint": "repos/OWNER/REPO/issues/11/comments",
+                            "body": {"body": "Validation note"},
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            exit_code, stdout, stderr = self.run_cli(
+                [
+                    "reconcile-fallback",
+                    "--repo",
+                    "OWNER/REPO",
+                    "--fallback-record-file",
+                    str(fallback_path),
+                    "--retire-record",
+                    "--execute",
+                ],
+                gh=gh,
+            )
+
+        self.assertEqual(exit_code, 2)
+        self.assertEqual(stdout, "")
+        self.assertEqual(stderr, "--retirement-note is required with --retire-record\n")
+        self.assertEqual(gh.calls, [])
+
     def test_execute_config_without_consumer_decision_fails_closed(self):
         args = argparse.Namespace(operation="comment", execute=True)
 
@@ -737,7 +1404,12 @@ class IssueTrackerOpsTests(unittest.TestCase):
         self.assertEqual(projection["decision_state"], "unknown")
 
     def test_execute_error_omits_resolved_when_no_resolution_occurred(self):
-        gh = FakeGh([subprocess.CompletedProcess(["gh"], 1, stdout="", stderr="boom")])
+        gh = FakeGh(
+            [
+                subprocess.CompletedProcess(["gh"], 0, stdout="[]", stderr=""),
+                subprocess.CompletedProcess(["gh"], 1, stdout="", stderr="boom"),
+            ]
+        )
 
         exit_code, stdout, stderr = self.run_cli(
             [
@@ -748,6 +1420,8 @@ class IssueTrackerOpsTests(unittest.TestCase):
                 "11",
                 "--body",
                 "Validation note",
+                "--mutation-policy-ref",
+                "issue-17-approved-plan",
                 "--execute",
             ],
             gh=gh,
@@ -758,7 +1432,8 @@ class IssueTrackerOpsTests(unittest.TestCase):
         payload = json.loads(stdout)
         self.assertEqual(payload["mode"], "execute")
         self.assertEqual(payload["operation"], "comment")
-        self.assertEqual(payload["error"], {"returncode": 1, "stderr": "boom"})
+        self.assertEqual(payload["error"], {"returncode": 1, "stderr": "boom", "class": "unknown"})
+        self.assertEqual(payload["failure"]["class"], "unknown")
         self.assertNotIn("resolved", payload)
 
     def test_execute_success_includes_empty_resolved_when_provided(self):
@@ -785,6 +1460,7 @@ class IssueTrackerOpsTests(unittest.TestCase):
         gh = FakeGh(
             [
                 subprocess.CompletedProcess(["gh"], 0, stdout='{"id": 98765}', stderr=""),
+                subprocess.CompletedProcess(["gh"], 0, stdout="[]", stderr=""),
                 subprocess.CompletedProcess(["gh"], 0, stdout='{"number": 11}', stderr=""),
             ]
         )
@@ -798,17 +1474,22 @@ class IssueTrackerOpsTests(unittest.TestCase):
                 "10",
                 "--blocking-issue-number",
                 "11",
+                "--mutation-policy-ref",
+                "issue-17-approved-plan",
                 "--execute",
             ],
             gh=gh,
         )
 
         self.assertEqual(exit_code, 0, stderr)
-        self.assertEqual(len(gh.calls), 2)
+        self.assertEqual(len(gh.calls), 3)
         get_args, get_input = gh.calls[0]
-        post_args, post_input = gh.calls[1]
+        preflight_args, preflight_input = gh.calls[1]
+        post_args, post_input = gh.calls[2]
         self.assertEqual(get_args[:5], ["gh", "api", "-X", "GET", "repos/OWNER/REPO/issues/11"])
         self.assertIsNone(get_input)
+        self.assertEqual(preflight_args[:5], ["gh", "api", "-X", "GET", "repos/OWNER/REPO/issues/10/dependencies/blocked_by"])
+        self.assertIsNone(preflight_input)
         self.assertEqual(
             post_args[:5],
             ["gh", "api", "-X", "POST", "repos/OWNER/REPO/issues/10/dependencies/blocked_by"],
@@ -887,6 +1568,7 @@ class IssueTrackerOpsTests(unittest.TestCase):
         gh = FakeGh(
             [
                 subprocess.CompletedProcess(["gh"], 0, stdout='{"id": 98765}', stderr=""),
+                subprocess.CompletedProcess(["gh"], 0, stdout='[{"id": 98765, "number": 11}]', stderr=""),
                 subprocess.CompletedProcess(["gh"], 0, stdout="{}", stderr=""),
             ]
         )
@@ -900,17 +1582,22 @@ class IssueTrackerOpsTests(unittest.TestCase):
                 "10",
                 "--blocking-issue-number",
                 "11",
+                "--mutation-policy-ref",
+                "issue-17-approved-plan",
                 "--execute",
             ],
             gh=gh,
         )
 
         self.assertEqual(exit_code, 0, stderr)
-        self.assertEqual(len(gh.calls), 2)
+        self.assertEqual(len(gh.calls), 3)
         get_args, get_input = gh.calls[0]
-        delete_args, delete_input = gh.calls[1]
+        preflight_args, preflight_input = gh.calls[1]
+        delete_args, delete_input = gh.calls[2]
         self.assertEqual(get_args[:5], ["gh", "api", "-X", "GET", "repos/OWNER/REPO/issues/11"])
         self.assertIsNone(get_input)
+        self.assertEqual(preflight_args[:5], ["gh", "api", "-X", "GET", "repos/OWNER/REPO/issues/10/dependencies/blocked_by"])
+        self.assertIsNone(preflight_input)
         self.assertEqual(
             delete_args[:5],
             ["gh", "api", "-X", "DELETE", "repos/OWNER/REPO/issues/10/dependencies/blocked_by/98765"],
@@ -919,6 +1606,125 @@ class IssueTrackerOpsTests(unittest.TestCase):
         payload = json.loads(stdout)
         self.assertEqual(payload["operation"], "remove-blocked-by")
         self.assertEqual(payload["resolved"]["blocking_issue_id"], 98765)
+
+    def test_remove_blocked_by_fails_closed_on_unexpected_dependency_preflight_response(self):
+        gh = FakeGh(
+            [
+                subprocess.CompletedProcess(["gh"], 0, stdout='{"id": 98765}', stderr=""),
+                subprocess.CompletedProcess(["gh"], 0, stdout='{"message": "unexpected"}', stderr=""),
+            ]
+        )
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "remove-blocked-by",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "10",
+                "--blocking-issue-number",
+                "11",
+                "--mutation-policy-ref",
+                "issue-17-approved-plan",
+                "--execute",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(stderr, "")
+        self.assertEqual(len(gh.calls), 2)
+        payload = json.loads(stdout)
+        self.assertEqual(payload["error"]["code"], "preflight_response_invalid")
+        self.assertEqual(payload["resolved"]["blocking_issue_id"], 98765)
+        preflight_args, _ = gh.calls[1]
+        self.assertIn("--paginate", preflight_args)
+        self.assertIn("--slurp", preflight_args)
+
+    def test_update_issue_execute_skips_when_existing_issue_matches_patch(self):
+        gh = FakeGh(
+            [
+                subprocess.CompletedProcess(
+                    ["gh"],
+                    0,
+                    stdout=json.dumps(
+                        {
+                            "id": 44,
+                            "number": 11,
+                            "html_url": "https://github.com/OWNER/REPO/issues/11",
+                            "title": "Same title",
+                            "body": "Same body",
+                            "state": "open",
+                            "labels": [{"name": "ready-for-agent"}],
+                            "assignees": [{"login": "nisavid"}],
+                        }
+                    ),
+                    stderr="",
+                )
+            ]
+        )
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "update-issue",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "11",
+                "--title",
+                "Same title",
+                "--body",
+                "Same body",
+                "--label",
+                "ready-for-agent",
+                "--assignee",
+                "nisavid",
+                "--mutation-policy-ref",
+                "issue-17-approved-plan",
+                "--idempotency-key",
+                "update-same-fields",
+                "--execute",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(len(gh.calls), 1)
+        payload = json.loads(stdout)
+        self.assertEqual(payload["result"]["status"], "idempotent_skip")
+        self.assertEqual(payload["result"]["reason"], "issue already matches requested fields")
+        self.assertEqual(payload["result"]["existing"]["number"], 11)
+        self.assertEqual(payload["idempotency_key"], "update-same-fields")
+
+    def test_add_blocked_by_execute_skips_when_relation_already_exists(self):
+        gh = FakeGh(
+            [
+                subprocess.CompletedProcess(["gh"], 0, stdout='{"id": 98765}', stderr=""),
+                subprocess.CompletedProcess(["gh"], 0, stdout='[{"id": 98765, "number": 11}]', stderr=""),
+            ]
+        )
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "add-blocked-by",
+                "--repo",
+                "OWNER/REPO",
+                "--issue-number",
+                "10",
+                "--blocking-issue-number",
+                "11",
+                "--mutation-policy-ref",
+                "issue-17-approved-plan",
+                "--execute",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(len(gh.calls), 2)
+        payload = json.loads(stdout)
+        self.assertEqual(payload["result"]["status"], "idempotent_skip")
+        self.assertEqual(payload["result"]["reason"], "blocked-by relation already exists")
 
     def test_list_blocking_dry_run_uses_outgoing_dependency_relation(self):
         gh = FakeGh()
@@ -1167,6 +1973,8 @@ class IssueTrackerOpsTests(unittest.TestCase):
                     "11",
                     "--body",
                     "Validation note",
+                    "--mutation-policy-ref",
+                    "issue-17-approved-plan",
                     "--execute",
                 ],
                 stdout=stdout,
@@ -1204,6 +2012,12 @@ class IssueTrackerOpsTests(unittest.TestCase):
                 subprocess.CompletedProcess(
                     ["gh"],
                     0,
+                    stdout="[]",
+                    stderr="",
+                ),
+                subprocess.CompletedProcess(
+                    ["gh"],
+                    0,
                     stdout=json.dumps(
                         {
                             "id": 44,
@@ -1228,6 +2042,8 @@ class IssueTrackerOpsTests(unittest.TestCase):
                 "11",
                 "--body",
                 "Validation note",
+                "--mutation-policy-ref",
+                "issue-17-approved-plan",
                 "--execute",
             ],
             gh=gh,

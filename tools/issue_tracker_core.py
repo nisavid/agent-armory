@@ -118,6 +118,9 @@ class OperationSafety:
     execute_required: bool
     config_preflight_required: bool
     available: bool
+    mutation_authority_required: bool = False
+    config_authorization_supported: bool = False
+    mutation_policy_ref_supported: bool = False
 
     def to_json(self) -> dict:
         return {
@@ -125,6 +128,9 @@ class OperationSafety:
             "execute_required": self.execute_required,
             "config_preflight_required": self.config_preflight_required,
             "available": self.available,
+            "mutation_authority_required": self.mutation_authority_required,
+            "config_authorization_supported": self.config_authorization_supported,
+            "mutation_policy_ref_supported": self.mutation_policy_ref_supported,
         }
 
 
@@ -529,8 +535,11 @@ def operation_plan_payload(adapter_id: str, operation_id: str) -> dict | None:
     safety = OperationSafety(
         dry_run_default=write_operation and available,
         execute_required=operation.operation_class in {OperationClass.READ, OperationClass.WRITE} and available,
-        config_preflight_required=write_operation and available,
+        config_preflight_required=False,
         available=available,
+        mutation_authority_required=write_operation and available,
+        config_authorization_supported=write_operation and available,
+        mutation_policy_ref_supported=write_operation and available,
     )
     return OperationPlan(
         adapter.adapter_id,

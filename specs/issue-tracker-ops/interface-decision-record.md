@@ -41,9 +41,10 @@ contracts as the core and CLI inspection surfaces.
   Config evidence, and reusable consumer action decisions. Issue Ops owns the
   `issue_tracker_ops` fragment, plain handoff ingestion, and adapter semantics:
   dry-run is the default, live mutation still requires `--execute`, and
-  config-aware live mutation requires the configured mode to be `execute` with
-  a non-blocking consumer decision. The broader Issue Ops config profile and
-  onboarding contract is defined in
+  live mutation requires usable Config authorization or a
+  `--mutation-policy-ref`; config-aware live mutation requires the configured
+  mode to be `execute` with a non-blocking consumer decision. The broader Issue
+  Ops config profile and onboarding contract is defined in
   [Config profile and onboarding](config-profile-and-onboarding.md).
 - Local docs: this Equipment Design Bundle records current design, security,
   validation, and closeout expectations.
@@ -76,8 +77,8 @@ expose typed inputs and outputs without relying on CLI command composition.
 
 - Codex: use the script through local shell tools and GitHub MCP for issue
   orientation; mutation remains dry-run by default unless the active session
-  explicitly executes it, and explicit Config inputs can fail closed before
-  tracker writes.
+  explicitly executes it with Config authorization or a mutation policy
+  reference, and explicit Config inputs can fail closed before tracker writes.
 - Other harnesses: defer until the tracker-neutral core, Issue Ops plain config
   profile, and mutation gates have stable contracts.
 
@@ -102,8 +103,8 @@ expose typed inputs and outputs without relying on CLI command composition.
 - `gh` authentication and permissions are external to the script.
 - GitHub API behavior may change; dependency and sub-issue features should be
   refreshed before promotion beyond the bootstrap MVP.
-- The MVP does not yet implement runtime onboarding, issue selection, duplicate
-  detection, fallback reconciliation, issue-set orchestration, or MCP parity.
+- The MVP does not yet implement runtime onboarding, issue selection, semantic
+  duplicate detection, issue-set orchestration, or MCP parity.
 - The Config consumer proof covers adapter execute-mode gating; broader Issue
   Ops policy fields and onboarding behavior are specified but remain outside
   this bootstrap runtime surface.

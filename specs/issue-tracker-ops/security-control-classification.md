@@ -26,6 +26,7 @@ config profile and onboarding control contract is specified in
 | Issue comment | Network write and notification | Requires `--execute`; emits JSON audit output. |
 | Dependency add/remove | Network write | Requires `--execute`; resolves issue number to REST `id` when needed and emits JSON audit output. |
 | Config-aware mutation | Policy decision and adapter preflight | Uses explicit Config inputs only; `consumer_enforcement_projection` maps consumer decisions to allow or block behavior, and blocking or unsupported decisions fail closed before `gh` runs. |
+| Fallback reconciliation | Read and optional local write | Reads tracker state under `--execute`; `--retire-record` updates only the explicitly supplied fallback record after projection is verified. |
 
 ## Assets
 
@@ -48,6 +49,7 @@ config profile and onboarding control contract is specified in
   overrides.
 - Issue Ops plain handoffs and Config layers to effective Config evidence and
   consumer action decisions.
+- Tracker failure summaries to optional local fallback records.
 
 ## Controls
 
@@ -59,6 +61,15 @@ config profile and onboarding control contract is specified in
   explicit.
 - The adapter emits JSON audit output for request shape, result, resolved IDs,
   and failure.
+- Live mutation without Config input requires `--mutation-policy-ref`; Config
+  input takes precedence and can still fail closed.
+- Live mutation preflights block exact duplicate issue titles and comment
+  bodies, skip exact no-op issue updates, and skip already-applied or
+  already-absent dependency changes before the write call.
+- Failed live mutations classify auth, permission, validation, conflict,
+  rate-limit, secondary-rate-limit, outage, not-found, and unknown failures,
+  and emit retry conditions and compensation guidance. The adapter does not
+  auto-retry writes.
 - The tracker-neutral core emits read-only JSON for operation ids, operation
   classes, side-effect classes, capability dispositions, adapter capabilities,
   audit requirements, and operation plans. These inspection commands do not
@@ -72,6 +83,8 @@ config profile and onboarding control contract is specified in
 - A valid adapter preflight projection records the effective Config Safety
   Status, diagnostic kinds, decision state, fallback, owner, and unsupported
   approval behavior in JSON audit output.
+- Optional fallback records use `issue_tracker_ops.fallback_record.v1alpha1`
+  and are written only when callers provide `--fallback-record-file`.
 - Missing or uncertain auth, policy, adapter behavior, or tracker state fails
   closed for writes.
 
@@ -81,10 +94,13 @@ config profile and onboarding control contract is specified in
   plain handoff promotion, and adapter-owned GitHub API mutation preflight.
 - The broader Issue Ops config profile and onboarding behavior are specified but
   not implemented in the bootstrap adapter.
-- No duplicate detection or idempotency key behavior yet.
-- No rollback or compensation beyond recording the failed or successful
-  operation.
-- No fallback reconciliation state yet.
+- Duplicate detection is exact-match bootstrap behavior, not semantic issue
+  similarity across PRD linkage, dependencies, Reflection Findings, or closed
+  issue history beyond the configured issue scope.
+- Idempotency keys are audit metadata; they do not create a durable server-side
+  idempotency store.
+- Compensation guidance is recorded for failed writes, but the adapter does not
+  perform automatic rollback or repair mutations.
 - No rate-limit backoff beyond surfacing `gh api` failure.
 - No redaction layer for body text in dry-run output.
 - No hook-enforced approval gate beyond explicit `--execute`.

@@ -64,6 +64,36 @@ Expected evidence:
 - dry-run JSON shows read-then-write steps for issue-number input;
 - execute JSON records the resolved blocking issue id and API result.
 
+### Avoid duplicate and idempotent tracker writes
+
+An agent repeats a closeout action after interruption. The adapter must check
+tracker state under live `--execute`, block exact duplicate issue titles and
+comment bodies by default, and return `idempotent_skip` for exact no-op updates
+or dependency changes.
+
+Expected evidence:
+
+- mutation dry-run JSON shows planned safety preflight reads without calling
+  `gh`;
+- execute JSON records duplicate decisions or idempotent skips before a write;
+- duplicate override requires an explicit reason.
+
+### Reconcile fallback after tracker failure
+
+A live tracker mutation fails after dry-run inspection and the caller explicitly
+requests a fallback record. The adapter must write a local fallback record with
+owner, retry condition, intended tracker target, reconciliation requirements,
+and compensation guidance. Later reconciliation must inspect tracker state
+before retry or retirement.
+
+Expected evidence:
+
+- failure JSON includes a failure class, retry condition, compensation guidance,
+  and fallback record path when requested;
+- `reconcile-fallback` reports whether the intended projection is present;
+- `--retire-record` changes only the supplied fallback record after projection
+  is verified.
+
 ## Full-delivery scenarios
 
 - Missing config starts interruptible onboarding, as specified in
@@ -84,10 +114,11 @@ Expected evidence:
   preview, migration apply, compatibility classification, and tracker operation
   plans.
 - Issue review recommends repairs without writing when policy is uncertain.
-- Duplicate-prone issue creation detects existing candidates and asks for a
+- Semantic duplicate detection considers related issues, dependencies, PRD
+  linkage, Reflection Findings, and out-of-scope records before asking for a
   disposition.
-- Fallback state records owner, retry condition, intended tracker target, and
-  reconciliation requirements when direct tracker recording is blocked.
+- Fallback compatibility supports richer local markdown workflows without
+  turning fallback state into a parallel tracker.
 - Issue selection distinguishes backlog placement, selected-for-development or
   to-do status, explicit priority, readiness labels, dependencies, and
   stakeholder overrides before recommending the next card.

@@ -27,10 +27,10 @@ adapter exposes that contract through read-only JSON commands before callers
 use tracker-specific commands.
 
 The bootstrap scope covers direct issue create, issue update, issue comment,
-label-axis audit, issue dependency operations, neutral core inspection, adapter
-capability inspection, and neutral operation planning for GitHub Issues without
-Projects. Full Issue Ops delivery remains tracked in issue #11 and child
-issues.
+label-axis audit, issue dependency operations, fallback-record reconciliation,
+neutral core inspection, adapter capability inspection, and neutral operation
+planning for GitHub Issues without Projects. Full Issue Ops delivery remains
+tracked in issue #11 and child issues.
 
 Inspection commands:
 
@@ -39,7 +39,12 @@ Inspection commands:
 - `plan-operation --adapter github-issues-baseline --operation <operation-id>`
 
 Runtime adapter commands use the local `gh` CLI as the authenticated transport
-and default write modes to dry-run output unless `--execute` is provided.
+and default write modes to dry-run output unless `--execute` is provided. Live
+mutation requires either usable Config authorization or
+`--mutation-policy-ref <ref>`. Mutation commands perform live preflight reads
+under `--execute` to block duplicate issue creation and comments, skip exact
+no-op issue updates, and skip already-applied or already-absent dependency
+changes.
 
 The adapter consumes explicit Agent Equipment Config sources when callers pass
 `--config-layer` or `--config-plain-handoff`. Config-aware dry-runs include the
@@ -49,6 +54,12 @@ consumer decision that supports execute mode, and
 `consumer_enforcement_projection.adapter_action = "allow"`; blocking,
 unsupported, malformed, or missing projection evidence fails closed before the
 adapter invokes `gh`.
+
+Fallback records use `issue_tracker_ops.fallback_record.v1alpha1`. The adapter
+writes a fallback record only when `--fallback-record-file <path>` is provided
+and a live mutation cannot be completed. `reconcile-fallback` checks the
+intended tracker target before retry or retirement, and `--retire-record`
+updates the local fallback record only after projection is verified.
 
 Durable layered configuration belongs to Agent Equipment Config. Issue Ops owns
 the Issue Ops namespace, plain handoff shape, and behavior-specific semantics
