@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -133,6 +134,17 @@ def duplicate_decision(args: Any, existing: dict) -> dict:
     return decision
 
 
+def status_code_present(text: str, code: int) -> bool:
+    code_text = str(code)
+    patterns = [
+        rf"\bhttp(?:/\d+(?:\.\d+)?)?\s+{code_text}\b",
+        rf"\bstatus(?:\s+code)?\D{{0,12}}{code_text}\b",
+        rf"\bresponse(?:\s+status)?\D{{0,12}}{code_text}\b",
+        rf'"(?:status|status_code)"\s*:\s*{code_text}\b',
+    ]
+    return any(re.search(pattern, text) for pattern in patterns)
+
+
 def classify_failure(returncode: int, stderr: str, stdout: str = "") -> dict:
     text = f"{stderr}\n{stdout}".casefold()
     failure_class = "unknown"
@@ -142,19 +154,25 @@ def classify_failure(returncode: int, stderr: str, stdout: str = "") -> dict:
     elif "secondary rate limit" in text:
         failure_class = "secondary-rate-limit"
         retryable = True
-    elif "rate limit" in text or "too many requests" in text or "429" in text:
+    elif "rate limit" in text or "too many requests" in text or status_code_present(text, 429):
         failure_class = "rate-limit"
         retryable = True
-    elif any(fragment in text for fragment in ("resource not accessible", "forbidden", "permission", "403")):
+    elif (
+        any(fragment in text for fragment in ("resource not accessible", "forbidden", "permission"))
+        or status_code_present(text, 403)
+    ):
         failure_class = "permission"
-    elif "not found" in text or "404" in text:
+    elif "not found" in text or status_code_present(text, 404):
         failure_class = "not-found"
-    elif "validation failed" in text or "unprocessable" in text or "422" in text:
+    elif "validation failed" in text or "unprocessable" in text or status_code_present(text, 422):
         failure_class = "validation"
-    elif "conflict" in text or "409" in text:
+    elif "conflict" in text or status_code_present(text, 409):
         failure_class = "conflict"
         retryable = True
-    elif any(fragment in text for fragment in ("timeout", "timed out", "502", "503", "504", "connection reset")):
+    elif (
+        any(fragment in text for fragment in ("timeout", "timed out", "connection reset"))
+        or any(status_code_present(text, code) for code in (502, 503, 504))
+    ):
         failure_class = "outage"
         retryable = True
     return {
@@ -203,7 +221,7 @@ def fallback_record(
         "operation": operation,
         "repo": repo,
         "mutation_policy": mutation_policy,
-        "idempotency_key": idempotency_key,
+        **({"idempotency_key": idempotency_key} if idempotency_key is not None else {}),
         "intended_tracker_target": {
             "repo": repo,
             "endpoint": request.get("endpoint"),

@@ -1184,7 +1184,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_common_flags(reconcile, mutation=False)
     reconcile.add_argument("--fallback-record-file", required=True)
     reconcile.add_argument("--retire-record", action="store_true")
-    reconcile.add_argument("--retirement-note")
+    reconcile.add_argument("--retirement-note", help="Note explaining why the fallback record is being retired.")
 
     subparsers.add_parser("describe-core", help="Describe the tracker-neutral Issue Tracker Ops core contract.")
 
@@ -1306,7 +1306,7 @@ def preflight_mutation(
                 config=config,
             )
         if issue_tracker_safety.issue_matches_update(existing_issue, body):
-            existing = issue_tracker_safety.summarize_issue(existing_issue) if isinstance(existing_issue, dict) else None
+            existing = issue_tracker_safety.summarize_issue(existing_issue)
             return 0, idempotent_skip_payload(
                 args,
                 request,

@@ -26,7 +26,7 @@ python3.14 tools/issue_tracker_ops.py comment --repo nisavid/agent-armory --issu
 python3.14 tools/issue_tracker_ops.py audit-labels --repo nisavid/agent-armory
 python3.14 tools/issue_tracker_ops.py add-blocked-by --repo nisavid/agent-armory --issue-number 10 --blocking-issue-number 11
 python3.14 tools/issue_tracker_ops.py comment --repo nisavid/agent-armory --issue-number 11 --body "Config-aware dry-run comment" --config-layer templates/config/agent-equipment-config-example.toml
-python3.14 tools/issue_tracker_ops.py reconcile-fallback --repo nisavid/agent-armory --fallback-record-file <fallback-record.json>
+python3.14 tools/issue_tracker_ops.py reconcile-fallback --repo nisavid/agent-armory --fallback-record-file fallback-record.json
 ```
 
 Run live validation only after dry-run output is inspected and the active session
