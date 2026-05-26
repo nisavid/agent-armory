@@ -66,8 +66,9 @@ policy model without making Config depend on Issue Tracker Ops.
   reviewed plan apply, onboarding, migration preview, and migration apply, plus
   implementation commands and deliberate edit-boundary reference.
 - MCP/tools: typed parity tools for `config.resolve`, `config.validate`,
-  `config.diff`, `onboard.config`, `migrate.config_preview`, and
-  `migrate.config_apply`. MCP authoring parity is deferred.
+  `config.diff`, `config.propose`, `config.patch`, `config.create_layer`,
+  `config.apply`, `onboard.config`, `migrate.config_preview`, and
+  `migrate.config_apply`.
 - Hooks, permissions, approvals, sandboxes, or tool gates: future enforcement
   projections for mutation-capable behavior.
 - Skills: future Smith and Wielder judgment around design, onboarding, and

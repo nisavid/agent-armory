@@ -270,10 +270,10 @@ target is a fluent CLI with MCP parity:
 | Resolve/read/explain/trace | `config resolve` | `config.resolve` |
 | Validate | `config validate` | `config.validate` |
 | Compare | `config diff` | `config.diff` |
-| Authoring proposal | `config propose` | Deferred authoring parity |
-| Authoring patch plan | `config patch` | Deferred authoring parity |
-| Authoring create-layer plan | `create-layer` | Deferred authoring parity |
-| Authoring apply | `config apply` | Deferred authoring parity |
+| Authoring proposal | `config propose` | `config.propose` |
+| Authoring patch plan | `config patch` | `config.patch` |
+| Authoring create-layer plan | `create-layer` | `config.create_layer` |
+| Authoring apply | `config apply` | `config.apply` |
 | Onboard/revise planning | `onboard config` | `onboard.config` |
 | Migration preview | `migrate config preview` | `migrate.config_preview` |
 | Migration apply | `migrate config apply` | `migrate.config_apply` |
@@ -283,9 +283,9 @@ remain available for implementation debugging and evidence comparison. MCP
 tool definitions live in [MCP tools](mcp-tools.md) and the importable runtime.
 Skills and docs route agents to CLI or MCP usage; they are not substitutes for
 those surfaces. Current CLI authoring operations produce reviewed plan artifacts
-and apply those artifacts through `config apply`. MCP authoring parity remains
-deferred and must preserve the reviewed plan artifact contract before exposing
-an MCP write surface.
+and apply those artifacts through `config apply`. MCP authoring parity preserves
+the reviewed plan artifact contract before exposing the `config.apply` write
+surface.
 
 ## Harness projections
 

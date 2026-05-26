@@ -4478,7 +4478,11 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(
             sorted(tools),
             [
+                "config.apply",
+                "config.create_layer",
                 "config.diff",
+                "config.patch",
+                "config.propose",
                 "config.resolve",
                 "config.validate",
                 "migrate.config_apply",
@@ -4510,6 +4514,23 @@ class AgentEquipmentConfigTests(unittest.TestCase):
             "per-call apply_authority",
         )
         self.assertIn("apply_authority", tools["migrate.config_apply"]["inputSchema"]["required"])
+        self.assertTrue(tools["config.propose"]["annotations"]["readOnlyHint"])
+        self.assertEqual(tools["config.propose"]["x-agent-armory"]["cli_operation"], "config propose")
+        self.assertEqual(tools["config.patch"]["x-agent-armory"]["read_write_classification"], "read-only policy decision")
+        self.assertTrue(tools["config.patch"]["annotations"]["readOnlyHint"])
+        self.assertEqual(tools["config.create_layer"]["x-agent-armory"]["cli_operation"], "create-layer")
+        self.assertTrue(tools["config.create_layer"]["annotations"]["readOnlyHint"])
+        self.assertFalse(tools["config.apply"]["annotations"]["readOnlyHint"])
+        self.assertTrue(tools["config.apply"]["annotations"]["destructiveHint"])
+        self.assertEqual(tools["config.apply"]["x-agent-armory"]["auth_source"], "per-call apply_authority")
+        self.assertEqual(
+            tools["config.apply"]["x-agent-armory"]["approval_requirements"],
+            ["explicit operator or host approval before mutation-capable call"],
+        )
+        self.assertEqual(tools["config.apply"]["x-agent-armory"]["side_effects"], ["eligible local TOML source rewrite"])
+        self.assertEqual(tools["config.apply"]["inputSchema"]["required"], ["plan", "apply_authority"])
+        self.assertNotIn("layer_paths", tools["config.apply"]["inputSchema"]["properties"])
+        self.assertIn("plan_schema", tools["config.apply"]["outputSchema"]["properties"]["result"]["properties"])
 
     def test_mcp_config_resolve_returns_structured_read_only_success(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -4611,6 +4632,64 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertIn("arguments.fragments must not contain duplicate item(s)", result["content"][0]["text"])
         self.assertIn("issue_tracker_ops", result["content"][0]["text"])
 
+    def test_mcp_rejects_nested_authoring_inputs_outside_published_schema(self):
+        unknown_change_field = agent_equipment_config.call_mcp_tool(
+            "config.propose",
+            {
+                "fragments": ["issue_tracker_ops"],
+                "changes": [
+                    {
+                        "path": "issue_tracker_ops.mode",
+                        "value": "execute",
+                        "source_target": "repo.toml",
+                    }
+                ],
+            },
+        )
+        malformed_plan = agent_equipment_config.call_mcp_tool(
+            "config.apply",
+            {
+                "plan": {"schema": "agent-armory.config.authoring-plan.v1"},
+                "apply_authority": "operator",
+            },
+        )
+        apply_with_authoring_inputs = agent_equipment_config.call_mcp_tool(
+            "config.apply",
+            {
+                "plan": {
+                    "schema": "agent-armory.config.authoring-plan.v1",
+                    "operation": "config patch",
+                    "plan_surface": "reviewed-plan",
+                    "plan_kind": "patch-layer",
+                    "source_target": "repo.toml",
+                    "source_category": "committed durable config",
+                    "source_identity": None,
+                    "precondition_fingerprint": "abc123",
+                    "change_payload": {},
+                    "authority_evidence": {},
+                    "validation_result": {},
+                    "virtual_post_change_effective_config": {},
+                    "audit_preview": {},
+                    "refusal_codes": [],
+                    "durability_classification": "durable project evidence",
+                },
+                "apply_authority": "operator",
+                "layer_paths": ["repo.toml"],
+                "fragments": ["issue_tracker_ops"],
+                "changes": [{"path": "issue_tracker_ops.mode", "value": "execute"}],
+            },
+        )
+
+        self.assertTrue(unknown_change_field["isError"])
+        self.assertIn("arguments.changes[0] contains unknown field(s): source_target", unknown_change_field["content"][0]["text"])
+        self.assertTrue(malformed_plan["isError"])
+        self.assertIn("arguments.plan.operation is required", malformed_plan["content"][0]["text"])
+        self.assertTrue(apply_with_authoring_inputs["isError"])
+        self.assertIn("unknown argument(s) for config.apply", apply_with_authoring_inputs["content"][0]["text"])
+        self.assertIn("changes", apply_with_authoring_inputs["content"][0]["text"])
+        self.assertIn("fragments", apply_with_authoring_inputs["content"][0]["text"])
+        self.assertIn("layer_paths", apply_with_authoring_inputs["content"][0]["text"])
+
     def test_mcp_validation_error_preserves_structured_output_contract(self):
         result = agent_equipment_config.call_mcp_tool(
             "config.resolve",
@@ -4698,6 +4777,351 @@ class AgentEquipmentConfigTests(unittest.TestCase):
         self.assertEqual(changes_by_path["issue_tracker_ops.external_disclosure"]["after"], "allowed")
         self.assertEqual(changes_by_path["issue_tracker_ops.mode"]["before"], "dry-run")
         self.assertEqual(changes_by_path["issue_tracker_ops.mode"]["after"], "execute")
+
+    def test_mcp_config_propose_returns_read_only_authoring_proposal(self):
+        result = agent_equipment_config.call_mcp_tool(
+            "config.propose",
+            {
+                "fragments": ["issue_tracker_ops"],
+                "changes": [
+                    {"path": "issue_tracker_ops.mode", "value": "execute"},
+                    {"path": "issue_tracker_ops.external_disclosure", "value": "allowed"},
+                ],
+                "rationale": "enable reviewed live tracker mutation",
+            },
+        )
+
+        self.assertFalse(result.get("isError", False))
+        self.assertEqual(result["structuredContent"]["tool"], "config.propose")
+        self.assertEqual(result["structuredContent"]["cli_operation"], "config propose")
+        self.assertEqual(result["structuredContent"]["read_write_classification"], "read-only")
+        payload = result["structuredContent"]["result"]
+        self.assertEqual(payload["operation"], "config propose")
+        self.assertEqual(payload["plan_surface"], "proposal")
+        self.assertIsNone(payload["source_target"])
+        self.assertEqual(payload["possible_target_categories"], ["committed durable config", "local-only operator config"])
+        self.assertEqual(payload["affected_fields"], ["issue_tracker_ops.mode", "issue_tracker_ops.external_disclosure"])
+        self.assertEqual(payload["refusal_codes"], [])
+        self.assertEqual(result["content"][0]["text"], "config.propose: candidates=1 refusals=0")
+
+    def test_mcp_config_patch_returns_read_only_patch_layer_plan(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            original_text = layer.read_text(encoding="utf-8")
+
+            result = agent_equipment_config.call_mcp_tool(
+                "config.patch",
+                {
+                    "layer_paths": [str(layer)],
+                    "source_target": str(layer),
+                    "fragments": ["issue_tracker_ops"],
+                    "changes": [
+                        {"path": "issue_tracker_ops.mode", "value": "execute"},
+                        {"path": "issue_tracker_ops.external_disclosure", "value": "allowed"},
+                    ],
+                    "plan_authority": "operator",
+                    "requested_behavior": "mutation",
+                    "rationale": "enable reviewed live tracker mutation",
+                },
+            )
+            rewritten_text = layer.read_text(encoding="utf-8")
+
+        self.assertEqual(rewritten_text, original_text)
+        self.assertFalse(result.get("isError", False))
+        self.assertEqual(result["structuredContent"]["tool"], "config.patch")
+        self.assertEqual(result["structuredContent"]["cli_operation"], "config patch")
+        self.assertEqual(result["structuredContent"]["read_write_classification"], "read-only policy decision")
+        payload = result["structuredContent"]["result"]
+        self.assertEqual(payload["schema"], "agent-armory.config.authoring-plan.v1")
+        self.assertEqual(payload["operation"], "config patch")
+        self.assertEqual(payload["plan_kind"], "patch-layer")
+        self.assertEqual(payload["source_target"], str(layer))
+        self.assertTrue(payload["validation_result"]["passed"])
+        self.assertEqual(payload["refusal_codes"], [])
+        self.assertFalse(payload["audit_preview"]["would_write"])
+
+    def test_mcp_config_create_layer_returns_read_only_create_layer_plan(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            destination = root / "agent-equipment.toml"
+
+            result = agent_equipment_config.call_mcp_tool(
+                "config.create_layer",
+                {
+                    "destination": str(destination),
+                    "layer_name": "repository policy",
+                    "source_category": "committed durable config",
+                    "fragments": ["issue_tracker_ops"],
+                    "changes": [
+                        {"path": "issue_tracker_ops.mode", "value": "dry-run"},
+                        {"path": "issue_tracker_ops.external_disclosure", "value": "blocked"},
+                    ],
+                    "plan_authority": "operator",
+                    "requested_behavior": "mutation",
+                    "rationale": "create reviewed tracker policy config",
+                },
+            )
+
+        self.assertFalse(destination.exists())
+        self.assertFalse(result.get("isError", False))
+        self.assertEqual(result["structuredContent"]["tool"], "config.create_layer")
+        self.assertEqual(result["structuredContent"]["cli_operation"], "create-layer")
+        self.assertEqual(result["structuredContent"]["read_write_classification"], "read-only policy decision")
+        payload = result["structuredContent"]["result"]
+        self.assertEqual(payload["schema"], "agent-armory.config.authoring-plan.v1")
+        self.assertEqual(payload["operation"], "create-layer")
+        self.assertEqual(payload["plan_kind"], "create-layer")
+        self.assertEqual(payload["source_target"], str(destination))
+        self.assertEqual(payload["precondition_fingerprint"], "absent")
+        self.assertTrue(payload["validation_result"]["passed"])
+        self.assertEqual(payload["refusal_codes"], [])
+        self.assertFalse(payload["audit_preview"]["would_write"])
+
+    def test_mcp_authoring_plan_generation_reports_refusals_without_writing(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            generated = self.write_layer(root, "generated.toml", """
+                [agent_equipment_config.layer]
+                name = "checkout-local state"
+                category = "generated cache or state"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            repo = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            generated_text = generated.read_text(encoding="utf-8")
+            repo_text = repo.read_text(encoding="utf-8")
+
+            ineligible = agent_equipment_config.call_mcp_tool(
+                "config.patch",
+                {
+                    "layer_paths": [str(generated)],
+                    "source_target": str(generated),
+                    "fragments": ["issue_tracker_ops"],
+                    "changes": [
+                        {"path": "issue_tracker_ops.mode", "value": "execute"},
+                        {"path": "issue_tracker_ops.external_disclosure", "value": "allowed"},
+                    ],
+                    "plan_authority": "operator",
+                },
+            )
+            missing_authority = agent_equipment_config.call_mcp_tool(
+                "config.patch",
+                {
+                    "layer_paths": [str(repo)],
+                    "source_target": str(repo),
+                    "fragments": ["issue_tracker_ops"],
+                    "changes": [
+                        {"path": "issue_tracker_ops.mode", "value": "execute"},
+                        {"path": "issue_tracker_ops.external_disclosure", "value": "allowed"},
+                    ],
+                },
+            )
+            unsafe = agent_equipment_config.call_mcp_tool(
+                "config.patch",
+                {
+                    "layer_paths": [str(repo)],
+                    "source_target": str(repo),
+                    "fragments": ["issue_tracker_ops"],
+                    "changes": [{"path": "issue_tracker_ops.mode", "value": "execute"}],
+                    "plan_authority": "operator",
+                },
+            )
+            secret = agent_equipment_config.call_mcp_tool(
+                "config.propose",
+                {
+                    "fragments": ["issue_tracker_ops"],
+                    "changes": [
+                        {
+                            "path": "issue_tracker_ops.github_token",
+                            "value": {"kind": "env", "name": "GH_TOKEN", "value": "raw-token"},
+                        }
+                    ],
+                },
+            )
+            generated_after = generated.read_text(encoding="utf-8")
+            repo_after = repo.read_text(encoding="utf-8")
+
+        self.assertEqual(generated_after, generated_text)
+        self.assertEqual(repo_after, repo_text)
+        self.assertEqual(ineligible["structuredContent"]["result"]["refusal_codes"], ["source_category_ineligible"])
+        self.assertEqual(missing_authority["structuredContent"]["result"]["refusal_codes"], ["missing_authority"])
+        self.assertIn("safety_status_blocking", unsafe["structuredContent"]["result"]["refusal_codes"])
+        secret_payload = secret["structuredContent"]["result"]
+        self.assertEqual(secret_payload["refusal_codes"], ["secret_boundary_violation"])
+        self.assertNotIn("GH_TOKEN", json.dumps(secret_payload))
+        self.assertNotIn("raw-token", json.dumps(secret_payload))
+
+    def test_mcp_config_apply_writes_reviewed_patch_plan_with_explicit_authority(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+
+            plan_result = agent_equipment_config.call_mcp_tool(
+                "config.patch",
+                {
+                    "layer_paths": [str(layer)],
+                    "source_target": str(layer),
+                    "fragments": ["issue_tracker_ops"],
+                    "changes": [
+                        {"path": "issue_tracker_ops.mode", "value": "execute"},
+                        {"path": "issue_tracker_ops.external_disclosure", "value": "allowed"},
+                    ],
+                    "plan_authority": "operator",
+                },
+            )
+            apply_result = agent_equipment_config.call_mcp_tool(
+                "config.apply",
+                {
+                    "plan": plan_result["structuredContent"]["result"],
+                    "apply_authority": "operator",
+                },
+            )
+            rewritten_text = layer.read_text(encoding="utf-8")
+
+        self.assertFalse(apply_result.get("isError", False))
+        self.assertEqual(apply_result["structuredContent"]["tool"], "config.apply")
+        self.assertEqual(apply_result["structuredContent"]["cli_operation"], "config apply")
+        self.assertEqual(apply_result["structuredContent"]["read_write_classification"], "local write")
+        payload = apply_result["structuredContent"]["result"]
+        self.assertEqual(payload["operation"], "config apply")
+        self.assertEqual(payload["plan_schema"], "agent-armory.config.authoring-plan.v1")
+        self.assertEqual(payload["plan_kind"], "patch-layer")
+        self.assertTrue(payload["applied"])
+        self.assertEqual(payload["result"], "applied")
+        self.assertEqual(payload["refusal_codes"], [])
+        self.assertEqual(payload["audit_records"][-1]["action"], "config authoring apply mutation")
+        self.assertIn('mode = "execute"', rewritten_text)
+        self.assertIn('external_disclosure = "allowed"', rewritten_text)
+        self.assertEqual(apply_result["content"][0]["text"], "config.apply: result=applied applied=True refusals=0")
+
+    def test_mcp_config_apply_refuses_invalid_authority_and_stale_precondition(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            layer = self.write_layer(root, "repo.toml", """
+                [agent_equipment_config.layer]
+                name = "repository policy"
+                category = "committed durable config"
+
+                [issue_tracker_ops]
+                mode = "dry-run"
+                external_disclosure = "blocked"
+            """)
+            plan_result = agent_equipment_config.call_mcp_tool(
+                "config.patch",
+                {
+                    "layer_paths": [str(layer)],
+                    "source_target": str(layer),
+                    "fragments": ["issue_tracker_ops"],
+                    "changes": [
+                        {"path": "issue_tracker_ops.mode", "value": "execute"},
+                        {"path": "issue_tracker_ops.external_disclosure", "value": "allowed"},
+                    ],
+                    "plan_authority": "operator",
+                },
+            )
+            invalid_authority = agent_equipment_config.call_mcp_tool(
+                "config.apply",
+                {
+                    "plan": plan_result["structuredContent"]["result"],
+                    "apply_authority": "configured",
+                },
+            )
+            layer.write_text(
+                textwrap.dedent(
+                    """
+                    [agent_equipment_config.layer]
+                    name = "repository policy"
+                    category = "committed durable config"
+
+                    [issue_tracker_ops]
+                    mode = "dry-run"
+                    external_disclosure = "allowed"
+                    """
+                ).lstrip(),
+                encoding="utf-8",
+            )
+            stale = agent_equipment_config.call_mcp_tool(
+                "config.apply",
+                {
+                    "plan": plan_result["structuredContent"]["result"],
+                    "apply_authority": "operator",
+                },
+            )
+            rewritten_text = layer.read_text(encoding="utf-8")
+
+        self.assertTrue(invalid_authority["isError"])
+        self.assertIn("arguments.apply_authority must be one of", invalid_authority["content"][0]["text"])
+        stale_payload = stale["structuredContent"]["result"]
+        self.assertFalse(stale_payload["applied"])
+        self.assertIn("source_changed", stale_payload["refusal_codes"])
+        self.assertNotIn('mode = "execute"', rewritten_text)
+
+    def test_mcp_config_apply_writes_reviewed_create_layer_plan_with_explicit_authority(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            destination = root / "agent-equipment.toml"
+
+            plan_result = agent_equipment_config.call_mcp_tool(
+                "config.create_layer",
+                {
+                    "destination": str(destination),
+                    "layer_name": "repository policy",
+                    "source_category": "committed durable config",
+                    "fragments": ["issue_tracker_ops"],
+                    "changes": [
+                        {"path": "issue_tracker_ops.mode", "value": "dry-run"},
+                        {"path": "issue_tracker_ops.external_disclosure", "value": "blocked"},
+                    ],
+                    "plan_authority": "operator",
+                },
+            )
+            apply_result = agent_equipment_config.call_mcp_tool(
+                "config.apply",
+                {
+                    "plan": plan_result["structuredContent"]["result"],
+                    "apply_authority": "operator",
+                },
+            )
+            created_text = destination.read_text(encoding="utf-8")
+
+        self.assertFalse(apply_result.get("isError", False))
+        payload = apply_result["structuredContent"]["result"]
+        self.assertEqual(payload["plan_schema"], "agent-armory.config.authoring-plan.v1")
+        self.assertEqual(payload["plan_kind"], "create-layer")
+        self.assertTrue(payload["applied"])
+        self.assertEqual(payload["result"], "applied")
+        self.assertEqual(payload["refusal_codes"], [])
+        self.assertIn('name = "repository policy"', created_text)
+        self.assertIn('category = "committed durable config"', created_text)
+        self.assertIn('mode = "dry-run"', created_text)
+        self.assertIn('external_disclosure = "blocked"', created_text)
 
     def test_mcp_onboard_config_returns_missing_shared_config_plan(self):
         result = agent_equipment_config.call_mcp_tool(
