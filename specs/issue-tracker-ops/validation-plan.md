@@ -18,10 +18,12 @@ Run dry-run adapter smokes:
 
 ```sh
 python3.14 tools/issue_tracker_ops.py describe-core
+python3.14 tools/issue_tracker_ops.py describe-workflows
 python3.14 tools/issue_tracker_ops.py describe-adapter --adapter github-issues-baseline
 python3.14 tools/issue_tracker_ops.py plan-operation --adapter github-issues-baseline --operation issue.create
 python3.14 tools/issue_tracker_ops.py plan-operation --adapter github-issues-baseline --operation issue.read
 python3.14 tools/issue_tracker_ops.py plan-operation --adapter github-issues-baseline --operation subissue.add
+python3.14 tools/issue_tracker_ops.py plan-workflow --adapter github-issues-baseline --workflow issue.review
 python3.14 tools/issue_tracker_ops.py read-issue --repo nisavid/agent-armory --issue-number 15
 python3.14 tools/issue_tracker_ops.py list-issues --repo nisavid/agent-armory --issue-state open --label ready-for-agent --paginate
 python3.14 tools/issue_tracker_ops.py create-issue --repo nisavid/agent-armory --title "Dry-run issue" --body "Dry-run body" --label ready-for-agent
@@ -72,6 +74,9 @@ paths.
   records through native sub-issue list reads.
 - Confirm failed live mutation can produce an explicit fallback record with
   retry condition and compensation guidance when requested.
+- Confirm `skills/issue-ops-workflow-executor/SKILL.md` and
+  `agents/issue-ops-workflow-executor/profile.toml` deny direct tracker
+  mutation and route accepted writes through deterministic Issue Ops gates.
 
 ## Documentation validation
 
@@ -86,9 +91,10 @@ paths.
 
 Full closure of issue #11 needs additional validation for onboarding, Issue Ops
 config profile fields, configuration layering, policy conflicts, issue
-selection, issue repair, fallback compatibility beyond bootstrap records,
-permission failure, rate limiting, semantic duplicate detection, subtask
-handling, and cross-issue orchestration.
+selection, fallback compatibility beyond bootstrap records, permission failure,
+rate limiting, semantic duplicate scoring, subtask handling, MCP parity, and
+deterministic engines for issue-set orchestration beyond the advisory
+skill/profile boundary.
 
 Issue #13 validation specifically requires
 [Config profile and onboarding](config-profile-and-onboarding.md), validator

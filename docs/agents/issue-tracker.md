@@ -114,6 +114,15 @@ commands are read-only planning surfaces: they do not call `gh`, do not require
 plan still need to be converted into deterministic Issue Ops operations and
 run through the adapter's dry-run and write gates.
 
+Use `skills/issue-ops-workflow-executor/SKILL.md` when an agent needs to apply
+one of those advisory workflow plans. The skill requires the agent to consume
+`describe-workflows` and `plan-workflow`, gather the workflow's required
+context, emit the workflow's configured output sections, and keep candidate
+writes as deterministic Issue Ops operation plans or dry-run command shapes.
+Use `agents/issue-ops-workflow-executor/profile.toml` for a bounded advisory
+worker shape that defaults to `github-issues-baseline`, allows read-only
+workflow planning, and denies direct tracker mutation.
+
 ## Triage Comments And Records
 
 Every comment or issue posted to the issue tracker during triage must start
