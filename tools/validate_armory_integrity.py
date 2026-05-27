@@ -901,6 +901,11 @@ ISSUE_OPS_WORKFLOW_EXECUTOR_REQUIRED_SKILL_TEXT = [
     "direct GitHub MCP writes",
     "Issue Ops dry-run/write gates",
 ]
+ISSUE_OPS_WORKFLOW_EXECUTOR_ALLOWED_TOOLS = [
+    "describe-workflows",
+    "plan-workflow",
+    "read/context gathering",
+]
 ISSUE_OPS_WORKFLOW_EXECUTOR_REQUIRED_DENIES = [
     "direct tracker mutation",
     "direct gh writes",
@@ -4990,7 +4995,7 @@ def validate_issue_ops_workflow_executor(root: Path) -> list[CheckResult]:
         if not isinstance(allow, list):
             allow = []
         allow_strings = [item for item in allow if isinstance(item, str)]
-        for required_allow in ("describe-workflows", "plan-workflow"):
+        for required_allow in ISSUE_OPS_WORKFLOW_EXECUTOR_ALLOWED_TOOLS:
             if required_allow not in allow_strings:
                 results.append(
                     CheckResult(
@@ -5000,6 +5005,18 @@ def validate_issue_ops_workflow_executor(root: Path) -> list[CheckResult]:
                         ISSUE_OPS_WORKFLOW_EXECUTOR_PROFILE_PATH,
                     )
                 )
+        unexpected_allow = sorted(
+            item for item in set(allow_strings) if item not in ISSUE_OPS_WORKFLOW_EXECUTOR_ALLOWED_TOOLS
+        )
+        if unexpected_allow:
+            results.append(
+                CheckResult(
+                    "issue_ops_workflow_executor:profile:allow:unexpected",
+                    False,
+                    f"unexpected allow entries: {', '.join(unexpected_allow)}",
+                    ISSUE_OPS_WORKFLOW_EXECUTOR_PROFILE_PATH,
+                )
+            )
 
         deny = tools.get("deny")
         if not isinstance(deny, list):

@@ -9014,6 +9014,28 @@ class IssueOpsWorkflowExecutorValidationTests(unittest.TestCase):
             results,
         )
 
+    def test_validate_issue_ops_workflow_executor_rejects_unexpected_profile_allow_entries(self):
+        profile_with_extra_allow = self.valid_profile().replace(
+            '"read/context gathering"]',
+            '"read/context gathering", "tracker write bypass"]',
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_file(root, self.skill_path, self.valid_skill())
+            self.write_file(root, self.profile_path, profile_with_extra_allow)
+
+            results = self.executor_results(run(root))
+
+        self.assertIn(
+            CheckResult(
+                "issue_ops_workflow_executor:profile:allow:unexpected",
+                False,
+                "unexpected allow entries: tracker write bypass",
+                "agents/issue-ops-workflow-executor/profile.toml",
+            ),
+            results,
+        )
+
     def test_validate_issue_ops_workflow_executor_requires_frontmatter_name(self):
         skill_without_frontmatter_name = self.valid_skill().replace(
             "name: issue-ops-workflow-executor",
