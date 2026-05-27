@@ -203,6 +203,13 @@ Result statuses are first-class values:
 - `timeout`
 - `flaky`
 
+`flaky` is emitted only when a Jig Test Plan declares a repeat policy and the
+same scenario, fixture hash, driver version, and target version produce mixed
+terminal outcomes across attempts. A single failed or timed-out attempt remains
+`fail`, `timeout`, `infra_error`, or the more specific status that caused it.
+`flaky` records per-attempt statuses, attempt count, repeat policy, and the
+identity hashes that justify treating the attempts as the same scenario.
+
 Each result records scenario identity, selected jig and driver, environment,
 target, steps, captured outputs, assertions, attempted external effects,
 resource usage, model or prompt metadata where applicable, and recommended
