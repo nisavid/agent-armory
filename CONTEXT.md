@@ -57,6 +57,12 @@ _Avoid_: using Agent Ops as the name of the repository-operations equipment line
 A reusable harness configuration for identity, mission, prompt, tools, model, permissions, and related behavior.
 _Avoid_: Agent when referring to the reusable declaration
 
+**Agent Test Jig**:
+A controlled Capability Surface where an Agent Harness, Agent Equipment,
+Loadout, or interaction can be installed, exercised, observed, and evaluated.
+_Avoid_: Agent Harness, Harness Test Suite, Standard Clean-Room Profiling Jig
+when the referent is not the harness runtime or the profiling-jig ideal
+
 **Agent-Operated Repository**:
 A repository where agents drive assigned execution after a human operator initiates or continues the work session.
 _Avoid_: fully autonomous repository, human-absent governance
@@ -97,6 +103,12 @@ Core when the surface is a process contract rather than Agent Equipment
 **Assembly**:
 A cohesive grouping of equipment designed to work together.
 _Avoid_: unintegrated collection
+
+**Assertion Provider**:
+An Agent Test Jig component that evaluates an expected condition against
+observed evidence and returns a structured assertion result.
+_Avoid_: Learned Oracle when the provider is deterministic; test runner when
+the provider only evaluates one condition
 
 **Blueprint**:
 A positive construction spec for something to be built.
@@ -410,6 +422,11 @@ _Avoid_: casual web lookup, stale handoff copy
 A portable collection of Harness Components.
 _Avoid_: plugin when referring to an individual skill, hook, or profile
 
+**Harness Test Suite**:
+A set of Agent Test Jig plans used to validate Capability Surface claims for
+one or more Agent Harnesses.
+_Avoid_: Agent Test Jig, Capability Profiling Protocol, generic test suite
+
 **Head Gear**:
 The planned name for the Armory's generic Cognition Enhancement Equipment for
 translating underspecified but realizable operator intent into high-quality
@@ -509,10 +526,32 @@ classifies controls as claimed, verified, unsupported, or unknown and records
 how those controls affect selected rigor.
 _Avoid_: assuming a clean-room jig is fully adequate without control evidence
 
+**Jig Driver**:
+The registered backend for an Agent Test Jig that owns environment lifecycle,
+effect controls, execution, observation, capture, and teardown.
+_Avoid_: Jig Runner, Agent Harness
+
+**Jig Runner**:
+The orchestrator that loads Agent Test Jig plans, selects a Jig Driver,
+executes scenarios, invokes Assertion Providers, and emits structured results.
+_Avoid_: Jig Driver, Assertion Provider
+
+**Jig Test Plan**:
+A machine-readable plan that tells a Jig Runner what target to exercise, which
+driver constraints apply, which scenarios run, and which assertions evaluate
+the observed result.
+_Avoid_: Study Plan when the artifact is executable jig input rather than
+Capability Profiling Protocol planning evidence
+
 **Layer Precedence**:
 The normal Agent Equipment Config merge order that decides which configuration
 value would win when no policy lock blocks it.
 _Avoid_: policy authority, when the point is the value merge order
+
+**Learned Oracle**:
+An inference-backed Assertion Provider whose structured result can be pass,
+fail, inconclusive, disagreement, or oracle error.
+_Avoid_: deterministic assertion, final arbiter, truth source
 
 **Loadout**:
 The selected equipment set for a role, task, session, Agent, or agentic system.
@@ -800,6 +839,12 @@ _Avoid_: Outfitter, Loadout, Agent Profile
   authority should be named explicitly when the distinction matters.
 - A **Harness Plugin** packages one or more **Harness Components**.
 - An **Agent Profile** configures a reusable kind of **Agent** but is not the running **Agent**.
+- An **Agent Test Jig** uses a **Jig Runner** and **Jig Driver** to execute a
+  **Jig Test Plan**; a **Harness Test Suite** groups plans for Harness
+  Capability claims.
+- **Assertion Providers** evaluate observed evidence. **Learned Oracles** are
+  inference-backed Assertion Providers and do not replace deterministic
+  assertions when deterministic checks can decide the condition.
 - A **Source Handoff** can inform **Forge Canon**, but it is not itself the live Forge surface.
 - The **Forge Seed** specifies future **Agent Equipment** but does not implement that downstream equipment.
 - **Seed Validation** checks the completed **Forge Seed**; live repository
@@ -911,6 +956,9 @@ _Avoid_: Outfitter, Loadout, Agent Profile
   Report** for observed outcomes after execution.
 - Use **Jig Adequacy Report** when the target under study is the control
   adequacy of a clean-room profiling jig.
+- Use **Agent Test Jig** for the controlled test mechanism, **Jig Runner** for
+  orchestration, **Jig Driver** for the environment backend, and **Harness Test
+  Suite** for a grouped set of jig plans validating Harness Capability claims.
 - Use **Issue Tracker Ops** for broad issue lifecycle equipment; use **Issue
   Projection** only for post-review PRD publication into the issue tracker.
 - Use **Issue Ops** as shorthand only after the full Issue Tracker Ops name is
