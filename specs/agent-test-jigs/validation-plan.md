@@ -53,7 +53,11 @@ Runner tests should verify public CLI behavior through real fixture plans:
 - driver setup or cleanup failure emits `infra_error` or `sandbox_error`;
 - blocked network attempt is represented as an attempted external effect;
 - missing local inference service does not collapse learned assertions to pass;
-- disagreement remains a structured status with all oracle evidence.
+- disagreement remains a structured status with all oracle evidence;
+- declared repeat with mixed terminal outcomes emits `flaky` and records
+  per-attempt status history;
+- a single failed or timed-out attempt without a declared repeat policy does
+  not emit `flaky`.
 
 ## Later Codex disagreement workflow validation
 

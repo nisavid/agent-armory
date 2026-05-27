@@ -122,6 +122,24 @@ Expected behavior:
 - The scenario returns `fixture_error` or `infra_error`.
 - Cleanup evidence tells the next agent whether manual recovery is needed.
 
+## Declared repeat detects nondeterminism
+
+Scenario:
+
+A Jig Test Plan declares a repeat policy for the same deterministic scenario.
+The same fixture hash, driver version, and target version produce both passing
+and failing attempts across the allowed repeats.
+
+Expected behavior:
+
+- The runner emits `flaky`.
+- The result records the repeat policy, attempt count, per-attempt statuses,
+  and identity hashes used to compare attempts.
+- A single failed attempt without a declared repeat policy remains `fail`,
+  `timeout`, or the more specific status that caused it.
+- The result is not promoted as stable capability evidence without reviewed
+  rationale.
+
 ## Review cognitive load
 
 Scenario:

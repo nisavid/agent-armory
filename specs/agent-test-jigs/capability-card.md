@@ -121,6 +121,8 @@ adjudication handoffs.
 - Learned Oracle disagreement: return `disagreement` for Codex adjudication.
 - Codex adjudicator timeout, startup failure, or service failure: return
   `adjudicator_error` without losing the original disagreement evidence.
+- Declared repeat with mixed terminal outcomes for the same scenario identity:
+  return `flaky` with per-attempt status history.
 - Cleanup failure: record residue and prevent a clean result status.
 
 ## Evidence
