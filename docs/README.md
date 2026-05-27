@@ -21,8 +21,9 @@ and Agent Equipment Config has its first published runtime slice.
   what exists now, how equipment is made, and what is planned.
 - **Procuring equipment**: check the current inventory note in the
   [Forge Tour](forge-tour.md), then review
-  [equipment promotion](equipment-promotion.md) to see what must be true before
-  equipment is ready to use.
+  [equipment promotion](equipment-promotion.md) and
+  [Published Equipment Delivery](equipment-delivery.md) to see what must be
+  true before equipment is ready to use.
 - **Commissioning new equipment**: have a smith start with the
   [Armory Vision](vision.md), [smith runbook](smith-runbook.md),
   [interface decision guide](interface-decision-guide.md), and
@@ -64,6 +65,9 @@ agent equipment.
   place for each equipment responsibility.
 - [Equipment promotion](equipment-promotion.md): see how close an example,
   blueprint, or candidate is to being ready for inventory.
+- [Published Equipment Delivery](equipment-delivery.md): use when a stockable
+  release needs a shop card, stock record, component manifest, and delivery
+  compliance status.
 - [Work closeout](story-closeout.md): use when an agent needs to finish work
   cleanly, with checks, safeguards, docs, and review aligned.
 
@@ -86,6 +90,8 @@ agent equipment.
   Config.
 - [Config integration guide](equipment/agent-equipment-config-integration.md):
   how Smiths, Wielders, and Outfitters connect equipment to shared Config.
+- [Published Equipment Delivery](equipment-delivery.md): stock inventory and
+  shop-card standard for delivery-compliant equipment claims.
 
 ## Explanation
 

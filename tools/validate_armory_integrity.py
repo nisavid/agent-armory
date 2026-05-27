@@ -119,6 +119,11 @@ VALIDATION_INVENTORY = [
         "relationship": "Equipment-candidate shape validation for Forge templates, not equipment-specific behavior validation.",
     },
     {
+        "check": "published_equipment_delivery",
+        "boundary": "armory_integrity",
+        "relationship": "Top-level stock inventory and Equipment Shop Card standard validation for published equipment delivery claims.",
+    },
+    {
         "check": "examples",
         "boundary": "equipment_candidate_shape",
         "relationship": "Equipment-candidate shape validation for Forge examples, not equipment-specific behavior validation.",
@@ -719,6 +724,15 @@ CANONICAL_DOC_REQUIRED_SECTIONS = {
         "published",
         "entry/exit criteria",
     ],
+    "docs/equipment-delivery.md": [
+        "Purpose",
+        "Authority",
+        "Equipment Shop Cards",
+        "Stock Inventory Records",
+        "Component Manifests",
+        "Delivery Compliance",
+        "Validation",
+    ],
     "docs/story-closeout.md": [
         "Purpose",
         "Gate order",
@@ -915,6 +929,7 @@ REQUIRED_HARNESSES = [
 ]
 TEMPLATE_REQUIRED_PATHS = [
     "templates/capability-card.md",
+    "templates/equipment-shop-card.md",
     "templates/interface-decision-record.md",
     "templates/skill/README.md",
     "templates/skill/SKILL.md",
@@ -932,6 +947,7 @@ TEMPLATE_REQUIRED_PATHS = [
     "templates/config/example.toml",
     "templates/security-review.md",
     "templates/context-budget-review.md",
+    "templates/equipment-stock-record.toml",
 ]
 EXAMPLE_DIRECTORIES = [
     "examples/pr-review",
@@ -989,6 +1005,39 @@ ISSUE_OPS_WORKFLOW_EXECUTOR_REQUIRED_APPROVALS = [
     "tracker mutation",
     "user-global policy mutation",
 ]
+PUBLISHED_EQUIPMENT_DELIVERY_DOC_PATH = "docs/equipment-delivery.md"
+PUBLISHED_EQUIPMENT_INVENTORY_PATH = "inventory/equipment.toml"
+PUBLISHED_EQUIPMENT_INVENTORY_SCHEMA_VERSION = "agent-armory.equipment-stock.v1"
+PUBLISHED_EQUIPMENT_SHOP_CARD_DIR = "docs/equipment/shop-cards"
+PUBLISHED_EQUIPMENT_PROMOTION_STATES = {
+    "example",
+    "specified",
+    "planned",
+    "implemented",
+    "validated",
+    "published",
+}
+PUBLISHED_EQUIPMENT_DELIVERY_COMPLIANCE_STATUSES = {
+    "not_evaluated",
+    "pending",
+    "passed",
+    "blocked",
+}
+PUBLISHED_EQUIPMENT_COMPONENT_STATUSES = {
+    "required",
+    "optional",
+    "planned",
+    "unavailable",
+}
+PUBLISHED_EQUIPMENT_REQUIRED_FIELDS = (
+    "id",
+    "name",
+    "summary",
+    "promotion_state",
+    "delivery_compliance",
+    "shop_card",
+)
+PUBLISHED_EQUIPMENT_COMPONENT_REQUIRED_FIELDS = ("name", "kind", "status", "paths")
 EXISTING_EQUIPMENT_ONBOARDING_PRD_PATH = "docs/prd/existing-equipment-onboarding.md"
 ISSUE_TRACKER_OPS_CONFIG_PROFILE_REQUIRED_SECTIONS = [
     "Purpose",
@@ -1187,6 +1236,7 @@ FORBIDDEN_EXAMPLE_CLAIMS = [
 FORBIDDEN_SPEC_CLAIMS = FORBIDDEN_EXAMPLE_CLAIMS
 ROOT_TEMPLATE_FILES = [
     "templates/capability-card.md",
+    "templates/equipment-shop-card.md",
     "templates/interface-decision-record.md",
     "templates/security-review.md",
     "templates/context-budget-review.md",
@@ -1207,6 +1257,15 @@ ROOT_TEMPLATE_REQUIRED_SECTIONS = {
         "Failure modes",
         "Evidence",
         "Open questions",
+    ],
+    "templates/equipment-shop-card.md": [
+        "Fit",
+        "What is stocked",
+        "Gear-up paths",
+        "Component manifest",
+        "Delivery status",
+        "Inspection and evidence",
+        "Support and lifecycle",
     ],
     "templates/interface-decision-record.md": [
         "Requirement",
@@ -1332,6 +1391,7 @@ MCP_TOOL_REQUIRED_SECTIONS = [
     "Failure modes",
 ]
 CONFIG_TEMPLATE_PATH = "templates/config/example.toml"
+EQUIPMENT_STOCK_RECORD_TEMPLATE_PATH = "templates/equipment-stock-record.toml"
 CONFIG_REQUIRED_FIELDS = {
     "ownership": ("ownership",),
     "autonomy": ("autonomy",),
@@ -1339,6 +1399,10 @@ CONFIG_REQUIRED_FIELDS = {
     "enabled_default": ("enabled", "default"),
     "review": ("review",),
     "approval": ("approval",),
+}
+EQUIPMENT_STOCK_RECORD_REQUIRED_FIELDS = {
+    "schema_version": ("schema_version",),
+    "equipment": ("equipment",),
 }
 TOML_REQUIRED_TABLES = {
     AGENT_PROFILE_TEMPLATE_PATH: {
@@ -2073,6 +2137,7 @@ CANONICAL_DOC_STATUSES = {
     "docs/evidence-taxonomy.md": "Forge Canon",
     "docs/security-and-control.md": "Forge Canon",
     "docs/equipment-promotion.md": "Forge Canon",
+    "docs/equipment-delivery.md": "Forge Canon",
     "docs/story-closeout.md": "Armory Operating Contract",
 }
 
@@ -4805,6 +4870,223 @@ def validate_script_template(root: Path) -> list[CheckResult]:
     return results
 
 
+def validate_published_equipment_delivery(root: Path) -> list[CheckResult]:
+    ok, detail, path = repo_relative_path_status(root, PUBLISHED_EQUIPMENT_INVENTORY_PATH, "file")
+    if not ok:
+        if detail == "path contains symlink":
+            detail = "stock inventory path contains symlink"
+        return [CheckResult("published_equipment_delivery:inventory:path", False, detail, PUBLISHED_EQUIPMENT_INVENTORY_PATH)]
+    try:
+        data = load_toml(path)
+    except tomllib.TOMLDecodeError as error:
+        return [
+            CheckResult(
+                "published_equipment_delivery:inventory:toml",
+                False,
+                f"TOML invalid: {error.msg}",
+                PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+            )
+        ]
+    schema_version = data.get("schema_version")
+    if schema_version != PUBLISHED_EQUIPMENT_INVENTORY_SCHEMA_VERSION:
+        return [
+            CheckResult(
+                "published_equipment_delivery:inventory:schema_version",
+                False,
+                f"schema_version must be {PUBLISHED_EQUIPMENT_INVENTORY_SCHEMA_VERSION}",
+                PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+            )
+        ]
+    results: list[CheckResult] = []
+    equipment_records = data.get("equipment", [])
+    if not isinstance(equipment_records, list):
+        return [
+            CheckResult(
+                "published_equipment_delivery:equipment",
+                False,
+                "equipment must be a list",
+                PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+            )
+        ]
+    for index, record in enumerate(equipment_records, start=1):
+        if not isinstance(record, dict):
+            results.append(
+                CheckResult(
+                    f"published_equipment_delivery:equipment:{index}",
+                    False,
+                    "equipment record must be a table",
+                    PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+                )
+            )
+            continue
+        equipment_id = record.get("id") if isinstance(record.get("id"), str) and record.get("id").strip() else str(index)
+        for field in PUBLISHED_EQUIPMENT_REQUIRED_FIELDS:
+            value = record.get(field)
+            if not isinstance(value, str) or not value.strip():
+                results.append(
+                    CheckResult(
+                        f"published_equipment_delivery:equipment:{equipment_id}:{field}",
+                        False,
+                        f"missing {field}",
+                        PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+                    )
+                )
+        promotion_state = record.get("promotion_state")
+        delivery_compliance = record.get("delivery_compliance")
+        if promotion_state not in PUBLISHED_EQUIPMENT_PROMOTION_STATES:
+            results.append(
+                CheckResult(
+                    f"published_equipment_delivery:equipment:{equipment_id}:promotion_state",
+                    False,
+                    "promotion_state must be a known equipment promotion state",
+                    PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+                )
+            )
+        if delivery_compliance not in PUBLISHED_EQUIPMENT_DELIVERY_COMPLIANCE_STATUSES:
+            results.append(
+                CheckResult(
+                    f"published_equipment_delivery:equipment:{equipment_id}:delivery_compliance",
+                    False,
+                    "delivery_compliance must be not_evaluated, pending, passed, or blocked",
+                    PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+                )
+            )
+        elif delivery_compliance == "passed" and promotion_state != "published":
+            results.append(
+                CheckResult(
+                    f"published_equipment_delivery:equipment:{equipment_id}:delivery_compliance",
+                    False,
+                    "delivery_compliance passed requires promotion_state published",
+                    PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+                )
+            )
+        shop_card = record.get("shop_card")
+        if not (
+            isinstance(shop_card, str)
+            and shop_card.startswith(f"{PUBLISHED_EQUIPMENT_SHOP_CARD_DIR}/")
+            and shop_card.endswith(".md")
+        ):
+            results.append(
+                CheckResult(
+                    f"published_equipment_delivery:equipment:{equipment_id}:shop_card",
+                    False,
+                    "shop_card must be a Markdown file under docs/equipment/shop-cards/",
+                    PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+                )
+            )
+        else:
+            card_ok, card_detail, _card_path = repo_relative_path_status(root, shop_card, "file")
+            if not card_ok:
+                results.append(
+                    CheckResult(
+                        f"published_equipment_delivery:equipment:{equipment_id}:shop_card",
+                        False,
+                        card_detail,
+                        shop_card,
+                    )
+                )
+        components = record.get("components", [])
+        if not isinstance(components, list):
+            results.append(
+                CheckResult(
+                    f"published_equipment_delivery:equipment:{equipment_id}:components",
+                    False,
+                    "components must be a list",
+                    PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+                )
+            )
+            continue
+        for component_index, component in enumerate(components, start=1):
+            if not isinstance(component, dict):
+                results.append(
+                    CheckResult(
+                        f"published_equipment_delivery:equipment:{equipment_id}:component:{component_index}",
+                        False,
+                        "component must be a table",
+                        PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+                    )
+                )
+                continue
+            component_name = (
+                component.get("name")
+                if isinstance(component.get("name"), str) and component.get("name").strip()
+                else str(component_index)
+            )
+            for field in PUBLISHED_EQUIPMENT_COMPONENT_REQUIRED_FIELDS:
+                value = component.get(field)
+                valid = isinstance(value, list) if field == "paths" else isinstance(value, str) and value.strip()
+                if not valid:
+                    results.append(
+                        CheckResult(
+                            f"published_equipment_delivery:equipment:{equipment_id}:component:{component_name}:{field}",
+                            False,
+                            f"missing {field}",
+                            PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+                        )
+                    )
+            status = component.get("status")
+            if status not in PUBLISHED_EQUIPMENT_COMPONENT_STATUSES:
+                results.append(
+                    CheckResult(
+                        f"published_equipment_delivery:equipment:{equipment_id}:component:{component_name}:status",
+                        False,
+                        "component status must be required, optional, planned, or unavailable",
+                        PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+                    )
+                )
+            paths = component.get("paths", [])
+            if not isinstance(paths, list) or not all(isinstance(item, str) for item in paths):
+                results.append(
+                    CheckResult(
+                        f"published_equipment_delivery:equipment:{equipment_id}:component:{component_name}:paths",
+                        False,
+                        "component paths must be a list of strings",
+                        PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+                    )
+                )
+                continue
+            if status == "required" and not paths:
+                results.append(
+                    CheckResult(
+                        f"published_equipment_delivery:equipment:{equipment_id}:component:{component_name}:paths",
+                        False,
+                        "required components must list at least one inspectable repo path",
+                        PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+                    )
+                )
+            notes = component.get("notes")
+            if status in {"planned", "unavailable"} and not (isinstance(notes, str) and notes.strip()):
+                results.append(
+                    CheckResult(
+                        f"published_equipment_delivery:equipment:{equipment_id}:component:{component_name}:notes",
+                        False,
+                        "planned and unavailable components must explain their status in notes",
+                        PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+                    )
+                )
+            for component_path in paths:
+                path_ok, path_detail, _path = repo_relative_path_status(root, component_path, "any")
+                if not path_ok:
+                    results.append(
+                        CheckResult(
+                            f"published_equipment_delivery:equipment:{equipment_id}:component:{component_name}:path:{component_path}",
+                            False,
+                            path_detail,
+                            component_path,
+                        )
+                    )
+    if results:
+        return results
+    return [
+        CheckResult(
+            "published_equipment_delivery:inventory",
+            True,
+            "valid stock inventory",
+            PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+        )
+    ]
+
+
 def validate_templates(root: Path) -> list[CheckResult]:
     results: list[CheckResult] = [
         *validate_root_templates(root),
@@ -4815,6 +5097,11 @@ def validate_templates(root: Path) -> list[CheckResult]:
         *validate_script_template(root),
         *validate_markdown_section_set(root, MCP_TOOL_SPEC_PATH, MCP_TOOL_REQUIRED_SECTIONS),
         *validate_toml_template_fields(root, CONFIG_TEMPLATE_PATH, CONFIG_REQUIRED_FIELDS),
+        *validate_toml_template_fields(
+            root,
+            EQUIPMENT_STOCK_RECORD_TEMPLATE_PATH,
+            EQUIPMENT_STOCK_RECORD_REQUIRED_FIELDS,
+        ),
     ]
     for readme_path in TEMPLATE_READMES:
         results.extend(validate_markdown_section_set(root, readme_path, TEMPLATE_README_SECTIONS))
@@ -5578,6 +5865,8 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
         CONFIG_PRD_PATH,
         ISSUE_TRACKER_OPS_PRD_PATH,
         EXISTING_EQUIPMENT_ONBOARDING_PRD_PATH,
+        PUBLISHED_EQUIPMENT_DELIVERY_DOC_PATH,
+        PUBLISHED_EQUIPMENT_INVENTORY_PATH,
         SOURCE_DISPOSITION_PATH,
         SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
         PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
@@ -5606,6 +5895,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
         *validate_projection_drafts(root),
         *validate_harness_catalog(root),
         *validate_templates(root),
+        *validate_published_equipment_delivery(root),
         *validate_examples(root),
         *validate_specs(root),
         *validate_issue_ops_workflow_executor(root),
