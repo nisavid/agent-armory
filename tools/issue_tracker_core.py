@@ -189,11 +189,12 @@ class WorkflowDefinition:
     output_sections: tuple[str, ...]
     policy_factors: tuple[str, ...]
     judgment_boundary: str
+    workflow_class: OperationClass = OperationClass.ADVISORY
 
     def to_json(self) -> dict:
         return {
             "workflow_id": self.workflow_id.value,
-            "workflow_class": OperationClass.ADVISORY.value,
+            "workflow_class": self.workflow_class.value,
             "title": self.title,
             "summary": self.summary,
             "required_context": list(self.required_context),
@@ -1074,10 +1075,14 @@ def workflow_plan_payload(adapter_id: str, workflow_id: str) -> dict | None:
             *workflow.candidate_write_operations,
         )
     ]
-    operation_plans = {
-        operation_id: operation_plan_payload(adapter_id, operation_id)
-        for operation_id in operation_ids
-    }
+    operation_plans = {}
+    for operation_id in operation_ids:
+        plan = operation_plan_payload(adapter_id, operation_id)
+        if plan is None:
+            raise RuntimeError(
+                f"workflow {workflow_id!r} references unplannable operation {operation_id!r}"
+            )
+        operation_plans[operation_id] = plan
     return contract_payload(
         WORKFLOW_PLAN_SCHEMA,
         "plan",
@@ -1085,10 +1090,6 @@ def workflow_plan_payload(adapter_id: str, workflow_id: str) -> dict | None:
         {
             "adapter": adapter_id,
             **workflow.to_json(),
-            "operation_plans": {
-                operation_id: plan
-                for operation_id, plan in operation_plans.items()
-                if plan is not None
-            },
+            "operation_plans": operation_plans,
         },
     )
