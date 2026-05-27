@@ -268,6 +268,64 @@ class ValidatorPrimitiveTests(unittest.TestCase):
             results,
         )
 
+    def test_validate_skill_eval_methodology_source_intake_requires_exact_issue_routes(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Skill-Eval Methodology Source Intake
+
+                    Status: Source Disposition Ledger
+
+                    ## Scope Boundary
+
+                    Source intake only.
+
+                    ## Portable Source Inventory
+
+                    skill-creator/SKILL.md and adapting-skill-creator-to-harnesses/SKILL.md.
+
+                    ## Reusable Techniques
+
+                    behavioral evals, trigger-selection evals, harness adaptation,
+                    description optimization, benchmarking, human review, grading,
+                    packaging, and viewer/review workflow.
+
+                    ## Downstream Routing
+
+                    #61, #62, #67, #51, #155, #157, and later Forge work.
+
+                    ## Deferments And Nonportable Claims
+
+                    No runnable eval design.
+
+                    ## Security, Privacy, And Durability
+
+                    No raw logs are retained.
+
+                    ## Closeout Evidence
+
+                    Reviewed.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_skill_eval_methodology_source_intake(root)
+
+        self.assertIn(
+            CheckResult(
+                name="skill_eval_methodology_source_intake:routing:#5",
+                ok=False,
+                detail="missing downstream route: #5",
+                path=SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
+            ),
+            results,
+        )
+
     def test_validate_skill_eval_methodology_source_intake_rejects_host_local_paths(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

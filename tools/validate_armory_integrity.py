@@ -1632,6 +1632,13 @@ def validate_source_disposition(root: Path, *, required_item_ids: set[str] | Non
     return results
 
 
+def required_downstream_route_present(searchable_markdown: str, route: str) -> bool:
+    if re.fullmatch(r"#\d+", route):
+        route_token_re = re.compile(rf"(?<![\w#]){re.escape(route)}(?!\d)")
+        return route_token_re.search(searchable_markdown) is not None
+    return route.casefold() in searchable_markdown.casefold()
+
+
 def validate_skill_eval_methodology_source_intake(root: Path) -> list[CheckResult]:
     ok, detail, path = repo_relative_path_status(root, SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH, "file")
     if not ok:
@@ -1667,9 +1674,10 @@ def validate_skill_eval_methodology_source_intake(root: Path) -> list[CheckResul
                     SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
                 )
             )
-    searchable_markdown = markdown_link_search_text(markdown).casefold()
+    searchable_markdown = markdown_link_search_text(markdown)
+    searchable_markdown_casefold = searchable_markdown.casefold()
     for required_term in SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_COVERAGE_TERMS:
-        if required_term.casefold() not in searchable_markdown:
+        if required_term.casefold() not in searchable_markdown_casefold:
             results.append(
                 CheckResult(
                     f"skill_eval_methodology_source_intake:coverage:{required_term}",
@@ -1679,7 +1687,7 @@ def validate_skill_eval_methodology_source_intake(root: Path) -> list[CheckResul
                 )
             )
     for route in SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_DOWNSTREAM_ROUTES:
-        if route.casefold() not in searchable_markdown:
+        if not required_downstream_route_present(searchable_markdown, route):
             results.append(
                 CheckResult(
                     f"skill_eval_methodology_source_intake:routing:{route}",
