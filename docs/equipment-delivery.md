@@ -25,8 +25,8 @@ storefronts, README copy, docs maps, issue comments, and shop cards may display
 stock information, but they do not replace the inventory record.
 
 The inventory file uses schema version `agent-armory.equipment-stock.v1`. It
-may contain zero `[[equipment]]` records while the standard exists and before a
-stockable slice is recorded.
+may use `equipment = []` while the standard exists and before a stockable slice
+is recorded.
 
 ## Equipment Shop Cards
 

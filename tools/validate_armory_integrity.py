@@ -4898,7 +4898,16 @@ def validate_published_equipment_delivery(root: Path) -> list[CheckResult]:
             )
         ]
     results: list[CheckResult] = []
-    equipment_records = data.get("equipment", [])
+    if "equipment" not in data:
+        return [
+            CheckResult(
+                "published_equipment_delivery:equipment",
+                False,
+                "missing equipment",
+                PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+            )
+        ]
+    equipment_records = data.get("equipment")
     if not isinstance(equipment_records, list):
         return [
             CheckResult(
@@ -4933,7 +4942,11 @@ def validate_published_equipment_delivery(root: Path) -> list[CheckResult]:
                 )
         promotion_state = record.get("promotion_state")
         delivery_compliance = record.get("delivery_compliance")
-        if promotion_state not in PUBLISHED_EQUIPMENT_PROMOTION_STATES:
+        if (
+            isinstance(promotion_state, str)
+            and promotion_state.strip()
+            and promotion_state not in PUBLISHED_EQUIPMENT_PROMOTION_STATES
+        ):
             results.append(
                 CheckResult(
                     f"published_equipment_delivery:equipment:{equipment_id}:promotion_state",
@@ -4942,7 +4955,11 @@ def validate_published_equipment_delivery(root: Path) -> list[CheckResult]:
                     PUBLISHED_EQUIPMENT_INVENTORY_PATH,
                 )
             )
-        if delivery_compliance not in PUBLISHED_EQUIPMENT_DELIVERY_COMPLIANCE_STATUSES:
+        if (
+            isinstance(delivery_compliance, str)
+            and delivery_compliance.strip()
+            and delivery_compliance not in PUBLISHED_EQUIPMENT_DELIVERY_COMPLIANCE_STATUSES
+        ):
             results.append(
                 CheckResult(
                     f"published_equipment_delivery:equipment:{equipment_id}:delivery_compliance",
@@ -4961,30 +4978,30 @@ def validate_published_equipment_delivery(root: Path) -> list[CheckResult]:
                 )
             )
         shop_card = record.get("shop_card")
-        if not (
-            isinstance(shop_card, str)
-            and shop_card.startswith(f"{PUBLISHED_EQUIPMENT_SHOP_CARD_DIR}/")
-            and shop_card.endswith(".md")
-        ):
-            results.append(
-                CheckResult(
-                    f"published_equipment_delivery:equipment:{equipment_id}:shop_card",
-                    False,
-                    "shop_card must be a Markdown file under docs/equipment/shop-cards/",
-                    PUBLISHED_EQUIPMENT_INVENTORY_PATH,
-                )
-            )
-        else:
-            card_ok, card_detail, _card_path = repo_relative_path_status(root, shop_card, "file")
-            if not card_ok:
+        if isinstance(shop_card, str) and shop_card.strip():
+            if not (
+                shop_card.startswith(f"{PUBLISHED_EQUIPMENT_SHOP_CARD_DIR}/")
+                and shop_card.endswith(".md")
+            ):
                 results.append(
                     CheckResult(
                         f"published_equipment_delivery:equipment:{equipment_id}:shop_card",
                         False,
-                        card_detail,
-                        shop_card,
+                        "shop_card must be a Markdown file under docs/equipment/shop-cards/",
+                        PUBLISHED_EQUIPMENT_INVENTORY_PATH,
                     )
                 )
+            else:
+                card_ok, card_detail, _card_path = repo_relative_path_status(root, shop_card, "file")
+                if not card_ok:
+                    results.append(
+                        CheckResult(
+                            f"published_equipment_delivery:equipment:{equipment_id}:shop_card",
+                            False,
+                            card_detail,
+                            shop_card,
+                        )
+                    )
         components = record.get("components", [])
         if not isinstance(components, list):
             results.append(
@@ -5035,12 +5052,14 @@ def validate_published_equipment_delivery(root: Path) -> list[CheckResult]:
                     )
                 )
             paths = component.get("paths", [])
-            if not isinstance(paths, list) or not all(isinstance(item, str) for item in paths):
+            if not isinstance(paths, list) or not all(
+                isinstance(item, str) and item.strip() for item in paths
+            ):
                 results.append(
                     CheckResult(
                         f"published_equipment_delivery:equipment:{equipment_id}:component:{component_name}:paths",
                         False,
-                        "component paths must be a list of strings",
+                        "component paths must be a list of non-empty strings",
                         PUBLISHED_EQUIPMENT_INVENTORY_PATH,
                     )
                 )
