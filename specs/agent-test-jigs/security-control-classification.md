@@ -67,8 +67,8 @@ service, or harness test suite implementation.
 - Root-relative fixture paths, symlink rejection, and explicit scratch
   disposition in later validators.
 - Result statuses that distinguish `fail`, `inconclusive`, `disagreement`,
-  `oracle_error`, `infra_error`, `fixture_error`, `sandbox_error`, `timeout`,
-  and `flaky`.
+  `oracle_error`, `adjudicator_error`, `infra_error`, `fixture_error`,
+  `sandbox_error`, `timeout`, and `flaky`.
 - Weakest reliable oracle policy for assertions.
 - Local inference service metadata for model, prompt, threshold, sampling,
   input hash, cache, timeout, evidence, and error behavior.

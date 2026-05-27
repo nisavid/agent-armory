@@ -64,6 +64,22 @@ Expected behavior:
 - Codex routes the case to a fresh latest-GPT high-thinking adjudicator and
   records the final decision without deleting the disagreement evidence.
 
+## Adjudicator unavailable
+
+Scenario:
+
+A runner emits `disagreement`, but the fresh Codex adjudicator times out,
+errors, or cannot be started.
+
+Expected behavior:
+
+- The final record uses `adjudicator_error`.
+- The original disagreement payload remains attached.
+- The adjudicator failure point is recorded separately from the original
+  Learned Oracle outputs.
+- The result does not become pass, fail, `inconclusive`, or `oracle_error`
+  unless a later reviewed adjudication changes it with rationale.
+
 ## Local inference unavailable
 
 Scenario:

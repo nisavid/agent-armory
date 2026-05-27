@@ -119,6 +119,8 @@ adjudication handoffs.
   the result as capability evidence.
 - Learned Oracle timeout or service failure: return `oracle_error`.
 - Learned Oracle disagreement: return `disagreement` for Codex adjudication.
+- Codex adjudicator timeout, startup failure, or service failure: return
+  `adjudicator_error` without losing the original disagreement evidence.
 - Cleanup failure: record residue and prevent a clean result status.
 
 ## Evidence

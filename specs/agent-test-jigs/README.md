@@ -196,6 +196,7 @@ Result statuses are first-class values:
 - `inconclusive`
 - `disagreement`
 - `oracle_error`
+- `adjudicator_error`
 - `infra_error`
 - `fixture_error`
 - `sandbox_error`
@@ -215,6 +216,11 @@ returns disagreement records to Codex with the scenario, rubric, expected value,
 actual output, trace, evidence, and all oracle outputs. Codex then delegates to
 a fresh latest-GPT high-thinking subagent and records adjudication without
 hiding the original disagreement evidence.
+
+If the Codex adjudicator times out, errors, or is unavailable, the final
+record uses `adjudicator_error`. It preserves the original `disagreement`
+payload, records the adjudicator failure point, and must not collapse the case
+into pass, fail, `inconclusive`, or `oracle_error`.
 
 ## Driver gate
 

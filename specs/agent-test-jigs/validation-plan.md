@@ -55,6 +55,17 @@ Runner tests should verify public CLI behavior through real fixture plans:
 - missing local inference service does not collapse learned assertions to pass;
 - disagreement remains a structured status with all oracle evidence.
 
+## Later Codex disagreement workflow validation
+
+Codex disagreement workflow tests should verify:
+
+- adjudicator timeout, startup failure, or service error emits
+  `adjudicator_error`;
+- `adjudicator_error` preserves the original `disagreement` payload;
+- adjudicator failures are not reported as Learned Oracle `oracle_error`;
+- adjudicator failures do not collapse the scenario to pass, fail, or
+  `inconclusive` without a later reviewed adjudication.
+
 ## Later driver validation
 
 First driver tests should prove only the controls the driver actually claims:
