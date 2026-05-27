@@ -102,6 +102,9 @@ agent equipment.
   durable conclusions from the current executable-surface security refresh.
 - [Agent Equipment Config PRD](prd/agent-equipment-config.md): product
   requirements for shared Config, including CLI and MCP operation surfaces.
+- [Published Equipment Delivery System PRD](prd/published-equipment-delivery.md):
+  draft delivery standard for shop cards, inventory, storefronts, Equipment
+  ITP, closeout gates, and the Config delivery retrofit.
 - [Design decisions](adr/): the decision records behind durable choices in the
   Forge.
 - [Agentic Engineering Operating Model Review](reviews/agentic-engineering-operating-model.md):
