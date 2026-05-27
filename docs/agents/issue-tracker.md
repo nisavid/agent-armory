@@ -19,17 +19,19 @@ long-term UX. Richer project fields remain future Issue Tracker Ops work. See
 
 Use `tools/issue_tracker_ops.py` for Issue Tracker Ops (Issue Ops) bootstrap
 modes that describe the tracker-neutral core, describe the GitHub Issues
-baseline adapter, plan neutral operations, read, list, create, update, comment
-on, add dependency relations, remove dependency relations, list dependency
-relations, read parent relationships, manage supported native sub-issue
-relationships for GitHub Issues, audit labels, and reconcile explicit fallback
-records.
+baseline adapter, describe advisory workflows, plan neutral operations and
+advisory workflows, read, list, create, update, comment on, add dependency
+relations, remove dependency relations, list dependency relations, read parent
+relationships, manage supported native sub-issue relationships for GitHub
+Issues, audit labels, and reconcile explicit fallback records.
 
 Bootstrap adapter subcommands:
 
 - `describe-core`
+- `describe-workflows`
 - `describe-adapter --adapter github-issues-baseline`
 - `plan-operation --adapter github-issues-baseline --operation <operation-id>`
+- `plan-workflow --adapter github-issues-baseline --workflow <workflow-id>`
 - `read-issue`
 - `list-issues`
 - `create-issue`
@@ -100,6 +102,17 @@ current GitHub Issues baseline maps those operations to native, emulated,
 unsupported, or fallback behavior. Use
 `plan-operation --adapter github-issues-baseline --operation <operation-id>` to
 inspect one operation plan before invoking adapter-specific commands.
+
+Use `describe-workflows` to inspect advisory Issue Ops workflow contracts for
+issue review, repair, enrichment, refactoring, assignment, duplicate review,
+selection, session pickup, and issue-set orchestration. Use
+`plan-workflow --adapter github-issues-baseline --workflow <workflow-id>` to
+inspect the reads, candidate writes, policy factors, output sections, judgment
+boundary, and adapter-mapped operation plans for one workflow. These workflow
+commands are read-only planning surfaces: they do not call `gh`, do not require
+`--execute`, and do not mutate the tracker. Accepted writes from a workflow
+plan still need to be converted into deterministic Issue Ops operations and
+run through the adapter's dry-run and write gates.
 
 ## Triage Comments And Records
 

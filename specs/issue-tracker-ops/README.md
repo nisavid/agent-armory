@@ -22,23 +22,35 @@ GitHub issue #11.
 The bootstrap MVP is the tracker-neutral core at `tools/issue_tracker_core.py`
 and the GitHub Issues adapter at `tools/issue_tracker_ops.py`. The core defines
 operation ids, operation classes, side-effect classes, capability dispositions,
-audit requirements, adapter capability entries, and operation-plan output. The
-adapter exposes that contract through read-only JSON commands before callers
-use tracker-specific commands.
+audit requirements, adapter capability entries, operation-plan output, advisory
+workflow ids, workflow policy factors, workflow output sections, and
+workflow-plan output. The adapter exposes those contracts through read-only JSON
+commands before callers use tracker-specific commands.
 
 The bootstrap scope covers direct issue read, issue list, issue create, issue
 update, issue close or reopen through update state, issue comment, label-axis
 audit, issue dependency operations, supported native parent and sub-issue
 operations, fallback-record reconciliation, neutral core inspection, adapter
-capability inspection, and neutral operation planning for GitHub Issues without
-Projects. Full Issue Ops delivery remains tracked in issue #11 and child
-issues.
+capability inspection, neutral operation planning, advisory workflow
+inspection, and advisory workflow planning for GitHub Issues without Projects.
+Full Issue Ops delivery remains tracked in issue #11 and child issues.
 
 Inspection commands:
 
 - `describe-core`
+- `describe-workflows`
 - `describe-adapter --adapter github-issues-baseline`
 - `plan-operation --adapter github-issues-baseline --operation <operation-id>`
+- `plan-workflow --adapter github-issues-baseline --workflow <workflow-id>`
+
+The advisory workflow commands cover issue review, repair, enrichment,
+refactoring, assignment, duplicate review, selection, session pickup, and
+issue-set orchestration. `plan-workflow` maps each workflow's reads and
+candidate writes through the selected adapter capability matrix, including
+fallback and unsupported capabilities. These commands do not call `gh`, do not
+require `--execute`, and do not mutate the tracker. Accepted workflow
+recommendations still flow through deterministic Issue Ops operations with
+normal dry-run, policy, and write gates.
 
 Runtime adapter commands use the local `gh` CLI as the authenticated transport
 and default write modes to dry-run output unless `--execute` is provided. Live

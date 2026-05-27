@@ -8,6 +8,8 @@ from enum import StrEnum
 CORE_CONTRACT_SCHEMA = "issue_tracker_ops.core_contract.v1alpha1"
 ADAPTER_CONTRACT_SCHEMA = "issue_tracker_ops.adapter_contract.v1alpha1"
 OPERATION_PLAN_SCHEMA = "issue_tracker_ops.operation_plan.v1alpha1"
+WORKFLOW_CONTRACT_SCHEMA = "issue_tracker_ops.workflow_contract.v1alpha1"
+WORKFLOW_PLAN_SCHEMA = "issue_tracker_ops.workflow_plan.v1alpha1"
 
 
 def contract_payload(schema: str, mode: str, operation: str, body: dict) -> dict:
@@ -47,6 +49,18 @@ class OperationId(StrEnum):
     PRIORITY_SET = "priority.set"
     EVIDENCE_LINK = "evidence.link"
     ATTACHMENT_ADD = "attachment.add"
+
+
+class WorkflowId(StrEnum):
+    ISSUE_REVIEW = "issue.review"
+    ISSUE_REPAIR = "issue.repair"
+    ISSUE_ENRICHMENT = "issue.enrichment"
+    ISSUE_REFACTOR = "issue.refactor"
+    ISSUE_ASSIGNMENT = "issue.assignment"
+    ISSUE_DUPLICATE_REVIEW = "issue.duplicate_review"
+    ISSUE_SELECTION = "issue.selection"
+    ISSUE_SESSION_PICKUP = "issue.session_pickup"
+    ISSUE_SET_ORCHESTRATION = "issue_set.orchestration"
 
 
 class CapabilityDisposition(StrEnum):
@@ -162,6 +176,35 @@ class OperationPlan:
                 "safety": self.safety.to_json(),
             },
         )
+
+
+@dataclass(frozen=True)
+class WorkflowDefinition:
+    workflow_id: WorkflowId
+    title: str
+    summary: str
+    required_context: tuple[str, ...]
+    read_operations: tuple[OperationId, ...]
+    candidate_write_operations: tuple[OperationId, ...]
+    output_sections: tuple[str, ...]
+    policy_factors: tuple[str, ...]
+    judgment_boundary: str
+
+    def to_json(self) -> dict:
+        return {
+            "workflow_id": self.workflow_id.value,
+            "workflow_class": OperationClass.ADVISORY.value,
+            "title": self.title,
+            "summary": self.summary,
+            "required_context": list(self.required_context),
+            "read_operations": [operation.value for operation in self.read_operations],
+            "candidate_write_operations": [
+                operation.value for operation in self.candidate_write_operations
+            ],
+            "output_sections": list(self.output_sections),
+            "policy_factors": list(self.policy_factors),
+            "judgment_boundary": self.judgment_boundary,
+        }
 
 
 @dataclass(frozen=True)
@@ -388,8 +431,381 @@ CORE_OPERATIONS: tuple[OperationDefinition, ...] = (
 )
 
 
+WORKFLOW_JUDGMENT_BOUNDARY = (
+    "This workflow may inspect tracker state and prepare recommendations without "
+    "mutating the tracker. Accepted writes must be converted into deterministic "
+    "Issue Ops operations and executed through the adapter's dry-run and write gates."
+)
+
+
+WORKFLOW_DEFINITIONS: tuple[WorkflowDefinition, ...] = (
+    WorkflowDefinition(
+        WorkflowId.ISSUE_REVIEW,
+        "Review issue quality",
+        "Inspect one issue for quality, readiness, policy fit, and repair needs.",
+        (
+            "issue body",
+            "labels",
+            "comments or linked evidence",
+            "dependency context",
+            "parent and sub-issue context",
+        ),
+        (
+            OperationId.ISSUE_READ,
+            OperationId.DEPENDENCY_LIST_BLOCKED_BY,
+            OperationId.DEPENDENCY_LIST_BLOCKING,
+            OperationId.SUBISSUE_GET_PARENT,
+            OperationId.SUBISSUE_LIST,
+        ),
+        (
+            OperationId.ISSUE_UPDATE,
+            OperationId.COMMENT_CREATE,
+            OperationId.LABEL_SET,
+        ),
+        (
+            "evidence_boundary",
+            "quality_findings",
+            "recommendations",
+            "candidate_operations",
+            "unresolved_judgment",
+        ),
+        (
+            "configured issue standards",
+            "label axes",
+            "readiness labels",
+            "dependency disposition",
+            "brief status",
+        ),
+        WORKFLOW_JUDGMENT_BOUNDARY,
+    ),
+    WorkflowDefinition(
+        WorkflowId.ISSUE_REPAIR,
+        "Prepare issue repairs",
+        "Turn review findings into deterministic candidate issue updates.",
+        (
+            "review findings",
+            "current issue body",
+            "current labels",
+            "dependency context",
+        ),
+        (
+            OperationId.ISSUE_READ,
+            OperationId.DEPENDENCY_LIST_BLOCKED_BY,
+            OperationId.DEPENDENCY_LIST_BLOCKING,
+            OperationId.SUBISSUE_LIST,
+        ),
+        (
+            OperationId.ISSUE_UPDATE,
+            OperationId.COMMENT_CREATE,
+            OperationId.LABEL_SET,
+            OperationId.DEPENDENCY_ADD_BLOCKED_BY,
+            OperationId.DEPENDENCY_REMOVE_BLOCKED_BY,
+            OperationId.SUBISSUE_ADD,
+            OperationId.SUBISSUE_REMOVE,
+        ),
+        (
+            "repair_summary",
+            "body_patch",
+            "metadata_changes",
+            "candidate_operations",
+            "verification_notes",
+        ),
+        (
+            "configured issue standards",
+            "label axes",
+            "dependency semantics",
+            "brief status",
+            "stakeholder authority",
+        ),
+        WORKFLOW_JUDGMENT_BOUNDARY,
+    ),
+    WorkflowDefinition(
+        WorkflowId.ISSUE_ENRICHMENT,
+        "Prepare issue enrichment",
+        "Add source links, evidence, findings, and handoff context to an issue plan.",
+        (
+            "issue body",
+            "source links",
+            "file references",
+            "evidence artifacts",
+            "privacy boundary",
+        ),
+        (
+            OperationId.ISSUE_READ,
+            OperationId.DEPENDENCY_LIST_BLOCKED_BY,
+        ),
+        (
+            OperationId.ISSUE_UPDATE,
+            OperationId.COMMENT_CREATE,
+            OperationId.EVIDENCE_LINK,
+            OperationId.ATTACHMENT_ADD,
+        ),
+        (
+            "evidence_boundary",
+            "enrichment_candidates",
+            "disclosure_review",
+            "candidate_operations",
+        ),
+        (
+            "external disclosure policy",
+            "evidence durability",
+            "source authority",
+            "privacy or secret boundary",
+        ),
+        WORKFLOW_JUDGMENT_BOUNDARY,
+    ),
+    WorkflowDefinition(
+        WorkflowId.ISSUE_REFACTOR,
+        "Prepare issue structure refactor",
+        "Plan changes to issue structure, parentage, dependencies, and body organization.",
+        (
+            "issue body",
+            "related issues",
+            "dependency context",
+            "parent and sub-issue context",
+        ),
+        (
+            OperationId.ISSUE_READ,
+            OperationId.ISSUE_LIST,
+            OperationId.DEPENDENCY_LIST_BLOCKED_BY,
+            OperationId.DEPENDENCY_LIST_BLOCKING,
+            OperationId.SUBISSUE_GET_PARENT,
+            OperationId.SUBISSUE_LIST,
+        ),
+        (
+            OperationId.ISSUE_UPDATE,
+            OperationId.COMMENT_CREATE,
+            OperationId.DEPENDENCY_ADD_BLOCKED_BY,
+            OperationId.DEPENDENCY_REMOVE_BLOCKED_BY,
+            OperationId.SUBISSUE_ADD,
+            OperationId.SUBISSUE_REMOVE,
+            OperationId.SUBISSUE_REPRIORITIZE,
+        ),
+        (
+            "structure_findings",
+            "refactor_plan",
+            "candidate_operations",
+            "compatibility_notes",
+        ),
+        (
+            "parent issue policy",
+            "sub-issue policy",
+            "dependency semantics",
+            "issue taxonomy",
+        ),
+        WORKFLOW_JUDGMENT_BOUNDARY,
+    ),
+    WorkflowDefinition(
+        WorkflowId.ISSUE_ASSIGNMENT,
+        "Prepare issue assignment",
+        "Recommend owner, assignee, or delegation changes under configured policy.",
+        (
+            "issue body",
+            "current assignees",
+            "labels",
+            "role and ownership policy",
+        ),
+        (
+            OperationId.ISSUE_READ,
+            OperationId.ISSUE_LIST,
+        ),
+        (
+            OperationId.ASSIGNEE_SET,
+            OperationId.LABEL_SET,
+            OperationId.COMMENT_CREATE,
+        ),
+        (
+            "assignment_context",
+            "recommendations",
+            "candidate_operations",
+            "operator_questions",
+        ),
+        (
+            "assignee choice",
+            "role boundaries",
+            "delegation policy",
+            "readiness labels",
+            "stakeholder authority",
+        ),
+        WORKFLOW_JUDGMENT_BOUNDARY,
+    ),
+    WorkflowDefinition(
+        WorkflowId.ISSUE_DUPLICATE_REVIEW,
+        "Review duplicate or related issues",
+        "Compare one issue against open and closed tracker work before disposition.",
+        (
+            "issue body",
+            "candidate related issues",
+            "dependency context",
+            "PRD linkage",
+            "Reflection Finding routing",
+        ),
+        (
+            OperationId.ISSUE_READ,
+            OperationId.ISSUE_LIST,
+            OperationId.DEPENDENCY_LIST_BLOCKED_BY,
+            OperationId.DEPENDENCY_LIST_BLOCKING,
+            OperationId.SUBISSUE_GET_PARENT,
+            OperationId.SUBISSUE_LIST,
+        ),
+        (
+            OperationId.ISSUE_UPDATE,
+            OperationId.ISSUE_CLOSE,
+            OperationId.COMMENT_CREATE,
+            OperationId.LABEL_SET,
+            OperationId.DEPENDENCY_ADD_BLOCKED_BY,
+            OperationId.SUBISSUE_ADD,
+        ),
+        (
+            "comparison_scope",
+            "duplicate_candidates",
+            "recommended_disposition",
+            "candidate_operations",
+        ),
+        (
+            "duplicate policy",
+            "open and closed issue scope",
+            "dependency semantics",
+            "PRD linkage",
+            "out-of-scope records",
+        ),
+        WORKFLOW_JUDGMENT_BOUNDARY,
+    ),
+    WorkflowDefinition(
+        WorkflowId.ISSUE_SELECTION,
+        "Select next issue or issue set",
+        "Explain next-work ordering across readiness, priority, status, and blockers.",
+        (
+            "candidate issue set",
+            "workflow status",
+            "priority signals",
+            "readiness labels",
+            "dependency context",
+        ),
+        (
+            OperationId.ISSUE_LIST,
+            OperationId.DEPENDENCY_LIST_BLOCKED_BY,
+            OperationId.DEPENDENCY_LIST_BLOCKING,
+        ),
+        (
+            OperationId.PRIORITY_SET,
+            OperationId.STATUS_SET,
+            OperationId.LABEL_SET,
+            OperationId.COMMENT_CREATE,
+        ),
+        (
+            "candidate_set",
+            "ordering_explanation",
+            "blocked_candidates",
+            "recommendations",
+            "candidate_operations",
+        ),
+        (
+            "workflow status",
+            "priority fields",
+            "readiness labels",
+            "dependency disposition",
+            "stakeholder overrides",
+            "work kind",
+            "engagement mode",
+        ),
+        WORKFLOW_JUDGMENT_BOUNDARY,
+    ),
+    WorkflowDefinition(
+        WorkflowId.ISSUE_SESSION_PICKUP,
+        "Prepare session pickup",
+        "Summarize an issue into a bounded work-session start plan.",
+        (
+            "issue body",
+            "comments or linked handoff",
+            "labels",
+            "dependency context",
+            "parent and sub-issue context",
+        ),
+        (
+            OperationId.ISSUE_READ,
+            OperationId.DEPENDENCY_LIST_BLOCKED_BY,
+            OperationId.DEPENDENCY_LIST_BLOCKING,
+            OperationId.SUBISSUE_GET_PARENT,
+            OperationId.SUBISSUE_LIST,
+        ),
+        (
+            OperationId.COMMENT_CREATE,
+            OperationId.LABEL_SET,
+            OperationId.STATUS_SET,
+        ),
+        (
+            "evidence_boundary",
+            "pickup_summary",
+            "blocked_or_ready_state",
+            "next_actions",
+            "candidate_operations",
+        ),
+        (
+            "brief status",
+            "readiness labels",
+            "dependency disposition",
+            "session intent",
+            "stakeholder overrides",
+        ),
+        WORKFLOW_JUDGMENT_BOUNDARY,
+    ),
+    WorkflowDefinition(
+        WorkflowId.ISSUE_SET_ORCHESTRATION,
+        "Orchestrate issue set",
+        "Plan coordinated changes across related issues without direct mutation.",
+        (
+            "issue-set membership",
+            "parent and sub-issue context",
+            "dependency graph",
+            "priority and status policy",
+            "delegation policy",
+        ),
+        (
+            OperationId.ISSUE_LIST,
+            OperationId.DEPENDENCY_LIST_BLOCKED_BY,
+            OperationId.DEPENDENCY_LIST_BLOCKING,
+            OperationId.SUBISSUE_GET_PARENT,
+            OperationId.SUBISSUE_LIST,
+        ),
+        (
+            OperationId.PRIORITY_SET,
+            OperationId.STATUS_SET,
+            OperationId.LABEL_SET,
+            OperationId.ASSIGNEE_SET,
+            OperationId.DEPENDENCY_ADD_BLOCKED_BY,
+            OperationId.DEPENDENCY_REMOVE_BLOCKED_BY,
+            OperationId.SUBISSUE_ADD,
+            OperationId.SUBISSUE_REMOVE,
+            OperationId.SUBISSUE_REPRIORITIZE,
+            OperationId.COMMENT_CREATE,
+        ),
+        (
+            "issue_set_map",
+            "ordering_explanation",
+            "coordination_risks",
+            "candidate_operations",
+            "operator_questions",
+        ),
+        (
+            "priority fields",
+            "workflow status",
+            "readiness labels",
+            "delegation policy",
+            "dependency disposition",
+            "stakeholder overrides",
+        ),
+        WORKFLOW_JUDGMENT_BOUNDARY,
+    ),
+)
+
+
 def core_operations_by_id() -> dict[str, OperationDefinition]:
     return {operation.operation_id.value: operation for operation in CORE_OPERATIONS}
+
+
+def workflow_definitions_by_id() -> dict[str, WorkflowDefinition]:
+    return {workflow.workflow_id.value: workflow for workflow in WORKFLOW_DEFINITIONS}
 
 
 def core_contract_payload() -> dict:
@@ -407,6 +823,22 @@ def core_contract_payload() -> dict:
             "operations": {
                 operation_id: operations[operation_id].to_json()
                 for operation_id in sorted(operations)
+            },
+        },
+    )
+
+
+def workflow_contract_payload() -> dict:
+    workflows = workflow_definitions_by_id()
+    return contract_payload(
+        WORKFLOW_CONTRACT_SCHEMA,
+        "describe",
+        "describe-workflows",
+        {
+            "workflow_ids": sorted(workflows),
+            "workflows": {
+                workflow_id: workflows[workflow_id].to_json()
+                for workflow_id in sorted(workflows)
             },
         },
     )
@@ -628,3 +1060,35 @@ def operation_plan_payload(adapter_id: str, operation_id: str) -> dict | None:
         capability,
         safety,
     ).to_json()
+
+
+def workflow_plan_payload(adapter_id: str, workflow_id: str) -> dict | None:
+    adapter = adapter_contract(adapter_id)
+    workflow = workflow_definitions_by_id().get(workflow_id)
+    if adapter is None or workflow is None:
+        return None
+    operation_ids = [
+        operation.value
+        for operation in (
+            *workflow.read_operations,
+            *workflow.candidate_write_operations,
+        )
+    ]
+    operation_plans = {
+        operation_id: operation_plan_payload(adapter_id, operation_id)
+        for operation_id in operation_ids
+    }
+    return contract_payload(
+        WORKFLOW_PLAN_SCHEMA,
+        "plan",
+        "plan-workflow",
+        {
+            "adapter": adapter_id,
+            **workflow.to_json(),
+            "operation_plans": {
+                operation_id: plan
+                for operation_id, plan in operation_plans.items()
+                if plan is not None
+            },
+        },
+    )

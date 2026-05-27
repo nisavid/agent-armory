@@ -1609,6 +1609,7 @@ def build_parser() -> argparse.ArgumentParser:
     reconcile.add_argument("--retirement-note", help="Note explaining why the fallback record is being retired.")
 
     subparsers.add_parser("describe-core", help="Describe the tracker-neutral Issue Tracker Ops core contract.")
+    subparsers.add_parser("describe-workflows", help="Describe advisory Issue Tracker Ops workflow contracts.")
 
     describe_adapter = subparsers.add_parser("describe-adapter", help="Describe an Issue Tracker Ops adapter contract.")
     describe_adapter.add_argument("--adapter", required=True, choices=sorted(issue_tracker_core.ADAPTERS))
@@ -1616,6 +1617,15 @@ def build_parser() -> argparse.ArgumentParser:
     plan_operation = subparsers.add_parser("plan-operation", help="Plan one tracker-neutral operation for an adapter.")
     plan_operation.add_argument("--adapter", required=True, choices=sorted(issue_tracker_core.ADAPTERS))
     plan_operation.add_argument("--operation", dest="operation_id", required=True, choices=sorted(issue_tracker_core.core_operations_by_id()))
+
+    plan_workflow = subparsers.add_parser("plan-workflow", help="Plan one advisory workflow for an adapter.")
+    plan_workflow.add_argument("--adapter", required=True, choices=sorted(issue_tracker_core.ADAPTERS))
+    plan_workflow.add_argument(
+        "--workflow",
+        dest="workflow_id",
+        required=True,
+        choices=sorted(issue_tracker_core.workflow_definitions_by_id()),
+    )
 
     return parser
 
@@ -2022,6 +2032,9 @@ def run(
         if args.operation == "describe-core":
             write_json(stdout, issue_tracker_core.core_contract_payload())
             return 0
+        if args.operation == "describe-workflows":
+            write_json(stdout, issue_tracker_core.workflow_contract_payload())
+            return 0
         if args.operation == "describe-adapter":
             payload = issue_tracker_core.adapter_contract_payload(args.adapter)
             if payload is None:
@@ -2032,6 +2045,12 @@ def run(
             payload = issue_tracker_core.operation_plan_payload(args.adapter, args.operation_id)
             if payload is None:
                 raise UsageError(f"could not plan {args.operation_id!r} for adapter {args.adapter!r}")
+            write_json(stdout, payload)
+            return 0
+        if args.operation == "plan-workflow":
+            payload = issue_tracker_core.workflow_plan_payload(args.adapter, args.workflow_id)
+            if payload is None:
+                raise UsageError(f"could not plan {args.workflow_id!r} for adapter {args.adapter!r}")
             write_json(stdout, payload)
             return 0
         if args.operation == "reconcile-fallback":
