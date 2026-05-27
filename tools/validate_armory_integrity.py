@@ -5061,7 +5061,7 @@ def validate_issue_ops_workflow_executor(root: Path) -> list[CheckResult]:
                     ISSUE_OPS_WORKFLOW_EXECUTOR_PROFILE_PATH,
                 )
             )
-            profile = {}
+            return results
 
         identity = profile.get("identity", {})
         tools = profile.get("tools", {})

@@ -9265,6 +9265,7 @@ class IssueOpsWorkflowExecutorValidationTests(unittest.TestCase):
             ),
             results,
         )
+        self.assertEqual(1, len(results), results)
 
     def test_validate_issue_ops_workflow_executor_requires_skill_workflow_contract_terms(self):
         skill_without_workflow_contract = self.valid_skill().replace(
