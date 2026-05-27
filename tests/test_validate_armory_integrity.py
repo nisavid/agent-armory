@@ -273,9 +273,8 @@ class ValidatorPrimitiveTests(unittest.TestCase):
             root = Path(tmpdir)
             path = root / SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH
             path.parent.mkdir(parents=True)
-            path.write_text(
-                textwrap.dedent(
-                    """\
+            template = textwrap.dedent(
+                """\
                     # Skill-Eval Methodology Source Intake
 
                     Status: Source Disposition Ledger
@@ -286,7 +285,7 @@ class ValidatorPrimitiveTests(unittest.TestCase):
 
                     ## Portable Source Inventory
 
-                    The raw source lives at `/home/agent/.agents/skills/skill-creator/SKILL.md`.
+                    The raw source lives at `{host_local_path}`.
 
                     ## Reusable Techniques
 
@@ -310,21 +309,28 @@ class ValidatorPrimitiveTests(unittest.TestCase):
 
                     Reviewed.
                     """
-                ),
-                encoding="utf-8",
             )
 
-            results = validate_skill_eval_methodology_source_intake(root)
+            for host_local_path in (
+                "/home/agent/.agents/skills/skill-creator/SKILL.md",
+                r"C:\Users\agent\.agents\skills\skill-creator\SKILL.md",
+            ):
+                with self.subTest(host_local_path=host_local_path):
+                    path.write_text(
+                        template.format(host_local_path=host_local_path),
+                        encoding="utf-8",
+                    )
+                    results = validate_skill_eval_methodology_source_intake(root)
 
-        self.assertIn(
-            CheckResult(
-                name="skill_eval_methodology_source_intake:portable_paths",
-                ok=False,
-                detail="ledger must not preserve host-local paths",
-                path=SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
-            ),
-            results,
-        )
+                    self.assertIn(
+                        CheckResult(
+                            name="skill_eval_methodology_source_intake:portable_paths",
+                            ok=False,
+                            detail="ledger must not preserve host-local paths",
+                            path=SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
+                        ),
+                        results,
+                    )
 
     def test_validate_skill_eval_methodology_source_intake_accepts_complete_ledger(self):
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -157,7 +157,13 @@ HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 BACKTICK_PATH_RE = re.compile(r"`([^`]+)`")
 REFERENCE_DEFINITION_RE = re.compile(r"(?m)^[ \t]{0,3}\[([^\]\n]+)\]:[ \t]*(.+?)\s*$")
 PYTHON_RUNTIME_REFERENCE_RE = re.compile(r"\b(?:python|Python)\s*(\d+\.\d+)\b")
-HOST_LOCAL_PATH_RE = re.compile(r"(?<![\w.-])(?:~[/\\]|/(?:home|Users|tmp|var/tmp)/)")
+HOST_LOCAL_PATH_RE = re.compile(
+    r"(?<![\w.-])(?:"
+    r"~[/\\]"
+    r"|/(?:home|Users|tmp|var/tmp)/"
+    r"|[A-Za-z]:[\\/](?:Users|Windows|Temp|Documents)(?:[\\/]|$)"
+    r")"
+)
 
 
 def strip_fenced_code_blocks(markdown: str) -> str:
