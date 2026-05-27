@@ -440,6 +440,7 @@ def markdown_frontmatter(markdown: str) -> dict[str, str]:
             continue
         key, value = line.split(":", 1)
         fields[key.strip()] = value.strip().strip('"').strip("'")
+    # No closing "---" found: treat the block as malformed frontmatter.
     return {}
 
 
