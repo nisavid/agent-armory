@@ -10,6 +10,12 @@ directories, mock services, network controls, and hybrid approaches. This
 keeps the design from prematurely treating a convenient local execution path
 as a validated isolation boundary.
 
+## Decision
+
+Defer first Jig Driver selection until the first implementation slice applies
+the driver rubric with executable constraints in view. No first driver is
+accepted by this design package.
+
 ## Considered Options
 
 - Select a process-sandbox or hybrid local driver during the design package.

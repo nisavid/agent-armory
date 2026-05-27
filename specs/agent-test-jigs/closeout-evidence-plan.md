@@ -52,16 +52,17 @@ staleness boundaries.
 
 ## Follow-up issue projection
 
-Created follow-up issues:
+Created follow-up issues are listed in dependency order where practical. Native
+issue dependencies remain authoritative for blocked work:
 
 - [#162](https://github.com/nisavid/agent-armory/issues/162): Jig Test Plan
   TOML schema and fixture examples;
-- [#164](https://github.com/nisavid/agent-armory/issues/164): Jig Runner CLI
-  and structured result output;
 - [#163](https://github.com/nisavid/agent-armory/issues/163): first Jig Driver
   implementation after ADR gate application;
 - [#165](https://github.com/nisavid/agent-armory/issues/165): deterministic
   Assertion Provider library;
+- [#164](https://github.com/nisavid/agent-armory/issues/164): Jig Runner CLI
+  and structured result output;
 - [#166](https://github.com/nisavid/agent-armory/issues/166): local inference
   service adapter and Learned Oracle providers;
 - [#167](https://github.com/nisavid/agent-armory/issues/167): Harness Test
