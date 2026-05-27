@@ -131,6 +131,11 @@ VALIDATION_INVENTORY = [
         "relationship": "Top-level repository integrity check for the durable source-disposition ledger retained after source retirement.",
     },
     {
+        "check": "skill_eval_methodology_source_intake",
+        "boundary": "armory_integrity",
+        "relationship": "Top-level repository integrity check for the durable skill-eval methodology source-intake ledger.",
+    },
+    {
         "check": "source_retired_tree",
         "boundary": "historical_seed_migration",
         "relationship": "Historical Seed migration guard that prevents retired raw source trees from returning to the live repository.",
@@ -152,6 +157,7 @@ HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 BACKTICK_PATH_RE = re.compile(r"`([^`]+)`")
 REFERENCE_DEFINITION_RE = re.compile(r"(?m)^[ \t]{0,3}\[([^\]\n]+)\]:[ \t]*(.+?)\s*$")
 PYTHON_RUNTIME_REFERENCE_RE = re.compile(r"\b(?:python|Python)\s*(\d+\.\d+)\b")
+HOST_LOCAL_PATH_RE = re.compile(r"(?<![\w.-])(?:~[/\\]|/(?:home|Users|tmp|var/tmp)/)")
 
 
 def strip_fenced_code_blocks(markdown: str) -> str:
@@ -412,6 +418,36 @@ SOURCE_PROJECTION_FIELDS = [
 SOURCE_PROJECTION_VALIDATION_STATUSES = {"planned", "validated"}
 SOURCE_PROJECTION_PLANNED_REQUIREMENTS = {"H012", "H053"}
 SOURCE_DISPOSITION_PATH = "docs/closeout/forge-seed-source-disposition.md"
+SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH = "docs/closeout/skill-eval-methodology-source-intake.md"
+SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_REQUIRED_SECTIONS = [
+    "Scope Boundary",
+    "Portable Source Inventory",
+    "Reusable Techniques",
+    "Downstream Routing",
+    "Deferments And Nonportable Claims",
+    "Security, Privacy, And Durability",
+    "Closeout Evidence",
+]
+SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_COVERAGE_TERMS = [
+    "behavioral evals",
+    "trigger-selection evals",
+    "harness adaptation",
+    "description optimization",
+    "benchmarking",
+    "human review",
+    "grading",
+    "packaging",
+    "viewer/review workflow",
+]
+SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_DOWNSTREAM_ROUTES = [
+    "#61",
+    "#62",
+    "#67",
+    "#5",
+    "#155",
+    "#157",
+    "later Forge work",
+]
 SOURCE_DISPOSITION_MANIFEST_FIELDS = [
     "source_id",
     "source_kind",
@@ -1588,6 +1624,83 @@ def validate_source_disposition(root: Path, *, required_item_ids: set[str] | Non
     if not any(result.name.startswith("source_disposition:") and not result.ok for result in results):
         results.append(CheckResult("source_disposition:ledger", True, "present", SOURCE_DISPOSITION_PATH))
     return results
+
+
+def validate_skill_eval_methodology_source_intake(root: Path) -> list[CheckResult]:
+    ok, detail, path = repo_relative_path_status(root, SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH, "file")
+    if not ok:
+        return [
+            CheckResult(
+                "skill_eval_methodology_source_intake:path",
+                False,
+                detail,
+                SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
+            )
+        ]
+    markdown = path.read_text(encoding="utf-8")
+    visible_markdown = markdown_visible_text(markdown)
+    nonblank_lines = [line.strip() for line in visible_markdown.splitlines() if line.strip()]
+    headings = markdown_heading_texts(markdown)
+    results: list[CheckResult] = []
+    if "Status: Source Disposition Ledger" not in nonblank_lines[:8]:
+        results.append(
+            CheckResult(
+                "skill_eval_methodology_source_intake:status",
+                False,
+                "status must be Source Disposition Ledger",
+                SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
+            )
+        )
+    for required_section in SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_REQUIRED_SECTIONS:
+        if normalize_reference_label(required_section) not in headings:
+            results.append(
+                CheckResult(
+                    f"skill_eval_methodology_source_intake:section:{required_section}",
+                    False,
+                    f"missing section: {required_section}",
+                    SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
+                )
+            )
+    searchable_markdown = markdown_link_search_text(markdown).casefold()
+    for required_term in SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_COVERAGE_TERMS:
+        if required_term.casefold() not in searchable_markdown:
+            results.append(
+                CheckResult(
+                    f"skill_eval_methodology_source_intake:coverage:{required_term}",
+                    False,
+                    f"missing coverage term: {required_term}",
+                    SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
+                )
+            )
+    for route in SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_DOWNSTREAM_ROUTES:
+        if route.casefold() not in searchable_markdown:
+            results.append(
+                CheckResult(
+                    f"skill_eval_methodology_source_intake:routing:{route}",
+                    False,
+                    f"missing downstream route: {route}",
+                    SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
+                )
+            )
+    if HOST_LOCAL_PATH_RE.search(visible_markdown):
+        results.append(
+            CheckResult(
+                "skill_eval_methodology_source_intake:portable_paths",
+                False,
+                "ledger must not preserve host-local paths",
+                SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
+            )
+        )
+    if results:
+        return results
+    return [
+        CheckResult(
+            "skill_eval_methodology_source_intake:ledger",
+            True,
+            "present",
+            SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
+        )
+    ]
 
 
 def validate_source_retired_tree(root: Path, *, include_disposition: bool = True) -> list[CheckResult]:
@@ -5074,6 +5187,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
         ISSUE_TRACKER_OPS_PRD_PATH,
         EXISTING_EQUIPMENT_ONBOARDING_PRD_PATH,
         SOURCE_DISPOSITION_PATH,
+        SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
         THREAT_MODEL_PATH,
         ISSUE_TRACKER_OPS_POLICY_CONFIG_PATH,
         DOCUMENTATION_CLOSEOUT_PATH,
@@ -5105,6 +5219,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
         *validate_markdown_links(root),
     ]
     results.extend(validate_source_disposition(root))
+    results.extend(validate_skill_eval_methodology_source_intake(root))
     results.extend(validate_source_retired_tree(root, include_disposition=False))
     results.extend(validate_final_source_retired_stamp(root))
     if final_closeout:
