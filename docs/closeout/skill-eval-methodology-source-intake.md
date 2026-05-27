@@ -121,7 +121,7 @@ network calls, secret handling, or untrusted path inputs, and the ledger
 preserves only portable source identities.
 
 Documentation closeout: this ledger is the only committed doc change needed for
-#84. The repository documentation map remains reader-oriented and does not list
+issue `#84`. The repository documentation map remains reader-oriented and does not list
 issue-specific closeout ledgers; the repository threat model already covers the
 validator and durable-evidence boundaries exercised by this change.
 
