@@ -171,6 +171,185 @@ class IssueTrackerOpsTests(unittest.TestCase):
         self.assertEqual(payload["safety"]["config_preflight_required"], False)
         self.assertIn("external_network_read", payload["side_effects"])
 
+    def test_describe_workflows_reports_advisory_contract_without_calling_gh(self):
+        gh = FakeGh()
+
+        exit_code, stdout, stderr = self.run_cli(["describe-workflows"], gh=gh)
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(gh.calls, [])
+        payload = json.loads(stdout)
+        self.assertEqual(payload["schema"], "issue_tracker_ops.workflow_contract.v1alpha1")
+        self.assertEqual(payload["mode"], "describe")
+        self.assertEqual(payload["operation"], "describe-workflows")
+        self.assertEqual(
+            payload["workflow_ids"],
+            [
+                "issue.assignment",
+                "issue.duplicate_review",
+                "issue.enrichment",
+                "issue.refactor",
+                "issue.repair",
+                "issue.review",
+                "issue.selection",
+                "issue.session_pickup",
+                "issue_set.orchestration",
+            ],
+        )
+        review = payload["workflows"]["issue.review"]
+        self.assertEqual(review["workflow_class"], "advisory")
+        self.assertIn("issue.read", review["read_operations"])
+        self.assertIn("dependency.list_blocked_by", review["read_operations"])
+        self.assertIn("issue.update", review["candidate_write_operations"])
+        self.assertIn("Issue Ops operations", review["judgment_boundary"])
+
+    def test_plan_workflow_reports_review_context_and_candidate_repairs_without_calling_gh(self):
+        gh = FakeGh()
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "plan-workflow",
+                "--adapter",
+                "github-issues-baseline",
+                "--workflow",
+                "issue.review",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(gh.calls, [])
+        payload = json.loads(stdout)
+        self.assertEqual(payload["schema"], "issue_tracker_ops.workflow_plan.v1alpha1")
+        self.assertEqual(payload["mode"], "plan")
+        self.assertEqual(payload["operation"], "plan-workflow")
+        self.assertEqual(payload["adapter"], "github-issues-baseline")
+        self.assertEqual(payload["workflow_id"], "issue.review")
+        self.assertEqual(payload["workflow_class"], "advisory")
+        self.assertIn("issue.read", payload["read_operations"])
+        self.assertIn("dependency.list_blocked_by", payload["read_operations"])
+        self.assertIn("issue body", payload["required_context"])
+        self.assertIn("issue.update", payload["candidate_write_operations"])
+        self.assertIn("comment.create", payload["candidate_write_operations"])
+        self.assertEqual(
+            payload["operation_plans"]["issue.update"]["capability"]["disposition"],
+            "native",
+        )
+        self.assertTrue(payload["operation_plans"]["issue.update"]["safety"]["mutation_authority_required"])
+        self.assertIn("recommendations", payload["output_sections"])
+        self.assertIn("without mutating", payload["judgment_boundary"])
+
+    def test_plan_workflow_reports_selection_factors_and_priority_status_fallbacks(self):
+        gh = FakeGh()
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "plan-workflow",
+                "--adapter",
+                "github-issues-baseline",
+                "--workflow",
+                "issue.selection",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(gh.calls, [])
+        payload = json.loads(stdout)
+        self.assertIn("issue.list", payload["read_operations"])
+        self.assertIn("dependency disposition", payload["policy_factors"])
+        self.assertIn("readiness labels", payload["policy_factors"])
+        self.assertIn("stakeholder overrides", payload["policy_factors"])
+        self.assertIn("priority.set", payload["candidate_write_operations"])
+        self.assertIn("status.set", payload["candidate_write_operations"])
+        self.assertEqual(
+            payload["operation_plans"]["priority.set"]["capability"]["disposition"],
+            "fallback",
+        )
+        self.assertEqual(
+            payload["operation_plans"]["status.set"]["capability"]["disposition"],
+            "fallback",
+        )
+
+    def test_plan_workflow_reports_assignment_policy_and_native_assignee_write(self):
+        gh = FakeGh()
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "plan-workflow",
+                "--adapter",
+                "github-issues-baseline",
+                "--workflow",
+                "issue.assignment",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(gh.calls, [])
+        payload = json.loads(stdout)
+        self.assertIn("assignee choice", payload["policy_factors"])
+        self.assertIn("role boundaries", payload["policy_factors"])
+        self.assertIn("assignee.set", payload["candidate_write_operations"])
+        self.assertEqual(
+            payload["operation_plans"]["assignee.set"]["capability"]["disposition"],
+            "native",
+        )
+        self.assertTrue(payload["operation_plans"]["assignee.set"]["safety"]["mutation_authority_required"])
+
+    def test_plan_workflow_reports_unsupported_attachment_capability(self):
+        gh = FakeGh()
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "plan-workflow",
+                "--adapter",
+                "github-issues-baseline",
+                "--workflow",
+                "issue.enrichment",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(gh.calls, [])
+        payload = json.loads(stdout)
+        self.assertIn("attachment.add", payload["candidate_write_operations"])
+        self.assertEqual(
+            payload["operation_plans"]["attachment.add"]["capability"]["disposition"],
+            "unsupported",
+        )
+        self.assertFalse(payload["operation_plans"]["attachment.add"]["safety"]["available"])
+        self.assertFalse(payload["operation_plans"]["attachment.add"]["safety"]["execute_required"])
+
+    def test_plan_workflow_reports_issue_set_orchestration_operations(self):
+        gh = FakeGh()
+
+        exit_code, stdout, stderr = self.run_cli(
+            [
+                "plan-workflow",
+                "--adapter",
+                "github-issues-baseline",
+                "--workflow",
+                "issue_set.orchestration",
+            ],
+            gh=gh,
+        )
+
+        self.assertEqual(exit_code, 0, stderr)
+        self.assertEqual(gh.calls, [])
+        payload = json.loads(stdout)
+        self.assertIn("issue-set membership", payload["required_context"])
+        self.assertIn("dependency.list_blocking", payload["read_operations"])
+        self.assertIn("subissue.list", payload["read_operations"])
+        self.assertIn("dependency.add_blocked_by", payload["candidate_write_operations"])
+        self.assertIn("subissue.reprioritize", payload["candidate_write_operations"])
+        self.assertIn("delegation policy", payload["policy_factors"])
+        self.assertEqual(
+            payload["operation_plans"]["subissue.reprioritize"]["capability"]["disposition"],
+            "native",
+        )
+
     def test_read_issue_execute_fetches_one_issue(self):
         gh = FakeGh(
             [
