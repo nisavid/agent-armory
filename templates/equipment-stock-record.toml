@@ -1,0 +1,23 @@
+schema_version = "agent-armory.equipment-stock.v1"
+
+[[equipment]]
+id = "example-equipment"
+name = "Example Equipment"
+summary = "Describe the stockable equipment slice."
+promotion_state = "published"
+delivery_compliance = "pending"
+shop_card = "docs/equipment/shop-cards/example-equipment.md"
+notes = "Replace this example with current delivery context."
+
+[[equipment.components]]
+name = "Runtime"
+kind = "script"
+status = "required"
+paths = ["tools/example.py"]
+
+[[equipment.components]]
+name = "Future plugin"
+kind = "plugin"
+status = "planned"
+paths = []
+notes = "Planned components need explicit notes so they are not mistaken for stocked surfaces."

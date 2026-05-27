@@ -60,6 +60,8 @@ Smiths creating or modifying Agent Equipment should start with:
 - `docs/agent-equipment-forge.md` for the Forge overview.
 - `docs/smith-runbook.md` for the equipment creation workflow.
 - `docs/story-closeout.md` for closeout gate order, review sequencing, and rerun rules.
+- `docs/equipment-delivery.md` when a task creates, revises, validates, or
+  claims stockable Published Agent Equipment delivery surfaces.
 - If the current equipment task reveals an unsatisfied Tooling Gap, use `docs/smith-runbook.md` for Tooling Request before continuing.
 - `docs/interface-decision-guide.md` for choosing skills, MCP/tools, hooks, Agent Profiles, plugins, scripts, docs, and config.
 - `docs/harness-capabilities.md` before making harness-specific claims.

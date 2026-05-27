@@ -129,7 +129,9 @@ equipment-care questions to the right docs.
 If your agent is making equipment, start it with the
 [Forge Canon](docs/agent-equipment-forge.md), the
 [harness capability catalog](docs/harness-capabilities.md), and
-[equipment promotion](docs/equipment-promotion.md).
+[equipment promotion](docs/equipment-promotion.md). For stockable delivery
+claims, use the [Published Equipment Delivery](docs/equipment-delivery.md)
+standard.
 
 ## Roadmap
 

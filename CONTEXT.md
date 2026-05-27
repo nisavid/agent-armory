@@ -155,6 +155,11 @@ insight, right-sizes cognition, or improves its future harness behavior.
 _Avoid_: prompt style when deterministic support, durable capture, policy, or
 validation is the needed surface
 
+**Component Manifest**:
+A status-labeled list of the harness components, docs, scripts, config, or
+other surfaces that a stockable equipment release advertises.
+_Avoid_: implementation inventory, unstatused file list
+
 **Config Edit Intent**:
 A deliberate Agent Equipment Config source-change purpose such as propose,
 patch, migrate, revise, or apply. The intent does not authorize a write by
@@ -182,6 +187,11 @@ _Avoid_: Equipment Disposition, behavior ownership decision
 **Cross-Boundary Coherence Ralph Review**:
 A Review Until Clean gate that checks whether process outputs agree across PRD, specs, plans, implementation, validation, security, documentation, projection, and release or handoff surfaces.
 _Avoid_: local-only consistency check
+
+**Delivery Compliance Status**:
+The stock inventory status that records whether a stockable equipment release
+meets the current Published Equipment Delivery standard.
+_Avoid_: promotion state, historical publication claim
 
 **Effective Harness Capability Profile**:
 A Harness Capability Profile for an Effective Harness Capability Surface.
@@ -255,6 +265,12 @@ _Avoid_: whole equipment item, source file
 **Equipment Promotion Path**:
 The lifecycle that moves an equipment idea from example or spec toward Published Agent Equipment.
 _Avoid_: treating example, specified, planned, implemented, validated, and published as interchangeable states
+
+**Equipment Shop Card**:
+A Wielder and Outfitter-facing catalog artifact that summarizes fit, stocked
+components, gear-up paths, delivery status, evidence, and support for a
+stockable equipment release.
+_Avoid_: Capability Card, Smith-facing design record, storefront
 
 **Equipment Review Record**:
 A structured reviewed artifact that records equipment dispositions,
@@ -661,6 +677,11 @@ _Avoid_: implementer when the role includes equipment design
 **Smith-to-Forgewright Handoff**:
 The context package a Smith gives to a Forgewright for Tooling Request.
 _Avoid_: vague note, unstructured context dump
+
+**Stock Inventory Record**:
+The canonical structured record for one stockable equipment release or slice in
+the Armory stock inventory.
+_Avoid_: shop card, Capability Card, promotion state
 
 **Source Disposition Ledger**:
 A durable, self-contained closeout surface that records source-handoff coverage, retained claim summaries, operator dispositions, and source-retirement evidence after raw source handoff materials are retired.
