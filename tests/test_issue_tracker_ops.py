@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from tools import issue_tracker_ops
+from tools import issue_tracker_core, issue_tracker_ops
 
 
 class FakeGh:
@@ -349,6 +349,25 @@ class IssueTrackerOpsTests(unittest.TestCase):
             payload["operation_plans"]["subissue.reprioritize"]["capability"]["disposition"],
             "native",
         )
+
+    def test_workflow_plan_refuses_missing_operation_plan(self):
+        original = issue_tracker_core.operation_plan_payload
+
+        def fake_operation_plan(adapter_id, operation_id):
+            if operation_id == "issue.read":
+                return None
+            return original(adapter_id, operation_id)
+
+        with mock.patch.object(
+            issue_tracker_core,
+            "operation_plan_payload",
+            side_effect=fake_operation_plan,
+        ):
+            with self.assertRaisesRegex(RuntimeError, "unplannable operation 'issue.read'"):
+                issue_tracker_core.workflow_plan_payload(
+                    "github-issues-baseline",
+                    "issue.review",
+                )
 
     def test_read_issue_execute_fetches_one_issue(self):
         gh = FakeGh(
