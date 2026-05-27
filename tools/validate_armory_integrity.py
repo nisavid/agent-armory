@@ -1634,7 +1634,7 @@ def validate_source_disposition(root: Path, *, required_item_ids: set[str] | Non
 
 def required_downstream_route_present(searchable_markdown: str, route: str) -> bool:
     if re.fullmatch(r"#\d+", route):
-        route_token_re = re.compile(rf"(?<![\w#]){re.escape(route)}(?!\d)")
+        route_token_re = re.compile(rf"(?<![\w#]){re.escape(route)}(?![\w-])")
         return route_token_re.search(searchable_markdown) is not None
     return route.casefold() in searchable_markdown.casefold()
 

@@ -296,7 +296,7 @@ class ValidatorPrimitiveTests(unittest.TestCase):
 
                     ## Downstream Routing
 
-                    #61, #62, #67, #51, #155, #157, and later Forge work.
+                    #61a, #62, #67, #51, #155, #157, and later Forge work.
 
                     ## Deferments And Nonportable Claims
 
@@ -316,6 +316,15 @@ class ValidatorPrimitiveTests(unittest.TestCase):
 
             results = validate_skill_eval_methodology_source_intake(root)
 
+        self.assertIn(
+            CheckResult(
+                name="skill_eval_methodology_source_intake:routing:#61",
+                ok=False,
+                detail="missing downstream route: #61",
+                path=SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
+            ),
+            results,
+        )
         self.assertIn(
             CheckResult(
                 name="skill_eval_methodology_source_intake:routing:#5",
