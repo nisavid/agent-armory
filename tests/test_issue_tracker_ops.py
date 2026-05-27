@@ -369,6 +369,42 @@ class IssueTrackerOpsTests(unittest.TestCase):
                     "issue.review",
                 )
 
+    def test_workflow_plan_deduplicates_operation_plan_requests(self):
+        workflow = issue_tracker_core.WorkflowDefinition(
+            issue_tracker_core.WorkflowId.ISSUE_REVIEW,
+            "Duplicate operation workflow",
+            "Exercise operation-plan de-duplication.",
+            ("issue body",),
+            (issue_tracker_core.OperationId.ISSUE_READ,),
+            (issue_tracker_core.OperationId.ISSUE_READ,),
+            ("candidate_operations",),
+            ("configured issue standards",),
+            "Plan without mutating.",
+        )
+        original = issue_tracker_core.operation_plan_payload
+
+        with (
+            mock.patch.object(
+                issue_tracker_core,
+                "workflow_definitions_by_id",
+                return_value={"issue.review": workflow},
+            ),
+            mock.patch.object(
+                issue_tracker_core,
+                "operation_plan_payload",
+                wraps=original,
+            ) as plan_operation,
+        ):
+            payload = issue_tracker_core.workflow_plan_payload(
+                "github-issues-baseline",
+                "issue.review",
+            )
+
+        self.assertEqual(payload["read_operations"], ["issue.read"])
+        self.assertEqual(payload["candidate_write_operations"], ["issue.read"])
+        self.assertEqual(list(payload["operation_plans"]), ["issue.read"])
+        plan_operation.assert_called_once_with("github-issues-baseline", "issue.read")
+
     def test_read_issue_execute_fetches_one_issue(self):
         gh = FakeGh(
             [
