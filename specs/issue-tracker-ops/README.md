@@ -52,6 +52,13 @@ require `--execute`, and do not mutate the tracker. Accepted workflow
 recommendations still flow through deterministic Issue Ops operations with
 normal dry-run, policy, and write gates.
 
+The advisory workflow executor skill at
+`skills/issue-ops-workflow-executor/SKILL.md` and bounded Agent Profile at
+`agents/issue-ops-workflow-executor/profile.toml` are implemented candidate
+components for applying workflow plans without direct tracker mutation. They
+consume the workflow contract and workflow plan outputs instead of duplicating
+workflow policy.
+
 Runtime adapter commands use the local `gh` CLI as the authenticated transport
 and default write modes to dry-run output unless `--execute` is provided. Live
 mutation requires either usable Config authorization or

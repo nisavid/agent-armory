@@ -73,12 +73,14 @@ keep tracker mutations explicit and governable.
 
 ## Needed Harness Components
 
-- Skills: issue review, repair, enrichment, issue selection, orchestration, and
-  session pickup judgment.
+- Skills: `skills/issue-ops-workflow-executor/SKILL.md` is the implemented
+  candidate for issue review, repair, enrichment, issue selection,
+  orchestration, session pickup, and related advisory workflow judgment.
 - MCP/tools: future MCP parity for the tracker-neutral operations and GitHub
   Issues adapter.
 - Hooks: future mutation gates for policy enforcement and audit capture.
-- Agent Profiles: future bounded issue reviewer or orchestrator profiles.
+- Agent Profiles: `agents/issue-ops-workflow-executor/profile.toml` is the
+  implemented candidate for bounded advisory workflow preparation.
 - Plugins: future portable Issue Tracker Ops bundle.
 - Scripts: tracker-neutral core, GitHub Issues baseline adapter, read-only
   contract inspection, operation planning, and deterministic validation.
@@ -120,6 +122,7 @@ keep tracker mutations explicit and governable.
 ## Deterministic checks
 
 - `python3.14 -m unittest tests.test_issue_tracker_ops`
+- `python3.14 -m unittest tests.test_validate_armory_integrity`
 - `python3.14 tools/issue_tracker_ops.py <command> ...` dry-run smoke checks.
 - `python3.14 tools/issue_tracker_ops.py audit-labels --repo nisavid/agent-armory --execute`
 - `python3.14 tools/validate_armory_integrity.py`

@@ -9,6 +9,7 @@ import unittest
 from unittest import mock
 from pathlib import Path
 
+from tools import issue_tracker_core
 from tools.validate_armory_integrity import (
     ACCEPTED_SOURCE_REQUIREMENTS,
     CheckResult,
@@ -74,6 +75,8 @@ class ValidationBoundaryTests(unittest.TestCase):
         self.assertEqual(inventory["templates"]["boundary"], "equipment_candidate_shape")
         self.assertEqual(inventory["examples"]["boundary"], "equipment_candidate_shape")
         self.assertEqual(inventory["specs"]["boundary"], "equipment_candidate_shape")
+        self.assertIn("issue_ops_workflow_executor", inventory)
+        self.assertEqual(inventory["issue_ops_workflow_executor"]["boundary"], "equipment_candidate_shape")
         self.assertEqual(inventory["markdown_links"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["source_disposition"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["source_retired_tree"]["boundary"], "historical_seed_migration")
@@ -8774,6 +8777,261 @@ class IssueTrackerOpsPolicyConfigValidationTests(unittest.TestCase):
                 False,
                 "missing configured label: priority:low",
                 "docs/agents/triage-labels.md",
+            ),
+            results,
+        )
+
+
+class IssueOpsWorkflowExecutorValidationTests(unittest.TestCase):
+    skill_path = "skills/issue-ops-workflow-executor/SKILL.md"
+    profile_path = "agents/issue-ops-workflow-executor/profile.toml"
+
+    def write_file(self, root: Path, relative_path: str, content: str) -> None:
+        path = root / relative_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(textwrap.dedent(content).strip() + "\n", encoding="utf-8")
+
+    def workflow_ids(self) -> list[str]:
+        return sorted(issue_tracker_core.workflow_definitions_by_id())
+
+    def valid_skill(self) -> str:
+        return """
+            ---
+            name: issue-ops-workflow-executor
+            description: Use when executing Issue Ops advisory workflows for issue review, repair, enrichment, refactor, assignment, duplicate review, selection, session pickup, or issue-set orchestration.
+            ---
+
+            # Issue Ops Workflow Executor
+
+            Status: Implemented candidate
+
+            ## Use when
+
+            Use this skill for Issue Ops advisory workflow execution.
+
+            ## Procedure
+
+            1. Run or consume `describe-workflows`.
+            2. Run `plan-workflow --adapter github-issues-baseline --workflow <workflow-id>`.
+            3. Gather the workflow's required context.
+            4. Emit the workflow's configured output sections.
+            5. List candidate writes only as deterministic Issue Ops operation plans or dry-run command shapes.
+
+            ## Safety
+
+            Do not use direct `gh` writes, direct GitHub MCP writes, or tracker mutation outside Issue Ops dry-run/write gates.
+        """
+
+    def valid_profile(self, workflow_ids: list[str] | None = None, deny: list[str] | None = None) -> str:
+        workflow_id_items = ", ".join(f'"{workflow_id}"' for workflow_id in (workflow_ids or self.workflow_ids()))
+        deny_items = ", ".join(
+            f'"{item}"'
+            for item in (
+                deny
+                or [
+                    "direct tracker mutation",
+                    "direct gh writes",
+                    "direct GitHub MCP writes",
+                    "user-global policy mutation",
+                    "external disclosure without approval",
+                ]
+            )
+        )
+        return f"""
+            [identity]
+            name = "issue-ops-workflow-executor"
+            description = "Prepare advisory Issue Ops workflow recommendations."
+            mission = "Prepare Issue Ops workflow recommendations without direct tracker mutation."
+
+            [tools]
+            allow = ["describe-workflows", "plan-workflow", "read/context gathering"]
+            deny = [{deny_items}]
+
+            [permissions]
+            mode = "read-only"
+            approval_required_for = ["external disclosure", "network write", "tracker mutation", "user-global policy mutation"]
+
+            [model]
+            preference = "inherit"
+            reasoning_effort = "inherit"
+
+            [config]
+            default_adapter = "github-issues-baseline"
+            workflow_ids = [{workflow_id_items}]
+
+            [output]
+            contract = "Return workflow output sections, candidate operation plans, unresolved judgment, and dry-run command shapes."
+            format = "structured-report"
+        """
+
+    def write_valid_executor(self, root: Path, *, profile: str | None = None) -> None:
+        self.write_file(root, self.skill_path, self.valid_skill())
+        self.write_file(root, self.profile_path, profile or self.valid_profile())
+
+    def executor_results(self, results: list[CheckResult]) -> list[CheckResult]:
+        return [result for result in results if result.name.startswith("issue_ops_workflow_executor:")]
+
+    def test_validate_issue_ops_workflow_executor_requires_skill_and_profile(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = self.executor_results(run(root))
+
+        self.assertIn(
+            CheckResult(
+                "issue_ops_workflow_executor:path:skills/issue-ops-workflow-executor/SKILL.md",
+                False,
+                "missing",
+                "skills/issue-ops-workflow-executor/SKILL.md",
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                "issue_ops_workflow_executor:path:agents/issue-ops-workflow-executor/profile.toml",
+                False,
+                "missing",
+                "agents/issue-ops-workflow-executor/profile.toml",
+            ),
+            results,
+        )
+
+    def test_validate_issue_ops_workflow_executor_accepts_valid_skill_and_profile(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_valid_executor(root)
+
+            results = self.executor_results(run(root))
+
+        self.assertNotEqual(results, [])
+        self.assertTrue(all(result.ok for result in results), results)
+
+    def test_validate_issue_ops_workflow_executor_requires_workflow_id_parity(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_valid_executor(root, profile=self.valid_profile(workflow_ids=["issue.review"]))
+
+            results = self.executor_results(run(root))
+
+        self.assertIn(
+            CheckResult(
+                "issue_ops_workflow_executor:profile:workflow_ids",
+                False,
+                "must match issue_tracker_core.workflow_definitions_by_id()",
+                "agents/issue-ops-workflow-executor/profile.toml",
+            ),
+            results,
+        )
+
+    def test_validate_issue_ops_workflow_executor_requires_mutation_denies(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_valid_executor(root, profile=self.valid_profile(deny=["direct gh writes"]))
+
+            results = self.executor_results(run(root))
+
+        self.assertIn(
+            CheckResult(
+                "issue_ops_workflow_executor:profile:deny:direct tracker mutation",
+                False,
+                "missing deny entry: direct tracker mutation",
+                "agents/issue-ops-workflow-executor/profile.toml",
+            ),
+            results,
+        )
+
+    def test_validate_issue_ops_workflow_executor_requires_valid_profile_toml(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_file(root, self.skill_path, self.valid_skill())
+            self.write_file(root, self.profile_path, "[identity\nname = 'broken'\n")
+
+            results = self.executor_results(run(root))
+
+        self.assertTrue(
+            any(
+                result.name
+                == "issue_ops_workflow_executor:profile:toml:agents/issue-ops-workflow-executor/profile.toml"
+                and not result.ok
+                for result in results
+            ),
+            results,
+        )
+
+    def test_validate_issue_ops_workflow_executor_requires_skill_workflow_contract_terms(self):
+        skill_without_workflow_contract = self.valid_skill().replace(
+            "`describe-workflows`",
+            "`describe-core`",
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_file(root, self.skill_path, skill_without_workflow_contract)
+            self.write_file(root, self.profile_path, self.valid_profile())
+
+            results = self.executor_results(run(root))
+
+        self.assertIn(
+            CheckResult(
+                "issue_ops_workflow_executor:skill:text:describe-workflows",
+                False,
+                "missing text: describe-workflows",
+                "skills/issue-ops-workflow-executor/SKILL.md",
+            ),
+            results,
+        )
+
+    def test_validate_issue_ops_workflow_executor_requires_profile_planning_contract_terms(self):
+        profile_without_plan_or_dry_run = self.valid_profile().replace(
+            '"plan-workflow", ',
+            "",
+        ).replace(
+            " and dry-run command shapes",
+            "",
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_file(root, self.skill_path, self.valid_skill())
+            self.write_file(root, self.profile_path, profile_without_plan_or_dry_run)
+
+            results = self.executor_results(run(root))
+
+        self.assertIn(
+            CheckResult(
+                "issue_ops_workflow_executor:profile:allow:plan-workflow",
+                False,
+                "missing allow entry: plan-workflow",
+                "agents/issue-ops-workflow-executor/profile.toml",
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                "issue_ops_workflow_executor:profile:output:dry-run command shapes",
+                False,
+                "missing output contract text: dry-run command shapes",
+                "agents/issue-ops-workflow-executor/profile.toml",
+            ),
+            results,
+        )
+
+    def test_validate_issue_ops_workflow_executor_requires_frontmatter_name(self):
+        skill_without_frontmatter_name = self.valid_skill().replace(
+            "name: issue-ops-workflow-executor",
+            "summary: issue-ops-workflow-executor",
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_file(root, self.skill_path, skill_without_frontmatter_name)
+            self.write_file(root, self.profile_path, self.valid_profile())
+
+            results = self.executor_results(run(root))
+
+        self.assertIn(
+            CheckResult(
+                "issue_ops_workflow_executor:skill:frontmatter:name",
+                False,
+                "frontmatter name must be issue-ops-workflow-executor",
+                "skills/issue-ops-workflow-executor/SKILL.md",
             ),
             results,
         )

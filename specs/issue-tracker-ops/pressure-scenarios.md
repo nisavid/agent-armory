@@ -113,7 +113,13 @@ Expected evidence:
 - CLI and MCP parity expose the same typed contracts for onboarding, migration
   preview, migration apply, compatibility classification, and tracker operation
   plans.
-- Issue review recommends repairs without writing when policy is uncertain.
+- Under task pressure, advisory issue review or repair uses the Issue Ops
+  workflow executor skill to consume `describe-workflows` and `plan-workflow`,
+  gather the selected workflow's required context, emit the configured output
+  sections, and keep accepted writes behind deterministic Issue Ops dry-run and
+  write gates.
+- Issue review or repair recommends changes without writing when policy is
+  uncertain.
 - Semantic duplicate detection considers related issues, dependencies, PRD
   linkage, Reflection Findings, and out-of-scope records before asking for a
   disposition.

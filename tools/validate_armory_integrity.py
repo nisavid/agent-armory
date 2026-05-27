@@ -40,6 +40,19 @@ except ModuleNotFoundError:
     sys.modules[spec.name] = agent_equipment_config
     spec.loader.exec_module(agent_equipment_config)
 
+try:
+    from tools import issue_tracker_core
+except ModuleNotFoundError:
+    spec = importlib.util.spec_from_file_location(
+        "issue_tracker_core",
+        Path(__file__).with_name("issue_tracker_core.py"),
+    )
+    if spec is None or spec.loader is None:
+        raise
+    issue_tracker_core = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = issue_tracker_core
+    spec.loader.exec_module(issue_tracker_core)
+
 
 @dataclass(frozen=True)
 class CheckResult:
@@ -114,6 +127,11 @@ VALIDATION_INVENTORY = [
         "check": "specs",
         "boundary": "equipment_candidate_shape",
         "relationship": "Equipment-candidate shape validation for Equipment Blueprints and bundles, not equipment-specific behavior validation.",
+    },
+    {
+        "check": "issue_ops_workflow_executor",
+        "boundary": "equipment_candidate_shape",
+        "relationship": "Equipment-candidate shape validation for the Issue Ops advisory workflow skill and Agent Profile.",
     },
     {
         "check": "issue_ops_policy_config",
@@ -396,6 +414,21 @@ def find_markdown_links(markdown: str) -> list[str]:
 def load_toml(path: Path) -> dict:
     with path.open("rb") as handle:
         return tomllib.load(handle)
+
+
+def markdown_frontmatter(markdown: str) -> dict[str, str]:
+    lines = markdown.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return {}
+    fields: dict[str, str] = {}
+    for line in lines[1:]:
+        if line.strip() == "---":
+            return fields
+        if ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        fields[key.strip()] = value.strip().strip('"').strip("'")
+    return {}
 
 
 SOURCE_PROJECTION_PATH = "docs/metasmith/source-projection.md"
@@ -852,6 +885,33 @@ ISSUE_TRACKER_OPS_POLICY_CONFIG_PATH = "config/agent-equipment.toml"
 ISSUE_TRACKER_OPS_COMPATIBILITY_DOCS = [
     "docs/agents/issue-tracker.md",
     "docs/agents/triage-labels.md",
+]
+ISSUE_OPS_WORKFLOW_EXECUTOR_SKILL_PATH = "skills/issue-ops-workflow-executor/SKILL.md"
+ISSUE_OPS_WORKFLOW_EXECUTOR_PROFILE_PATH = "agents/issue-ops-workflow-executor/profile.toml"
+ISSUE_OPS_WORKFLOW_EXECUTOR_REQUIRED_SKILL_TEXT = [
+    "describe-workflows",
+    "plan-workflow --adapter github-issues-baseline --workflow <workflow-id>",
+    "required context",
+    "output sections",
+    "candidate writes",
+    "deterministic Issue Ops operation plans",
+    "dry-run command shapes",
+    "direct `gh` writes",
+    "direct GitHub MCP writes",
+    "Issue Ops dry-run/write gates",
+]
+ISSUE_OPS_WORKFLOW_EXECUTOR_REQUIRED_DENIES = [
+    "direct tracker mutation",
+    "direct gh writes",
+    "direct GitHub MCP writes",
+    "user-global policy mutation",
+    "external disclosure without approval",
+]
+ISSUE_OPS_WORKFLOW_EXECUTOR_REQUIRED_APPROVALS = [
+    "external disclosure",
+    "network write",
+    "tracker mutation",
+    "user-global policy mutation",
 ]
 EXISTING_EQUIPMENT_ONBOARDING_PRD_PATH = "docs/prd/existing-equipment-onboarding.md"
 ISSUE_TRACKER_OPS_CONFIG_PROFILE_REQUIRED_SECTIONS = [
@@ -4802,6 +4862,200 @@ def validate_issue_tracker_ops_policy_config(root: Path) -> list[CheckResult]:
     return results
 
 
+def validate_issue_ops_workflow_executor(root: Path) -> list[CheckResult]:
+    results: list[CheckResult] = []
+    skill_ok, skill_detail, skill_path = repo_relative_path_status(
+        root,
+        ISSUE_OPS_WORKFLOW_EXECUTOR_SKILL_PATH,
+        "file",
+    )
+    if not skill_ok:
+        results.append(
+            CheckResult(
+                f"issue_ops_workflow_executor:path:{ISSUE_OPS_WORKFLOW_EXECUTOR_SKILL_PATH}",
+                False,
+                skill_detail,
+                ISSUE_OPS_WORKFLOW_EXECUTOR_SKILL_PATH,
+            )
+        )
+    else:
+        skill_markdown = skill_path.read_text(encoding="utf-8")
+        skill_frontmatter = markdown_frontmatter(skill_markdown)
+        if skill_frontmatter.get("name") != "issue-ops-workflow-executor":
+            results.append(
+                CheckResult(
+                    "issue_ops_workflow_executor:skill:frontmatter:name",
+                    False,
+                    "frontmatter name must be issue-ops-workflow-executor",
+                    ISSUE_OPS_WORKFLOW_EXECUTOR_SKILL_PATH,
+                )
+            )
+        skill_visible = markdown_visible_text(skill_markdown)
+        for required_text in ISSUE_OPS_WORKFLOW_EXECUTOR_REQUIRED_SKILL_TEXT:
+            if required_text not in skill_visible:
+                results.append(
+                    CheckResult(
+                        f"issue_ops_workflow_executor:skill:text:{required_text}",
+                        False,
+                        f"missing text: {required_text}",
+                        ISSUE_OPS_WORKFLOW_EXECUTOR_SKILL_PATH,
+                    )
+                )
+
+    profile_ok, profile_detail, profile_path = repo_relative_path_status(
+        root,
+        ISSUE_OPS_WORKFLOW_EXECUTOR_PROFILE_PATH,
+        "file",
+    )
+    if not profile_ok:
+        results.append(
+            CheckResult(
+                f"issue_ops_workflow_executor:path:{ISSUE_OPS_WORKFLOW_EXECUTOR_PROFILE_PATH}",
+                False,
+                profile_detail,
+                ISSUE_OPS_WORKFLOW_EXECUTOR_PROFILE_PATH,
+            )
+        )
+    else:
+        try:
+            profile = load_toml(profile_path)
+        except (OSError, tomllib.TOMLDecodeError) as exc:
+            results.append(
+                CheckResult(
+                    f"issue_ops_workflow_executor:profile:toml:{ISSUE_OPS_WORKFLOW_EXECUTOR_PROFILE_PATH}",
+                    False,
+                    str(exc),
+                    ISSUE_OPS_WORKFLOW_EXECUTOR_PROFILE_PATH,
+                )
+            )
+            profile = {}
+
+        identity = profile.get("identity", {})
+        tools = profile.get("tools", {})
+        permissions = profile.get("permissions", {})
+        config = profile.get("config", {})
+        output = profile.get("output", {})
+        if not isinstance(identity, dict):
+            identity = {}
+        if not isinstance(tools, dict):
+            tools = {}
+        if not isinstance(permissions, dict):
+            permissions = {}
+        if not isinstance(config, dict):
+            config = {}
+        if not isinstance(output, dict):
+            output = {}
+
+        if identity.get("name") != "issue-ops-workflow-executor":
+            results.append(
+                CheckResult(
+                    "issue_ops_workflow_executor:profile:identity:name",
+                    False,
+                    "name must be issue-ops-workflow-executor",
+                    ISSUE_OPS_WORKFLOW_EXECUTOR_PROFILE_PATH,
+                )
+            )
+        if config.get("default_adapter") != "github-issues-baseline":
+            results.append(
+                CheckResult(
+                    "issue_ops_workflow_executor:profile:default_adapter",
+                    False,
+                    "default_adapter must be github-issues-baseline",
+                    ISSUE_OPS_WORKFLOW_EXECUTOR_PROFILE_PATH,
+                )
+            )
+        if permissions.get("mode") != "read-only":
+            results.append(
+                CheckResult(
+                    "issue_ops_workflow_executor:profile:permissions:mode",
+                    False,
+                    "mode must be read-only",
+                    ISSUE_OPS_WORKFLOW_EXECUTOR_PROFILE_PATH,
+                )
+            )
+
+        expected_workflow_ids = sorted(issue_tracker_core.workflow_definitions_by_id())
+        if config.get("workflow_ids") != expected_workflow_ids:
+            results.append(
+                CheckResult(
+                    "issue_ops_workflow_executor:profile:workflow_ids",
+                    False,
+                    "must match issue_tracker_core.workflow_definitions_by_id()",
+                    ISSUE_OPS_WORKFLOW_EXECUTOR_PROFILE_PATH,
+                )
+            )
+
+        allow = tools.get("allow")
+        if not isinstance(allow, list):
+            allow = []
+        allow_strings = [item for item in allow if isinstance(item, str)]
+        for required_allow in ("describe-workflows", "plan-workflow"):
+            if required_allow not in allow_strings:
+                results.append(
+                    CheckResult(
+                        f"issue_ops_workflow_executor:profile:allow:{required_allow}",
+                        False,
+                        f"missing allow entry: {required_allow}",
+                        ISSUE_OPS_WORKFLOW_EXECUTOR_PROFILE_PATH,
+                    )
+                )
+
+        deny = tools.get("deny")
+        if not isinstance(deny, list):
+            deny = []
+        deny_strings = [item for item in deny if isinstance(item, str)]
+        for required_deny in ISSUE_OPS_WORKFLOW_EXECUTOR_REQUIRED_DENIES:
+            if required_deny not in deny_strings:
+                results.append(
+                    CheckResult(
+                        f"issue_ops_workflow_executor:profile:deny:{required_deny}",
+                        False,
+                        f"missing deny entry: {required_deny}",
+                        ISSUE_OPS_WORKFLOW_EXECUTOR_PROFILE_PATH,
+                    )
+                )
+
+        approvals = permissions.get("approval_required_for")
+        if not isinstance(approvals, list):
+            approvals = []
+        approval_strings = [item for item in approvals if isinstance(item, str)]
+        for required_approval in ISSUE_OPS_WORKFLOW_EXECUTOR_REQUIRED_APPROVALS:
+            if required_approval not in approval_strings:
+                results.append(
+                    CheckResult(
+                        f"issue_ops_workflow_executor:profile:approval:{required_approval}",
+                        False,
+                        f"missing approval entry: {required_approval}",
+                        ISSUE_OPS_WORKFLOW_EXECUTOR_PROFILE_PATH,
+                    )
+                )
+
+        output_contract = output.get("contract")
+        if not isinstance(output_contract, str):
+            output_contract = ""
+        for required_output in ("candidate operation plans", "dry-run command shapes"):
+            if required_output not in output_contract:
+                results.append(
+                    CheckResult(
+                        f"issue_ops_workflow_executor:profile:output:{required_output}",
+                        False,
+                        f"missing output contract text: {required_output}",
+                        ISSUE_OPS_WORKFLOW_EXECUTOR_PROFILE_PATH,
+                    )
+                )
+
+    if not any(result.name.startswith("issue_ops_workflow_executor:") and not result.ok for result in results):
+        results.append(
+            CheckResult(
+                "issue_ops_workflow_executor:components",
+                True,
+                "valid Issue Ops workflow executor skill and Agent Profile",
+                "skills/issue-ops-workflow-executor",
+            )
+        )
+    return results
+
+
 def validate_specs(root: Path) -> list[CheckResult]:
     results: list[CheckResult] = []
     config_bundle_markdown_parts: list[str] = []
@@ -5101,6 +5355,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
         *validate_templates(root),
         *validate_examples(root),
         *validate_specs(root),
+        *validate_issue_ops_workflow_executor(root),
         *validate_issue_tracker_ops_policy_config(root),
         *validate_markdown_links(root),
     ]
