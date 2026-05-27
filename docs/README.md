@@ -142,6 +142,10 @@ The current roadmap points to equipment lines that still have future slices:
 - [Capability Profiling Protocol](../specs/capability-profiling-protocol/):
   reusable study-plan, study-report, and jig-adequacy structure for Capability
   Surface studies.
+- [Agent Test Jigs and Harness Testing System](../specs/agent-test-jigs/):
+  design package for controlled harness, equipment, Loadout, interaction, and
+  Harness Capability validation. Implementation remains projected to follow-up
+  issues.
 - [Head Gear / Reflection and cognition equipment](https://github.com/nisavid/agent-armory/issues/25):
   future generic cognition enhancement equipment that turns underspecified
   intent and recent agent experience into durable insight, routed follow-up, and
