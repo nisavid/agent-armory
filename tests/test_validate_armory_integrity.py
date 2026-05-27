@@ -18,6 +18,7 @@ from tools.validate_armory_integrity import (
     SOURCE_DISPOSITION_ITEM_FIELDS,
     SOURCE_DISPOSITION_MANIFEST_FIELDS,
     SOURCE_DISPOSITION_PATH,
+    SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
     find_markdown_links,
     harness_matrix_rows,
     load_toml,
@@ -44,6 +45,7 @@ from tools.validate_armory_integrity import (
     SOURCE_PROJECTION_PLANNED_REQUIREMENTS,
     validate_required_paths,
     validate_security_closeout,
+    validate_skill_eval_methodology_source_intake,
     validate_templates,
     validate_threat_model,
 )
@@ -76,6 +78,7 @@ class ValidationBoundaryTests(unittest.TestCase):
         self.assertEqual(inventory["specs"]["boundary"], "equipment_candidate_shape")
         self.assertEqual(inventory["markdown_links"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["source_disposition"]["boundary"], "armory_integrity")
+        self.assertEqual(inventory["skill_eval_methodology_source_intake"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["source_retired_tree"]["boundary"], "historical_seed_migration")
         self.assertEqual(inventory["final_source_retired_stamp"]["boundary"], "historical_seed_migration")
         self.assertEqual(
@@ -151,6 +154,238 @@ class ValidationBoundaryTests(unittest.TestCase):
 
 
 class ValidatorPrimitiveTests(unittest.TestCase):
+    def test_validate_skill_eval_methodology_source_intake_reports_missing_doc(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = validate_skill_eval_methodology_source_intake(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="skill_eval_methodology_source_intake:path",
+                    ok=False,
+                    detail="missing",
+                    path=SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
+                )
+            ],
+        )
+
+    def test_validate_skill_eval_methodology_source_intake_requires_ledger_shape(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "# Skill-Eval Methodology Source Intake\n\nStatus: Draft\n\n## Scope Boundary\n\nIncomplete.\n",
+                encoding="utf-8",
+            )
+
+            results = validate_skill_eval_methodology_source_intake(root)
+
+        self.assertIn(
+            CheckResult(
+                name="skill_eval_methodology_source_intake:status",
+                ok=False,
+                detail="status must be Source Disposition Ledger",
+                path=SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="skill_eval_methodology_source_intake:section:Portable Source Inventory",
+                ok=False,
+                detail="missing section: Portable Source Inventory",
+                path=SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_skill_eval_methodology_source_intake_requires_coverage_terms(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Skill-Eval Methodology Source Intake
+
+                    Status: Source Disposition Ledger
+
+                    ## Scope Boundary
+
+                    Source intake only.
+
+                    ## Portable Source Inventory
+
+                    Portable skill source identities.
+
+                    ## Reusable Techniques
+
+                    Behavioral evals are covered.
+
+                    ## Downstream Routing
+
+                    #61 is covered.
+
+                    ## Deferments And Nonportable Claims
+
+                    No runnable eval design.
+
+                    ## Security, Privacy, And Durability
+
+                    No raw logs are retained.
+
+                    ## Closeout Evidence
+
+                    Reviewed.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_skill_eval_methodology_source_intake(root)
+
+        self.assertIn(
+            CheckResult(
+                name="skill_eval_methodology_source_intake:coverage:trigger-selection evals",
+                ok=False,
+                detail="missing coverage term: trigger-selection evals",
+                path=SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="skill_eval_methodology_source_intake:routing:#62",
+                ok=False,
+                detail="missing downstream route: #62",
+                path=SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_skill_eval_methodology_source_intake_rejects_host_local_paths(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Skill-Eval Methodology Source Intake
+
+                    Status: Source Disposition Ledger
+
+                    ## Scope Boundary
+
+                    Source intake only.
+
+                    ## Portable Source Inventory
+
+                    The raw source lives at `/home/agent/.agents/skills/skill-creator/SKILL.md`.
+
+                    ## Reusable Techniques
+
+                    behavioral evals, trigger-selection evals, harness adaptation,
+                    description optimization, benchmarking, human review, grading,
+                    packaging, and viewer/review workflow.
+
+                    ## Downstream Routing
+
+                    #61, #62, #67, #5, #155, #157, and later Forge work.
+
+                    ## Deferments And Nonportable Claims
+
+                    No runnable eval design.
+
+                    ## Security, Privacy, And Durability
+
+                    No raw logs are retained.
+
+                    ## Closeout Evidence
+
+                    Reviewed.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_skill_eval_methodology_source_intake(root)
+
+        self.assertIn(
+            CheckResult(
+                name="skill_eval_methodology_source_intake:portable_paths",
+                ok=False,
+                detail="ledger must not preserve host-local paths",
+                path=SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_skill_eval_methodology_source_intake_accepts_complete_ledger(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Skill-Eval Methodology Source Intake
+
+                    Status: Source Disposition Ledger
+
+                    ## Scope Boundary
+
+                    Source intake only.
+
+                    ## Portable Source Inventory
+
+                    skill-creator/SKILL.md and adapting-skill-creator-to-harnesses/SKILL.md.
+
+                    ## Reusable Techniques
+
+                    behavioral evals, trigger-selection evals, harness adaptation,
+                    description optimization, benchmarking, human review, grading,
+                    packaging, and viewer/review workflow.
+
+                    ## Downstream Routing
+
+                    #61, #62, #67, #5, #155, #157, and later Forge work.
+
+                    ## Deferments And Nonportable Claims
+
+                    No runnable eval design.
+
+                    ## Security, Privacy, And Durability
+
+                    No raw logs are retained.
+
+                    ## Closeout Evidence
+
+                    Reviewed.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_skill_eval_methodology_source_intake(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="skill_eval_methodology_source_intake:ledger",
+                    ok=True,
+                    detail="present",
+                    path=SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
+                )
+            ],
+        )
+
     def test_validate_required_paths_reports_missing_paths(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
