@@ -1068,13 +1068,13 @@ def workflow_plan_payload(adapter_id: str, workflow_id: str) -> dict | None:
     workflow = workflow_definitions_by_id().get(workflow_id)
     if adapter is None or workflow is None:
         return None
-    operation_ids = [
+    operation_ids = list(dict.fromkeys(
         operation.value
         for operation in (
             *workflow.read_operations,
             *workflow.candidate_write_operations,
         )
-    ]
+    ))
     operation_plans = {}
     for operation_id in operation_ids:
         plan = operation_plan_payload(adapter_id, operation_id)
