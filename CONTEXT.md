@@ -550,7 +550,7 @@ _Avoid_: policy authority, when the point is the value merge order
 
 **Learned Oracle**:
 An inference-backed Assertion Provider whose structured result can be pass,
-fail, inconclusive, disagreement, or oracle error.
+fail, inconclusive, disagreement, or `oracle_error`.
 _Avoid_: deterministic assertion, final arbiter, truth source
 
 **Loadout**:

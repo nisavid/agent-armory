@@ -217,6 +217,11 @@ actual output, trace, evidence, and all oracle outputs. Codex then delegates to
 a fresh latest-GPT high-thinking subagent and records adjudication without
 hiding the original disagreement evidence.
 
+This design package deliberately scopes adjudication to Codex. OpenClaw,
+Hermes Agent, and other later harness targets may produce or carry
+`disagreement` records, but they are not assumed to route adjudication until a
+future harness-specific contract defines an equivalent handoff.
+
 If the Codex adjudicator times out, errors, or is unavailable, the final
 record uses `adjudicator_error`. It preserves the original `disagreement`
 payload, records the adjudicator failure point, and must not collapse the case
@@ -277,7 +282,10 @@ Design rules for later UI, report, or review surfaces:
 ## Downstream routing
 
 Follow-up issues are listed in dependency order where practical. Native issue
-dependencies remain authoritative for blocked work:
+dependencies remain authoritative for blocked work. The #165-before-#164 edge
+is intentional: the runner should consume a minimal stable Assertion Provider
+interface instead of landing an assertion-less shell; richer deterministic
+assertions can extend that interface later.
 
 - [#162](https://github.com/nisavid/agent-armory/issues/162): Jig Test Plan
   TOML schema and example fixtures;

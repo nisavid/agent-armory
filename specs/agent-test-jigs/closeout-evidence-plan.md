@@ -53,7 +53,10 @@ staleness boundaries.
 ## Follow-up issue projection
 
 Created follow-up issues are listed in dependency order where practical. Native
-issue dependencies remain authoritative for blocked work:
+issue dependencies remain authoritative for blocked work. The #165-before-#164
+edge is intentional: the runner should consume a minimal stable Assertion
+Provider interface instead of landing an assertion-less shell; richer
+deterministic assertions can extend that interface later.
 
 - [#162](https://github.com/nisavid/agent-armory/issues/162): Jig Test Plan
   TOML schema and fixture examples;
