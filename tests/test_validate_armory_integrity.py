@@ -8997,7 +8997,13 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
         validator = importlib.import_module("tools.validate_armory_integrity")
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
-            self.write_inventory(root, 'schema_version = "agent-armory.equipment-stock.v1"\n')
+            self.write_inventory(
+                root,
+                """
+                schema_version = "agent-armory.equipment-stock.v1"
+                equipment = []
+                """,
+            )
 
             results = validator.validate_published_equipment_delivery(root)
 
@@ -9008,6 +9014,78 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
                     "published_equipment_delivery:inventory",
                     True,
                     "valid stock inventory",
+                    "inventory/equipment.toml",
+                )
+            ],
+        )
+
+    def test_validate_published_equipment_delivery_accepts_valid_stock_record_with_components(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            runtime = root / "tools/runtime.py"
+            runtime.parent.mkdir(parents=True, exist_ok=True)
+            runtime.write_text("print('runtime')\n", encoding="utf-8")
+            self.write_inventory(
+                root,
+                """
+                schema_version = "agent-armory.equipment-stock.v1"
+
+                [[equipment]]
+                id = "example"
+                name = "Example Equipment"
+                summary = "Demonstrates a valid stock inventory record."
+                promotion_state = "published"
+                delivery_compliance = "passed"
+                shop_card = "docs/equipment/shop-cards/example.md"
+
+                [[equipment.components]]
+                name = "Runtime"
+                kind = "script"
+                status = "required"
+                paths = ["tools/runtime.py"]
+
+                [[equipment.components]]
+                name = "Future plugin"
+                kind = "plugin"
+                status = "planned"
+                paths = []
+                notes = "Future plugin is tracked but not part of the stocked slice."
+                """,
+            )
+            shop_card = root / "docs/equipment/shop-cards/example.md"
+            shop_card.parent.mkdir(parents=True, exist_ok=True)
+            shop_card.write_text("# Example Equipment\n\nStatus: Equipment Shop Card\n", encoding="utf-8")
+
+            results = validator.validate_published_equipment_delivery(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    "published_equipment_delivery:inventory",
+                    True,
+                    "valid stock inventory",
+                    "inventory/equipment.toml",
+                )
+            ],
+        )
+
+    def test_validate_published_equipment_delivery_rejects_missing_equipment_key(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_inventory(root, 'schema_version = "agent-armory.equipment-stock.v1"\n')
+
+            results = validator.validate_published_equipment_delivery(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    "published_equipment_delivery:equipment",
+                    False,
+                    "missing equipment",
                     "inventory/equipment.toml",
                 )
             ],
@@ -9198,6 +9276,46 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
                 False,
                 "missing",
                 "tools/missing-runtime.py",
+            ),
+            results,
+        )
+
+    def test_validate_published_equipment_delivery_rejects_blank_component_path(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_inventory(
+                root,
+                """
+                schema_version = "agent-armory.equipment-stock.v1"
+
+                [[equipment]]
+                id = "example"
+                name = "Example Equipment"
+                summary = "Demonstrates stock inventory validation."
+                promotion_state = "published"
+                delivery_compliance = "passed"
+                shop_card = "docs/equipment/shop-cards/example.md"
+
+                [[equipment.components]]
+                name = "Runtime"
+                kind = "script"
+                status = "required"
+                paths = [""]
+                """,
+            )
+            shop_card = root / "docs/equipment/shop-cards/example.md"
+            shop_card.parent.mkdir(parents=True, exist_ok=True)
+            shop_card.write_text("# Example Equipment\n\nStatus: Equipment Shop Card\n", encoding="utf-8")
+
+            results = validator.validate_published_equipment_delivery(root)
+
+        self.assertIn(
+            CheckResult(
+                "published_equipment_delivery:equipment:example:component:Runtime:paths",
+                False,
+                "component paths must be a list of non-empty strings",
+                "inventory/equipment.toml",
             ),
             results,
         )
@@ -9396,6 +9514,57 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
             ),
             results,
         )
+
+    def test_validate_published_equipment_delivery_rejects_missing_fields_without_duplicate_detail_errors(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_inventory(
+                root,
+                """
+                schema_version = "agent-armory.equipment-stock.v1"
+
+                [[equipment]]
+                id = "example"
+                name = "Example Equipment"
+                summary = "Demonstrates stock inventory validation."
+                """,
+            )
+
+            results = validator.validate_published_equipment_delivery(root)
+
+        for field in ["promotion_state", "delivery_compliance", "shop_card"]:
+            self.assertIn(
+                CheckResult(
+                    f"published_equipment_delivery:equipment:example:{field}",
+                    False,
+                    f"missing {field}",
+                    "inventory/equipment.toml",
+                ),
+                results,
+            )
+        duplicate_errors = [
+            CheckResult(
+                "published_equipment_delivery:equipment:example:promotion_state",
+                False,
+                "promotion_state must be a known equipment promotion state",
+                "inventory/equipment.toml",
+            ),
+            CheckResult(
+                "published_equipment_delivery:equipment:example:delivery_compliance",
+                False,
+                "delivery_compliance must be not_evaluated, pending, passed, or blocked",
+                "inventory/equipment.toml",
+            ),
+            CheckResult(
+                "published_equipment_delivery:equipment:example:shop_card",
+                False,
+                "shop_card must be a Markdown file under docs/equipment/shop-cards/",
+                "inventory/equipment.toml",
+            ),
+        ]
+        for duplicate_error in duplicate_errors:
+            self.assertNotIn(duplicate_error, results)
 
     def test_run_requires_published_equipment_delivery_paths(self):
         with tempfile.TemporaryDirectory() as tmpdir:
