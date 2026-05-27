@@ -154,6 +154,11 @@ VALIDATION_INVENTORY = [
         "relationship": "Top-level repository integrity check for the durable skill-eval methodology source-intake ledger.",
     },
     {
+        "check": "plugin_creator_source_intake",
+        "boundary": "armory_integrity",
+        "relationship": "Top-level repository integrity check for the durable plugin-creator source-intake ledger.",
+    },
+    {
         "check": "source_retired_tree",
         "boundary": "historical_seed_migration",
         "relationship": "Historical Seed migration guard that prevents retired raw source trees from returning to the live repository.",
@@ -459,6 +464,29 @@ SOURCE_PROJECTION_VALIDATION_STATUSES = {"planned", "validated"}
 SOURCE_PROJECTION_PLANNED_REQUIREMENTS = {"H012", "H053"}
 SOURCE_DISPOSITION_PATH = "docs/closeout/forge-seed-source-disposition.md"
 SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH = "docs/closeout/skill-eval-methodology-source-intake.md"
+PLUGIN_CREATOR_SOURCE_INTAKE_PATH = "docs/closeout/plugin-creator-source-intake.md"
+PLUGIN_CREATOR_SOURCE_INTAKE_REQUIRED_SECTIONS = [
+    "Scope Boundary",
+    "Portable Source Inventory",
+    "Reusable Techniques",
+    "UX And Marketplace Metadata",
+    "Downstream Routing",
+    "Deferments And Nonportable Claims",
+    "Security, Privacy, And Durability",
+    "Closeout Evidence",
+]
+PLUGIN_CREATOR_SOURCE_INTAKE_COVERAGE_TERMS = [
+    "manifest scaffolding",
+    "name normalization",
+    "marketplace projection",
+    "cachebuster reinstall flow",
+    "schema validation",
+    "component surface selection",
+    "placeholder debt",
+    "policy/auth semantics",
+    "asset metadata",
+]
+PLUGIN_CREATOR_SOURCE_INTAKE_DOWNSTREAM_ROUTES = ["#5", "#154", "#157"]
 SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_REQUIRED_SECTIONS = [
     "Scope Boundary",
     "Portable Source Inventory",
@@ -1779,6 +1807,84 @@ def validate_skill_eval_methodology_source_intake(root: Path) -> list[CheckResul
             True,
             "present",
             SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
+        )
+    ]
+
+
+def validate_plugin_creator_source_intake(root: Path) -> list[CheckResult]:
+    ok, detail, path = repo_relative_path_status(root, PLUGIN_CREATOR_SOURCE_INTAKE_PATH, "file")
+    if not ok:
+        return [
+            CheckResult(
+                "plugin_creator_source_intake:path",
+                False,
+                detail,
+                PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
+            )
+        ]
+    markdown = path.read_text(encoding="utf-8")
+    visible_markdown = markdown_visible_text(markdown)
+    nonblank_lines = [line.strip() for line in visible_markdown.splitlines() if line.strip()]
+    headings = markdown_heading_texts(markdown)
+    results: list[CheckResult] = []
+    if "Status: Source Disposition Ledger" not in nonblank_lines[:8]:
+        results.append(
+            CheckResult(
+                "plugin_creator_source_intake:status",
+                False,
+                "status must be Source Disposition Ledger",
+                PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
+            )
+        )
+    for required_section in PLUGIN_CREATOR_SOURCE_INTAKE_REQUIRED_SECTIONS:
+        if normalize_reference_label(required_section) not in headings:
+            results.append(
+                CheckResult(
+                    f"plugin_creator_source_intake:section:{required_section}",
+                    False,
+                    f"missing section: {required_section}",
+                    PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
+                )
+            )
+    searchable_markdown = markdown_link_search_text(markdown)
+    searchable_markdown_casefold = searchable_markdown.casefold()
+    for required_term in PLUGIN_CREATOR_SOURCE_INTAKE_COVERAGE_TERMS:
+        if required_term.casefold() not in searchable_markdown_casefold:
+            results.append(
+                CheckResult(
+                    f"plugin_creator_source_intake:coverage:{required_term}",
+                    False,
+                    f"missing coverage term: {required_term}",
+                    PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
+                )
+            )
+    for route in PLUGIN_CREATOR_SOURCE_INTAKE_DOWNSTREAM_ROUTES:
+        if not required_downstream_route_present(searchable_markdown, route):
+            results.append(
+                CheckResult(
+                    f"plugin_creator_source_intake:routing:{route}",
+                    False,
+                    f"missing downstream route: {route}",
+                    PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
+                )
+            )
+    if HOST_LOCAL_PATH_RE.search(visible_markdown):
+        results.append(
+            CheckResult(
+                "plugin_creator_source_intake:portable_paths",
+                False,
+                "ledger must not preserve host-local paths",
+                PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
+            )
+        )
+    if results:
+        return results
+    return [
+        CheckResult(
+            "plugin_creator_source_intake:ledger",
+            True,
+            "present",
+            PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
         )
     ]
 
@@ -5474,6 +5580,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
         EXISTING_EQUIPMENT_ONBOARDING_PRD_PATH,
         SOURCE_DISPOSITION_PATH,
         SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
+        PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
         THREAT_MODEL_PATH,
         ISSUE_TRACKER_OPS_POLICY_CONFIG_PATH,
         DOCUMENTATION_CLOSEOUT_PATH,
@@ -5507,6 +5614,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
     ]
     results.extend(validate_source_disposition(root))
     results.extend(validate_skill_eval_methodology_source_intake(root))
+    results.extend(validate_plugin_creator_source_intake(root))
     results.extend(validate_source_retired_tree(root, include_disposition=False))
     results.extend(validate_final_source_retired_stamp(root))
     if final_closeout:

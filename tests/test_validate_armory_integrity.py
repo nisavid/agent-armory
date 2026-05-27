@@ -20,6 +20,7 @@ from tools.validate_armory_integrity import (
     SOURCE_DISPOSITION_MANIFEST_FIELDS,
     SOURCE_DISPOSITION_PATH,
     SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
+    PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
     find_markdown_links,
     harness_matrix_rows,
     load_toml,
@@ -47,6 +48,7 @@ from tools.validate_armory_integrity import (
     validate_required_paths,
     validate_security_closeout,
     validate_skill_eval_methodology_source_intake,
+    validate_plugin_creator_source_intake,
     validate_templates,
     validate_threat_model,
 )
@@ -82,6 +84,7 @@ class ValidationBoundaryTests(unittest.TestCase):
         self.assertEqual(inventory["markdown_links"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["source_disposition"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["skill_eval_methodology_source_intake"]["boundary"], "armory_integrity")
+        self.assertEqual(inventory["plugin_creator_source_intake"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["source_retired_tree"]["boundary"], "historical_seed_migration")
         self.assertEqual(inventory["final_source_retired_stamp"]["boundary"], "historical_seed_migration")
         self.assertEqual(
@@ -97,6 +100,31 @@ class ValidationBoundaryTests(unittest.TestCase):
         self.assertEqual(output["schema"], "armory_integrity.validation_result.v1")
         self.assertEqual(output["validation"], "Armory Integrity Validation")
         self.assertEqual(output["results"][0]["name"], "demo")
+
+    def test_live_validator_run_includes_plugin_creator_source_intake(self):
+        repo_root = Path(__file__).resolve().parents[1]
+
+        results = run(repo_root, final_closeout=True)
+        result_map = {result.name: result for result in results}
+
+        self.assertEqual(
+            result_map[f"required_path:{PLUGIN_CREATOR_SOURCE_INTAKE_PATH}"],
+            CheckResult(
+                name=f"required_path:{PLUGIN_CREATOR_SOURCE_INTAKE_PATH}",
+                ok=True,
+                detail="exists",
+                path=PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
+            ),
+        )
+        self.assertEqual(
+            result_map["plugin_creator_source_intake:ledger"],
+            CheckResult(
+                name="plugin_creator_source_intake:ledger",
+                ok=True,
+                detail="present",
+                path=PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
+            ),
+        )
 
     def test_live_validator_help_names_integrity_boundaries(self):
         completed = subprocess.run(
@@ -171,6 +199,333 @@ class ValidatorPrimitiveTests(unittest.TestCase):
                     ok=False,
                     detail="missing",
                     path=SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
+                )
+            ],
+        )
+
+    def test_validate_plugin_creator_source_intake_reports_missing_doc(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = validate_plugin_creator_source_intake(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="plugin_creator_source_intake:path",
+                    ok=False,
+                    detail="missing",
+                    path=PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
+                )
+            ],
+        )
+
+    def test_validate_plugin_creator_source_intake_requires_ledger_shape(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / PLUGIN_CREATOR_SOURCE_INTAKE_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "# Plugin-Creator Source Intake\n\nStatus: Draft\n\n## Scope Boundary\n\nIncomplete.\n",
+                encoding="utf-8",
+            )
+
+            results = validate_plugin_creator_source_intake(root)
+
+        self.assertIn(
+            CheckResult(
+                name="plugin_creator_source_intake:status",
+                ok=False,
+                detail="status must be Source Disposition Ledger",
+                path=PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="plugin_creator_source_intake:section:Portable Source Inventory",
+                ok=False,
+                detail="missing section: Portable Source Inventory",
+                path=PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_plugin_creator_source_intake_requires_coverage_terms(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / PLUGIN_CREATOR_SOURCE_INTAKE_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Plugin-Creator Source Intake
+
+                    Status: Source Disposition Ledger
+
+                    ## Scope Boundary
+
+                    Source intake only.
+
+                    ## Portable Source Inventory
+
+                    plugin-creator/SKILL.md.
+
+                    ## Reusable Techniques
+
+                    name normalization and marketplace projection.
+
+                    ## UX And Marketplace Metadata
+
+                    display metadata is covered.
+
+                    ## Downstream Routing
+
+                    #5 is covered.
+
+                    ## Deferments And Nonportable Claims
+
+                    No plugin implementation.
+
+                    ## Security, Privacy, And Durability
+
+                    No raw logs are retained.
+
+                    ## Closeout Evidence
+
+                    Reviewed.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_plugin_creator_source_intake(root)
+
+        self.assertIn(
+            CheckResult(
+                name="plugin_creator_source_intake:coverage:manifest scaffolding",
+                ok=False,
+                detail="missing coverage term: manifest scaffolding",
+                path=PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="plugin_creator_source_intake:routing:#154",
+                ok=False,
+                detail="missing downstream route: #154",
+                path=PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_plugin_creator_source_intake_requires_exact_issue_routes(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / PLUGIN_CREATOR_SOURCE_INTAKE_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Plugin-Creator Source Intake
+
+                    Status: Source Disposition Ledger
+
+                    ## Scope Boundary
+
+                    Source intake only.
+
+                    ## Portable Source Inventory
+
+                    plugin-creator/SKILL.md and plugin-creator/scripts/create_basic_plugin.py.
+
+                    ## Reusable Techniques
+
+                    manifest scaffolding, name normalization, marketplace projection,
+                    cachebuster reinstall flow, schema validation, component surface selection,
+                    placeholder debt, policy/auth semantics, and asset metadata.
+
+                    ## UX And Marketplace Metadata
+
+                    Marketplace display metadata is retained.
+
+                    ## Downstream Routing
+
+                    #51, #154a, and #157b.
+
+                    ## Deferments And Nonportable Claims
+
+                    No plugin implementation.
+
+                    ## Security, Privacy, And Durability
+
+                    No raw logs are retained.
+
+                    ## Closeout Evidence
+
+                    Reviewed.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_plugin_creator_source_intake(root)
+
+        self.assertIn(
+            CheckResult(
+                name="plugin_creator_source_intake:routing:#5",
+                ok=False,
+                detail="missing downstream route: #5",
+                path=PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="plugin_creator_source_intake:routing:#154",
+                ok=False,
+                detail="missing downstream route: #154",
+                path=PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="plugin_creator_source_intake:routing:#157",
+                ok=False,
+                detail="missing downstream route: #157",
+                path=PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_plugin_creator_source_intake_rejects_host_local_paths(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / PLUGIN_CREATOR_SOURCE_INTAKE_PATH
+            path.parent.mkdir(parents=True)
+            template = textwrap.dedent(
+                """\
+                    # Plugin-Creator Source Intake
+
+                    Status: Source Disposition Ledger
+
+                    ## Scope Boundary
+
+                    Source intake only.
+
+                    ## Portable Source Inventory
+
+                    The raw source lives at `{host_local_path}`.
+
+                    ## Reusable Techniques
+
+                    manifest scaffolding, name normalization, marketplace projection,
+                    cachebuster reinstall flow, schema validation, component surface selection,
+                    placeholder debt, policy/auth semantics, and asset metadata.
+
+                    ## UX And Marketplace Metadata
+
+                    Marketplace display metadata is retained.
+
+                    ## Downstream Routing
+
+                    #5, #154, and #157.
+
+                    ## Deferments And Nonportable Claims
+
+                    No plugin implementation.
+
+                    ## Security, Privacy, And Durability
+
+                    No raw logs are retained.
+
+                    ## Closeout Evidence
+
+                    Reviewed.
+                    """
+            )
+
+            for host_local_path in (
+                "/home/agent/.codex/skills/.system/plugin-creator/SKILL.md",
+                r"C:\Users\agent\.codex\skills\.system\plugin-creator\SKILL.md",
+            ):
+                with self.subTest(host_local_path=host_local_path):
+                    path.write_text(template.format(host_local_path=host_local_path), encoding="utf-8")
+                    results = validate_plugin_creator_source_intake(root)
+
+                    self.assertIn(
+                        CheckResult(
+                            name="plugin_creator_source_intake:portable_paths",
+                            ok=False,
+                            detail="ledger must not preserve host-local paths",
+                            path=PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
+                        ),
+                        results,
+                    )
+
+    def test_validate_plugin_creator_source_intake_accepts_complete_ledger(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / PLUGIN_CREATOR_SOURCE_INTAKE_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Plugin-Creator Source Intake
+
+                    Status: Source Disposition Ledger
+
+                    ## Scope Boundary
+
+                    Source intake only.
+
+                    ## Portable Source Inventory
+
+                    plugin-creator/SKILL.md and plugin-creator/scripts/create_basic_plugin.py.
+
+                    ## Reusable Techniques
+
+                    manifest scaffolding, name normalization, marketplace projection,
+                    cachebuster reinstall flow, schema validation, component surface selection,
+                    placeholder debt, policy/auth semantics, and asset metadata.
+
+                    ## UX And Marketplace Metadata
+
+                    Marketplace display metadata is retained.
+
+                    ## Downstream Routing
+
+                    #5, #154, and #157.
+
+                    ## Deferments And Nonportable Claims
+
+                    No plugin implementation.
+
+                    ## Security, Privacy, And Durability
+
+                    No raw logs are retained.
+
+                    ## Closeout Evidence
+
+                    Reviewed.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_plugin_creator_source_intake(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="plugin_creator_source_intake:ledger",
+                    ok=True,
+                    detail="present",
+                    path=PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
                 )
             ],
         )
