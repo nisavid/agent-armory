@@ -9336,10 +9336,10 @@ class IssueOpsWorkflowExecutorValidationTests(unittest.TestCase):
 
         self.assertIn(
             CheckResult(
-                "issue_ops_workflow_executor:profile:allow:unexpected",
-                False,
-                "unexpected allow entries: tracker write bypass",
-                "agents/issue-ops-workflow-executor/profile.toml",
+                name="issue_ops_workflow_executor:profile:allow:unexpected",
+                ok=False,
+                detail="unexpected allow entries: tracker write bypass",
+                path="agents/issue-ops-workflow-executor/profile.toml",
             ),
             results,
         )
