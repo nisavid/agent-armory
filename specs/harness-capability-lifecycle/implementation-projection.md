@@ -35,8 +35,10 @@ The implementation projection created these follow-up issues:
    blocked by #173 and #174; Reflection-specific routing may also depend on
    #25.
 5. [#177 Integrate Harness Test Suite results with Harness Capability lifecycle evidence](https://github.com/nisavid/agent-armory/issues/177):
-   blocked by #164, #167, and any prerequisite Jig Test Plan, first Jig
-   Driver, Assertion Provider, or adequacy-report work.
+   blocked by [#164 Implement Agent Test Jig Runner CLI and structured results](https://github.com/nisavid/agent-armory/issues/164),
+   [#167 Integrate Harness Test Suites with Harness Capability lifecycle work](https://github.com/nisavid/agent-armory/issues/167),
+   and any prerequisite Jig Test Plan, first Jig Driver, Assertion Provider, or
+   adequacy-report work.
 6. [#178 Integrate Harness Capability lifecycle with Config and Periodic Actions](https://github.com/nisavid/agent-armory/issues/178):
    blocked by #23 and #3.
 
