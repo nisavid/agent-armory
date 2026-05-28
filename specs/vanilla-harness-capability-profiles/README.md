@@ -20,6 +20,7 @@ Smiths consume profile facts when crafting Agent Equipment.
 - [Forge Domain Model Review](forge-domain-model-review.md)
 - [Schema pressure report](schema-pressure-report.md)
 - [Capability Profiling Protocol](../capability-profiling-protocol/)
+- [Harness Capability Lifecycle Methodology](../harness-capability-lifecycle/)
 - [Manual refresh review workflow](workflows/manual-refresh-review.md)
 - [Manual refresh examples](../../examples/harness-capability-refresh/)
 - Research notes:

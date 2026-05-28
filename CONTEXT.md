@@ -390,6 +390,13 @@ The human-facing front door and collection boundary for Vanilla Harness
 Capability Profiles, sources, limitations, and refresh requirements.
 _Avoid_: source map, research notes
 
+**Harness Capability Lifecycle Methodology**:
+The methodology for discovering, comparing, reanalyzing, refining,
+deprecating, removing, and projecting Harness Capability work after Vanilla
+Harness Capability Profiles exist.
+_Avoid_: Manager Core implementation, recurring Harness Capability Refresh,
+assuming future jig validation is already available
+
 **Harness Capability Profile**:
 A Capability Profile for a Harness Capability Surface.
 _Avoid_: Agent Profile, Harness Plugin, equipment projection guidance
