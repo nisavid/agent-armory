@@ -108,8 +108,9 @@ impact, affected consumers, and current uncertainty.
 
 ### 2. Classify evidence
 
-Evidence classes are ordered by how directly they support durable profile
-claims:
+Evidence classes identify provenance and allowed next actions. The order moves
+from source-controlled authority toward interpreted or unresolved claims; it is
+not a generic confidence ranking:
 
 1. First-party source evidence: official docs, release notes, schema files,
    source repositories, or changelogs controlled by the harness owner.
@@ -126,8 +127,11 @@ claims:
 7. Hypothesis, unknown, unsupported, or not-applicable: explicit uncertainty,
    negative evidence, or out-of-scope classification.
 
-Do not collapse these classes into one confidence label. The class determines
-what action is allowed next.
+Do not collapse these classes into one confidence label. Class 3 is closer to
+raw observed behavior; class 4 can be more decision-worthy when its selected
+rigor, observation points, and sufficiency criteria answer the promotion
+question. Preserve the underlying source and observation pointers so the class
+still determines what action is allowed next.
 
 ### 3. Correlate across harnesses
 
