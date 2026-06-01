@@ -5248,21 +5248,21 @@ def validate_published_equipment_inventory_view(root: Path) -> list[CheckResult]
 
     bullets = markdown_bullet_items(stock_records)
     if not equipment_records:
-        if stock_records.strip() != PUBLISHED_EQUIPMENT_EMPTY_STOCK_SENTENCE:
-            results.append(
-                CheckResult(
-                    "published_equipment_inventory_view:empty_stock",
-                    False,
-                    "missing exact empty stock sentence",
-                    PUBLISHED_EQUIPMENT_INVENTORY_VIEW_PATH,
-                )
-            )
         if bullets:
             results.append(
                 CheckResult(
                     "published_equipment_inventory_view:empty_stock",
                     False,
                     "empty stock view must not list stock record bullets",
+                    PUBLISHED_EQUIPMENT_INVENTORY_VIEW_PATH,
+                )
+            )
+        elif stock_records.strip() != PUBLISHED_EQUIPMENT_EMPTY_STOCK_SENTENCE:
+            results.append(
+                CheckResult(
+                    "published_equipment_inventory_view:empty_stock",
+                    False,
+                    "missing exact empty stock sentence",
                     PUBLISHED_EQUIPMENT_INVENTORY_VIEW_PATH,
                 )
             )

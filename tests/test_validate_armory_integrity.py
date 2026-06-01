@@ -9782,6 +9782,15 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
             ),
             results,
         )
+        self.assertNotIn(
+            CheckResult(
+                "published_equipment_inventory_view:empty_stock",
+                False,
+                "missing exact empty stock sentence",
+                "docs/equipment/inventory.md",
+            ),
+            results,
+        )
 
     def test_validate_published_equipment_inventory_view_requires_non_empty_stock_record_bullets(self):
         validator = importlib.import_module("tools.validate_armory_integrity")
