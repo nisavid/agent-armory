@@ -58,9 +58,9 @@ foundation and its north star.
 
 ## Agent Equipment Forge
 
-The inventory is not stocked yet. What exists now is the **Agent Equipment
-Forge**: the workshop and quality system that prepares equipment before it
-reaches the Armory.
+The [stocked-equipment inventory](docs/equipment/inventory.md) is empty for now.
+What exists now is the **Agent Equipment Forge**: the workshop and quality
+system that prepares equipment before it reaches the Armory.
 
 The Forge helps agents turn a useful idea into something that can be trusted. It
 asks what the equipment is for, which harness it will run in, where each part
@@ -93,10 +93,16 @@ unresolved. The
 shows how Smiths, Wielders, and Outfitters connect that runtime to equipment and
 harness surfaces.
 
+The [Markdown inventory view](docs/equipment/inventory.md) shows current Armory
+stock and routes future shop cards. Config's stock record and shop card remain
+delivery-retrofit work, so the current inventory still records no stocked
+equipment.
+
 > [!IMPORTANT]
 > The examples and blueprints are not published agent equipment. They are
 > construction material for future equipment work. The Config runtime guide is
-> the current published equipment surface.
+> the current published equipment surface; it is not yet a stocked inventory
+> record.
 
 ## Why this matters
 

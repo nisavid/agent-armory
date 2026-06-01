@@ -124,6 +124,11 @@ VALIDATION_INVENTORY = [
         "relationship": "Top-level stock inventory and Equipment Shop Card standard validation for published equipment delivery claims.",
     },
     {
+        "check": "published_equipment_inventory_view",
+        "boundary": "armory_integrity",
+        "relationship": "Top-level validation that the human-facing Markdown inventory remains a checked projection of the canonical stock inventory.",
+    },
+    {
         "check": "examples",
         "boundary": "equipment_candidate_shape",
         "relationship": "Equipment-candidate shape validation for Forge examples, not equipment-specific behavior validation.",
@@ -1007,8 +1012,13 @@ ISSUE_OPS_WORKFLOW_EXECUTOR_REQUIRED_APPROVALS = [
 ]
 PUBLISHED_EQUIPMENT_DELIVERY_DOC_PATH = "docs/equipment-delivery.md"
 PUBLISHED_EQUIPMENT_INVENTORY_PATH = "inventory/equipment.toml"
+PUBLISHED_EQUIPMENT_INVENTORY_VIEW_PATH = "docs/equipment/inventory.md"
+PUBLISHED_EQUIPMENT_SHOP_CARD_INDEX_PATH = "docs/equipment/shop-cards/README.md"
 PUBLISHED_EQUIPMENT_INVENTORY_SCHEMA_VERSION = "agent-armory.equipment-stock.v1"
 PUBLISHED_EQUIPMENT_SHOP_CARD_DIR = "docs/equipment/shop-cards"
+PUBLISHED_EQUIPMENT_EMPTY_STOCK_SENTENCE = (
+    "No stocked equipment is recorded in `inventory/equipment.toml` yet."
+)
 PUBLISHED_EQUIPMENT_PROMOTION_STATES = {
     "example",
     "specified",
@@ -5106,6 +5116,223 @@ def validate_published_equipment_delivery(root: Path) -> list[CheckResult]:
     ]
 
 
+def markdown_section_body(markdown: str, heading: str) -> str | None:
+    visible = markdown_visible_text(markdown)
+    pattern = re.compile(
+        rf"(?ms)^## {re.escape(heading)}\s*$\n(?P<body>.*?)(?=^## |\Z)"
+    )
+    match = pattern.search(visible)
+    if match is None:
+        return None
+    return match.group("body")
+
+
+def markdown_bullet_items(markdown: str) -> list[str]:
+    bullets: list[str] = []
+    current: list[str] | None = None
+    for line in markdown.splitlines():
+        stripped = line.strip()
+        bullet_match = re.match(r"^[-*+]\s+(?P<body>.+)$", stripped)
+        if bullet_match:
+            if current is not None:
+                bullets.append(" ".join(current))
+            current = [bullet_match.group("body")]
+            continue
+        if current is not None and not stripped:
+            bullets.append(" ".join(current))
+            current = None
+            continue
+        if current is not None:
+            current.append(stripped)
+    if current is not None:
+        bullets.append(" ".join(current))
+    return bullets
+
+
+def validate_published_equipment_inventory_view(root: Path) -> list[CheckResult]:
+    view_ok, view_detail, view_path = repo_relative_path_status(
+        root, PUBLISHED_EQUIPMENT_INVENTORY_VIEW_PATH, "file"
+    )
+    if not view_ok:
+        return [
+            CheckResult(
+                "published_equipment_inventory_view:path",
+                False,
+                view_detail,
+                PUBLISHED_EQUIPMENT_INVENTORY_VIEW_PATH,
+            )
+        ]
+    try:
+        data = load_toml(root / PUBLISHED_EQUIPMENT_INVENTORY_PATH)
+    except OSError:
+        return [
+            CheckResult(
+                "published_equipment_inventory_view:inventory",
+                False,
+                "missing stock inventory",
+                PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+            )
+        ]
+    except tomllib.TOMLDecodeError as error:
+        return [
+            CheckResult(
+                "published_equipment_inventory_view:inventory",
+                False,
+                f"TOML invalid: {error.msg}",
+                PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+            )
+        ]
+
+    markdown = view_path.read_text(encoding="utf-8")
+    results: list[CheckResult] = []
+    links = find_markdown_links(markdown)
+    if "../../inventory/equipment.toml" not in links:
+        results.append(
+            CheckResult(
+                "published_equipment_inventory_view:authority",
+                False,
+                "missing canonical inventory link",
+                PUBLISHED_EQUIPMENT_INVENTORY_VIEW_PATH,
+            )
+        )
+    if PUBLISHED_EQUIPMENT_INVENTORY_SCHEMA_VERSION not in markdown_visible_text(markdown):
+        results.append(
+            CheckResult(
+                "published_equipment_inventory_view:schema_version",
+                False,
+                "missing stock inventory schema version",
+                PUBLISHED_EQUIPMENT_INVENTORY_VIEW_PATH,
+            )
+        )
+    if "shop-cards/README.md" not in links:
+        results.append(
+            CheckResult(
+                "published_equipment_inventory_view:shop_cards",
+                False,
+                "missing shop-card index link",
+                PUBLISHED_EQUIPMENT_INVENTORY_VIEW_PATH,
+            )
+        )
+
+    stock_records = markdown_section_body(markdown, "Stock Records")
+    if stock_records is None:
+        results.append(
+            CheckResult(
+                "published_equipment_inventory_view:stock_records",
+                False,
+                "missing Stock Records section",
+                PUBLISHED_EQUIPMENT_INVENTORY_VIEW_PATH,
+            )
+        )
+        return results
+
+    equipment_records = data.get("equipment")
+    if not isinstance(equipment_records, list):
+        results.append(
+            CheckResult(
+                "published_equipment_inventory_view:equipment",
+                False,
+                "equipment must be a list",
+                PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+            )
+        )
+        return results
+
+    bullets = markdown_bullet_items(stock_records)
+    if not equipment_records:
+        if stock_records.strip() != PUBLISHED_EQUIPMENT_EMPTY_STOCK_SENTENCE:
+            results.append(
+                CheckResult(
+                    "published_equipment_inventory_view:empty_stock",
+                    False,
+                    "missing exact empty stock sentence",
+                    PUBLISHED_EQUIPMENT_INVENTORY_VIEW_PATH,
+                )
+            )
+        if bullets:
+            results.append(
+                CheckResult(
+                    "published_equipment_inventory_view:empty_stock",
+                    False,
+                    "empty stock view must not list stock record bullets",
+                    PUBLISHED_EQUIPMENT_INVENTORY_VIEW_PATH,
+                )
+            )
+    else:
+        if len(bullets) != len(equipment_records):
+            results.append(
+                CheckResult(
+                    "published_equipment_inventory_view:stock_records",
+                    False,
+                    "stock record bullet count must match inventory records",
+                    PUBLISHED_EQUIPMENT_INVENTORY_VIEW_PATH,
+                )
+            )
+        for index, record in enumerate(equipment_records, start=1):
+            if not isinstance(record, dict):
+                continue
+            equipment_id = record.get("id")
+            name = record.get("name")
+            delivery_compliance = record.get("delivery_compliance")
+            shop_card = record.get("shop_card")
+            required_values = [equipment_id, name, delivery_compliance, shop_card]
+            if not all(isinstance(value, str) and value.strip() for value in required_values):
+                continue
+            if not any(
+                all(value in bullet for value in required_values)
+                for bullet in bullets
+            ):
+                results.append(
+                    CheckResult(
+                        f"published_equipment_inventory_view:record:{equipment_id or index}",
+                        False,
+                        "stock record bullet must include id, name, delivery_compliance, and shop_card",
+                        PUBLISHED_EQUIPMENT_INVENTORY_VIEW_PATH,
+                    )
+                )
+    if results:
+        return results
+    return [
+        CheckResult(
+            "published_equipment_inventory_view:projection",
+            True,
+            "inventory view matches stock inventory",
+            PUBLISHED_EQUIPMENT_INVENTORY_VIEW_PATH,
+        )
+    ]
+
+
+def validate_published_equipment_inventory_routing(root: Path) -> list[CheckResult]:
+    expected_routes = {
+        "README.md": "docs/equipment/inventory.md",
+        "docs/README.md": "equipment/inventory.md",
+        "docs/forge-tour.md": "equipment/inventory.md",
+    }
+    results: list[CheckResult] = []
+    for relative_path, target in expected_routes.items():
+        path_ok, path_detail, path = repo_relative_path_status(root, relative_path, "file")
+        if not path_ok:
+            results.append(
+                CheckResult(
+                    f"published_equipment_inventory_view:routing:{relative_path}",
+                    False,
+                    path_detail,
+                    relative_path,
+                )
+            )
+            continue
+        links = find_markdown_links(path.read_text(encoding="utf-8"))
+        results.append(
+            CheckResult(
+                f"published_equipment_inventory_view:routing:{relative_path}",
+                target in links,
+                "inventory view route present" if target in links else "missing inventory view route",
+                relative_path,
+            )
+        )
+    return results
+
+
 def validate_templates(root: Path) -> list[CheckResult]:
     results: list[CheckResult] = [
         *validate_root_templates(root),
@@ -5885,6 +6112,8 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
         ISSUE_TRACKER_OPS_PRD_PATH,
         EXISTING_EQUIPMENT_ONBOARDING_PRD_PATH,
         PUBLISHED_EQUIPMENT_DELIVERY_DOC_PATH,
+        PUBLISHED_EQUIPMENT_INVENTORY_VIEW_PATH,
+        PUBLISHED_EQUIPMENT_SHOP_CARD_INDEX_PATH,
         PUBLISHED_EQUIPMENT_INVENTORY_PATH,
         SOURCE_DISPOSITION_PATH,
         SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
@@ -5915,6 +6144,8 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
         *validate_harness_catalog(root),
         *validate_templates(root),
         *validate_published_equipment_delivery(root),
+        *validate_published_equipment_inventory_view(root),
+        *validate_published_equipment_inventory_routing(root),
         *validate_examples(root),
         *validate_specs(root),
         *validate_issue_ops_workflow_executor(root),
