@@ -5149,6 +5149,14 @@ def markdown_bullet_items(markdown: str) -> list[str]:
     return bullets
 
 
+def markdown_record_token_present(bullet: str, value: str, *, path: bool = False) -> bool:
+    if path:
+        pattern = rf"(?<![\w./-])(?:\.\./)*{re.escape(value)}(?![\w./-])"
+    else:
+        pattern = rf"(?<![\w-]){re.escape(value)}(?![\w-])"
+    return re.search(pattern, bullet) is not None
+
+
 def validate_published_equipment_inventory_view(root: Path) -> list[CheckResult]:
     view_ok, view_detail, view_path = repo_relative_path_status(
         root, PUBLISHED_EQUIPMENT_INVENTORY_VIEW_PATH, "file"
@@ -5279,7 +5287,11 @@ def validate_published_equipment_inventory_view(root: Path) -> list[CheckResult]
             if not all(isinstance(value, str) and value.strip() for value in required_values):
                 continue
             if not any(
-                all(value in bullet for value in required_values)
+                PUBLISHED_EQUIPMENT_EMPTY_STOCK_SENTENCE not in bullet
+                and markdown_record_token_present(bullet, equipment_id)
+                and markdown_record_token_present(bullet, name)
+                and markdown_record_token_present(bullet, delivery_compliance)
+                and markdown_record_token_present(bullet, shop_card, path=True)
                 for bullet in bullets
             ):
                 results.append(
