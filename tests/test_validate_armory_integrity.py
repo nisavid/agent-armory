@@ -9938,6 +9938,57 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
             results,
         )
 
+    def test_validate_published_equipment_inventory_view_rejects_substring_only_stock_record_bullet(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_inventory(
+                root,
+                """
+                schema_version = "agent-armory.equipment-stock.v1"
+
+                [[equipment]]
+                id = "kit"
+                name = "Kit"
+                summary = "Demonstrates stock inventory validation."
+                promotion_state = "published"
+                delivery_compliance = "pending"
+                shop_card = "docs/equipment/shop-cards/kit.md"
+                """,
+            )
+            self.write_inventory_view(
+                root,
+                """
+                # Stocked Equipment Inventory
+
+                ## Stock Authority
+
+                [`inventory/equipment.toml`](../../inventory/equipment.toml)
+                uses schema `agent-armory.equipment-stock.v1`.
+
+                ## Stock Records
+
+                - `toolkit` - Kitten - `pendingly` -
+                  [shop card](docs/equipment/shop-cards/kit.md.bak)
+
+                ## Shop Cards
+
+                [Shop-card index](shop-cards/README.md)
+                """,
+            )
+
+            results = validator.validate_published_equipment_inventory_view(root)
+
+        self.assertIn(
+            CheckResult(
+                "published_equipment_inventory_view:record:kit",
+                False,
+                "stock record bullet must include id, name, delivery_compliance, and shop_card",
+                "docs/equipment/inventory.md",
+            ),
+            results,
+        )
+
     def test_validate_published_equipment_inventory_routing_requires_reader_routes(self):
         validator = importlib.import_module("tools.validate_armory_integrity")
         with tempfile.TemporaryDirectory() as tmpdir:
