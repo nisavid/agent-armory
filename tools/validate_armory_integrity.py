@@ -159,6 +159,11 @@ VALIDATION_INVENTORY = [
         "relationship": "Top-level repository integrity check for the durable source-disposition ledger retained after source retirement.",
     },
     {
+        "check": "harbor_jig_source_map",
+        "boundary": "armory_integrity",
+        "relationship": "Top-level repository integrity check for the durable Harbor-to-Armory jig source-map ledger.",
+    },
+    {
         "check": "skill_eval_methodology_source_intake",
         "boundary": "armory_integrity",
         "relationship": "Top-level repository integrity check for the durable skill-eval methodology source-intake ledger.",
@@ -473,8 +478,57 @@ SOURCE_PROJECTION_FIELDS = [
 SOURCE_PROJECTION_VALIDATION_STATUSES = {"planned", "validated"}
 SOURCE_PROJECTION_PLANNED_REQUIREMENTS = {"H012", "H053"}
 SOURCE_DISPOSITION_PATH = "docs/closeout/forge-seed-source-disposition.md"
+HARBOR_JIG_SOURCE_MAP_PATH = "docs/closeout/harbor-jig-source-map.md"
 SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH = "docs/closeout/skill-eval-methodology-source-intake.md"
 PLUGIN_CREATOR_SOURCE_INTAKE_PATH = "docs/closeout/plugin-creator-source-intake.md"
+HARBOR_JIG_SOURCE_MAP_REQUIRED_SECTIONS = [
+    "Scope Boundary",
+    "Portable Source Inventory",
+    "Harbor-To-Armory Concept Map",
+    "Risks And Open Issues",
+    "Downstream Routing",
+    "Deferments And Nonportable Claims",
+    "Security Privacy And Durability",
+    "Closeout Evidence",
+]
+HARBOR_JIG_SOURCE_MAP_COVERAGE_TERMS = [
+    "task",
+    "dataset",
+    "agent",
+    "trial",
+    "job",
+    "environment",
+    "verifier",
+    "Reward Kit",
+    "ATIF trajectory",
+    "artifacts",
+    "scoring",
+    "cloud sandbox",
+    "network policy",
+    "artifact handling",
+    "verifier/reward tampering",
+    "auth/provider boundaries",
+    "Agent Test Jig",
+    "Jig Test Plan",
+    "Jig Driver",
+    "Jig Runner",
+    "Assertion Provider",
+    "Learned Oracle",
+    "Harness Test Suite",
+    "Capability Profiling Protocol",
+    "Study Report",
+    "Jig Adequacy Report",
+]
+HARBOR_JIG_SOURCE_MAP_DOWNSTREAM_ROUTES = [
+    "#183",
+    "#185",
+    "#186",
+    "#187",
+    "#188",
+    "#189",
+    "#190",
+    "#191",
+]
 PLUGIN_CREATOR_SOURCE_INTAKE_REQUIRED_SECTIONS = [
     "Scope Boundary",
     "Portable Source Inventory",
@@ -1959,6 +2013,84 @@ def validate_plugin_creator_source_intake(root: Path) -> list[CheckResult]:
             True,
             "present",
             PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
+        )
+    ]
+
+
+def validate_harbor_jig_source_map(root: Path) -> list[CheckResult]:
+    ok, detail, path = repo_relative_path_status(root, HARBOR_JIG_SOURCE_MAP_PATH, "file")
+    if not ok:
+        return [
+            CheckResult(
+                "harbor_jig_source_map:path",
+                False,
+                detail,
+                HARBOR_JIG_SOURCE_MAP_PATH,
+            )
+        ]
+    markdown = path.read_text(encoding="utf-8")
+    visible_markdown = markdown_visible_text(markdown)
+    nonblank_lines = [line.strip() for line in visible_markdown.splitlines() if line.strip()]
+    headings = markdown_heading_texts(markdown)
+    results: list[CheckResult] = []
+    if "Status: Source Disposition Ledger" not in nonblank_lines[:8]:
+        results.append(
+            CheckResult(
+                "harbor_jig_source_map:status",
+                False,
+                "status must be Source Disposition Ledger",
+                HARBOR_JIG_SOURCE_MAP_PATH,
+            )
+        )
+    for required_section in HARBOR_JIG_SOURCE_MAP_REQUIRED_SECTIONS:
+        if normalize_reference_label(required_section) not in headings:
+            results.append(
+                CheckResult(
+                    f"harbor_jig_source_map:section:{required_section}",
+                    False,
+                    f"missing section: {required_section}",
+                    HARBOR_JIG_SOURCE_MAP_PATH,
+                )
+            )
+    searchable_markdown = markdown_link_search_text(markdown)
+    searchable_markdown_casefold = searchable_markdown.casefold()
+    for required_term in HARBOR_JIG_SOURCE_MAP_COVERAGE_TERMS:
+        if required_term.casefold() not in searchable_markdown_casefold:
+            results.append(
+                CheckResult(
+                    f"harbor_jig_source_map:coverage:{required_term}",
+                    False,
+                    f"missing coverage term: {required_term}",
+                    HARBOR_JIG_SOURCE_MAP_PATH,
+                )
+            )
+    for route in HARBOR_JIG_SOURCE_MAP_DOWNSTREAM_ROUTES:
+        if not required_downstream_route_present(searchable_markdown, route):
+            results.append(
+                CheckResult(
+                    f"harbor_jig_source_map:routing:{route}",
+                    False,
+                    f"missing downstream route: {route}",
+                    HARBOR_JIG_SOURCE_MAP_PATH,
+                )
+            )
+    if HOST_LOCAL_PATH_RE.search(visible_markdown):
+        results.append(
+            CheckResult(
+                "harbor_jig_source_map:portable_paths",
+                False,
+                "ledger must not preserve host-local paths",
+                HARBOR_JIG_SOURCE_MAP_PATH,
+            )
+        )
+    if results:
+        return results
+    return [
+        CheckResult(
+            "harbor_jig_source_map:ledger",
+            True,
+            "present",
+            HARBOR_JIG_SOURCE_MAP_PATH,
         )
     ]
 
@@ -6128,6 +6260,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
         PUBLISHED_EQUIPMENT_SHOP_CARD_INDEX_PATH,
         PUBLISHED_EQUIPMENT_INVENTORY_PATH,
         SOURCE_DISPOSITION_PATH,
+        HARBOR_JIG_SOURCE_MAP_PATH,
         SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
         PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
         THREAT_MODEL_PATH,
@@ -6165,6 +6298,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
         *validate_markdown_links(root),
     ]
     results.extend(validate_source_disposition(root))
+    results.extend(validate_harbor_jig_source_map(root))
     results.extend(validate_skill_eval_methodology_source_intake(root))
     results.extend(validate_plugin_creator_source_intake(root))
     results.extend(validate_source_retired_tree(root, include_disposition=False))

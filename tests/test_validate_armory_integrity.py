@@ -19,6 +19,7 @@ from tools.validate_armory_integrity import (
     SOURCE_DISPOSITION_ITEM_FIELDS,
     SOURCE_DISPOSITION_MANIFEST_FIELDS,
     SOURCE_DISPOSITION_PATH,
+    HARBOR_JIG_SOURCE_MAP_PATH,
     SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
     PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
     find_markdown_links,
@@ -47,6 +48,7 @@ from tools.validate_armory_integrity import (
     SOURCE_PROJECTION_PLANNED_REQUIREMENTS,
     validate_required_paths,
     validate_security_closeout,
+    validate_harbor_jig_source_map,
     validate_skill_eval_methodology_source_intake,
     validate_plugin_creator_source_intake,
     validate_templates,
@@ -85,6 +87,7 @@ class ValidationBoundaryTests(unittest.TestCase):
         self.assertEqual(inventory["issue_ops_workflow_executor"]["boundary"], "equipment_candidate_shape")
         self.assertEqual(inventory["markdown_links"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["source_disposition"]["boundary"], "armory_integrity")
+        self.assertEqual(inventory["harbor_jig_source_map"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["skill_eval_methodology_source_intake"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["plugin_creator_source_intake"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["source_retired_tree"]["boundary"], "historical_seed_migration")
@@ -125,6 +128,31 @@ class ValidationBoundaryTests(unittest.TestCase):
                 ok=True,
                 detail="present",
                 path=PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
+            ),
+        )
+
+    def test_live_validator_run_includes_harbor_jig_source_map(self):
+        repo_root = Path(__file__).resolve().parents[1]
+
+        results = run(repo_root, final_closeout=True)
+        result_map = {result.name: result for result in results}
+
+        self.assertEqual(
+            result_map[f"required_path:{HARBOR_JIG_SOURCE_MAP_PATH}"],
+            CheckResult(
+                name=f"required_path:{HARBOR_JIG_SOURCE_MAP_PATH}",
+                ok=True,
+                detail="exists",
+                path=HARBOR_JIG_SOURCE_MAP_PATH,
+            ),
+        )
+        self.assertEqual(
+            result_map["harbor_jig_source_map:ledger"],
+            CheckResult(
+                name="harbor_jig_source_map:ledger",
+                ok=True,
+                detail="present",
+                path=HARBOR_JIG_SOURCE_MAP_PATH,
             ),
         )
 
@@ -252,6 +280,329 @@ class ValidatorPrimitiveTests(unittest.TestCase):
                 path=PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
             ),
             results,
+        )
+
+    def test_validate_harbor_jig_source_map_reports_missing_doc(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = validate_harbor_jig_source_map(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="harbor_jig_source_map:path",
+                    ok=False,
+                    detail="missing",
+                    path=HARBOR_JIG_SOURCE_MAP_PATH,
+                )
+            ],
+        )
+
+    def test_validate_harbor_jig_source_map_requires_ledger_shape(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_JIG_SOURCE_MAP_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "# Harbor Jig Source Map\n\nStatus: Draft\n\n## Scope Boundary\n\nIncomplete.\n",
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_jig_source_map(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_jig_source_map:status",
+                ok=False,
+                detail="status must be Source Disposition Ledger",
+                path=HARBOR_JIG_SOURCE_MAP_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="harbor_jig_source_map:section:Portable Source Inventory",
+                ok=False,
+                detail="missing section: Portable Source Inventory",
+                path=HARBOR_JIG_SOURCE_MAP_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_harbor_jig_source_map_requires_coverage_terms(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_JIG_SOURCE_MAP_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Harbor Jig Source Map
+
+                    Status: Source Disposition Ledger
+
+                    ## Scope Boundary
+
+                    Source map only.
+
+                    ## Portable Source Inventory
+
+                    Harbor docs.
+
+                    ## Harbor-To-Armory Concept Map
+
+                    task and dataset.
+
+                    ## Risks And Open Issues
+
+                    Network policy remains open.
+
+                    ## Downstream Routing
+
+                    #183.
+
+                    ## Deferments And Nonportable Claims
+
+                    No prototype.
+
+                    ## Security Privacy And Durability
+
+                    No raw logs.
+
+                    ## Closeout Evidence
+
+                    Reviewed.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_jig_source_map(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_jig_source_map:coverage:ATIF trajectory",
+                ok=False,
+                detail="missing coverage term: ATIF trajectory",
+                path=HARBOR_JIG_SOURCE_MAP_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="harbor_jig_source_map:coverage:Agent Test Jig",
+                ok=False,
+                detail="missing coverage term: Agent Test Jig",
+                path=HARBOR_JIG_SOURCE_MAP_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_harbor_jig_source_map_requires_exact_issue_routes(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_JIG_SOURCE_MAP_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Harbor Jig Source Map
+
+                    Status: Source Disposition Ledger
+
+                    ## Scope Boundary
+
+                    Source map only.
+
+                    ## Portable Source Inventory
+
+                    task, dataset, agent, trial, job, environment, verifier,
+                    Reward Kit, ATIF trajectory, artifacts, scoring, cloud sandbox,
+                    network policy, artifact handling, verifier/reward tampering,
+                    auth/provider boundaries, Agent Test Jig, Jig Test Plan,
+                    Jig Driver, Jig Runner, Assertion Provider, Learned Oracle,
+                    Harness Test Suite, Capability Profiling Protocol, Study Report,
+                    and Jig Adequacy Report.
+
+                    ## Harbor-To-Armory Concept Map
+
+                    Source-backed concept map.
+
+                    ## Risks And Open Issues
+
+                    Risks recorded.
+
+                    ## Downstream Routing
+
+                    #183, #185a, #186, #187, #188, #189, #190, and #191.
+
+                    ## Deferments And Nonportable Claims
+
+                    No prototype.
+
+                    ## Security Privacy And Durability
+
+                    No raw logs.
+
+                    ## Closeout Evidence
+
+                    Reviewed.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_jig_source_map(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_jig_source_map:routing:#185",
+                ok=False,
+                detail="missing downstream route: #185",
+                path=HARBOR_JIG_SOURCE_MAP_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_harbor_jig_source_map_rejects_host_local_paths(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_JIG_SOURCE_MAP_PATH
+            path.parent.mkdir(parents=True)
+            template = textwrap.dedent(
+                """\
+                    # Harbor Jig Source Map
+
+                    Status: Source Disposition Ledger
+
+                    ## Scope Boundary
+
+                    Source map only.
+
+                    ## Portable Source Inventory
+
+                    task, dataset, agent, trial, job, environment, verifier,
+                    Reward Kit, ATIF trajectory, artifacts, scoring, cloud sandbox,
+                    network policy, artifact handling, verifier/reward tampering,
+                    auth/provider boundaries, Agent Test Jig, Jig Test Plan,
+                    Jig Driver, Jig Runner, Assertion Provider, Learned Oracle,
+                    Harness Test Suite, Capability Profiling Protocol, Study Report,
+                    and Jig Adequacy Report.
+
+                    Raw scratch lives at `{host_local_path}`.
+
+                    ## Harbor-To-Armory Concept Map
+
+                    Source-backed concept map.
+
+                    ## Risks And Open Issues
+
+                    Risks recorded.
+
+                    ## Downstream Routing
+
+                    #183, #185, #186, #187, #188, #189, #190, and #191.
+
+                    ## Deferments And Nonportable Claims
+
+                    No prototype.
+
+                    ## Security Privacy And Durability
+
+                    No raw logs.
+
+                    ## Closeout Evidence
+
+                    Reviewed.
+                    """
+            )
+
+            for host_local_path in (
+                "/home/agent/harbor/source-map-scratch.json",
+                r"C:\Users\agent\harbor\source-map-scratch.json",
+            ):
+                with self.subTest(host_local_path=host_local_path):
+                    path.write_text(template.format(host_local_path=host_local_path), encoding="utf-8")
+                    results = validate_harbor_jig_source_map(root)
+
+                    self.assertIn(
+                        CheckResult(
+                            name="harbor_jig_source_map:portable_paths",
+                            ok=False,
+                            detail="ledger must not preserve host-local paths",
+                            path=HARBOR_JIG_SOURCE_MAP_PATH,
+                        ),
+                        results,
+                    )
+
+    def test_validate_harbor_jig_source_map_accepts_complete_ledger(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_JIG_SOURCE_MAP_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Harbor Jig Source Map
+
+                    Status: Source Disposition Ledger
+
+                    ## Scope Boundary
+
+                    Source map only.
+
+                    ## Portable Source Inventory
+
+                    Harbor docs cover task, dataset, agent, trial, job, environment,
+                    verifier, Reward Kit, ATIF trajectory, artifacts, scoring,
+                    cloud sandbox, network policy, artifact handling,
+                    verifier/reward tampering, and auth/provider boundaries.
+
+                    ## Harbor-To-Armory Concept Map
+
+                    Agent Test Jig, Jig Test Plan, Jig Driver, Jig Runner,
+                    Assertion Provider, Learned Oracle, Harness Test Suite,
+                    Capability Profiling Protocol, Study Report, and
+                    Jig Adequacy Report are mapped.
+
+                    ## Risks And Open Issues
+
+                    Risks recorded.
+
+                    ## Downstream Routing
+
+                    #183, #185, #186, #187, #188, #189, #190, and #191.
+
+                    ## Deferments And Nonportable Claims
+
+                    No prototype.
+
+                    ## Security Privacy And Durability
+
+                    No raw logs.
+
+                    ## Closeout Evidence
+
+                    Reviewed.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_jig_source_map(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="harbor_jig_source_map:ledger",
+                    ok=True,
+                    detail="present",
+                    path=HARBOR_JIG_SOURCE_MAP_PATH,
+                )
+            ],
         )
 
     def test_validate_plugin_creator_source_intake_requires_coverage_terms(self):
