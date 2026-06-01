@@ -9990,10 +9990,10 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
 
         self.assertIn(
             CheckResult(
-                "published_equipment_inventory_view:record:kit",
-                False,
-                "stock record bullet must include id, name, delivery_compliance, and shop_card",
-                "docs/equipment/inventory.md",
+                name="published_equipment_inventory_view:record:kit",
+                ok=False,
+                detail="stock record bullet must include id, name, delivery_compliance, and shop_card",
+                path="docs/equipment/inventory.md",
             ),
             results,
         )
