@@ -10,6 +10,8 @@ and Agent Equipment Config has its first published runtime slice.
   [Forge Tour](forge-tour.md). For shared equipment configuration, use
   [Agent Equipment Config](equipment/agent-equipment-config.md) and the
   [Config integration guide](equipment/agent-equipment-config-integration.md).
+  Check the [stocked-equipment inventory](equipment/inventory.md) before
+  treating any surface as current Armory stock.
 - **Outfitting a harness**: ask an outfitter to compare
   [harness capabilities](harness-capabilities.md),
   [harness components](harness-components.md), and
@@ -19,8 +21,8 @@ and Agent Equipment Config has its first published runtime slice.
   [Forge Tour](forge-tour.md), then use the
   [Forge Canon](agent-equipment-forge.md) and current [roadmap](#roadmap) to see
   what exists now, how equipment is made, and what is planned.
-- **Procuring equipment**: check the current inventory note in the
-  [Forge Tour](forge-tour.md), then review
+- **Procuring equipment**: check the current
+  [stocked-equipment inventory](equipment/inventory.md), then review
   [equipment promotion](equipment-promotion.md) and
   [Published Equipment Delivery](equipment-delivery.md) to see what must be
   true before equipment is ready to use.
@@ -90,6 +92,8 @@ agent equipment.
   Config.
 - [Config integration guide](equipment/agent-equipment-config-integration.md):
   how Smiths, Wielders, and Outfitters connect equipment to shared Config.
+- [Stocked equipment inventory](equipment/inventory.md): human-facing view of
+  current stock, backed by `inventory/equipment.toml`.
 - [Published Equipment Delivery](equipment-delivery.md): stock inventory and
   shop-card standard for delivery-compliant equipment claims.
 

@@ -66,9 +66,11 @@ Smiths, Wielders, and Outfitters connect Config to equipment and harness
 surfaces.
 
 Stockable delivery claims use the
-[Published Equipment Delivery](equipment-delivery.md) standard. That standard
-defines the inventory record, shop card, component manifest, and delivery
-status that must be inspectable before a release is delivery-compliant.
+[Published Equipment Delivery](equipment-delivery.md) standard. The
+[stocked-equipment inventory](equipment/inventory.md) shows what is currently
+stocked from the canonical inventory record. The delivery standard defines the
+inventory record, shop card, component manifest, and delivery status that must
+be inspectable before a release is delivery-compliant.
 
 When equipment reaches the right readiness state, an outfitter will be able to
 select equipment from the Armory and assemble a loadout for a role, task,
@@ -114,6 +116,8 @@ material for future equipment.
   needs approval, and where side effects are controlled.
 - [Equipment promotion](equipment-promotion.md): how examples and candidates
   move toward published agent equipment.
+- [Stocked equipment inventory](equipment/inventory.md): the current
+  human-facing inventory view.
 - [Published Equipment Delivery](equipment-delivery.md): how published
   equipment becomes inspectable Armory stock.
 

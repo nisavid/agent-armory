@@ -77,6 +77,8 @@ class ValidationBoundaryTests(unittest.TestCase):
         self.assertEqual(inventory["projection_drafts"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["harness_catalog"]["boundary"], "forge_integrity")
         self.assertEqual(inventory["templates"]["boundary"], "equipment_candidate_shape")
+        self.assertEqual(inventory["published_equipment_delivery"]["boundary"], "armory_integrity")
+        self.assertEqual(inventory["published_equipment_inventory_view"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["examples"]["boundary"], "equipment_candidate_shape")
         self.assertEqual(inventory["specs"]["boundary"], "equipment_candidate_shape")
         self.assertIn("issue_ops_workflow_executor", inventory)
@@ -8993,6 +8995,42 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(textwrap.dedent(content).lstrip(), encoding="utf-8")
 
+    def write_inventory_view(self, root: Path, content: str) -> None:
+        path = root / "docs/equipment/inventory.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(textwrap.dedent(content).lstrip(), encoding="utf-8")
+
+    def write_routing_docs(
+        self,
+        root: Path,
+        *,
+        readme_link: bool = True,
+        docs_link: bool = True,
+        tour_link: bool = True,
+    ) -> None:
+        readme = root / "README.md"
+        readme.write_text(
+            "[Inventory](docs/equipment/inventory.md)\n"
+            if readme_link
+            else "No inventory route.\n",
+            encoding="utf-8",
+        )
+        docs = root / "docs/README.md"
+        docs.parent.mkdir(parents=True, exist_ok=True)
+        docs.write_text(
+            "[Inventory](equipment/inventory.md)\n"
+            if docs_link
+            else "No inventory route.\n",
+            encoding="utf-8",
+        )
+        tour = root / "docs/forge-tour.md"
+        tour.write_text(
+            "[Inventory](equipment/inventory.md)\n"
+            if tour_link
+            else "No inventory route.\n",
+            encoding="utf-8",
+        )
+
     def test_validate_published_equipment_delivery_accepts_empty_stock_inventory(self):
         validator = importlib.import_module("tools.validate_armory_integrity")
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -9566,6 +9604,358 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
         for duplicate_error in duplicate_errors:
             self.assertNotIn(duplicate_error, results)
 
+    def test_validate_published_equipment_inventory_view_accepts_empty_stock_projection(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_inventory(
+                root,
+                """
+                schema_version = "agent-armory.equipment-stock.v1"
+                equipment = []
+                """,
+            )
+            self.write_inventory_view(
+                root,
+                """
+                # Stocked Equipment Inventory
+
+                ## Stock Authority
+
+                The canonical stock authority is
+                [`inventory/equipment.toml`](../../inventory/equipment.toml).
+                The stock inventory uses schema `agent-armory.equipment-stock.v1`.
+
+                ## Stock Records
+
+                No stocked equipment is recorded in `inventory/equipment.toml` yet.
+
+                ## Shop Cards
+
+                Shop cards live in the [shop-card index](shop-cards/README.md).
+                """,
+            )
+
+            results = validator.validate_published_equipment_inventory_view(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    "published_equipment_inventory_view:projection",
+                    True,
+                    "inventory view matches stock inventory",
+                    "docs/equipment/inventory.md",
+                )
+            ],
+        )
+
+    def test_validate_published_equipment_inventory_view_requires_empty_stock_sentence(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_inventory(
+                root,
+                """
+                schema_version = "agent-armory.equipment-stock.v1"
+                equipment = []
+                """,
+            )
+            self.write_inventory_view(
+                root,
+                """
+                # Stocked Equipment Inventory
+
+                ## Stock Authority
+
+                [`inventory/equipment.toml`](../../inventory/equipment.toml)
+                uses schema `agent-armory.equipment-stock.v1`.
+
+                ## Stock Records
+
+                Nothing is stocked.
+
+                ## Shop Cards
+
+                [Shop-card index](shop-cards/README.md)
+                """,
+            )
+
+            results = validator.validate_published_equipment_inventory_view(root)
+
+        self.assertIn(
+            CheckResult(
+                "published_equipment_inventory_view:empty_stock",
+                False,
+                "missing exact empty stock sentence",
+                "docs/equipment/inventory.md",
+            ),
+            results,
+        )
+
+    def test_validate_published_equipment_inventory_view_rejects_extra_empty_stock_text(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_inventory(
+                root,
+                """
+                schema_version = "agent-armory.equipment-stock.v1"
+                equipment = []
+                """,
+            )
+            self.write_inventory_view(
+                root,
+                """
+                # Stocked Equipment Inventory
+
+                ## Stock Authority
+
+                [`inventory/equipment.toml`](../../inventory/equipment.toml)
+                uses schema `agent-armory.equipment-stock.v1`.
+
+                ## Stock Records
+
+                No stocked equipment is recorded in `inventory/equipment.toml` yet.
+
+                Another empty-stock note.
+
+                ## Shop Cards
+
+                [Shop-card index](shop-cards/README.md)
+                """,
+            )
+
+            results = validator.validate_published_equipment_inventory_view(root)
+
+        self.assertIn(
+            CheckResult(
+                "published_equipment_inventory_view:empty_stock",
+                False,
+                "missing exact empty stock sentence",
+                "docs/equipment/inventory.md",
+            ),
+            results,
+        )
+
+    def test_validate_published_equipment_inventory_view_rejects_stale_stock_bullets_when_inventory_empty(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_inventory(
+                root,
+                """
+                schema_version = "agent-armory.equipment-stock.v1"
+                equipment = []
+                """,
+            )
+            self.write_inventory_view(
+                root,
+                """
+                # Stocked Equipment Inventory
+
+                ## Stock Authority
+
+                [`inventory/equipment.toml`](../../inventory/equipment.toml)
+                uses schema `agent-armory.equipment-stock.v1`.
+
+                ## Stock Records
+
+                No stocked equipment is recorded in `inventory/equipment.toml` yet.
+
+                - `agent-equipment-config` - stale stock claim
+
+                ## Shop Cards
+
+                [Shop-card index](shop-cards/README.md)
+                """,
+            )
+
+            results = validator.validate_published_equipment_inventory_view(root)
+
+        self.assertIn(
+            CheckResult(
+                "published_equipment_inventory_view:empty_stock",
+                False,
+                "empty stock view must not list stock record bullets",
+                "docs/equipment/inventory.md",
+            ),
+            results,
+        )
+
+    def test_validate_published_equipment_inventory_view_requires_non_empty_stock_record_bullets(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_inventory(
+                root,
+                """
+                schema_version = "agent-armory.equipment-stock.v1"
+
+                [[equipment]]
+                id = "example"
+                name = "Example Equipment"
+                summary = "Demonstrates stock inventory validation."
+                promotion_state = "published"
+                delivery_compliance = "pending"
+                shop_card = "docs/equipment/shop-cards/example.md"
+                """,
+            )
+            self.write_inventory_view(
+                root,
+                """
+                # Stocked Equipment Inventory
+
+                ## Stock Authority
+
+                [`inventory/equipment.toml`](../../inventory/equipment.toml)
+                uses schema `agent-armory.equipment-stock.v1`.
+
+                ## Stock Records
+
+                - `example` - Example Equipment - `pending` -
+                  [shop card](../../docs/equipment/shop-cards/example.md)
+
+                ## Shop Cards
+
+                [Shop-card index](shop-cards/README.md)
+                """,
+            )
+
+            results = validator.validate_published_equipment_inventory_view(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    "published_equipment_inventory_view:projection",
+                    True,
+                    "inventory view matches stock inventory",
+                    "docs/equipment/inventory.md",
+                )
+            ],
+        )
+
+    def test_validate_published_equipment_inventory_view_rejects_non_empty_record_missing_field(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_inventory(
+                root,
+                """
+                schema_version = "agent-armory.equipment-stock.v1"
+
+                [[equipment]]
+                id = "example"
+                name = "Example Equipment"
+                summary = "Demonstrates stock inventory validation."
+                promotion_state = "published"
+                delivery_compliance = "pending"
+                shop_card = "docs/equipment/shop-cards/example.md"
+                """,
+            )
+            self.write_inventory_view(
+                root,
+                """
+                # Stocked Equipment Inventory
+
+                ## Stock Authority
+
+                [`inventory/equipment.toml`](../../inventory/equipment.toml)
+                uses schema `agent-armory.equipment-stock.v1`.
+
+                ## Stock Records
+
+                - `example` - Example Equipment - `pending`
+
+                ## Shop Cards
+
+                [Shop-card index](shop-cards/README.md)
+                """,
+            )
+
+            results = validator.validate_published_equipment_inventory_view(root)
+
+        self.assertIn(
+            CheckResult(
+                "published_equipment_inventory_view:record:example",
+                False,
+                "stock record bullet must include id, name, delivery_compliance, and shop_card",
+                "docs/equipment/inventory.md",
+            ),
+            results,
+        )
+
+    def test_validate_published_equipment_inventory_view_does_not_count_paragraph_after_bullet(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_inventory(
+                root,
+                """
+                schema_version = "agent-armory.equipment-stock.v1"
+
+                [[equipment]]
+                id = "example"
+                name = "Example Equipment"
+                summary = "Demonstrates stock inventory validation."
+                promotion_state = "published"
+                delivery_compliance = "pending"
+                shop_card = "docs/equipment/shop-cards/example.md"
+                """,
+            )
+            self.write_inventory_view(
+                root,
+                """
+                # Stocked Equipment Inventory
+
+                ## Stock Authority
+
+                [`inventory/equipment.toml`](../../inventory/equipment.toml)
+                uses schema `agent-armory.equipment-stock.v1`.
+
+                ## Stock Records
+
+                - `example` - Example Equipment - `pending`
+
+                The shop-card path is docs/equipment/shop-cards/example.md.
+
+                ## Shop Cards
+
+                [Shop-card index](shop-cards/README.md)
+                """,
+            )
+
+            results = validator.validate_published_equipment_inventory_view(root)
+
+        self.assertIn(
+            CheckResult(
+                "published_equipment_inventory_view:record:example",
+                False,
+                "stock record bullet must include id, name, delivery_compliance, and shop_card",
+                "docs/equipment/inventory.md",
+            ),
+            results,
+        )
+
+    def test_validate_published_equipment_inventory_routing_requires_reader_routes(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_routing_docs(root, docs_link=False)
+
+            results = validator.validate_published_equipment_inventory_routing(root)
+
+        self.assertIn(
+            CheckResult(
+                "published_equipment_inventory_view:routing:docs/README.md",
+                False,
+                "missing inventory view route",
+                "docs/README.md",
+            ),
+            results,
+        )
+
     def test_run_requires_published_equipment_delivery_paths(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -9574,6 +9964,8 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
 
         for relative_path in [
             "docs/equipment-delivery.md",
+            "docs/equipment/inventory.md",
+            "docs/equipment/shop-cards/README.md",
             "inventory/equipment.toml",
             "templates/equipment-shop-card.md",
             "templates/equipment-stock-record.toml",
