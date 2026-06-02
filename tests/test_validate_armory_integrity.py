@@ -4813,6 +4813,25 @@ class DocumentationCloseoutValidationTests(unittest.TestCase):
             results,
         )
 
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_closeout(
+                root,
+                self.valid_closeout().replace(f"`{HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH}`, ", ""),
+            )
+
+            results = validate_documentation_closeout(root)
+
+        self.assertIn(
+            CheckResult(
+                f"documentation_closeout:evidence:{self.closeout_path}:{HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH}",
+                False,
+                f"missing evidence: {HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH}",
+                self.closeout_path,
+            ),
+            results,
+        )
+
     def test_validate_documentation_closeout_requires_completion_window_evidence(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
