@@ -95,5 +95,7 @@ Current External Tool Evaluation Disposition:
 unknown pending evidence.
 
 Final disposition issue #191 will assign one of the fixed outcomes after the
-child outputs are coherent: adopted candidate, supporting component, research
-reference, deferred, rejected, or unknown pending evidence.
+child outputs are coherent. If evidence remains pending, #191 keeps the
+evaluation state in progress with unknown pending evidence. If #191 marks the
+evaluation complete, it must use a finalized disposition: adopted candidate,
+supporting component, research reference, deferred, or rejected.

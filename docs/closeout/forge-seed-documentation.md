@@ -16,6 +16,8 @@ Inspected live agent-facing and human-facing surfaces:
 - `docs/README.md`
 - `AGENTS.md`
 - `CONTEXT.md`
+- `docs/external-tool-evaluation.md`
+- `docs/evaluations/harbor.md`
 - `docs/agents/*.md`
 - Forge Canon under `docs/*.md`
 - `docs/prd/forge-seed.md`
@@ -50,6 +52,10 @@ Also inspected the raw Source Handoff before source retirement. The final tree p
   role terminology.
 - `docs/security/forge-seed-closeout.md`: recorded a narrow security
   applicability refresh for the human-facing documentation spine change.
+- `docs/external-tool-evaluation.md`: added the reusable external-tool
+  evaluation operating contract.
+- `docs/evaluations/harbor.md`: added the Harbor External Tool Evaluation
+  Record skeleton.
 - `docs/closeout/forge-seed-projection-drafts.md`: updated issue and PR draft
   text so external projection reflects the refreshed public docs spine.
 - `tools/validate_forge_seed.py` and `tests/test_validate_forge_seed.py`:

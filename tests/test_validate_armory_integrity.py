@@ -932,6 +932,24 @@ class ValidatorPrimitiveTests(unittest.TestCase):
             ],
         )
 
+    def test_validate_external_tool_evaluation_reports_missing_doc(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = validate_external_tool_evaluation(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="external_tool_evaluation:path",
+                    ok=False,
+                    detail="missing",
+                    path=EXTERNAL_TOOL_EVALUATION_PATH,
+                )
+            ],
+        )
+
     def test_validate_external_tool_evaluation_requires_contract_shape(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -1292,6 +1310,68 @@ class ValidatorPrimitiveTests(unittest.TestCase):
             results,
         )
 
+    def test_validate_harbor_external_tool_evaluation_record_requires_coverage_terms(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Harbor External Tool Evaluation
+
+                    Status: External Tool Evaluation Record
+
+                    Evaluation state: in progress
+
+                    Final disposition: unknown pending evidence
+
+                    ## Scope
+
+                    Harbor evaluation for #183.
+
+                    ## Source Inputs
+
+                    #184.
+
+                    ## Evidence Ledger
+
+                    source-backed claims, local observations, implementation inference,
+                    unknowns, and rejected claims.
+
+                    ## Child Issue Outputs
+
+                    #185, #186, #187, #188, #189, #190, and #191.
+
+                    ## Security Disclosure And Durability
+
+                    credentials, local paths, raw logs, trajectories, transcripts,
+                    model outputs, and external service usage.
+
+                    ## Projection State
+
+                    update existing issues, create new issues, propose a PRD, and propose an ADR.
+
+                    ## Final Disposition
+
+                    unknown pending evidence.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_external_tool_evaluation_record(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_external_tool_evaluation_record:coverage:prototype results",
+                ok=False,
+                detail="missing coverage term: prototype results",
+                path=HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+            ),
+            results,
+        )
+
     def test_validate_harbor_external_tool_evaluation_record_requires_child_issue_routes(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -1490,6 +1570,68 @@ class ValidatorPrimitiveTests(unittest.TestCase):
                     path=HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
                 )
             ],
+        )
+
+    def test_validate_harbor_external_tool_evaluation_record_rejects_complete_unknown_disposition(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Harbor External Tool Evaluation
+
+                    Status: External Tool Evaluation Record
+
+                    Evaluation state: complete
+
+                    Final disposition: unknown pending evidence
+
+                    ## Scope
+
+                    Harbor evaluation for #183.
+
+                    ## Source Inputs
+
+                    #184.
+
+                    ## Evidence Ledger
+
+                    source-backed claims, local observations, prototype results,
+                    implementation inference, unknowns, and rejected claims.
+
+                    ## Child Issue Outputs
+
+                    #185, #186, #187, #188, #189, #190, and #191.
+
+                    ## Security Disclosure And Durability
+
+                    credentials, local paths, raw logs, trajectories, transcripts,
+                    model outputs, and external service usage.
+
+                    ## Projection State
+
+                    update existing issues, create new issues, propose a PRD, and propose an ADR.
+
+                    ## Final Disposition
+
+                    unknown pending evidence.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_external_tool_evaluation_record(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_external_tool_evaluation_record:state_disposition_coherence",
+                ok=False,
+                detail="complete evaluations must use a finalized final disposition",
+                path=HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+            ),
+            results,
         )
 
     def test_validate_harbor_external_tool_evaluation_record_accepts_finalized_disposition(self):
@@ -4494,7 +4636,7 @@ class DocumentationCloseoutValidationTests(unittest.TestCase):
     def valid_closeout(self) -> str:
         sections = "\n\n".join(
             [
-                "## Scope of inspected docs\n\nInspected `README.md`, `AGENTS.md`, `CONTEXT.md`, `docs/agents/*.md`, Forge Canon under `docs/*.md`, `docs/prd/forge-seed.md`, `docs/adr/*.md`, `docs/plans/2026-05-03-forge-seed.md`, `docs/security/*.md`, `docs/closeout/*.md`, `docs/closeout/forge-seed-source-disposition.md`, `specs/*.md`, `templates/**/*.md`, and `examples/**/*.md`.",
+                "## Scope of inspected docs\n\nInspected `README.md`, `AGENTS.md`, `CONTEXT.md`, `docs/external-tool-evaluation.md`, `docs/evaluations/harbor.md`, `docs/agents/*.md`, Forge Canon under `docs/*.md`, `docs/prd/forge-seed.md`, `docs/adr/*.md`, `docs/plans/2026-05-03-forge-seed.md`, `docs/security/*.md`, `docs/closeout/*.md`, `docs/closeout/forge-seed-source-disposition.md`, `specs/*.md`, `templates/**/*.md`, and `examples/**/*.md`.",
                 "## Docs changed\n\nUpdated `docs/security/threat-model.md` and `docs/metasmith/source-projection.md`.",
                 "## Docs unchanged with rationale\n\nRecorded why `README.md` and `AGENTS.md` needed no change.",
                 "## Stale-language cleanup result\n\nStale initial-state language was searched and resolved.",
@@ -4649,6 +4791,23 @@ class DocumentationCloseoutValidationTests(unittest.TestCase):
                 f"documentation_closeout:evidence:{self.closeout_path}:specs/*.md",
                 False,
                 "missing evidence: specs/*.md",
+                self.closeout_path,
+            ),
+            results,
+        )
+
+    def test_validate_documentation_closeout_requires_external_tool_evidence(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_closeout(root, self.valid_closeout().replace(f"`{EXTERNAL_TOOL_EVALUATION_PATH}`, ", ""))
+
+            results = validate_documentation_closeout(root)
+
+        self.assertIn(
+            CheckResult(
+                f"documentation_closeout:evidence:{self.closeout_path}:{EXTERNAL_TOOL_EVALUATION_PATH}",
+                False,
+                f"missing evidence: {EXTERNAL_TOOL_EVALUATION_PATH}",
                 self.closeout_path,
             ),
             results,

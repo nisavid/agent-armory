@@ -630,6 +630,7 @@ EXTERNAL_TOOL_EVALUATION_DISPOSITIONS = {
     "rejected",
     "unknown pending evidence",
 }
+FINALIZED_EXTERNAL_TOOL_EVALUATION_DISPOSITIONS = EXTERNAL_TOOL_EVALUATION_DISPOSITIONS - {"unknown pending evidence"}
 PLUGIN_CREATOR_SOURCE_INTAKE_REQUIRED_SECTIONS = [
     "Scope Boundary",
     "Portable Source Inventory",
@@ -984,6 +985,8 @@ DOCUMENTATION_CLOSEOUT_REQUIRED_EVIDENCE = [
     "README.md",
     "AGENTS.md",
     "CONTEXT.md",
+    EXTERNAL_TOOL_EVALUATION_PATH,
+    HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
     "docs/agents/*.md",
     "Forge Canon",
     "docs/prd/forge-seed.md",
@@ -2301,7 +2304,8 @@ def validate_harbor_external_tool_evaluation_record(root: Path) -> list[CheckRes
         )
     state_prefix = "Evaluation state: "
     state = next((line.removeprefix(state_prefix).strip() for line in nonblank_lines[:10] if line.startswith(state_prefix)), "")
-    if state.casefold() not in HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_STATES:
+    state_folded = state.casefold()
+    if state_folded not in HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_STATES:
         results.append(
             CheckResult(
                 "harbor_external_tool_evaluation_record:evaluation_state",
@@ -2315,12 +2319,22 @@ def validate_harbor_external_tool_evaluation_record(root: Path) -> list[CheckRes
         (line.removeprefix(disposition_prefix).strip() for line in nonblank_lines[:12] if line.startswith(disposition_prefix)),
         "",
     )
-    if disposition.casefold() not in EXTERNAL_TOOL_EVALUATION_DISPOSITIONS:
+    disposition_folded = disposition.casefold()
+    if disposition_folded not in EXTERNAL_TOOL_EVALUATION_DISPOSITIONS:
         results.append(
             CheckResult(
                 "harbor_external_tool_evaluation_record:final_disposition",
                 False,
                 "final disposition must be a fixed External Tool Evaluation Disposition",
+                HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+            )
+        )
+    elif state_folded == "complete" and disposition_folded not in FINALIZED_EXTERNAL_TOOL_EVALUATION_DISPOSITIONS:
+        results.append(
+            CheckResult(
+                "harbor_external_tool_evaluation_record:state_disposition_coherence",
+                False,
+                "complete evaluations must use a finalized final disposition",
                 HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
             )
         )
