@@ -164,6 +164,16 @@ VALIDATION_INVENTORY = [
         "relationship": "Top-level repository integrity check for the durable Harbor-to-Armory jig source-map ledger.",
     },
     {
+        "check": "external_tool_evaluation",
+        "boundary": "armory_integrity",
+        "relationship": "Top-level repository integrity check for the reusable external-tool evaluation operating contract.",
+    },
+    {
+        "check": "harbor_external_tool_evaluation_record",
+        "boundary": "armory_integrity",
+        "relationship": "Top-level repository integrity check for the Harbor External Tool Evaluation Record skeleton.",
+    },
+    {
         "check": "skill_eval_methodology_source_intake",
         "boundary": "armory_integrity",
         "relationship": "Top-level repository integrity check for the durable skill-eval methodology source-intake ledger.",
@@ -479,6 +489,8 @@ SOURCE_PROJECTION_VALIDATION_STATUSES = {"planned", "validated"}
 SOURCE_PROJECTION_PLANNED_REQUIREMENTS = {"H012", "H053"}
 SOURCE_DISPOSITION_PATH = "docs/closeout/forge-seed-source-disposition.md"
 HARBOR_JIG_SOURCE_MAP_PATH = "docs/closeout/harbor-jig-source-map.md"
+EXTERNAL_TOOL_EVALUATION_PATH = "docs/external-tool-evaluation.md"
+HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH = "docs/evaluations/harbor.md"
 SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH = "docs/closeout/skill-eval-methodology-source-intake.md"
 PLUGIN_CREATOR_SOURCE_INTAKE_PATH = "docs/closeout/plugin-creator-source-intake.md"
 HARBOR_JIG_SOURCE_MAP_REQUIRED_SECTIONS = [
@@ -529,6 +541,95 @@ HARBOR_JIG_SOURCE_MAP_DOWNSTREAM_ROUTES = [
     "#190",
     "#191",
 ]
+EXTERNAL_TOOL_EVALUATION_REQUIRED_SECTIONS = [
+    "Purpose",
+    "Pipeline Stages",
+    "Evidence Classification",
+    "Projection Rules",
+    "Security Disclosure And Durability",
+    "Harbor-First Application",
+    "Closeout",
+]
+EXTERNAL_TOOL_EVALUATION_COVERAGE_TERMS = [
+    "intake scope",
+    "source review",
+    "live repository and issue review",
+    "evidence classification",
+    "Armory role mapping",
+    "bounded prototype decision",
+    "security and disclosure review",
+    "documentation closeout",
+    "issue projection",
+    "final disposition",
+    "source-backed claims",
+    "local observations",
+    "prototype results",
+    "implementation inference",
+    "unknowns",
+    "rejected claims",
+    "update existing issues",
+    "create new issues",
+    "propose a PRD",
+    "propose an ADR",
+    "credentials",
+    "local paths",
+    "raw logs",
+    "trajectories",
+    "transcripts",
+    "model outputs",
+    "external service usage",
+    "Change Set Security Closeout",
+    "Change Set Documentation Closeout",
+]
+EXTERNAL_TOOL_EVALUATION_ROUTES = ["#184", "#185"]
+HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_REQUIRED_SECTIONS = [
+    "Scope",
+    "Source Inputs",
+    "Evidence Ledger",
+    "Child Issue Outputs",
+    "Security Disclosure And Durability",
+    "Projection State",
+    "Final Disposition",
+]
+HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_COVERAGE_TERMS = [
+    "source-backed claims",
+    "local observations",
+    "prototype results",
+    "implementation inference",
+    "unknowns",
+    "rejected claims",
+    "update existing issues",
+    "create new issues",
+    "propose a PRD",
+    "propose an ADR",
+    "credentials",
+    "local paths",
+    "raw logs",
+    "trajectories",
+    "transcripts",
+    "model outputs",
+    "external service usage",
+]
+HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_ROUTES = [
+    "#183",
+    "#184",
+    "#185",
+    "#186",
+    "#187",
+    "#188",
+    "#189",
+    "#190",
+    "#191",
+]
+HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_STATES = {"in progress", "complete"}
+EXTERNAL_TOOL_EVALUATION_DISPOSITIONS = {
+    "adopted candidate",
+    "supporting component",
+    "research reference",
+    "deferred",
+    "rejected",
+    "unknown pending evidence",
+}
 PLUGIN_CREATOR_SOURCE_INTAKE_REQUIRED_SECTIONS = [
     "Scope Boundary",
     "Portable Source Inventory",
@@ -2091,6 +2192,187 @@ def validate_harbor_jig_source_map(root: Path) -> list[CheckResult]:
             True,
             "present",
             HARBOR_JIG_SOURCE_MAP_PATH,
+        )
+    ]
+
+
+def validate_external_tool_evaluation(root: Path) -> list[CheckResult]:
+    ok, detail, path = repo_relative_path_status(root, EXTERNAL_TOOL_EVALUATION_PATH, "file")
+    if not ok:
+        return [
+            CheckResult(
+                "external_tool_evaluation:path",
+                False,
+                detail,
+                EXTERNAL_TOOL_EVALUATION_PATH,
+            )
+        ]
+    markdown = path.read_text(encoding="utf-8")
+    visible_markdown = markdown_visible_text(markdown)
+    nonblank_lines = [line.strip() for line in visible_markdown.splitlines() if line.strip()]
+    headings = markdown_heading_texts(markdown)
+    results: list[CheckResult] = []
+    if "Status: Armory Operating Contract" not in nonblank_lines[:8]:
+        results.append(
+            CheckResult(
+                "external_tool_evaluation:status",
+                False,
+                "status must be Armory Operating Contract",
+                EXTERNAL_TOOL_EVALUATION_PATH,
+            )
+        )
+    for required_section in EXTERNAL_TOOL_EVALUATION_REQUIRED_SECTIONS:
+        if normalize_reference_label(required_section) not in headings:
+            results.append(
+                CheckResult(
+                    f"external_tool_evaluation:section:{required_section}",
+                    False,
+                    f"missing section: {required_section}",
+                    EXTERNAL_TOOL_EVALUATION_PATH,
+                )
+            )
+    searchable_markdown = markdown_link_search_text(markdown)
+    searchable_markdown_casefold = searchable_markdown.casefold()
+    for required_term in EXTERNAL_TOOL_EVALUATION_COVERAGE_TERMS:
+        if required_term.casefold() not in searchable_markdown_casefold:
+            results.append(
+                CheckResult(
+                    f"external_tool_evaluation:coverage:{required_term}",
+                    False,
+                    f"missing coverage term: {required_term}",
+                    EXTERNAL_TOOL_EVALUATION_PATH,
+                )
+            )
+    for route in EXTERNAL_TOOL_EVALUATION_ROUTES:
+        if not required_downstream_route_present(searchable_markdown, route):
+            results.append(
+                CheckResult(
+                    f"external_tool_evaluation:routing:{route}",
+                    False,
+                    f"missing downstream route: {route}",
+                    EXTERNAL_TOOL_EVALUATION_PATH,
+                )
+            )
+    if HOST_LOCAL_PATH_RE.search(visible_markdown):
+        results.append(
+            CheckResult(
+                "external_tool_evaluation:portable_paths",
+                False,
+                "contract must not preserve host-local paths",
+                EXTERNAL_TOOL_EVALUATION_PATH,
+            )
+        )
+    if results:
+        return results
+    return [
+        CheckResult(
+            "external_tool_evaluation:contract",
+            True,
+            "present",
+            EXTERNAL_TOOL_EVALUATION_PATH,
+        )
+    ]
+
+
+def validate_harbor_external_tool_evaluation_record(root: Path) -> list[CheckResult]:
+    ok, detail, path = repo_relative_path_status(root, HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH, "file")
+    if not ok:
+        return [
+            CheckResult(
+                "harbor_external_tool_evaluation_record:path",
+                False,
+                detail,
+                HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+            )
+        ]
+    markdown = path.read_text(encoding="utf-8")
+    visible_markdown = markdown_visible_text(markdown)
+    nonblank_lines = [line.strip() for line in visible_markdown.splitlines() if line.strip()]
+    headings = markdown_heading_texts(markdown)
+    results: list[CheckResult] = []
+    if "Status: External Tool Evaluation Record" not in nonblank_lines[:8]:
+        results.append(
+            CheckResult(
+                "harbor_external_tool_evaluation_record:status",
+                False,
+                "status must be External Tool Evaluation Record",
+                HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+            )
+        )
+    state_prefix = "Evaluation state: "
+    state = next((line.removeprefix(state_prefix).strip() for line in nonblank_lines[:10] if line.startswith(state_prefix)), "")
+    if state.casefold() not in HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_STATES:
+        results.append(
+            CheckResult(
+                "harbor_external_tool_evaluation_record:evaluation_state",
+                False,
+                "evaluation state must be in progress or complete",
+                HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+            )
+        )
+    disposition_prefix = "Final disposition: "
+    disposition = next(
+        (line.removeprefix(disposition_prefix).strip() for line in nonblank_lines[:12] if line.startswith(disposition_prefix)),
+        "",
+    )
+    if disposition.casefold() not in EXTERNAL_TOOL_EVALUATION_DISPOSITIONS:
+        results.append(
+            CheckResult(
+                "harbor_external_tool_evaluation_record:final_disposition",
+                False,
+                "final disposition must be a fixed External Tool Evaluation Disposition",
+                HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+            )
+        )
+    for required_section in HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_REQUIRED_SECTIONS:
+        if normalize_reference_label(required_section) not in headings:
+            results.append(
+                CheckResult(
+                    f"harbor_external_tool_evaluation_record:section:{required_section}",
+                    False,
+                    f"missing section: {required_section}",
+                    HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+                )
+            )
+    searchable_markdown = markdown_link_search_text(markdown)
+    searchable_markdown_casefold = searchable_markdown.casefold()
+    for required_term in HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_COVERAGE_TERMS:
+        if required_term.casefold() not in searchable_markdown_casefold:
+            results.append(
+                CheckResult(
+                    f"harbor_external_tool_evaluation_record:coverage:{required_term}",
+                    False,
+                    f"missing coverage term: {required_term}",
+                    HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+                )
+            )
+    for route in HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_ROUTES:
+        if not required_downstream_route_present(searchable_markdown, route):
+            results.append(
+                CheckResult(
+                    f"harbor_external_tool_evaluation_record:routing:{route}",
+                    False,
+                    f"missing downstream route: {route}",
+                    HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+                )
+            )
+    if HOST_LOCAL_PATH_RE.search(visible_markdown):
+        results.append(
+            CheckResult(
+                "harbor_external_tool_evaluation_record:portable_paths",
+                False,
+                "record must not preserve host-local paths",
+                HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+            )
+        )
+    if results:
+        return results
+    return [
+        CheckResult(
+            "harbor_external_tool_evaluation_record:record",
+            True,
+            "present",
+            HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
         )
     ]
 
@@ -6261,6 +6543,8 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
         PUBLISHED_EQUIPMENT_INVENTORY_PATH,
         SOURCE_DISPOSITION_PATH,
         HARBOR_JIG_SOURCE_MAP_PATH,
+        EXTERNAL_TOOL_EVALUATION_PATH,
+        HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
         SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
         PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
         THREAT_MODEL_PATH,
@@ -6299,6 +6583,8 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
     ]
     results.extend(validate_source_disposition(root))
     results.extend(validate_harbor_jig_source_map(root))
+    results.extend(validate_external_tool_evaluation(root))
+    results.extend(validate_harbor_external_tool_evaluation_record(root))
     results.extend(validate_skill_eval_methodology_source_intake(root))
     results.extend(validate_plugin_creator_source_intake(root))
     results.extend(validate_source_retired_tree(root, include_disposition=False))

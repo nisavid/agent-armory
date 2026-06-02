@@ -20,6 +20,8 @@ from tools.validate_armory_integrity import (
     SOURCE_DISPOSITION_MANIFEST_FIELDS,
     SOURCE_DISPOSITION_PATH,
     HARBOR_JIG_SOURCE_MAP_PATH,
+    EXTERNAL_TOOL_EVALUATION_PATH,
+    HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
     SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
     PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
     find_markdown_links,
@@ -49,6 +51,8 @@ from tools.validate_armory_integrity import (
     validate_required_paths,
     validate_security_closeout,
     validate_harbor_jig_source_map,
+    validate_external_tool_evaluation,
+    validate_harbor_external_tool_evaluation_record,
     validate_skill_eval_methodology_source_intake,
     validate_plugin_creator_source_intake,
     validate_templates,
@@ -88,6 +92,8 @@ class ValidationBoundaryTests(unittest.TestCase):
         self.assertEqual(inventory["markdown_links"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["source_disposition"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["harbor_jig_source_map"]["boundary"], "armory_integrity")
+        self.assertEqual(inventory["external_tool_evaluation"]["boundary"], "armory_integrity")
+        self.assertEqual(inventory["harbor_external_tool_evaluation_record"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["skill_eval_methodology_source_intake"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["plugin_creator_source_intake"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["source_retired_tree"]["boundary"], "historical_seed_migration")
@@ -153,6 +159,49 @@ class ValidationBoundaryTests(unittest.TestCase):
                 ok=True,
                 detail="present",
                 path=HARBOR_JIG_SOURCE_MAP_PATH,
+            ),
+        )
+
+    def test_live_validator_run_includes_external_tool_evaluation_surfaces(self):
+        repo_root = Path(__file__).resolve().parents[1]
+
+        results = run(repo_root, final_closeout=True)
+        result_map = {result.name: result for result in results}
+
+        self.assertEqual(
+            result_map[f"required_path:{EXTERNAL_TOOL_EVALUATION_PATH}"],
+            CheckResult(
+                name=f"required_path:{EXTERNAL_TOOL_EVALUATION_PATH}",
+                ok=True,
+                detail="exists",
+                path=EXTERNAL_TOOL_EVALUATION_PATH,
+            ),
+        )
+        self.assertEqual(
+            result_map["external_tool_evaluation:contract"],
+            CheckResult(
+                name="external_tool_evaluation:contract",
+                ok=True,
+                detail="present",
+                path=EXTERNAL_TOOL_EVALUATION_PATH,
+            ),
+        )
+        self.assertEqual(
+            result_map[f"required_path:{HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH}"],
+            CheckResult(
+                name=f"required_path:{HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH}",
+                ok=True,
+                detail="exists",
+                path=HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+            ),
+        )
+        self.assertEqual(
+            result_map["harbor_external_tool_evaluation_record:record"],
+            CheckResult(
+                name="harbor_external_tool_evaluation_record:record",
+                ok=True,
+                detail="present",
+                path=HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
             ),
         )
 
@@ -879,6 +928,630 @@ class ValidatorPrimitiveTests(unittest.TestCase):
                     ok=True,
                     detail="present",
                     path=PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
+                )
+            ],
+        )
+
+    def test_validate_external_tool_evaluation_requires_contract_shape(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / EXTERNAL_TOOL_EVALUATION_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "# External-Tool Evaluation\n\nStatus: Draft\n\n## Purpose\n\nIncomplete.\n",
+                encoding="utf-8",
+            )
+
+            results = validate_external_tool_evaluation(root)
+
+        self.assertIn(
+            CheckResult(
+                name="external_tool_evaluation:status",
+                ok=False,
+                detail="status must be Armory Operating Contract",
+                path=EXTERNAL_TOOL_EVALUATION_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="external_tool_evaluation:section:Pipeline Stages",
+                ok=False,
+                detail="missing section: Pipeline Stages",
+                path=EXTERNAL_TOOL_EVALUATION_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_external_tool_evaluation_requires_coverage_terms(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / EXTERNAL_TOOL_EVALUATION_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # External-Tool Evaluation
+
+                    Status: Armory Operating Contract
+
+                    ## Purpose
+
+                    Evaluate outside tools.
+
+                    ## Pipeline Stages
+
+                    Source review and closeout.
+
+                    ## Evidence Classification
+
+                    source-backed claims.
+
+                    ## Projection Rules
+
+                    Issues may be updated.
+
+                    ## Security Disclosure And Durability
+
+                    Credentials are sensitive.
+
+                    ## Harbor-First Application
+
+                    #184 and #185.
+
+                    ## Closeout
+
+                    Reviewed.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_external_tool_evaluation(root)
+
+        self.assertIn(
+            CheckResult(
+                name="external_tool_evaluation:coverage:prototype results",
+                ok=False,
+                detail="missing coverage term: prototype results",
+                path=EXTERNAL_TOOL_EVALUATION_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="external_tool_evaluation:coverage:external service usage",
+                ok=False,
+                detail="missing coverage term: external service usage",
+                path=EXTERNAL_TOOL_EVALUATION_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_external_tool_evaluation_requires_exact_issue_routes(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / EXTERNAL_TOOL_EVALUATION_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # External-Tool Evaluation
+
+                    Status: Armory Operating Contract
+
+                    ## Purpose
+
+                    Reusable evaluation pipeline.
+
+                    ## Pipeline Stages
+
+                    intake scope, source review, live repository and issue review,
+                    evidence classification, Armory role mapping, bounded prototype decision,
+                    security and disclosure review, documentation closeout, issue projection,
+                    and final disposition.
+
+                    ## Evidence Classification
+
+                    source-backed claims, local observations, prototype results,
+                    implementation inference, unknowns, and rejected claims.
+
+                    ## Projection Rules
+
+                    update existing issues, create new issues, propose a PRD, and propose an ADR.
+
+                    ## Security Disclosure And Durability
+
+                    credentials, local paths, raw logs, trajectories, transcripts,
+                    model outputs, and external service usage.
+
+                    ## Harbor-First Application
+
+                    #184a and #185b.
+
+                    ## Closeout
+
+                    Change Set Security Closeout and Change Set Documentation Closeout.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_external_tool_evaluation(root)
+
+        self.assertIn(
+            CheckResult(
+                name="external_tool_evaluation:routing:#184",
+                ok=False,
+                detail="missing downstream route: #184",
+                path=EXTERNAL_TOOL_EVALUATION_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="external_tool_evaluation:routing:#185",
+                ok=False,
+                detail="missing downstream route: #185",
+                path=EXTERNAL_TOOL_EVALUATION_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_external_tool_evaluation_rejects_host_local_paths(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / EXTERNAL_TOOL_EVALUATION_PATH
+            path.parent.mkdir(parents=True)
+            template = textwrap.dedent(
+                """\
+                    # External-Tool Evaluation
+
+                    Status: Armory Operating Contract
+
+                    ## Purpose
+
+                    Reusable evaluation pipeline.
+
+                    ## Pipeline Stages
+
+                    intake scope, source review, live repository and issue review,
+                    evidence classification, Armory role mapping, bounded prototype decision,
+                    security and disclosure review, documentation closeout, issue projection,
+                    and final disposition.
+
+                    ## Evidence Classification
+
+                    source-backed claims, local observations, prototype results,
+                    implementation inference, unknowns, and rejected claims.
+
+                    ## Projection Rules
+
+                    update existing issues, create new issues, propose a PRD, and propose an ADR.
+
+                    ## Security Disclosure And Durability
+
+                    credentials, local paths, raw logs, trajectories, transcripts,
+                    model outputs, and external service usage. Scratch path: `{host_local_path}`.
+
+                    ## Harbor-First Application
+
+                    #184 and #185.
+
+                    ## Closeout
+
+                    Change Set Security Closeout and Change Set Documentation Closeout.
+                    """
+            )
+
+            for host_local_path in (
+                "/home/agent/harbor/evaluation-log.json",
+                r"C:\Users\agent\harbor\evaluation-log.json",
+            ):
+                with self.subTest(host_local_path=host_local_path):
+                    path.write_text(template.format(host_local_path=host_local_path), encoding="utf-8")
+                    results = validate_external_tool_evaluation(root)
+
+                    self.assertIn(
+                        CheckResult(
+                            name="external_tool_evaluation:portable_paths",
+                            ok=False,
+                            detail="contract must not preserve host-local paths",
+                            path=EXTERNAL_TOOL_EVALUATION_PATH,
+                        ),
+                        results,
+                    )
+
+    def test_validate_external_tool_evaluation_accepts_complete_contract(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / EXTERNAL_TOOL_EVALUATION_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # External-Tool Evaluation
+
+                    Status: Armory Operating Contract
+
+                    ## Purpose
+
+                    Reusable evaluation pipeline.
+
+                    ## Pipeline Stages
+
+                    intake scope, source review, live repository and issue review,
+                    evidence classification, Armory role mapping, bounded prototype decision,
+                    security and disclosure review, documentation closeout, issue projection,
+                    and final disposition.
+
+                    ## Evidence Classification
+
+                    source-backed claims, local observations, prototype results,
+                    implementation inference, unknowns, and rejected claims.
+
+                    ## Projection Rules
+
+                    update existing issues, create new issues, propose a PRD, and propose an ADR.
+
+                    ## Security Disclosure And Durability
+
+                    credentials, local paths, raw logs, trajectories, transcripts,
+                    model outputs, and external service usage.
+
+                    ## Harbor-First Application
+
+                    #184 and #185.
+
+                    ## Closeout
+
+                    Change Set Security Closeout and Change Set Documentation Closeout.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_external_tool_evaluation(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="external_tool_evaluation:contract",
+                    ok=True,
+                    detail="present",
+                    path=EXTERNAL_TOOL_EVALUATION_PATH,
+                )
+            ],
+        )
+
+    def test_validate_harbor_external_tool_evaluation_record_reports_missing_doc(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = validate_harbor_external_tool_evaluation_record(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="harbor_external_tool_evaluation_record:path",
+                    ok=False,
+                    detail="missing",
+                    path=HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+                )
+            ],
+        )
+
+    def test_validate_harbor_external_tool_evaluation_record_requires_record_shape(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "# Harbor Evaluation\n\nStatus: Draft\n\n## Scope\n\nIncomplete.\n",
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_external_tool_evaluation_record(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_external_tool_evaluation_record:status",
+                ok=False,
+                detail="status must be External Tool Evaluation Record",
+                path=HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="harbor_external_tool_evaluation_record:evaluation_state",
+                ok=False,
+                detail="evaluation state must be in progress or complete",
+                path=HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="harbor_external_tool_evaluation_record:final_disposition",
+                ok=False,
+                detail="final disposition must be a fixed External Tool Evaluation Disposition",
+                path=HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="harbor_external_tool_evaluation_record:section:Evidence Ledger",
+                ok=False,
+                detail="missing section: Evidence Ledger",
+                path=HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_harbor_external_tool_evaluation_record_requires_child_issue_routes(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Harbor External Tool Evaluation
+
+                    Status: External Tool Evaluation Record
+
+                    Evaluation state: in progress
+
+                    Final disposition: unknown pending evidence
+
+                    ## Scope
+
+                    Harbor evaluation for #183.
+
+                    ## Source Inputs
+
+                    #184a.
+
+                    ## Evidence Ledger
+
+                    source-backed claims, local observations, prototype results,
+                    implementation inference, unknowns, and rejected claims.
+
+                    ## Child Issue Outputs
+
+                    #185.
+
+                    ## Security Disclosure And Durability
+
+                    credentials, local paths, raw logs, trajectories, transcripts,
+                    model outputs, and external service usage.
+
+                    ## Projection State
+
+                    update existing issues, create new issues, propose a PRD, and propose an ADR.
+
+                    ## Final Disposition
+
+                    unknown pending evidence.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_external_tool_evaluation_record(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_external_tool_evaluation_record:routing:#184",
+                ok=False,
+                detail="missing downstream route: #184",
+                path=HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="harbor_external_tool_evaluation_record:routing:#191",
+                ok=False,
+                detail="missing downstream route: #191",
+                path=HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_harbor_external_tool_evaluation_record_rejects_host_local_paths(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH
+            path.parent.mkdir(parents=True)
+            template = textwrap.dedent(
+                """\
+                    # Harbor External Tool Evaluation
+
+                    Status: External Tool Evaluation Record
+
+                    Evaluation state: in progress
+
+                    Final disposition: unknown pending evidence
+
+                    ## Scope
+
+                    Harbor evaluation for #183.
+
+                    ## Source Inputs
+
+                    #184.
+
+                    ## Evidence Ledger
+
+                    source-backed claims, local observations, prototype results,
+                    implementation inference, unknowns, and rejected claims.
+
+                    ## Child Issue Outputs
+
+                    #185, #186, #187, #188, #189, #190, and #191.
+
+                    ## Security Disclosure And Durability
+
+                    credentials, local paths, raw logs, trajectories, transcripts,
+                    model outputs, and external service usage. Scratch path: `{host_local_path}`.
+
+                    ## Projection State
+
+                    update existing issues, create new issues, propose a PRD, and propose an ADR.
+
+                    ## Final Disposition
+
+                    unknown pending evidence.
+                    """
+            )
+
+            for host_local_path in (
+                "/home/agent/harbor/evaluation-record.json",
+                r"C:\Users\agent\harbor\evaluation-record.json",
+            ):
+                with self.subTest(host_local_path=host_local_path):
+                    path.write_text(template.format(host_local_path=host_local_path), encoding="utf-8")
+                    results = validate_harbor_external_tool_evaluation_record(root)
+
+                    self.assertIn(
+                        CheckResult(
+                            name="harbor_external_tool_evaluation_record:portable_paths",
+                            ok=False,
+                            detail="record must not preserve host-local paths",
+                            path=HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+                        ),
+                        results,
+                    )
+
+    def test_validate_harbor_external_tool_evaluation_record_accepts_complete_record(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Harbor External Tool Evaluation
+
+                    Status: External Tool Evaluation Record
+
+                    Evaluation state: in progress
+
+                    Final disposition: unknown pending evidence
+
+                    ## Scope
+
+                    Harbor evaluation for #183.
+
+                    ## Source Inputs
+
+                    #184.
+
+                    ## Evidence Ledger
+
+                    source-backed claims, local observations, prototype results,
+                    implementation inference, unknowns, and rejected claims.
+
+                    ## Child Issue Outputs
+
+                    #185, #186, #187, #188, #189, #190, and #191.
+
+                    ## Security Disclosure And Durability
+
+                    credentials, local paths, raw logs, trajectories, transcripts,
+                    model outputs, and external service usage.
+
+                    ## Projection State
+
+                    update existing issues, create new issues, propose a PRD, and propose an ADR.
+
+                    ## Final Disposition
+
+                    unknown pending evidence.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_external_tool_evaluation_record(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="harbor_external_tool_evaluation_record:record",
+                    ok=True,
+                    detail="present",
+                    path=HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+                )
+            ],
+        )
+
+    def test_validate_harbor_external_tool_evaluation_record_accepts_finalized_disposition(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Harbor External Tool Evaluation
+
+                    Status: External Tool Evaluation Record
+
+                    Evaluation state: complete
+
+                    Final disposition: rejected
+
+                    ## Scope
+
+                    Harbor evaluation for #183.
+
+                    ## Source Inputs
+
+                    #184.
+
+                    ## Evidence Ledger
+
+                    source-backed claims, local observations, prototype results,
+                    implementation inference, unknowns, and rejected claims.
+
+                    ## Child Issue Outputs
+
+                    #185, #186, #187, #188, #189, #190, and #191.
+
+                    ## Security Disclosure And Durability
+
+                    credentials, local paths, raw logs, trajectories, transcripts,
+                    model outputs, and external service usage.
+
+                    ## Projection State
+
+                    update existing issues, create new issues, propose a PRD, and propose an ADR.
+
+                    ## Final Disposition
+
+                    rejected.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_external_tool_evaluation_record(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="harbor_external_tool_evaluation_record:record",
+                    ok=True,
+                    detail="present",
+                    path=HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
                 )
             ],
         )
