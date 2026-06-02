@@ -18,6 +18,10 @@ An External Tool Evaluation Record declares its evaluation state as in progress
 or complete, and its final disposition as one of the fixed External Tool
 Evaluation Disposition values.
 
+`unknown pending evidence` is the disposition for an in-progress evaluation.
+A complete evaluation must use a finalized disposition: adopted candidate,
+supporting component, research reference, deferred, or rejected.
+
 The process is reusable across external tools. Harbor is the first application,
 not a special-case rule source.
 
@@ -37,7 +41,7 @@ applicable when the record states why the stage does not affect the evaluation.
 | security and disclosure review | Classify credentials, local paths, raw logs, trajectories, transcripts, model outputs, external service usage, and provider/account state before publication. |
 | documentation closeout | Run Change Set Documentation Closeout on every affected human-facing and agent-facing doc. |
 | issue projection | Decide whether to update existing issues, create new issues, propose a PRD, propose an ADR, or defer projection. |
-| final disposition | Assign one External Tool Evaluation Disposition value after the evidence is sufficient. |
+| final disposition | Assign a finalized External Tool Evaluation Disposition value after the evidence is sufficient. |
 
 ## Evidence Classification
 
@@ -115,7 +119,8 @@ The Harbor External Tool Evaluation Record lives at
 source-map result from
 [Harbor Jig Source Map](closeout/harbor-jig-source-map.md), keeps later child
 issue outputs pending until those issues close, and starts with final
-disposition set to unknown pending evidence.
+disposition set to unknown pending evidence while the evaluation remains in
+progress.
 
 ## Closeout
 
@@ -134,7 +139,7 @@ checks in this order:
 8. Record issue and PR projection, including any deferred risks or follow-up
    conditions.
 
-Do not assign a final disposition until the record has enough evidence to
-support one of the fixed External Tool Evaluation Disposition values: adopted
-candidate, supporting component, research reference, deferred, rejected, or
-unknown pending evidence.
+Do not mark an External Tool Evaluation Record complete until the record has
+enough evidence to support one finalized External Tool Evaluation Disposition
+value: adopted candidate, supporting component, research reference, deferred,
+or rejected.
