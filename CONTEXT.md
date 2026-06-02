@@ -291,6 +291,18 @@ and supporting evidence.
 _Avoid_: active configuration, prose-only narrative, migration execution
 artifact
 
+**External Tool Evaluation Disposition**:
+The top-level outcome assigned to an external-tool evaluation: adopted
+candidate, supporting component, research reference, deferred, rejected, or
+unknown pending evidence.
+_Avoid_: one-off outcome labels that cannot be compared across evaluations
+
+**External Tool Evaluation Record**:
+A durable per-tool record that accumulates evidence classifications, child issue
+outputs, security and disclosure limits, projection decisions, and final
+disposition for one external-tool evaluation.
+_Avoid_: raw logs, chat transcript, replacing child issue evidence
+
 **Existing Equipment Onboarding**:
 The onboarding work that discovers Existing Equipment Surfaces, establishes
 Onboarding Intent, and decides dispositions, compatibility, conflicts,

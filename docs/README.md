@@ -72,6 +72,10 @@ agent equipment.
   compliance status.
 - [Work closeout](story-closeout.md): use when an agent needs to finish work
   cleanly, with checks, safeguards, docs, and review aligned.
+- [External tool evaluation](external-tool-evaluation.md): use when an outside
+  tool, framework, harness, service, dataset, or adjacent project may influence
+  Armory architecture, issue projection, documentation, security posture, or
+  adoption decisions.
 
 ## Reference
 
@@ -83,6 +87,9 @@ agent equipment.
   decides what can be trusted.
 - [Security and control](security-and-control.md): what equipment may do, what
   needs approval, and where secrets and side effects are controlled.
+- [External tool evaluation](external-tool-evaluation.md): reusable operating
+  contract for source review, evidence classification, security disclosure,
+  projection, and final disposition of outside tools.
 - [Security Best Practices Baseline](security/security-best-practices.md):
   current secure defaults for executable repository surfaces.
 - [Templates](../templates/): starting points an agent can copy while making

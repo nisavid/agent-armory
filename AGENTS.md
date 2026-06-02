@@ -50,6 +50,10 @@ doctrine.
 
 - Use root `AGENTS.md` as the repo-local agent policy entrypoint. Keep detailed cross-Armory operating-model rules in named Armory Operating Contract docs.
 - Use `docs/story-closeout.md` for cross-Armory closeout gate order, interdependency rules, review sequencing, and rerun rules.
+- Use `docs/external-tool-evaluation.md` when an outside tool, framework,
+  harness, service, dataset, or adjacent project may influence Armory
+  architecture, issue projection, documentation, security posture, or adoption
+  decisions.
 - Add or revise named Armory Operating Contract docs when cross-Armory rules need more detail than `AGENTS.md` can carry durably.
 
 ## Forge Conveyor
