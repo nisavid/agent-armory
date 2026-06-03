@@ -757,7 +757,8 @@ class ValidatorPrimitiveTests(unittest.TestCase):
             ],
         )
 
-    def valid_harbor_ab_prototype_results(self) -> str:
+    @staticmethod
+    def valid_harbor_ab_prototype_results() -> str:
         return textwrap.dedent(
             """\
             # Harbor Agent Equipment A/B Prototype Results

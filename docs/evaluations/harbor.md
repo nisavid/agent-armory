@@ -127,7 +127,7 @@ unknown pending evidence.
 
 Final disposition issue #191 will assign one of the fixed outcomes after the
 child outputs are coherent. #187 no longer blocks on prototype evidence, but
-#189, #190, and #191 remain open. If evidence remains pending, #191 keeps the
+issues #189, #190, and #191 remain open. If evidence remains pending, #191 keeps the
 evaluation state in progress with unknown pending evidence. If #191 marks the
 evaluation complete, it must use a finalized disposition: adopted candidate,
 supporting component, research reference, deferred, or rejected.
