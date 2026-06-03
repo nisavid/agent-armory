@@ -174,6 +174,11 @@ VALIDATION_INVENTORY = [
         "relationship": "Top-level repository integrity check for the durable Harbor Reward Kit source-disposition ledger.",
     },
     {
+        "check": "harbor_agent_equipment_ab_prototype_results",
+        "boundary": "armory_integrity",
+        "relationship": "Top-level repository integrity check for the durable Harbor Agent Equipment A/B prototype results ledger.",
+    },
+    {
         "check": "external_tool_evaluation",
         "boundary": "armory_integrity",
         "relationship": "Top-level repository integrity check for the reusable external-tool evaluation operating contract.",
@@ -543,6 +548,7 @@ SOURCE_DISPOSITION_PATH = "docs/closeout/forge-seed-source-disposition.md"
 HARBOR_JIG_SOURCE_MAP_PATH = "docs/closeout/harbor-jig-source-map.md"
 HARBOR_NEIGHBOR_TOOL_CATALOG_PATH = "docs/closeout/harbor-neighbor-tool-catalog.md"
 HARBOR_REWARD_KIT_EVALUATION_PATH = "docs/closeout/harbor-reward-kit-evaluation.md"
+HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH = "docs/closeout/harbor-agent-equipment-ab-prototype-results.md"
 EXTERNAL_TOOL_EVALUATION_PATH = "docs/external-tool-evaluation.md"
 HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH = "docs/evaluations/harbor.md"
 SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH = "docs/closeout/skill-eval-methodology-source-intake.md"
@@ -591,6 +597,54 @@ HARBOR_REWARD_KIT_EVALUATION_DOWNSTREAM_ROUTES = ["#188", "#165", "#166", "#191"
 HARBOR_REWARD_KIT_EVALUATION_SOURCE_URLS = [
     "https://www.harborframework.com/docs/rewardkit",
     "https://www.harborframework.com/docs/rewardkit/judge-criteria",
+    "https://github.com/harbor-framework/harbor",
+]
+HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_REQUIRED_SECTIONS = [
+    "Scope Boundary",
+    "Prototype Setup",
+    "Command Summary",
+    "Result Summary",
+    "Evidence Classification",
+    "Runtime Controls And Boundaries",
+    "Downstream Routing",
+    "Deferments And Nonportable Claims",
+    "Security Privacy And Durability",
+    "Closeout Evidence",
+]
+HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_COVERAGE_TERMS = [
+    "uv tool install harbor",
+    "Harbor CLI version",
+    "0.13.0",
+    "schema_version",
+    "1.3",
+    "Docker",
+    "Podman",
+    "no-network",
+    "custom agent import paths",
+    "skills/issue-ops-workflow-executor/SKILL.md",
+    "baseline",
+    "equipped",
+    "0.5714",
+    "1.0",
+    "artifact manifest.json",
+    "status ok",
+    "trajectory",
+    "raw",
+    "host-local paths",
+    "credentials",
+]
+HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_ROUTES = [
+    "#183",
+    "#187",
+    "#189",
+    "#190",
+    "#191",
+]
+HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_SOURCE_URLS = [
+    "https://www.harborframework.com/docs/getting-started",
+    "https://www.harborframework.com/docs/tasks",
+    "https://www.harborframework.com/docs/agents",
+    "https://www.harborframework.com/docs/evals",
     "https://github.com/harbor-framework/harbor",
 ]
 HARBOR_JIG_SOURCE_MAP_COVERAGE_TERMS = [
@@ -764,6 +818,10 @@ HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_COVERAGE_TERMS = [
     "transcripts",
     "model outputs",
     "external service usage",
+    "Harbor Agent Equipment A/B Prototype Results",
+    "bounded prototype evidence accepted",
+    "baseline reward",
+    "equipped reward",
 ]
 HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_ROUTES = [
     "#183",
@@ -2561,6 +2619,95 @@ def validate_harbor_reward_kit_evaluation(root: Path) -> list[CheckResult]:
             True,
             "present",
             HARBOR_REWARD_KIT_EVALUATION_PATH,
+        )
+    ]
+
+
+def validate_harbor_agent_equipment_ab_prototype_results(root: Path) -> list[CheckResult]:
+    ok, detail, path = repo_relative_path_status(root, HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH, "file")
+    if not ok:
+        return [
+            CheckResult(
+                "harbor_agent_equipment_ab_prototype_results:path",
+                False,
+                detail,
+                HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH,
+            )
+        ]
+    markdown = path.read_text(encoding="utf-8")
+    visible_markdown = markdown_visible_text(markdown)
+    nonblank_lines = [line.strip() for line in visible_markdown.splitlines() if line.strip()]
+    headings = markdown_heading_texts(markdown)
+    results: list[CheckResult] = []
+    if "Status: Source Disposition Ledger" not in nonblank_lines[:8]:
+        results.append(
+            CheckResult(
+                "harbor_agent_equipment_ab_prototype_results:status",
+                False,
+                "status must be Source Disposition Ledger",
+                HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH,
+            )
+        )
+    for required_section in HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_REQUIRED_SECTIONS:
+        if normalize_reference_label(required_section) not in headings:
+            results.append(
+                CheckResult(
+                    f"harbor_agent_equipment_ab_prototype_results:section:{required_section}",
+                    False,
+                    f"missing section: {required_section}",
+                    HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH,
+                )
+            )
+    searchable_markdown = markdown_link_search_text(markdown)
+    searchable_markdown_casefold = searchable_markdown.casefold()
+    for required_term in HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_COVERAGE_TERMS:
+        if required_term.casefold() not in searchable_markdown_casefold:
+            results.append(
+                CheckResult(
+                    f"harbor_agent_equipment_ab_prototype_results:coverage:{required_term}",
+                    False,
+                    f"missing coverage term: {required_term}",
+                    HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH,
+                )
+            )
+    for route in HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_ROUTES:
+        if not required_downstream_route_present(searchable_markdown, route):
+            results.append(
+                CheckResult(
+                    f"harbor_agent_equipment_ab_prototype_results:routing:{route}",
+                    False,
+                    f"missing downstream route: {route}",
+                    HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH,
+                )
+            )
+    exact_link_targets = markdown_link_destinations(markdown)
+    for source_url in HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_SOURCE_URLS:
+        if source_url not in exact_link_targets:
+            results.append(
+                CheckResult(
+                    f"harbor_agent_equipment_ab_prototype_results:source:{source_url}",
+                    False,
+                    f"missing source URL: {source_url}",
+                    HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH,
+                )
+            )
+    if HOST_LOCAL_PATH_RE.search(visible_markdown):
+        results.append(
+            CheckResult(
+                "harbor_agent_equipment_ab_prototype_results:portable_paths",
+                False,
+                "ledger must not preserve host-local paths",
+                HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH,
+            )
+        )
+    if results:
+        return results
+    return [
+        CheckResult(
+            "harbor_agent_equipment_ab_prototype_results:ledger",
+            True,
+            "present",
+            HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH,
         )
     ]
 
@@ -6925,6 +7072,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
         HARBOR_JIG_SOURCE_MAP_PATH,
         HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
         HARBOR_REWARD_KIT_EVALUATION_PATH,
+        HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH,
         EXTERNAL_TOOL_EVALUATION_PATH,
         HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
         SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
@@ -6967,6 +7115,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
     results.extend(validate_harbor_jig_source_map(root))
     results.extend(validate_harbor_neighbor_tool_catalog(root))
     results.extend(validate_harbor_reward_kit_evaluation(root))
+    results.extend(validate_harbor_agent_equipment_ab_prototype_results(root))
     results.extend(validate_external_tool_evaluation(root))
     results.extend(validate_harbor_external_tool_evaluation_record(root))
     results.extend(validate_skill_eval_methodology_source_intake(root))
