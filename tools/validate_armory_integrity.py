@@ -501,7 +501,7 @@ def markdown_link_destinations(markdown: str) -> set[str]:
             index += 1
             continue
         links.add(markdown_link_destination(searchable_markdown[open_target + 1 : close_target]))
-        index = close_target + 1 if is_image else index + 1
+        index = close_target + 1
     return links
 
 
