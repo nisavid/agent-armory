@@ -220,9 +220,7 @@ External Tool Evaluation Record. README, AGENTS, PRDs, ADRs, and inventory do
 not need changes because #187 creates no public feature, policy change,
 architecture decision, or stocked equipment claim.
 
-Ralph review closeout: Cross-Boundary Coherence Ralph Review Cycle 1 found and
-fixed projection wording for #185 and the remaining Harbor unknowns. Cross-Boundary
-Coherence Ralph Review Cycle 2 found no findings. Story Quality Ralph Review
-Cycle 1 found no findings after checking DX, validator locality, evidence
-durability, security boundaries, command handoff shape, and alignment with
-`docs/vision.md`.
+Ralph review closeout: Cross-Boundary Coherence Ralph Review and
+Story Quality Ralph Review found no unresolved findings after projection
+wording, validator locality, evidence durability, security boundaries, command
+handoff shape, and `docs/vision.md` alignment were checked.

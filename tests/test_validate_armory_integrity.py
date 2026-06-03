@@ -1870,7 +1870,8 @@ class ValidatorPrimitiveTests(unittest.TestCase):
             path.parent.mkdir(parents=True)
             path.write_text(
                 self.harbor_agent_equipment_ab_prototype_record()
-                + "\n\nA rejected scratch command used `/tmp/harbor-ab/jobs`.\n",
+                + "\n\nA rejected scratch command used `/tmp/harbor-ab/jobs`.\n"
+                + "Another rejected scratch command used `C:\\Temp\\harbor-ab\\jobs`.\n",
                 encoding="utf-8",
             )
 
