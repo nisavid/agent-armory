@@ -436,7 +436,11 @@ def find_markdown_links(markdown: str) -> list[str]:
         if char == "\\":
             index += 2
             continue
-        is_image = char == "!" and index + 1 < len(searchable_markdown) and searchable_markdown[index + 1] == "["
+        is_image = (
+            char == "!"
+            and index + 1 < len(searchable_markdown)
+            and searchable_markdown[index + 1] == "["
+        )
         if is_image:
             open_label = index + 1
         elif char == "[":
