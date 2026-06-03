@@ -30,19 +30,27 @@ judge criteria, ATIF trajectory, artifacts, scoring, cloud sandbox, network
 policy, artifact handling, verifier/reward tampering, and auth/provider
 boundaries into current Armory jig vocabulary.
 
-Additional source inputs remain pending for neighbor tools, prototype behavior,
-Reward Kit and judge semantics, trajectory/artifact contracts, driver gates,
-and final projection.
+The accepted neighbor-tool catalog input is
+[#186](https://github.com/nisavid/agent-armory/issues/186) and its durable
+[Harbor-Neighbor Tool Catalog](../closeout/harbor-neighbor-tool-catalog.md).
+That ledger maps Harbor-linked sandbox providers, Reward Kit, LiteLLM provider
+routing, ATIF, Opik fallback context, Harbor registry, dataset.toml, adapter
+templates, result viewer, Hugging Face parity experiments, SkyRL, and GEPA into
+Armory routing classifications.
+
+Additional source inputs remain pending for prototype behavior, Reward Kit and
+judge semantics, trajectory/artifact contracts, driver gates, and final
+projection.
 
 ## Evidence Ledger
 
 | evidence class | current durable status |
 | --- | --- |
-| source-backed claims | Present for Harbor vocabulary and concept mapping through #184 and the Harbor Jig Source Map. |
+| source-backed claims | Present for Harbor vocabulary and concept mapping through #184 and the Harbor Jig Source Map; present for Harbor-linked neighbor tools and surfaces through #186 and the Harbor-Neighbor Tool Catalog. |
 | local observations | Limited to live repository and issue review during each child issue; not retained here as raw command output. |
 | prototype results | Pending #187. No Harbor prototype result is accepted by this record yet. |
 | implementation inference | Pending downstream work. Inferences must cite the source or prototype evidence that supports them. |
-| unknowns | Neighbor-tool comparison, prototype fit, Reward Kit safety, ATIF/artifact contract fit, Jig Driver gate fit, and final projection remain unresolved. |
+| unknowns | Prototype fit, Reward Kit safety, ATIF/artifact contract fit, Jig Driver gate fit, and final projection remain unresolved. |
 | rejected claims | No rejected Harbor claims have been promoted to this record yet. |
 
 Child issues update this table with durable conclusions only. Raw logs,
@@ -54,7 +62,7 @@ outside the record.
 | route | expected output | current state |
 | --- | --- | --- |
 | [#185](https://github.com/nisavid/agent-armory/issues/185) | Reusable external-tool evaluation pipeline and this Harbor record skeleton. | In progress. |
-| [#186](https://github.com/nisavid/agent-armory/issues/186) | Neighbor-tool comparison against Harbor-relevant axes. | Pending. |
+| [#186](https://github.com/nisavid/agent-armory/issues/186) | Neighbor-tool comparison against Harbor-relevant axes. | Complete through the Harbor-Neighbor Tool Catalog. |
 | [#187](https://github.com/nisavid/agent-armory/issues/187) | Harbor Agent Equipment A/B test prototype results. | Pending. |
 | [#188](https://github.com/nisavid/agent-armory/issues/188) | Reward Kit and judge criteria fit for Assertion Provider and Learned Oracle questions. | Pending. |
 | [#189](https://github.com/nisavid/agent-armory/issues/189) | ATIF trajectory and artifact contract evidence for Jig Runner results. | Pending. |

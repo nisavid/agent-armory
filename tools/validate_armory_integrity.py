@@ -164,6 +164,11 @@ VALIDATION_INVENTORY = [
         "relationship": "Top-level repository integrity check for the durable Harbor-to-Armory jig source-map ledger.",
     },
     {
+        "check": "harbor_neighbor_tool_catalog",
+        "boundary": "armory_integrity",
+        "relationship": "Top-level repository integrity check for the durable Harbor-neighbor tool catalog ledger.",
+    },
+    {
         "check": "external_tool_evaluation",
         "boundary": "armory_integrity",
         "relationship": "Top-level repository integrity check for the reusable external-tool evaluation operating contract.",
@@ -489,6 +494,7 @@ SOURCE_PROJECTION_VALIDATION_STATUSES = {"planned", "validated"}
 SOURCE_PROJECTION_PLANNED_REQUIREMENTS = {"H012", "H053"}
 SOURCE_DISPOSITION_PATH = "docs/closeout/forge-seed-source-disposition.md"
 HARBOR_JIG_SOURCE_MAP_PATH = "docs/closeout/harbor-jig-source-map.md"
+HARBOR_NEIGHBOR_TOOL_CATALOG_PATH = "docs/closeout/harbor-neighbor-tool-catalog.md"
 EXTERNAL_TOOL_EVALUATION_PATH = "docs/external-tool-evaluation.md"
 HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH = "docs/evaluations/harbor.md"
 SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH = "docs/closeout/skill-eval-methodology-source-intake.md"
@@ -534,6 +540,71 @@ HARBOR_JIG_SOURCE_MAP_COVERAGE_TERMS = [
 HARBOR_JIG_SOURCE_MAP_DOWNSTREAM_ROUTES = [
     "#183",
     "#185",
+    "#186",
+    "#187",
+    "#188",
+    "#189",
+    "#190",
+    "#191",
+]
+HARBOR_NEIGHBOR_TOOL_CATALOG_REQUIRED_SECTIONS = [
+    "Scope Boundary",
+    "Portable Source Inventory",
+    "Harbor-Neighbor Tool Catalog",
+    "Role Classification Summary",
+    "Open Uncertainties And Follow-Up Conditions",
+    "Downstream Routing",
+    "Deferments And Nonportable Claims",
+    "Security Privacy And Durability",
+    "Closeout Evidence",
+]
+HARBOR_NEIGHBOR_TOOL_CATALOG_FIELDS = [
+    "entry_id",
+    "tool_or_surface",
+    "Harbor linkage",
+    "source URL",
+    "role classification",
+    "evidence quality",
+    "likely Armory consumer",
+    "open uncertainty",
+]
+HARBOR_NEIGHBOR_TOOL_CATALOG_COVERAGE_TERMS = [
+    "Daytona",
+    "Modal",
+    "E2B",
+    "Runloop",
+    "Tensorlake",
+    "Islo",
+    "CoreWeave Sandboxes",
+    "W&B Sandboxes",
+    "Reward Kit",
+    "LiteLLM",
+    "ATIF",
+    "Opik",
+    "Harbor registry",
+    "dataset.toml",
+    "adapter templates",
+    "result viewer",
+    "Hugging Face parity experiments",
+    "SkyRL",
+    "GEPA",
+    "Jig Driver substrate",
+    "sandbox provider",
+    "benchmark format",
+    "benchmark registry",
+    "Agent or harness configurator",
+    "tool provider",
+    "observability/evaluation instrumentation",
+    "verifier/assertion layer",
+    "trajectory/result format",
+    "training/export surface",
+    "harbor-doc-supported",
+    "harbor-source-supported",
+    "vendor-doc-supported",
+    "third-party-fallback",
+]
+HARBOR_NEIGHBOR_TOOL_CATALOG_ROUTES = [
+    "#183",
     "#186",
     "#187",
     "#188",
@@ -2195,6 +2266,124 @@ def validate_harbor_jig_source_map(root: Path) -> list[CheckResult]:
             True,
             "present",
             HARBOR_JIG_SOURCE_MAP_PATH,
+        )
+    ]
+
+
+def validate_harbor_neighbor_tool_catalog(root: Path) -> list[CheckResult]:
+    ok, detail, path = repo_relative_path_status(root, HARBOR_NEIGHBOR_TOOL_CATALOG_PATH, "file")
+    if not ok:
+        return [
+            CheckResult(
+                "harbor_neighbor_tool_catalog:path",
+                False,
+                detail,
+                HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+            )
+        ]
+    markdown = path.read_text(encoding="utf-8")
+    visible_markdown = markdown_visible_text(markdown)
+    nonblank_lines = [line.strip() for line in visible_markdown.splitlines() if line.strip()]
+    headings = markdown_heading_texts(markdown)
+    results: list[CheckResult] = []
+    if "Status: Source Disposition Ledger" not in nonblank_lines[:8]:
+        results.append(
+            CheckResult(
+                "harbor_neighbor_tool_catalog:status",
+                False,
+                "status must be Source Disposition Ledger",
+                HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+            )
+        )
+    for required_section in HARBOR_NEIGHBOR_TOOL_CATALOG_REQUIRED_SECTIONS:
+        if normalize_reference_label(required_section) not in headings:
+            results.append(
+                CheckResult(
+                    f"harbor_neighbor_tool_catalog:section:{required_section}",
+                    False,
+                    f"missing section: {required_section}",
+                    HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+                )
+            )
+    searchable_markdown = markdown_link_search_text(markdown)
+    searchable_markdown_casefold = searchable_markdown.casefold()
+    visible_markdown_casefold = visible_markdown.casefold()
+    table_header_cells: set[str] = set()
+    visible_lines = visible_markdown.splitlines()
+    for index, line in enumerate(visible_lines[:-1]):
+        stripped_line = line.strip()
+        stripped_next_line = visible_lines[index + 1].strip()
+        if not (
+            stripped_line.startswith("|")
+            and stripped_line.endswith("|")
+            and stripped_next_line.startswith("|")
+            and stripped_next_line.endswith("|")
+        ):
+            continue
+        separator_cells = [cell.strip() for cell in stripped_next_line.strip("|").split("|")]
+        if not all(re.fullmatch(r":?-{3,}:?", cell) for cell in separator_cells):
+            continue
+        table_header_cells.update(cell.strip().casefold() for cell in stripped_line.strip("|").split("|"))
+    for required_field in HARBOR_NEIGHBOR_TOOL_CATALOG_FIELDS:
+        if required_field.casefold() not in table_header_cells:
+            results.append(
+                CheckResult(
+                    f"harbor_neighbor_tool_catalog:field:{required_field}",
+                    False,
+                    f"missing catalog field: {required_field}",
+                    HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+                )
+            )
+    for required_term in HARBOR_NEIGHBOR_TOOL_CATALOG_COVERAGE_TERMS:
+        if required_term.casefold() not in searchable_markdown_casefold:
+            results.append(
+                CheckResult(
+                    f"harbor_neighbor_tool_catalog:coverage:{required_term}",
+                    False,
+                    f"missing coverage term: {required_term}",
+                    HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+                )
+            )
+    for route in HARBOR_NEIGHBOR_TOOL_CATALOG_ROUTES:
+        if not required_downstream_route_present(searchable_markdown, route):
+            results.append(
+                CheckResult(
+                    f"harbor_neighbor_tool_catalog:routing:{route}",
+                    False,
+                    f"missing downstream route: {route}",
+                    HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+                )
+            )
+    broad_survey_excluded = (
+        "broad market survey work is out of scope" in visible_markdown_casefold
+        or "broad eval-platform survey work is out of scope" in visible_markdown_casefold
+    )
+    if "broad market survey" in visible_markdown_casefold and not broad_survey_excluded:
+        results.append(
+            CheckResult(
+                "harbor_neighbor_tool_catalog:scope:broad_survey",
+                False,
+                "catalog must exclude broad market survey work",
+                HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+            )
+        )
+    if HOST_LOCAL_PATH_RE.search(visible_markdown):
+        results.append(
+            CheckResult(
+                "harbor_neighbor_tool_catalog:portable_paths",
+                False,
+                "ledger must not preserve host-local paths",
+                HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+            )
+        )
+    if results:
+        return results
+    return [
+        CheckResult(
+            "harbor_neighbor_tool_catalog:ledger",
+            True,
+            "present",
+            HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
         )
     ]
 
@@ -6557,6 +6746,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
         PUBLISHED_EQUIPMENT_INVENTORY_PATH,
         SOURCE_DISPOSITION_PATH,
         HARBOR_JIG_SOURCE_MAP_PATH,
+        HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
         EXTERNAL_TOOL_EVALUATION_PATH,
         HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
         SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
@@ -6597,6 +6787,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
     ]
     results.extend(validate_source_disposition(root))
     results.extend(validate_harbor_jig_source_map(root))
+    results.extend(validate_harbor_neighbor_tool_catalog(root))
     results.extend(validate_external_tool_evaluation(root))
     results.extend(validate_harbor_external_tool_evaluation_record(root))
     results.extend(validate_skill_eval_methodology_source_intake(root))
