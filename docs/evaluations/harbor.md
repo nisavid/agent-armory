@@ -38,23 +38,35 @@ routing, ATIF, Opik fallback context, Harbor registry, dataset.toml, adapter
 templates, result viewer, Hugging Face parity experiments, SkyRL, and GEPA into
 Armory routing classifications.
 
+The accepted evaluation-pipeline input is
+[#185](https://github.com/nisavid/agent-armory/issues/185) and the reusable
+[External Tool Evaluation](../external-tool-evaluation.md) contract.
+
+The accepted Reward Kit input is
+[#188](https://github.com/nisavid/agent-armory/issues/188) and its durable
+[Harbor Reward Kit Evaluation](../closeout/harbor-reward-kit-evaluation.md).
+That ledger evaluates deterministic criteria, judge TOML, LLM judges, agent
+judges, trajectory evaluation, isolation, scoring, output files, provider
+routing, comparison behavior, open Harbor PRs/issues, and security risks for
+Assertion Provider and Learned Oracle fit.
+
 Prototype behavior for #187 is represented by the bounded
 [Harbor Agent Equipment A/B Prototype](../closeout/harbor-agent-equipment-ab-prototype.md)
 no-run handoff record.
 
-Additional source inputs remain pending for Reward Kit and judge semantics,
+Additional source inputs remain pending for executed Harbor run evidence,
 trajectory/artifact contracts, driver gates, and final projection.
 
 ## Evidence Ledger
 
 | evidence class | current durable status |
 | --- | --- |
-| source-backed claims | Present for Harbor vocabulary and concept mapping through #184 and the Harbor Jig Source Map; present for Harbor-linked neighbor tools and surfaces through #186 and the Harbor-Neighbor Tool Catalog. |
+| source-backed claims | Present for Harbor vocabulary and concept mapping through #184 and the Harbor Jig Source Map; present for Harbor-linked neighbor tools and surfaces through #186 and the Harbor-Neighbor Tool Catalog; present for Reward Kit and judge criteria fit through #188 and the Harbor Reward Kit Evaluation. |
 | local observations | Limited to live repository and issue review during each child issue; not retained here as raw command output. |
 | prototype results | Present for #187 as a bounded no-run prototype handoff. No executed Harbor job result is accepted by this record yet because Harbor CLI and container runtime controls were unavailable in the active environment. |
-| implementation inference | Pending downstream work. Inferences must cite the source or prototype evidence that supports them. |
-| unknowns | Executed Harbor run evidence, Reward Kit safety, ATIF/artifact contract fit, Jig Driver gate fit, and final projection remain unresolved. |
-| rejected claims | No rejected Harbor claims have been promoted to this record yet. |
+| implementation inference | Reward Kit currently fits as concept source for deterministic Assertion Provider and Learned Oracle work, not a direct Armory result contract. Other inferences must cite the source or prototype evidence that supports them. |
+| unknowns | Executed Harbor run evidence, ATIF/artifact contract fit, Jig Driver gate fit, and final projection remain unresolved. |
+| rejected claims | Reward Kit output files are rejected as the direct current Armory structured result contract; final Harbor rejection or adoption remains unassigned. |
 
 Child issues update this table with durable conclusions only. Raw logs,
 scratch output, transient command output, and unreviewed source extracts remain
@@ -64,10 +76,10 @@ outside the record.
 
 | route | expected output | current state |
 | --- | --- | --- |
-| [#185](https://github.com/nisavid/agent-armory/issues/185) | Reusable external-tool evaluation pipeline and this Harbor record skeleton. | Closed; reusable pipeline and record skeleton are present. |
+| [#185](https://github.com/nisavid/agent-armory/issues/185) | Reusable external-tool evaluation pipeline and this Harbor record skeleton. | Complete; reusable contract accepted. |
 | [#186](https://github.com/nisavid/agent-armory/issues/186) | Neighbor-tool comparison against Harbor-relevant axes. | Complete through the Harbor-Neighbor Tool Catalog. |
 | [#187](https://github.com/nisavid/agent-armory/issues/187) | Harbor Agent Equipment A/B test prototype results. | Bounded no-run handoff recorded in [Harbor Agent Equipment A/B Prototype](../closeout/harbor-agent-equipment-ab-prototype.md); live Harbor execution remains a return-contract item if controls become available. |
-| [#188](https://github.com/nisavid/agent-armory/issues/188) | Reward Kit and judge criteria fit for Assertion Provider and Learned Oracle questions. | Pending. |
+| [#188](https://github.com/nisavid/agent-armory/issues/188) | Reward Kit and judge criteria fit for Assertion Provider and Learned Oracle questions. | Complete; borrow concepts and defer wrapping for both roles. |
 | [#189](https://github.com/nisavid/agent-armory/issues/189) | ATIF trajectory and artifact contract evidence for Jig Runner results. | Pending. |
 | [#190](https://github.com/nisavid/agent-armory/issues/190) | Harbor driver gate evidence against ADR 0022 and Jig Driver requirements. | Pending. |
 | [#191](https://github.com/nisavid/agent-armory/issues/191) | Final disposition, projection state, and closeout coherence. | Pending. |
@@ -76,7 +88,8 @@ outside the record.
 
 Public-safe Harbor security boundaries include provider/auth surfaces, sandbox
 network policy, verifier/reward tampering, artifact collection uncertainty,
-judge provider cost boundaries, and external observability integration risk.
+judge provider cost boundaries, Reward Kit agent judge execution, verifier
+output tampering, and external observability integration risk.
 
 Do not commit or post credentials, private local paths, raw logs, raw
 trajectories, transcripts, model outputs, provider account state, exploit

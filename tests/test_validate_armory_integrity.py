@@ -21,6 +21,7 @@ from tools.validate_armory_integrity import (
     SOURCE_DISPOSITION_PATH,
     HARBOR_JIG_SOURCE_MAP_PATH,
     HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+    HARBOR_REWARD_KIT_EVALUATION_PATH,
     EXTERNAL_TOOL_EVALUATION_PATH,
     HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
     HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_PATH,
@@ -54,6 +55,7 @@ from tools.validate_armory_integrity import (
     validate_security_closeout,
     validate_harbor_jig_source_map,
     validate_harbor_neighbor_tool_catalog,
+    validate_harbor_reward_kit_evaluation,
     validate_external_tool_evaluation,
     validate_harbor_external_tool_evaluation_record,
     validate_harbor_agent_equipment_ab_prototype,
@@ -97,6 +99,7 @@ class ValidationBoundaryTests(unittest.TestCase):
         self.assertEqual(inventory["source_disposition"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["harbor_jig_source_map"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["harbor_neighbor_tool_catalog"]["boundary"], "armory_integrity")
+        self.assertEqual(inventory["harbor_reward_kit_evaluation"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["external_tool_evaluation"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["harbor_external_tool_evaluation_record"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["harbor_agent_equipment_ab_prototype"]["boundary"], "armory_integrity")
@@ -190,6 +193,31 @@ class ValidationBoundaryTests(unittest.TestCase):
                 ok=True,
                 detail="present",
                 path=HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+            ),
+        )
+
+    def test_live_validator_run_includes_harbor_reward_kit_evaluation(self):
+        repo_root = Path(__file__).resolve().parents[1]
+
+        results = run(repo_root, final_closeout=True)
+        result_map = {result.name: result for result in results}
+
+        self.assertEqual(
+            result_map[f"required_path:{HARBOR_REWARD_KIT_EVALUATION_PATH}"],
+            CheckResult(
+                name=f"required_path:{HARBOR_REWARD_KIT_EVALUATION_PATH}",
+                ok=True,
+                detail="exists",
+                path=HARBOR_REWARD_KIT_EVALUATION_PATH,
+            ),
+        )
+        self.assertEqual(
+            result_map["harbor_reward_kit_evaluation:ledger"],
+            CheckResult(
+                name="harbor_reward_kit_evaluation:ledger",
+                ok=True,
+                detail="present",
+                path=HARBOR_REWARD_KIT_EVALUATION_PATH,
             ),
         )
 
@@ -456,6 +484,330 @@ class ValidatorPrimitiveTests(unittest.TestCase):
                     ok=False,
                     detail="missing",
                     path=HARBOR_JIG_SOURCE_MAP_PATH,
+                )
+            ],
+        )
+
+    def test_validate_harbor_reward_kit_evaluation_reports_missing_doc(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = validate_harbor_reward_kit_evaluation(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="harbor_reward_kit_evaluation:path",
+                    ok=False,
+                    detail="missing",
+                    path=HARBOR_REWARD_KIT_EVALUATION_PATH,
+                )
+            ],
+        )
+
+    def test_validate_harbor_reward_kit_evaluation_requires_ledger_shape(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_REWARD_KIT_EVALUATION_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "# Harbor Reward Kit Evaluation\n\nStatus: Draft\n\n## Scope Boundary\n\nIncomplete.\n",
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_reward_kit_evaluation(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_reward_kit_evaluation:status",
+                ok=False,
+                detail="status must be Source Disposition Ledger",
+                path=HARBOR_REWARD_KIT_EVALUATION_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="harbor_reward_kit_evaluation:section:Portable Source Inventory",
+                ok=False,
+                detail="missing section: Portable Source Inventory",
+                path=HARBOR_REWARD_KIT_EVALUATION_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_harbor_reward_kit_evaluation_requires_coverage_terms(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_REWARD_KIT_EVALUATION_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Harbor Reward Kit Evaluation
+
+                    Status: Source Disposition Ledger
+
+                    ## Scope Boundary
+
+                    Reward Kit evaluation for #188.
+
+                    ## Portable Source Inventory
+
+                    Reward Kit, judge TOML, LLM judges, agent judges, trajectory evaluation,
+                    isolation, scoring, output files, provider routing, comparison behavior,
+                    open Harbor PRs/issues, and security risks.
+
+                    ## Reward Kit Fit Matrix
+
+                    Assertion Provider, Learned Oracle, wrap, borrow concepts, defer, and reject.
+
+                    ## Open Harbor PRs Issues And Security Risks
+
+                    Harbor PRs and issues.
+
+                    ## Downstream Routing
+
+                    #188, #165, #166, and #191.
+
+                    ## Deferments And Nonportable Claims
+
+                    No Harbor execution.
+
+                    ## Security Privacy And Durability
+
+                    raw logs, local paths, credentials, trajectories, transcripts, model outputs,
+                    provider account state, and external service usage.
+
+                    ## Closeout Evidence
+
+                    TDD, Prototype, Impeccable, Codex Security, and Ralph Review Cycle.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_reward_kit_evaluation(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_reward_kit_evaluation:coverage:deterministic criteria",
+                ok=False,
+                detail="missing coverage term: deterministic criteria",
+                path=HARBOR_REWARD_KIT_EVALUATION_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_harbor_reward_kit_evaluation_requires_routes_and_sources(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_REWARD_KIT_EVALUATION_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Harbor Reward Kit Evaluation
+
+                    Status: Source Disposition Ledger
+
+                    ## Scope Boundary
+
+                    Reward Kit evaluation for #188.
+
+                    ## Portable Source Inventory
+
+                    [Judge Criteria](https://www.harborframework.com/docs/rewardkit/judge-criteria)
+                    and [Harbor source](https://github.com/harbor-framework/harbor) cover
+                    deterministic criteria, judge TOML, LLM judges, agent judges,
+                    trajectory evaluation, isolation, scoring, output files, provider
+                    routing, comparison behavior, open Harbor PRs/issues, and security risks.
+
+                    ## Reward Kit Fit Matrix
+
+                    Assertion Provider, Learned Oracle, wrap, borrow concepts, defer, and reject.
+
+                    ## Open Harbor PRs Issues And Security Risks
+
+                    Harbor PRs and issues.
+
+                    ## Downstream Routing
+
+                    #188 and #191.
+
+                    ## Deferments And Nonportable Claims
+
+                    No Harbor execution.
+
+                    ## Security Privacy And Durability
+
+                    raw logs, local paths, credentials, trajectories, transcripts, model outputs,
+                    provider account state, and external service usage.
+
+                    ## Closeout Evidence
+
+                    TDD, Prototype, Impeccable, Codex Security, and Ralph Review Cycle.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_reward_kit_evaluation(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_reward_kit_evaluation:routing:#165",
+                ok=False,
+                detail="missing downstream route: #165",
+                path=HARBOR_REWARD_KIT_EVALUATION_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="harbor_reward_kit_evaluation:source:https://www.harborframework.com/docs/rewardkit",
+                ok=False,
+                detail="missing source URL: https://www.harborframework.com/docs/rewardkit",
+                path=HARBOR_REWARD_KIT_EVALUATION_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_harbor_reward_kit_evaluation_rejects_host_local_paths(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_REWARD_KIT_EVALUATION_PATH
+            path.parent.mkdir(parents=True)
+            template = textwrap.dedent(
+                """\
+                # Harbor Reward Kit Evaluation
+
+                Status: Source Disposition Ledger
+
+                ## Scope Boundary
+
+                Reward Kit evaluation for #188.
+
+                ## Portable Source Inventory
+
+                [Reward Kit](https://www.harborframework.com/docs/rewardkit),
+                [Judge Criteria](https://www.harborframework.com/docs/rewardkit/judge-criteria),
+                and [Harbor source](https://github.com/harbor-framework/harbor)
+                cover deterministic criteria, judge TOML, LLM judges, agent judges,
+                trajectory evaluation, isolation, scoring, output files, provider routing,
+                comparison behavior, open Harbor PRs/issues, and security risks.
+
+                ## Reward Kit Fit Matrix
+
+                Assertion Provider, Learned Oracle, wrap, borrow concepts, defer, and reject.
+
+                ## Open Harbor PRs Issues And Security Risks
+
+                Harbor PRs and issues.
+
+                ## Downstream Routing
+
+                #188, #165, #166, and #191.
+
+                ## Deferments And Nonportable Claims
+
+                No Harbor execution.
+
+                ## Security Privacy And Durability
+
+                Scratch path: `{host_local_path}`. raw logs, local paths, credentials,
+                trajectories, transcripts, model outputs, provider account state, and
+                external service usage.
+
+                ## Closeout Evidence
+
+                TDD, Prototype, Impeccable, Codex Security, and Ralph Review Cycle.
+                """
+            )
+
+            for host_local_path in (
+                "/home/agent/harbor/rewardkit-output.json",
+                r"C:\Users\agent\harbor\rewardkit-output.json",
+            ):
+                with self.subTest(host_local_path=host_local_path):
+                    path.write_text(template.format(host_local_path=host_local_path), encoding="utf-8")
+                    results = validate_harbor_reward_kit_evaluation(root)
+
+                    self.assertIn(
+                        CheckResult(
+                            name="harbor_reward_kit_evaluation:portable_paths",
+                            ok=False,
+                            detail="ledger must not preserve host-local paths",
+                            path=HARBOR_REWARD_KIT_EVALUATION_PATH,
+                        ),
+                        results,
+                    )
+
+    def test_validate_harbor_reward_kit_evaluation_accepts_complete_ledger(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_REWARD_KIT_EVALUATION_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Harbor Reward Kit Evaluation
+
+                    Status: Source Disposition Ledger
+
+                    ## Scope Boundary
+
+                    Reward Kit evaluation for #188.
+
+                    ## Portable Source Inventory
+
+                    [Reward Kit](https://www.harborframework.com/docs/rewardkit),
+                    [Judge Criteria](https://www.harborframework.com/docs/rewardkit/judge-criteria),
+                    and [Harbor source](https://github.com/harbor-framework/harbor)
+                    cover deterministic criteria, judge TOML, LLM judges, agent judges,
+                    trajectory evaluation, isolation, scoring, output files, provider routing,
+                    comparison behavior, open Harbor PRs/issues, and security risks.
+
+                    ## Reward Kit Fit Matrix
+
+                    Assertion Provider, Learned Oracle, wrap, borrow concepts, defer, and reject.
+
+                    ## Open Harbor PRs Issues And Security Risks
+
+                    Harbor PRs and issues.
+
+                    ## Downstream Routing
+
+                    #188, #165, #166, and #191.
+
+                    ## Deferments And Nonportable Claims
+
+                    No Harbor execution.
+
+                    ## Security Privacy And Durability
+
+                    raw logs, local paths, credentials, trajectories, transcripts, model outputs,
+                    provider account state, and external service usage.
+
+                    ## Closeout Evidence
+
+                    TDD, Prototype, Impeccable, Codex Security, and Ralph Review Cycle.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_reward_kit_evaluation(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="harbor_reward_kit_evaluation:ledger",
+                    ok=True,
+                    detail="present",
+                    path=HARBOR_REWARD_KIT_EVALUATION_PATH,
                 )
             ],
         )

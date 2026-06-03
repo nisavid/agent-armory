@@ -169,6 +169,11 @@ VALIDATION_INVENTORY = [
         "relationship": "Top-level repository integrity check for the durable Harbor-neighbor tool catalog ledger.",
     },
     {
+        "check": "harbor_reward_kit_evaluation",
+        "boundary": "armory_integrity",
+        "relationship": "Top-level repository integrity check for the durable Harbor Reward Kit source-disposition ledger.",
+    },
+    {
         "check": "external_tool_evaluation",
         "boundary": "armory_integrity",
         "relationship": "Top-level repository integrity check for the reusable external-tool evaluation operating contract.",
@@ -436,7 +441,11 @@ def find_markdown_links(markdown: str) -> list[str]:
         if char == "\\":
             index += 2
             continue
-        is_image = char == "!" and index + 1 < len(searchable_markdown) and searchable_markdown[index + 1] == "["
+        is_image = (
+            char == "!"
+            and index + 1 < len(searchable_markdown)
+            and searchable_markdown[index + 1] == "["
+        )
         if is_image:
             open_label = index + 1
         elif char == "[":
@@ -460,6 +469,44 @@ def find_markdown_links(markdown: str) -> list[str]:
         if local_markdown_target(target):
             links.append(target)
         index = close_target + 1 if is_image else index + 1
+    return links
+
+
+def markdown_link_destinations(markdown: str) -> set[str]:
+    searchable_markdown = markdown_link_search_text(markdown)
+    links: set[str] = set(reference_definitions(searchable_markdown).values())
+    index = 0
+    while index < len(searchable_markdown):
+        char = searchable_markdown[index]
+        if char == "\\":
+            index += 2
+            continue
+        is_image = (
+            char == "!"
+            and index + 1 < len(searchable_markdown)
+            and searchable_markdown[index + 1] == "["
+        )
+        if is_image:
+            open_label = index + 1
+        elif char == "[":
+            open_label = index
+        else:
+            index += 1
+            continue
+        close_label = find_matching_label_close(searchable_markdown, open_label)
+        if close_label is None:
+            index += 1
+            continue
+        open_target = close_label + 1
+        if open_target >= len(searchable_markdown) or searchable_markdown[open_target] != "(":
+            index += 1
+            continue
+        close_target = find_matching_parenthesis_close(searchable_markdown, open_target)
+        if close_target is None:
+            index += 1
+            continue
+        links.add(markdown_link_destination(searchable_markdown[open_target + 1 : close_target]))
+        index = close_target + 1
     return links
 
 
@@ -500,6 +547,7 @@ SOURCE_PROJECTION_PLANNED_REQUIREMENTS = {"H012", "H053"}
 SOURCE_DISPOSITION_PATH = "docs/closeout/forge-seed-source-disposition.md"
 HARBOR_JIG_SOURCE_MAP_PATH = "docs/closeout/harbor-jig-source-map.md"
 HARBOR_NEIGHBOR_TOOL_CATALOG_PATH = "docs/closeout/harbor-neighbor-tool-catalog.md"
+HARBOR_REWARD_KIT_EVALUATION_PATH = "docs/closeout/harbor-reward-kit-evaluation.md"
 EXTERNAL_TOOL_EVALUATION_PATH = "docs/external-tool-evaluation.md"
 HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH = "docs/evaluations/harbor.md"
 HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_PATH = "docs/closeout/harbor-agent-equipment-ab-prototype.md"
@@ -514,6 +562,42 @@ HARBOR_JIG_SOURCE_MAP_REQUIRED_SECTIONS = [
     "Deferments And Nonportable Claims",
     "Security Privacy And Durability",
     "Closeout Evidence",
+]
+HARBOR_REWARD_KIT_EVALUATION_REQUIRED_SECTIONS = [
+    "Scope Boundary",
+    "Portable Source Inventory",
+    "Reward Kit Fit Matrix",
+    "Open Harbor PRs Issues And Security Risks",
+    "Downstream Routing",
+    "Deferments And Nonportable Claims",
+    "Security Privacy And Durability",
+    "Closeout Evidence",
+]
+HARBOR_REWARD_KIT_EVALUATION_COVERAGE_TERMS = [
+    "deterministic criteria",
+    "judge TOML",
+    "LLM judges",
+    "agent judges",
+    "trajectory evaluation",
+    "isolation",
+    "scoring",
+    "output files",
+    "provider routing",
+    "comparison behavior",
+    "open Harbor PRs/issues",
+    "security risks",
+    "Assertion Provider",
+    "Learned Oracle",
+    "wrap",
+    "borrow concepts",
+    "defer",
+    "reject",
+]
+HARBOR_REWARD_KIT_EVALUATION_DOWNSTREAM_ROUTES = ["#188", "#165", "#166", "#191"]
+HARBOR_REWARD_KIT_EVALUATION_SOURCE_URLS = [
+    "https://www.harborframework.com/docs/rewardkit",
+    "https://www.harborframework.com/docs/rewardkit/judge-criteria",
+    "https://github.com/harbor-framework/harbor",
 ]
 HARBOR_JIG_SOURCE_MAP_COVERAGE_TERMS = [
     "task",
@@ -2457,6 +2541,95 @@ def validate_harbor_neighbor_tool_catalog(root: Path) -> list[CheckResult]:
             True,
             "present",
             HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+        )
+    ]
+
+
+def validate_harbor_reward_kit_evaluation(root: Path) -> list[CheckResult]:
+    ok, detail, path = repo_relative_path_status(root, HARBOR_REWARD_KIT_EVALUATION_PATH, "file")
+    if not ok:
+        return [
+            CheckResult(
+                "harbor_reward_kit_evaluation:path",
+                False,
+                detail,
+                HARBOR_REWARD_KIT_EVALUATION_PATH,
+            )
+        ]
+    markdown = path.read_text(encoding="utf-8")
+    visible_markdown = markdown_visible_text(markdown)
+    nonblank_lines = [line.strip() for line in visible_markdown.splitlines() if line.strip()]
+    headings = markdown_heading_texts(markdown)
+    results: list[CheckResult] = []
+    if "Status: Source Disposition Ledger" not in nonblank_lines[:8]:
+        results.append(
+            CheckResult(
+                "harbor_reward_kit_evaluation:status",
+                False,
+                "status must be Source Disposition Ledger",
+                HARBOR_REWARD_KIT_EVALUATION_PATH,
+            )
+        )
+    for required_section in HARBOR_REWARD_KIT_EVALUATION_REQUIRED_SECTIONS:
+        if normalize_reference_label(required_section) not in headings:
+            results.append(
+                CheckResult(
+                    f"harbor_reward_kit_evaluation:section:{required_section}",
+                    False,
+                    f"missing section: {required_section}",
+                    HARBOR_REWARD_KIT_EVALUATION_PATH,
+                )
+            )
+    searchable_markdown = markdown_link_search_text(markdown)
+    searchable_markdown_casefold = searchable_markdown.casefold()
+    for required_term in HARBOR_REWARD_KIT_EVALUATION_COVERAGE_TERMS:
+        if required_term.casefold() not in searchable_markdown_casefold:
+            results.append(
+                CheckResult(
+                    f"harbor_reward_kit_evaluation:coverage:{required_term}",
+                    False,
+                    f"missing coverage term: {required_term}",
+                    HARBOR_REWARD_KIT_EVALUATION_PATH,
+                )
+            )
+    for route in HARBOR_REWARD_KIT_EVALUATION_DOWNSTREAM_ROUTES:
+        if not required_downstream_route_present(searchable_markdown, route):
+            results.append(
+                CheckResult(
+                    f"harbor_reward_kit_evaluation:routing:{route}",
+                    False,
+                    f"missing downstream route: {route}",
+                    HARBOR_REWARD_KIT_EVALUATION_PATH,
+                )
+            )
+    exact_link_targets = markdown_link_destinations(markdown)
+    for source_url in HARBOR_REWARD_KIT_EVALUATION_SOURCE_URLS:
+        if source_url not in exact_link_targets:
+            results.append(
+                CheckResult(
+                    f"harbor_reward_kit_evaluation:source:{source_url}",
+                    False,
+                    f"missing source URL: {source_url}",
+                    HARBOR_REWARD_KIT_EVALUATION_PATH,
+                )
+            )
+    if HOST_LOCAL_PATH_RE.search(visible_markdown):
+        results.append(
+            CheckResult(
+                "harbor_reward_kit_evaluation:portable_paths",
+                False,
+                "ledger must not preserve host-local paths",
+                HARBOR_REWARD_KIT_EVALUATION_PATH,
+            )
+        )
+    if results:
+        return results
+    return [
+        CheckResult(
+            "harbor_reward_kit_evaluation:ledger",
+            True,
+            "present",
+            HARBOR_REWARD_KIT_EVALUATION_PATH,
         )
     ]
 
@@ -6898,6 +7071,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
         SOURCE_DISPOSITION_PATH,
         HARBOR_JIG_SOURCE_MAP_PATH,
         HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+        HARBOR_REWARD_KIT_EVALUATION_PATH,
         EXTERNAL_TOOL_EVALUATION_PATH,
         HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
         HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_PATH,
@@ -6940,6 +7114,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
     results.extend(validate_source_disposition(root))
     results.extend(validate_harbor_jig_source_map(root))
     results.extend(validate_harbor_neighbor_tool_catalog(root))
+    results.extend(validate_harbor_reward_kit_evaluation(root))
     results.extend(validate_external_tool_evaluation(root))
     results.extend(validate_harbor_external_tool_evaluation_record(root))
     results.extend(validate_harbor_agent_equipment_ab_prototype(root))
