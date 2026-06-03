@@ -164,6 +164,11 @@ VALIDATION_INVENTORY = [
         "relationship": "Top-level repository integrity check for the durable Harbor-to-Armory jig source-map ledger.",
     },
     {
+        "check": "harbor_reward_kit_evaluation",
+        "boundary": "armory_integrity",
+        "relationship": "Top-level repository integrity check for the durable Harbor Reward Kit source-disposition ledger.",
+    },
+    {
         "check": "external_tool_evaluation",
         "boundary": "armory_integrity",
         "relationship": "Top-level repository integrity check for the reusable external-tool evaluation operating contract.",
@@ -426,7 +431,11 @@ def find_markdown_links(markdown: str) -> list[str]:
         if char == "\\":
             index += 2
             continue
-        is_image = char == "!" and index + 1 < len(searchable_markdown) and searchable_markdown[index + 1] == "["
+        is_image = (
+            char == "!"
+            and index + 1 < len(searchable_markdown)
+            and searchable_markdown[index + 1] == "["
+        )
         if is_image:
             open_label = index + 1
         elif char == "[":
@@ -449,6 +458,40 @@ def find_markdown_links(markdown: str) -> list[str]:
         target = markdown_link_destination(searchable_markdown[open_target + 1 : close_target])
         if local_markdown_target(target):
             links.append(target)
+        index = close_target + 1 if is_image else index + 1
+    return links
+
+
+def markdown_link_destinations(markdown: str) -> set[str]:
+    searchable_markdown = markdown_link_search_text(markdown)
+    links: set[str] = set(reference_definitions(searchable_markdown).values())
+    index = 0
+    while index < len(searchable_markdown):
+        char = searchable_markdown[index]
+        if char == "\\":
+            index += 2
+            continue
+        is_image = char == "!" and index + 1 < len(searchable_markdown) and searchable_markdown[index + 1] == "["
+        if is_image:
+            open_label = index + 1
+        elif char == "[":
+            open_label = index
+        else:
+            index += 1
+            continue
+        close_label = find_matching_label_close(searchable_markdown, open_label)
+        if close_label is None:
+            index += 1
+            continue
+        open_target = close_label + 1
+        if open_target >= len(searchable_markdown) or searchable_markdown[open_target] != "(":
+            index += 1
+            continue
+        close_target = find_matching_parenthesis_close(searchable_markdown, open_target)
+        if close_target is None:
+            index += 1
+            continue
+        links.add(markdown_link_destination(searchable_markdown[open_target + 1 : close_target]))
         index = close_target + 1 if is_image else index + 1
     return links
 
@@ -2293,8 +2336,9 @@ def validate_harbor_reward_kit_evaluation(root: Path) -> list[CheckResult]:
                     HARBOR_REWARD_KIT_EVALUATION_PATH,
                 )
             )
+    exact_link_targets = markdown_link_destinations(markdown)
     for source_url in HARBOR_REWARD_KIT_EVALUATION_SOURCE_URLS:
-        if source_url not in searchable_markdown:
+        if source_url not in exact_link_targets:
             results.append(
                 CheckResult(
                     f"harbor_reward_kit_evaluation:source:{source_url}",

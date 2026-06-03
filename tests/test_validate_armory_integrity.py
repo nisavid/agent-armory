@@ -94,6 +94,7 @@ class ValidationBoundaryTests(unittest.TestCase):
         self.assertEqual(inventory["markdown_links"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["source_disposition"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["harbor_jig_source_map"]["boundary"], "armory_integrity")
+        self.assertEqual(inventory["harbor_reward_kit_evaluation"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["external_tool_evaluation"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["harbor_external_tool_evaluation_record"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["skill_eval_methodology_source_intake"]["boundary"], "armory_integrity")
@@ -161,6 +162,31 @@ class ValidationBoundaryTests(unittest.TestCase):
                 ok=True,
                 detail="present",
                 path=HARBOR_JIG_SOURCE_MAP_PATH,
+            ),
+        )
+
+    def test_live_validator_run_includes_harbor_reward_kit_evaluation(self):
+        repo_root = Path(__file__).resolve().parents[1]
+
+        results = run(repo_root, final_closeout=True)
+        result_map = {result.name: result for result in results}
+
+        self.assertEqual(
+            result_map[f"required_path:{HARBOR_REWARD_KIT_EVALUATION_PATH}"],
+            CheckResult(
+                name=f"required_path:{HARBOR_REWARD_KIT_EVALUATION_PATH}",
+                ok=True,
+                detail="exists",
+                path=HARBOR_REWARD_KIT_EVALUATION_PATH,
+            ),
+        )
+        self.assertEqual(
+            result_map["harbor_reward_kit_evaluation:ledger"],
+            CheckResult(
+                name="harbor_reward_kit_evaluation:ledger",
+                ok=True,
+                detail="present",
+                path=HARBOR_REWARD_KIT_EVALUATION_PATH,
             ),
         )
 
@@ -481,10 +507,11 @@ class ValidatorPrimitiveTests(unittest.TestCase):
 
                     ## Portable Source Inventory
 
-                    [Reward Kit](https://www.harborframework.com/docs/rewardkit)
-                    covers deterministic criteria, judge TOML, LLM judges, agent judges,
-                    trajectory evaluation, isolation, scoring, output files, provider routing,
-                    comparison behavior, open Harbor PRs/issues, and security risks.
+                    [Judge Criteria](https://www.harborframework.com/docs/rewardkit/judge-criteria)
+                    and [Harbor source](https://github.com/harbor-framework/harbor) cover
+                    deterministic criteria, judge TOML, LLM judges, agent judges,
+                    trajectory evaluation, isolation, scoring, output files, provider
+                    routing, comparison behavior, open Harbor PRs/issues, and security risks.
 
                     ## Reward Kit Fit Matrix
 
@@ -528,9 +555,9 @@ class ValidatorPrimitiveTests(unittest.TestCase):
         )
         self.assertIn(
             CheckResult(
-                name="harbor_reward_kit_evaluation:source:https://www.harborframework.com/docs/rewardkit/judge-criteria",
+                name="harbor_reward_kit_evaluation:source:https://www.harborframework.com/docs/rewardkit",
                 ok=False,
-                detail="missing source URL: https://www.harborframework.com/docs/rewardkit/judge-criteria",
+                detail="missing source URL: https://www.harborframework.com/docs/rewardkit",
                 path=HARBOR_REWARD_KIT_EVALUATION_PATH,
             ),
             results,
