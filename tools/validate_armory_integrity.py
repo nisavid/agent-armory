@@ -2356,7 +2356,10 @@ def validate_harbor_neighbor_tool_catalog(root: Path) -> list[CheckResult]:
     searchable_markdown = markdown_link_search_text(markdown)
     searchable_markdown_casefold = searchable_markdown.casefold()
     visible_markdown_casefold = visible_markdown.casefold()
-    table_header_cells: set[str] = set()
+    required_catalog_fields = {
+        field.casefold() for field in HARBOR_NEIGHBOR_TOOL_CATALOG_FIELDS
+    }
+    table_header_rows: list[set[str]] = []
     visible_lines = visible_markdown.splitlines()
     for index, line in enumerate(visible_lines[:-1]):
         stripped_line = line.strip()
@@ -2371,14 +2374,32 @@ def validate_harbor_neighbor_tool_catalog(root: Path) -> list[CheckResult]:
         separator_cells = [cell.strip() for cell in stripped_next_line.strip("|").split("|")]
         if not all(re.fullmatch(r":?-{3,}:?", cell) for cell in separator_cells):
             continue
-        table_header_cells.update(cell.strip().casefold() for cell in stripped_line.strip("|").split("|"))
-    for required_field in HARBOR_NEIGHBOR_TOOL_CATALOG_FIELDS:
-        if required_field.casefold() not in table_header_cells:
+        header_cells = {cell.strip().casefold() for cell in stripped_line.strip("|").split("|")}
+        table_header_rows.append(header_cells)
+    has_complete_catalog_header = any(
+        required_catalog_fields.issubset(header_cells) for header_cells in table_header_rows
+    )
+    if not has_complete_catalog_header:
+        missing_fields = [
+            required_field
+            for required_field in HARBOR_NEIGHBOR_TOOL_CATALOG_FIELDS
+            if all(required_field.casefold() not in header_cells for header_cells in table_header_rows)
+        ]
+        for required_field in missing_fields:
             results.append(
                 CheckResult(
                     f"harbor_neighbor_tool_catalog:field:{required_field}",
                     False,
                     f"missing catalog field: {required_field}",
+                    HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+                )
+            )
+        if not missing_fields:
+            results.append(
+                CheckResult(
+                    "harbor_neighbor_tool_catalog:field_schema",
+                    False,
+                    "catalog table header must include all required fields",
                     HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
                 )
             )

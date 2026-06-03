@@ -955,6 +955,76 @@ class ValidatorPrimitiveTests(unittest.TestCase):
             results,
         )
 
+    def test_validate_harbor_neighbor_tool_catalog_requires_fields_in_one_table_header(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_NEIGHBOR_TOOL_CATALOG_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Harbor-Neighbor Tool Catalog
+
+                    Status: Source Disposition Ledger
+
+                    ## Scope Boundary
+
+                    Broad eval-platform survey work is out of scope.
+
+                    ## Portable Source Inventory
+
+                    Harbor docs and source URLs.
+
+                    ## Harbor-Neighbor Tool Catalog
+
+                    | entry_id | tool_or_surface | Harbor linkage | source URL |
+                    | --- | --- | --- | --- |
+                    | HN001 | Daytona | Harbor sandbox provider. | https://example.invalid/daytona |
+
+                    | role classification | evidence quality | likely Armory consumer | open uncertainty |
+                    | --- | --- | --- | --- |
+                    | Jig Driver substrate | source-backed | #190 | provider semantics |
+
+                    ## Role Classification Summary
+
+                    Jig Driver substrate and sandbox provider.
+
+                    ## Open Uncertainties And Follow-Up Conditions
+
+                    No integration approval.
+
+                    ## Downstream Routing
+
+                    #183, #186, #187, #188, #189, #190, and #191.
+
+                    ## Deferments And Nonportable Claims
+
+                    No prototype.
+
+                    ## Security Privacy And Durability
+
+                    No raw logs.
+
+                    ## Closeout Evidence
+
+                    Reviewed.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_neighbor_tool_catalog(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_neighbor_tool_catalog:field_schema",
+                ok=False,
+                detail="catalog table header must include all required fields",
+                path=HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+            ),
+            results,
+        )
+
     def test_validate_harbor_neighbor_tool_catalog_requires_coverage_terms(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
