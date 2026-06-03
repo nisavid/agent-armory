@@ -143,7 +143,7 @@ Privacy boundaries:
 Triage result: issue #188 remained `enhancement`, `ready-for-agent`,
 `kind:research`, `mode:afk-implementation`, and `dependency:unblocked` when
 work began. Live dependency reads showed #184 and #185 closed as blockers and
-#188 blocking #191. Label audit findings were unrelated to #188.
+issue #188 blocking #191. Label audit findings were unrelated to issue #188.
 
 Grill-with-docs result: no interactive grill was needed for #188. The source
 evidence fits existing Armory vocabulary, and no new glossary term, PRD, or
