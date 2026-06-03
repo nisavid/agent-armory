@@ -22,6 +22,7 @@ from tools.validate_armory_integrity import (
     HARBOR_JIG_SOURCE_MAP_PATH,
     HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
     HARBOR_REWARD_KIT_EVALUATION_PATH,
+    HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH,
     EXTERNAL_TOOL_EVALUATION_PATH,
     HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
     SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
@@ -55,6 +56,7 @@ from tools.validate_armory_integrity import (
     validate_harbor_jig_source_map,
     validate_harbor_neighbor_tool_catalog,
     validate_harbor_reward_kit_evaluation,
+    validate_harbor_agent_equipment_ab_prototype_results,
     validate_external_tool_evaluation,
     validate_harbor_external_tool_evaluation_record,
     validate_skill_eval_methodology_source_intake,
@@ -98,6 +100,7 @@ class ValidationBoundaryTests(unittest.TestCase):
         self.assertEqual(inventory["harbor_jig_source_map"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["harbor_neighbor_tool_catalog"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["harbor_reward_kit_evaluation"]["boundary"], "armory_integrity")
+        self.assertEqual(inventory["harbor_agent_equipment_ab_prototype_results"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["external_tool_evaluation"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["harbor_external_tool_evaluation_record"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["skill_eval_methodology_source_intake"]["boundary"], "armory_integrity")
@@ -215,6 +218,31 @@ class ValidationBoundaryTests(unittest.TestCase):
                 ok=True,
                 detail="present",
                 path=HARBOR_REWARD_KIT_EVALUATION_PATH,
+            ),
+        )
+
+    def test_live_validator_run_includes_harbor_agent_equipment_ab_prototype_results(self):
+        repo_root = Path(__file__).resolve().parents[1]
+
+        results = run(repo_root, final_closeout=True)
+        result_map = {result.name: result for result in results}
+
+        self.assertEqual(
+            result_map[f"required_path:{HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH}"],
+            CheckResult(
+                name=f"required_path:{HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH}",
+                ok=True,
+                detail="exists",
+                path=HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH,
+            ),
+        )
+        self.assertEqual(
+            result_map["harbor_agent_equipment_ab_prototype_results:ledger"],
+            CheckResult(
+                name="harbor_agent_equipment_ab_prototype_results:ledger",
+                ok=True,
+                detail="present",
+                path=HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH,
             ),
         )
 
@@ -725,6 +753,261 @@ class ValidatorPrimitiveTests(unittest.TestCase):
                     ok=True,
                     detail="present",
                     path=HARBOR_REWARD_KIT_EVALUATION_PATH,
+                )
+            ],
+        )
+
+    def valid_harbor_ab_prototype_results(self) -> str:
+        return textwrap.dedent(
+            """\
+            # Harbor Agent Equipment A/B Prototype Results
+
+            Status: Source Disposition Ledger
+
+            ## Scope Boundary
+
+            Issue #187 records a bounded Harbor Agent Equipment A/B prototype.
+            This is not a Harbor adoption decision, Armory structured result
+            contract, public API, PRD, ADR, or proof that the equipped skill is
+            generally better.
+
+            ## Prototype Setup
+
+            Harbor CLI version 0.13.0 was installed with uv tool install harbor.
+            [Harbor Getting Started](https://www.harborframework.com/docs/getting-started),
+            [Harbor Tasks](https://www.harborframework.com/docs/tasks),
+            [Harbor Agents](https://www.harborframework.com/docs/agents),
+            [Harbor Evals](https://www.harborframework.com/docs/evals), and
+            [Harbor source](https://github.com/harbor-framework/harbor) were the
+            source inputs. The task used schema_version = "1.3", Docker
+            environment, no-network runtime network mode, explicit timeouts,
+            custom agent import paths, a deterministic shared agent, baseline
+            without equipment, and equipped run with
+            skills/issue-ops-workflow-executor/SKILL.md as the only variable.
+
+            ## Command Summary
+
+            harbor --help, harbor run --help, harbor --version, docker ps,
+            docker compose version, podman ps, baseline harbor run, equipped
+            harbor run, job result.json inspection, trial result.json inspection,
+            verifier reward.json inspection, artifact manifest.json inspection,
+            collected report artifact inspection, and trajectory search were run.
+
+            ## Result Summary
+
+            The baseline Harbor job completed one trial with reward 0.5714,
+            score 0.5714, report_exists 1.0, artifact_written 1.0,
+            required_sections_present 3, required_sections_missing 4, and no
+            exception. The equipped Harbor job completed one trial with reward
+            1.0, score 1.0, report_exists 1.0, artifact_written 1.0,
+            required_sections_present 7, required_sections_missing 0, and no
+            exception. Both artifact manifest.json files reported status ok for
+            the /logs/artifacts collection source. No trajectory or ATIF file was
+            emitted by this deterministic custom-agent prototype.
+
+            ## Evidence Classification
+
+            Durable project evidence is this sanitized closeout ledger and the
+            Harbor evaluation record update. Scratch task files, raw jobs, raw
+            logs, raw reward files, raw artifact reports, trial ids, local
+            absolute paths, trajectories, transcripts, model outputs, provider
+            credentials, and container runtime state are instance-scoped scratch
+            evidence and are not committed.
+
+            ## Runtime Controls And Boundaries
+
+            The runtime used a local container-backed Harbor Docker environment
+            through the local Podman-backed Docker/Compose shim. Task runtime
+            network mode was no-network. Image availability and container
+            runtime access were host prerequisites and are not Armory adoption
+            evidence.
+
+            ## Downstream Routing
+
+            #187 accepts the bounded prototype evidence. #189 owns trajectory
+            and artifact contract fit. #190 owns Harbor driver gate evidence.
+            #191 owns final Harbor disposition. #183 remains the parent Harbor
+            evaluation route.
+
+            ## Deferments And Nonportable Claims
+
+            Do not infer general skill quality, production jig driver fit,
+            Harbor adoption, ATIF contract compatibility, provider behavior,
+            cloud sandbox behavior, registry behavior, or verifier hardening
+            from this prototype. Those claims remain deferred to #189, #190,
+            and #191.
+
+            ## Security Privacy And Durability
+
+            The prototype used no provider credentials, no LLM calls, no cloud
+            sandboxes, no Harbor registry writes, and no model access. The task
+            runtime used no-network. Durable notes exclude host-local paths, raw
+            logs, raw jobs, reward files, trajectories, transcripts, model
+            outputs, credentials, provider account state, and sensitive external
+            service usage details.
+
+            ## Closeout Evidence
+
+            Evidence includes Harbor CLI help and version probes, local
+            container runtime checks, baseline and equipped Harbor run results,
+            job result.json inspection, trial result.json inspection, verifier
+            reward.json inspection, artifact manifest.json inspection, collected
+            report artifact inspection, trajectory absence check, validator TDD,
+            Armory integrity validation, security review, Change Set
+            Documentation Closeout, Cross-Boundary Coherence Ralph Review, and
+            Story Quality Ralph Review.
+            """
+        )
+
+    def test_validate_harbor_agent_equipment_ab_prototype_results_reports_missing_doc(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = validate_harbor_agent_equipment_ab_prototype_results(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="harbor_agent_equipment_ab_prototype_results:path",
+                    ok=False,
+                    detail="missing",
+                    path=HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH,
+                )
+            ],
+        )
+
+    def test_validate_harbor_agent_equipment_ab_prototype_results_requires_ledger_shape(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "# Harbor Agent Equipment A/B Prototype Results\n\nStatus: Draft\n\n## Scope Boundary\n\nIncomplete.\n",
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_agent_equipment_ab_prototype_results(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_agent_equipment_ab_prototype_results:status",
+                ok=False,
+                detail="status must be Source Disposition Ledger",
+                path=HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="harbor_agent_equipment_ab_prototype_results:section:Prototype Setup",
+                ok=False,
+                detail="missing section: Prototype Setup",
+                path=HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_harbor_agent_equipment_ab_prototype_results_requires_coverage_terms(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                self.valid_harbor_ab_prototype_results().replace("no-network", "network boundary"),
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_agent_equipment_ab_prototype_results(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_agent_equipment_ab_prototype_results:coverage:no-network",
+                ok=False,
+                detail="missing coverage term: no-network",
+                path=HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_harbor_agent_equipment_ab_prototype_results_requires_routes_and_sources(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                self.valid_harbor_ab_prototype_results()
+                .replace("#190", "#999")
+                .replace("https://www.harborframework.com/docs/tasks", "https://example.invalid/tasks"),
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_agent_equipment_ab_prototype_results(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_agent_equipment_ab_prototype_results:routing:#190",
+                ok=False,
+                detail="missing downstream route: #190",
+                path=HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="harbor_agent_equipment_ab_prototype_results:source:https://www.harborframework.com/docs/tasks",
+                ok=False,
+                detail="missing source URL: https://www.harborframework.com/docs/tasks",
+                path=HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_harbor_agent_equipment_ab_prototype_results_rejects_host_local_paths(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH
+            path.parent.mkdir(parents=True)
+
+            for host_local_path in (
+                "/home/agent/harbor/jobs/result.json",
+                r"C:\Users\agent\harbor\jobs\result.json",
+            ):
+                with self.subTest(host_local_path=host_local_path):
+                    path.write_text(
+                        self.valid_harbor_ab_prototype_results()
+                        + f"\nScratch path: `{host_local_path}`.\n",
+                        encoding="utf-8",
+                    )
+                    results = validate_harbor_agent_equipment_ab_prototype_results(root)
+
+                    self.assertIn(
+                        CheckResult(
+                            name="harbor_agent_equipment_ab_prototype_results:portable_paths",
+                            ok=False,
+                            detail="ledger must not preserve host-local paths",
+                            path=HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH,
+                        ),
+                        results,
+                    )
+
+    def test_validate_harbor_agent_equipment_ab_prototype_results_accepts_complete_ledger(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(self.valid_harbor_ab_prototype_results(), encoding="utf-8")
+
+            results = validate_harbor_agent_equipment_ab_prototype_results(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="harbor_agent_equipment_ab_prototype_results:ledger",
+                    ok=True,
+                    detail="present",
+                    path=HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH,
                 )
             ],
         )
@@ -2257,6 +2540,15 @@ class ValidatorPrimitiveTests(unittest.TestCase):
             ),
             results,
         )
+        self.assertIn(
+            CheckResult(
+                name="harbor_external_tool_evaluation_record:coverage:Harbor Agent Equipment A/B Prototype Results",
+                ok=False,
+                detail="missing coverage term: Harbor Agent Equipment A/B Prototype Results",
+                path=HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+            ),
+            results,
+        )
 
     def test_validate_harbor_external_tool_evaluation_record_requires_child_issue_routes(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -2350,7 +2642,9 @@ class ValidatorPrimitiveTests(unittest.TestCase):
 
                     ## Source Inputs
 
-                    #184.
+                    #184. Harbor Agent Equipment A/B Prototype Results,
+                    bounded prototype evidence accepted, baseline reward, and
+                    equipped reward.
 
                     ## Evidence Ledger
 
@@ -2416,7 +2710,9 @@ class ValidatorPrimitiveTests(unittest.TestCase):
 
                     ## Source Inputs
 
-                    #184.
+                    #184. Harbor Agent Equipment A/B Prototype Results,
+                    bounded prototype evidence accepted, baseline reward, and
+                    equipped reward.
 
                     ## Evidence Ledger
 
@@ -2480,7 +2776,8 @@ class ValidatorPrimitiveTests(unittest.TestCase):
 
                     ## Source Inputs
 
-                    #184.
+                    #184. Harbor Agent Equipment A/B Prototype Results, bounded
+                    prototype evidence accepted, baseline reward, and equipped reward.
 
                     ## Evidence Ledger
 
@@ -2542,7 +2839,9 @@ class ValidatorPrimitiveTests(unittest.TestCase):
 
                     ## Source Inputs
 
-                    #184.
+                    #184. Harbor Agent Equipment A/B Prototype Results,
+                    bounded prototype evidence accepted, baseline reward, and
+                    equipped reward.
 
                     ## Evidence Ledger
 
