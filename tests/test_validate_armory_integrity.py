@@ -22,6 +22,7 @@ from tools.validate_armory_integrity import (
     HARBOR_JIG_SOURCE_MAP_PATH,
     EXTERNAL_TOOL_EVALUATION_PATH,
     HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+    HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_PATH,
     SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
     PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
     find_markdown_links,
@@ -53,6 +54,7 @@ from tools.validate_armory_integrity import (
     validate_harbor_jig_source_map,
     validate_external_tool_evaluation,
     validate_harbor_external_tool_evaluation_record,
+    validate_harbor_agent_equipment_ab_prototype,
     validate_skill_eval_methodology_source_intake,
     validate_plugin_creator_source_intake,
     validate_templates,
@@ -94,6 +96,7 @@ class ValidationBoundaryTests(unittest.TestCase):
         self.assertEqual(inventory["harbor_jig_source_map"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["external_tool_evaluation"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["harbor_external_tool_evaluation_record"]["boundary"], "armory_integrity")
+        self.assertEqual(inventory["harbor_agent_equipment_ab_prototype"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["skill_eval_methodology_source_intake"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["plugin_creator_source_intake"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["source_retired_tree"]["boundary"], "historical_seed_migration")
@@ -204,6 +207,24 @@ class ValidationBoundaryTests(unittest.TestCase):
                 path=HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
             ),
         )
+        self.assertEqual(
+            result_map[f"required_path:{HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_PATH}"],
+            CheckResult(
+                name=f"required_path:{HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_PATH}",
+                ok=True,
+                detail="exists",
+                path=HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_PATH,
+            ),
+        )
+        self.assertEqual(
+            result_map["harbor_agent_equipment_ab_prototype:record"],
+            CheckResult(
+                name="harbor_agent_equipment_ab_prototype:record",
+                ok=True,
+                detail="present",
+                path=HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_PATH,
+            ),
+        )
 
     def test_live_validator_help_names_integrity_boundaries(self):
         completed = subprocess.run(
@@ -264,6 +285,68 @@ class ValidationBoundaryTests(unittest.TestCase):
 
 
 class ValidatorPrimitiveTests(unittest.TestCase):
+    def harbor_agent_equipment_ab_prototype_record(self):
+        return textwrap.dedent(
+            """\
+            # Harbor Agent Equipment A/B Prototype
+
+            Status: Prototype Evidence Record
+
+            ## Scope Boundary
+
+            The #187 prototype records whether Harbor can compare an Agent Equipment
+            variant without adopting Harbor as a Jig Driver or changing ADR 0022.
+
+            ## Prototype Question
+
+            Can Harbor compare a baseline variant with an equipment-enabled variant
+            for a small Agent Equipment candidate?
+
+            ## Source Inputs
+
+            #187, Harbor run evals, Harbor task structure, Harbor artifacts,
+            Harbor agents, Reward Kit, ATIF trajectory, and the Harbor source map.
+
+            ## Fixture Design
+
+            The Harbor task uses a dataset-style task fixture. A custom agent for
+            the baseline variant receives only the task. A custom agent for the
+            equipment-enabled variant also receives Issue Ops Workflow Executor
+            instructions from skills/issue-ops-workflow-executor/SKILL.md.
+
+            ## Execution Feasibility
+
+            The current controls support a no-run handoff. Harbor CLI and container
+            runtime availability determine whether job execution can proceed.
+
+            ## Result Or Handoff
+
+            Expected Harbor output includes reward output, trajectory, artifacts,
+            job result, trial result, verifier result, and repeatability limits.
+
+            ## Evidence Ledger
+
+            Source-backed claims, local observations, prototype results,
+            implementation inference, unknowns, and rejected claims are separated.
+
+            ## Security Privacy And Durability
+
+            Credentials, Docker/provider boundaries, environment controls, local scratch disposition,
+            raw logs, trajectories, transcripts, model outputs, and external service usage
+            are not durable project evidence by default.
+
+            ## Downstream Routing
+
+            #183, #187, #189, #190, and #191 remain the routed issues.
+
+            ## Closeout Evidence
+
+            TDD, prototype feasibility, security closeout, documentation closeout,
+            Cross-Boundary Coherence Ralph Review, and Story Quality Ralph Review
+            are recorded.
+            """
+        )
+
     def test_validate_skill_eval_methodology_source_intake_reports_missing_doc(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -1694,6 +1777,135 @@ class ValidatorPrimitiveTests(unittest.TestCase):
                     ok=True,
                     detail="present",
                     path=HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+                )
+            ],
+        )
+
+    def test_validate_harbor_agent_equipment_ab_prototype_reports_missing_doc(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = validate_harbor_agent_equipment_ab_prototype(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="harbor_agent_equipment_ab_prototype:path",
+                    ok=False,
+                    detail="missing",
+                    path=HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_PATH,
+                )
+            ],
+        )
+
+    def test_validate_harbor_agent_equipment_ab_prototype_requires_record_shape(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "# Harbor Agent Equipment A/B Prototype\n\nStatus: Draft\n\n## Scope Boundary\n\nIncomplete.\n",
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_agent_equipment_ab_prototype(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_agent_equipment_ab_prototype:status",
+                ok=False,
+                detail="status must be Prototype Evidence Record",
+                path=HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="harbor_agent_equipment_ab_prototype:section:Fixture Design",
+                ok=False,
+                detail="missing section: Fixture Design",
+                path=HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_harbor_agent_equipment_ab_prototype_requires_evidence_terms_and_routes(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                self.harbor_agent_equipment_ab_prototype_record()
+                .replace("reward output", "scoring output")
+                .replace("#191", "#19x"),
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_agent_equipment_ab_prototype(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_agent_equipment_ab_prototype:coverage:reward output",
+                ok=False,
+                detail="missing coverage term: reward output",
+                path=HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="harbor_agent_equipment_ab_prototype:routing:#191",
+                ok=False,
+                detail="missing downstream route: #191",
+                path=HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_harbor_agent_equipment_ab_prototype_rejects_host_local_paths(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                self.harbor_agent_equipment_ab_prototype_record()
+                + "\n\nA rejected scratch command used `/tmp/harbor-ab/jobs`.\n",
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_agent_equipment_ab_prototype(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_agent_equipment_ab_prototype:portable_paths",
+                ok=False,
+                detail="record must not preserve host-local paths",
+                path=HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_harbor_agent_equipment_ab_prototype_accepts_complete_record(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                self.harbor_agent_equipment_ab_prototype_record(),
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_agent_equipment_ab_prototype(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="harbor_agent_equipment_ab_prototype:record",
+                    ok=True,
+                    detail="present",
+                    path=HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_PATH,
                 )
             ],
         )
