@@ -1029,7 +1029,7 @@ class ValidatorPrimitiveTests(unittest.TestCase):
 
                     ## Scope Boundary
 
-                    This is a broad market survey.
+                    {scope_statement}
 
                     ## Portable Source Inventory
 
@@ -1072,32 +1072,42 @@ class ValidatorPrimitiveTests(unittest.TestCase):
                     """
             )
 
-            for host_local_path in (
-                "/home/agent/harbor/neighbor-catalog.json",
-                r"C:\Users\agent\harbor\neighbor-catalog.json",
+            for scope_statement in (
+                "This is a broad market survey.",
+                "This is a broad eval-platform survey.",
             ):
-                with self.subTest(host_local_path=host_local_path):
-                    path.write_text(template.format(host_local_path=host_local_path), encoding="utf-8")
-                    results = validate_harbor_neighbor_tool_catalog(root)
+                for host_local_path in (
+                    "/home/agent/harbor/neighbor-catalog.json",
+                    r"C:\Users\agent\harbor\neighbor-catalog.json",
+                ):
+                    with self.subTest(scope_statement=scope_statement, host_local_path=host_local_path):
+                        path.write_text(
+                            template.format(
+                                scope_statement=scope_statement,
+                                host_local_path=host_local_path,
+                            ),
+                            encoding="utf-8",
+                        )
+                        results = validate_harbor_neighbor_tool_catalog(root)
 
-                    self.assertIn(
-                        CheckResult(
-                            name="harbor_neighbor_tool_catalog:portable_paths",
-                            ok=False,
-                            detail="ledger must not preserve host-local paths",
-                            path=HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
-                        ),
-                        results,
-                    )
-                    self.assertIn(
-                        CheckResult(
-                            name="harbor_neighbor_tool_catalog:scope:broad_survey",
-                            ok=False,
-                            detail="catalog must exclude broad market survey work",
-                            path=HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
-                        ),
-                        results,
-                    )
+                        self.assertIn(
+                            CheckResult(
+                                name="harbor_neighbor_tool_catalog:portable_paths",
+                                ok=False,
+                                detail="ledger must not preserve host-local paths",
+                                path=HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+                            ),
+                            results,
+                        )
+                        self.assertIn(
+                            CheckResult(
+                                name="harbor_neighbor_tool_catalog:scope:broad_survey",
+                                ok=False,
+                                detail="catalog must exclude broad market survey work",
+                                path=HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+                            ),
+                            results,
+                        )
 
     def test_validate_harbor_neighbor_tool_catalog_accepts_complete_ledger(self):
         with tempfile.TemporaryDirectory() as tmpdir:

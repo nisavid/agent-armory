@@ -2358,7 +2358,11 @@ def validate_harbor_neighbor_tool_catalog(root: Path) -> list[CheckResult]:
         "broad market survey work is out of scope" in visible_markdown_casefold
         or "broad eval-platform survey work is out of scope" in visible_markdown_casefold
     )
-    if "broad market survey" in visible_markdown_casefold and not broad_survey_excluded:
+    broad_survey_mentioned = (
+        "broad market survey" in visible_markdown_casefold
+        or "broad eval-platform survey" in visible_markdown_casefold
+    )
+    if broad_survey_mentioned and not broad_survey_excluded:
         results.append(
             CheckResult(
                 "harbor_neighbor_tool_catalog:scope:broad_survey",
