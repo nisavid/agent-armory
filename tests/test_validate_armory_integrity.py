@@ -20,6 +20,7 @@ from tools.validate_armory_integrity import (
     SOURCE_DISPOSITION_MANIFEST_FIELDS,
     SOURCE_DISPOSITION_PATH,
     HARBOR_JIG_SOURCE_MAP_PATH,
+    HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
     EXTERNAL_TOOL_EVALUATION_PATH,
     HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
     HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_PATH,
@@ -52,6 +53,7 @@ from tools.validate_armory_integrity import (
     validate_required_paths,
     validate_security_closeout,
     validate_harbor_jig_source_map,
+    validate_harbor_neighbor_tool_catalog,
     validate_external_tool_evaluation,
     validate_harbor_external_tool_evaluation_record,
     validate_harbor_agent_equipment_ab_prototype,
@@ -94,6 +96,7 @@ class ValidationBoundaryTests(unittest.TestCase):
         self.assertEqual(inventory["markdown_links"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["source_disposition"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["harbor_jig_source_map"]["boundary"], "armory_integrity")
+        self.assertEqual(inventory["harbor_neighbor_tool_catalog"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["external_tool_evaluation"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["harbor_external_tool_evaluation_record"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["harbor_agent_equipment_ab_prototype"]["boundary"], "armory_integrity")
@@ -162,6 +165,31 @@ class ValidationBoundaryTests(unittest.TestCase):
                 ok=True,
                 detail="present",
                 path=HARBOR_JIG_SOURCE_MAP_PATH,
+            ),
+        )
+
+    def test_live_validator_run_includes_harbor_neighbor_tool_catalog(self):
+        repo_root = Path(__file__).resolve().parents[1]
+
+        results = run(repo_root, final_closeout=True)
+        result_map = {result.name: result for result in results}
+
+        self.assertEqual(
+            result_map[f"required_path:{HARBOR_NEIGHBOR_TOOL_CATALOG_PATH}"],
+            CheckResult(
+                name=f"required_path:{HARBOR_NEIGHBOR_TOOL_CATALOG_PATH}",
+                ok=True,
+                detail="exists",
+                path=HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+            ),
+        )
+        self.assertEqual(
+            result_map["harbor_neighbor_tool_catalog:ledger"],
+            CheckResult(
+                name="harbor_neighbor_tool_catalog:ledger",
+                ok=True,
+                detail="present",
+                path=HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
             ),
         )
 
@@ -733,6 +761,512 @@ class ValidatorPrimitiveTests(unittest.TestCase):
                     ok=True,
                     detail="present",
                     path=HARBOR_JIG_SOURCE_MAP_PATH,
+                )
+            ],
+        )
+
+    def test_validate_harbor_neighbor_tool_catalog_reports_missing_doc(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = validate_harbor_neighbor_tool_catalog(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="harbor_neighbor_tool_catalog:path",
+                    ok=False,
+                    detail="missing",
+                    path=HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+                )
+            ],
+        )
+
+    def test_validate_harbor_neighbor_tool_catalog_requires_ledger_shape(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_NEIGHBOR_TOOL_CATALOG_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "# Harbor Neighbor Catalog\n\nStatus: Draft\n\n## Scope Boundary\n\nIncomplete.\n",
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_neighbor_tool_catalog(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_neighbor_tool_catalog:status",
+                ok=False,
+                detail="status must be Source Disposition Ledger",
+                path=HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="harbor_neighbor_tool_catalog:section:Harbor-Neighbor Tool Catalog",
+                ok=False,
+                detail="missing section: Harbor-Neighbor Tool Catalog",
+                path=HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_harbor_neighbor_tool_catalog_requires_table_fields(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_NEIGHBOR_TOOL_CATALOG_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Harbor-Neighbor Tool Catalog
+
+                    Status: Source Disposition Ledger
+
+                    ## Scope Boundary
+
+                    Broad eval-platform survey work is out of scope.
+
+                    ## Portable Source Inventory
+
+                    Harbor docs and source URLs.
+
+                    ## Harbor-Neighbor Tool Catalog
+
+                    | entry_id | tool_or_surface | Harbor linkage |
+                    | --- | --- | --- |
+                    | HN001 | Daytona | Harbor sandbox provider. |
+
+                    ## Role Classification Summary
+
+                    Jig Driver substrate and sandbox provider.
+
+                    ## Open Uncertainties And Follow-Up Conditions
+
+                    No integration approval.
+
+                    ## Downstream Routing
+
+                    #183, #186, #187, #188, #189, #190, and #191.
+
+                    ## Deferments And Nonportable Claims
+
+                    No prototype.
+
+                    ## Security Privacy And Durability
+
+                    No raw logs.
+
+                    ## Closeout Evidence
+
+                    Reviewed.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_neighbor_tool_catalog(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_neighbor_tool_catalog:field:source URL",
+                ok=False,
+                detail="missing catalog field: source URL",
+                path=HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="harbor_neighbor_tool_catalog:field:open uncertainty",
+                ok=False,
+                detail="missing catalog field: open uncertainty",
+                path=HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_harbor_neighbor_tool_catalog_ignores_field_names_outside_headers(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_NEIGHBOR_TOOL_CATALOG_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Harbor-Neighbor Tool Catalog
+
+                    Status: Source Disposition Ledger
+
+                    ## Scope Boundary
+
+                    Broad eval-platform survey work is out of scope.
+
+                    ## Portable Source Inventory
+
+                    Harbor docs and source URLs.
+
+                    ## Harbor-Neighbor Tool Catalog
+
+                    | entry_id | tool_or_surface | Harbor linkage |
+                    | --- | --- | --- |
+                    | HN001 | source URL, role classification, evidence quality, likely Armory consumer, open uncertainty | Harbor sandbox provider. |
+
+                    ## Role Classification Summary
+
+                    Jig Driver substrate and sandbox provider.
+
+                    ## Open Uncertainties And Follow-Up Conditions
+
+                    No integration approval.
+
+                    ## Downstream Routing
+
+                    #183, #186, #187, #188, #189, #190, and #191.
+
+                    ## Deferments And Nonportable Claims
+
+                    No prototype.
+
+                    ## Security Privacy And Durability
+
+                    No raw logs.
+
+                    ## Closeout Evidence
+
+                    Reviewed.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_neighbor_tool_catalog(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_neighbor_tool_catalog:field:source URL",
+                ok=False,
+                detail="missing catalog field: source URL",
+                path=HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_harbor_neighbor_tool_catalog_requires_coverage_terms(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_NEIGHBOR_TOOL_CATALOG_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Harbor-Neighbor Tool Catalog
+
+                    Status: Source Disposition Ledger
+
+                    ## Scope Boundary
+
+                    Broad eval-platform survey work is out of scope.
+
+                    ## Portable Source Inventory
+
+                    Harbor docs and source URLs.
+
+                    ## Harbor-Neighbor Tool Catalog
+
+                    | entry_id | tool_or_surface | Harbor linkage | source URL | role classification | evidence quality | likely Armory consumer | open uncertainty |
+                    | --- | --- | --- | --- | --- | --- | --- | --- |
+                    | HN001 | Daytona | Harbor sandbox provider. | https://www.harborframework.com/docs/run-jobs/cloud-sandboxes | sandbox provider | harbor-doc-supported | #190 | Provider policy. |
+
+                    ## Role Classification Summary
+
+                    Jig Driver substrate and sandbox provider.
+
+                    ## Open Uncertainties And Follow-Up Conditions
+
+                    No integration approval.
+
+                    ## Downstream Routing
+
+                    #183, #186, #187, #188, #189, #190, and #191.
+
+                    ## Deferments And Nonportable Claims
+
+                    No prototype.
+
+                    ## Security Privacy And Durability
+
+                    No raw logs.
+
+                    ## Closeout Evidence
+
+                    Reviewed.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_neighbor_tool_catalog(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_neighbor_tool_catalog:coverage:Reward Kit",
+                ok=False,
+                detail="missing coverage term: Reward Kit",
+                path=HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="harbor_neighbor_tool_catalog:coverage:third-party-fallback",
+                ok=False,
+                detail="missing coverage term: third-party-fallback",
+                path=HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_harbor_neighbor_tool_catalog_requires_exact_issue_routes(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_NEIGHBOR_TOOL_CATALOG_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Harbor-Neighbor Tool Catalog
+
+                    Status: Source Disposition Ledger
+
+                    ## Scope Boundary
+
+                    Broad eval-platform survey work is out of scope.
+
+                    ## Portable Source Inventory
+
+                    Harbor docs and source URLs.
+
+                    ## Harbor-Neighbor Tool Catalog
+
+                    | entry_id | tool_or_surface | Harbor linkage | source URL | role classification | evidence quality | likely Armory consumer | open uncertainty |
+                    | --- | --- | --- | --- | --- | --- | --- | --- |
+                    | HN001 | Daytona, Modal, E2B, Runloop, Tensorlake, Islo, CoreWeave Sandboxes, W&B Sandboxes, Reward Kit, LiteLLM, ATIF, Opik, Harbor registry, dataset.toml, adapter templates, result viewer, Hugging Face parity experiments, SkyRL, and GEPA | Harbor-linked surfaces only. | https://www.harborframework.com/docs/run-jobs/cloud-sandboxes | Jig Driver substrate, sandbox provider, benchmark format, benchmark registry, Agent or harness configurator, tool provider, observability/evaluation instrumentation, verifier/assertion layer, trajectory/result format, training/export surface | harbor-doc-supported, harbor-source-supported, vendor-doc-supported, third-party-fallback | #187, #188, #189, #190, #191 | No integration approval. |
+
+                    ## Role Classification Summary
+
+                    Jig Driver substrate, sandbox provider, benchmark format,
+                    benchmark registry, Agent or harness configurator, tool provider,
+                    observability/evaluation instrumentation, verifier/assertion layer,
+                    trajectory/result format, and training/export surface.
+
+                    ## Open Uncertainties And Follow-Up Conditions
+
+                    No integration approval.
+
+                    ## Downstream Routing
+
+                    #183, #186a, #187, #188, #189, #190, and #191.
+
+                    ## Deferments And Nonportable Claims
+
+                    No prototype.
+
+                    ## Security Privacy And Durability
+
+                    No raw logs.
+
+                    ## Closeout Evidence
+
+                    Reviewed.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_neighbor_tool_catalog(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_neighbor_tool_catalog:routing:#186",
+                ok=False,
+                detail="missing downstream route: #186",
+                path=HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_harbor_neighbor_tool_catalog_rejects_host_local_paths_and_broad_survey(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_NEIGHBOR_TOOL_CATALOG_PATH
+            path.parent.mkdir(parents=True)
+            template = textwrap.dedent(
+                """\
+                    # Harbor-Neighbor Tool Catalog
+
+                    Status: Source Disposition Ledger
+
+                    ## Scope Boundary
+
+                    {scope_statement}
+
+                    ## Portable Source Inventory
+
+                    Harbor docs and source URLs.
+
+                    ## Harbor-Neighbor Tool Catalog
+
+                    | entry_id | tool_or_surface | Harbor linkage | source URL | role classification | evidence quality | likely Armory consumer | open uncertainty |
+                    | --- | --- | --- | --- | --- | --- | --- | --- |
+                    | HN001 | Daytona, Modal, E2B, Runloop, Tensorlake, Islo, CoreWeave Sandboxes, W&B Sandboxes, Reward Kit, LiteLLM, ATIF, Opik, Harbor registry, dataset.toml, adapter templates, result viewer, Hugging Face parity experiments, SkyRL, and GEPA | Harbor-linked surfaces only. | https://www.harborframework.com/docs/run-jobs/cloud-sandboxes | Jig Driver substrate, sandbox provider, benchmark format, benchmark registry, Agent or harness configurator, tool provider, observability/evaluation instrumentation, verifier/assertion layer, trajectory/result format, training/export surface | harbor-doc-supported, harbor-source-supported, vendor-doc-supported, third-party-fallback | #187, #188, #189, #190, #191 | No integration approval. |
+
+                    Scratch path: `{host_local_path}`.
+
+                    ## Role Classification Summary
+
+                    Jig Driver substrate, sandbox provider, benchmark format,
+                    benchmark registry, Agent or harness configurator, tool provider,
+                    observability/evaluation instrumentation, verifier/assertion layer,
+                    trajectory/result format, and training/export surface.
+
+                    ## Open Uncertainties And Follow-Up Conditions
+
+                    No integration approval.
+
+                    ## Downstream Routing
+
+                    #183, #186, #187, #188, #189, #190, and #191.
+
+                    ## Deferments And Nonportable Claims
+
+                    No prototype.
+
+                    ## Security Privacy And Durability
+
+                    No raw logs.
+
+                    ## Closeout Evidence
+
+                    Reviewed.
+                    """
+            )
+
+            for scope_statement in (
+                "This is a broad market survey.",
+                "This is a broad eval-platform survey.",
+            ):
+                for host_local_path in (
+                    "/home/agent/harbor/neighbor-catalog.json",
+                    r"C:\Users\agent\harbor\neighbor-catalog.json",
+                ):
+                    with self.subTest(scope_statement=scope_statement, host_local_path=host_local_path):
+                        path.write_text(
+                            template.format(
+                                scope_statement=scope_statement,
+                                host_local_path=host_local_path,
+                            ),
+                            encoding="utf-8",
+                        )
+                        results = validate_harbor_neighbor_tool_catalog(root)
+
+                        self.assertIn(
+                            CheckResult(
+                                name="harbor_neighbor_tool_catalog:portable_paths",
+                                ok=False,
+                                detail="ledger must not preserve host-local paths",
+                                path=HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+                            ),
+                            results,
+                        )
+                        self.assertIn(
+                            CheckResult(
+                                name="harbor_neighbor_tool_catalog:scope:broad_survey",
+                                ok=False,
+                                detail="catalog must exclude broad market survey work",
+                                path=HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
+                            ),
+                            results,
+                        )
+
+    def test_validate_harbor_neighbor_tool_catalog_accepts_complete_ledger(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_NEIGHBOR_TOOL_CATALOG_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Harbor-Neighbor Tool Catalog
+
+                    Status: Source Disposition Ledger
+
+                    ## Scope Boundary
+
+                    Catalog includes Harbor-linked surfaces only. Broad eval-platform
+                    survey work is out of scope.
+
+                    ## Portable Source Inventory
+
+                    Harbor docs and source URLs cover Daytona, Modal, E2B, Runloop,
+                    Tensorlake, Islo, CoreWeave Sandboxes, W&B Sandboxes, Reward Kit,
+                    LiteLLM, ATIF, Opik, Harbor registry, dataset.toml, adapter
+                    templates, result viewer, Hugging Face parity experiments, SkyRL,
+                    and GEPA.
+
+                    ## Harbor-Neighbor Tool Catalog
+
+                    | entry_id | tool_or_surface | Harbor linkage | source URL | role classification | evidence quality | likely Armory consumer | open uncertainty |
+                    | --- | --- | --- | --- | --- | --- | --- | --- |
+                    | HN001 | Daytona, Modal, E2B, Runloop, Tensorlake, Islo, CoreWeave Sandboxes, W&B Sandboxes | Harbor cloud sandbox providers. | https://www.harborframework.com/docs/run-jobs/cloud-sandboxes | Jig Driver substrate; sandbox provider | harbor-doc-supported | #190 | No provider is approved as an Armory driver. |
+                    | HN002 | Reward Kit and LiteLLM | Harbor verifier and judge routing. | https://www.harborframework.com/docs/rewardkit | verifier/assertion layer; trajectory/result format | harbor-doc-supported | #188 | Tamper and calibration boundaries remain open. |
+                    | HN003 | ATIF and Opik | Harbor trajectory format and fallback integration context. | https://github.com/harbor-framework/harbor/blob/main/rfcs/0001-trajectory-format.md | observability/evaluation instrumentation; trajectory/result format | harbor-source-supported; third-party-fallback | #189 | Opik is fallback evidence only. |
+                    | HN004 | Harbor registry, dataset.toml, adapter templates, result viewer, Hugging Face parity experiments, SkyRL, and GEPA | Harbor benchmark and training/export surfaces. | https://www.harborframework.com/docs/run-jobs/run-evals | benchmark format; benchmark registry; Agent or harness configurator; tool provider; training/export surface | harbor-doc-supported; vendor-doc-supported | #187, #191 | Later issues decide Armory adoption. |
+
+                    ## Role Classification Summary
+
+                    Jig Driver substrate, sandbox provider, benchmark format,
+                    benchmark registry, Agent or harness configurator, tool provider,
+                    observability/evaluation instrumentation, verifier/assertion layer,
+                    trajectory/result format, and training/export surface.
+
+                    ## Open Uncertainties And Follow-Up Conditions
+
+                    No integration approval.
+
+                    ## Downstream Routing
+
+                    #183, #186, #187, #188, #189, #190, and #191.
+
+                    ## Deferments And Nonportable Claims
+
+                    No prototype.
+
+                    ## Security Privacy And Durability
+
+                    No raw logs.
+
+                    ## Closeout Evidence
+
+                    Reviewed.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_neighbor_tool_catalog(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="harbor_neighbor_tool_catalog:ledger",
+                    ok=True,
+                    detail="present",
+                    path=HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
                 )
             ],
         )
