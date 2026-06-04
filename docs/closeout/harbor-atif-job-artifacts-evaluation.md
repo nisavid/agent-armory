@@ -81,7 +81,7 @@ Current Armory structured result statuses remain:
 Gap analysis:
 
 - `pass` and `fail`: Harbor reward or verifier output may imply success or
-  failure for a task, but Armory needs typed assertion provenance and cannot
+  failure for a task, but Armory requires typed assertion provenance and cannot
   collapse numeric reward into status without normalization.
 - `inconclusive`: Harbor output can show missing verifier, missing artifact,
   empty manifest, partial evidence, or unreadable trajectory, but Armory must
