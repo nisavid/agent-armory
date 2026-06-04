@@ -2995,6 +2995,7 @@ def validate_harbor_driver_gate(root: Path) -> list[CheckResult]:
                 HARBOR_DRIVER_GATE_PATH,
             )
         )
+    # Scan raw markdown so fenced scratch paths cannot bypass the portability gate.
     if HOST_LOCAL_PATH_RE.search(markdown):
         results.append(
             CheckResult(
