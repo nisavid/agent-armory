@@ -148,10 +148,10 @@ Current External Tool Evaluation Disposition:
 unknown pending evidence.
 
 Final disposition issue #191 will assign one of the fixed outcomes after the
-child outputs are coherent. #187 no longer blocks on prototype evidence and
-#189 no longer blocks on ATIF/artifact evidence. #190 no longer blocks on
+child outputs are coherent. #187 no longer blocks on prototype evidence, #189
+no longer blocks on ATIF/artifact evidence, and #190 no longer blocks on
 driver-gate evidence. #191 remains open for final projection. If evidence
 remains pending, #191 keeps the evaluation state in progress with unknown
-pending evidence. If #191 marks the evaluation complete, it must use a
-finalized disposition: adopted candidate, supporting component, research
-reference, deferred, or rejected.
+pending evidence. If #191 marks the evaluation complete, it must use a finalized
+disposition: adopted candidate, supporting component, research reference,
+deferred, or rejected.

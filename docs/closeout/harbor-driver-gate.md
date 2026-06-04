@@ -88,8 +88,7 @@ output, cleanup evidence, unsupported-control handling, and fixture/result
 semantics.
 
 This recommendation does not reject Harbor as a future component. It rejects
-only selecting Harbor now as the first driver on the evidence available to
-#190.
+only selecting Harbor now as the first driver on the evidence available to #190.
 
 ## Security Review
 
