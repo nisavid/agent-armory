@@ -3177,9 +3177,13 @@ class ValidatorPrimitiveTests(unittest.TestCase):
             root = Path(tmpdir)
             path = root / HARBOR_FINAL_DISPOSITION_PATH
             path.parent.mkdir(parents=True)
+            marker = "raw tool output remain scratch evidence."
             template = self.valid_harbor_final_disposition().replace(
-                "raw tool output remain scratch evidence.",
-                "raw tool output remain scratch evidence. Scratch path: `{host_local_path}`.",
+                marker,
+                (
+                    "raw tool output remain scratch evidence. Scratch path: `{host_local_path}`."
+                    "\n\n```text\n{host_local_path}\n```"
+                ),
             )
 
             for host_local_path in (
@@ -3187,7 +3191,7 @@ class ValidatorPrimitiveTests(unittest.TestCase):
                 r"C:\Users\agent\harbor\final-projection.json",
             ):
                 with self.subTest(host_local_path=host_local_path):
-                    path.write_text(template.format(host_local_path=host_local_path), encoding="utf-8")
+                    path.write_text(template.replace("{host_local_path}", host_local_path), encoding="utf-8")
                     results = validate_harbor_final_disposition(root)
 
                     self.assertIn(

@@ -1006,7 +1006,7 @@ HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_ROUTES = [
     "#190",
     "#191",
 ]
-HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_FINAL_ROUTES = HARBOR_FINAL_DISPOSITION_ROUTES
+HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_FINAL_ROUTES = list(HARBOR_FINAL_DISPOSITION_ROUTES)
 HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_FINAL_TERMS = [
     "research reference",
     "supporting source material",
@@ -3146,7 +3146,8 @@ def validate_harbor_final_disposition(root: Path) -> list[CheckResult]:
                     HARBOR_FINAL_DISPOSITION_PATH,
                 )
             )
-    if HOST_LOCAL_PATH_RE.search(visible_markdown):
+    # Scan raw markdown so fenced scratch paths cannot bypass the portability gate.
+    if HOST_LOCAL_PATH_RE.search(markdown):
         results.append(
             CheckResult(
                 "harbor_final_disposition:portable_paths",
