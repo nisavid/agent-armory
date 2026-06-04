@@ -189,6 +189,11 @@ VALIDATION_INVENTORY = [
         "relationship": "Top-level repository integrity check for the durable Harbor driver-gate source-disposition ledger.",
     },
     {
+        "check": "harbor_final_disposition",
+        "boundary": "armory_integrity",
+        "relationship": "Top-level repository integrity check for the durable Harbor final-disposition source-disposition ledger.",
+    },
+    {
         "check": "external_tool_evaluation",
         "boundary": "armory_integrity",
         "relationship": "Top-level repository integrity check for the reusable external-tool evaluation operating contract.",
@@ -561,6 +566,7 @@ HARBOR_REWARD_KIT_EVALUATION_PATH = "docs/closeout/harbor-reward-kit-evaluation.
 HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH = "docs/closeout/harbor-agent-equipment-ab-prototype-results.md"
 HARBOR_ATIF_JOB_ARTIFACTS_EVALUATION_PATH = "docs/closeout/harbor-atif-job-artifacts-evaluation.md"
 HARBOR_DRIVER_GATE_PATH = "docs/closeout/harbor-driver-gate.md"
+HARBOR_FINAL_DISPOSITION_PATH = "docs/closeout/harbor-final-disposition.md"
 EXTERNAL_TOOL_EVALUATION_PATH = "docs/external-tool-evaluation.md"
 HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH = "docs/evaluations/harbor.md"
 SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH = "docs/closeout/skill-eval-methodology-source-intake.md"
@@ -764,6 +770,55 @@ HARBOR_DRIVER_GATE_SOURCE_URLS = [
     "https://github.com/harbor-framework/harbor/issues/1779",
     "https://github.com/harbor-framework/harbor/issues/1795",
 ]
+HARBOR_FINAL_DISPOSITION_REQUIRED_SECTIONS = [
+    "Scope Boundary",
+    "Disposition Decision",
+    "Evidence Basis",
+    "Projection Matrix",
+    "Non-Goals And Deferments",
+    "Security Privacy And Durability",
+    "Closeout Evidence",
+]
+HARBOR_FINAL_DISPOSITION_COVERAGE_TERMS = [
+    "research reference",
+    "supporting source material",
+    "adopted candidate",
+    "supporting component",
+    "selected first Jig Driver",
+    "Assertion Provider",
+    "Learned Oracle",
+    "Harness Test Suite",
+    "direct Armory result contract",
+    "bounded prototype evidence",
+    "borrow concepts",
+    "defer wrapping",
+    "result.json",
+    "trajectory.json",
+    "artifact manifest.json",
+    "viewer affordances",
+    "no broad eval-platform survey",
+    "no PRD",
+    "no ADR",
+]
+HARBOR_FINAL_DISPOSITION_ROUTES = [
+    "#163",
+    "#164",
+    "#165",
+    "#166",
+    "#167",
+    "#169",
+    "#177",
+    "#183",
+    "#191",
+]
+HARBOR_FINAL_DISPOSITION_SOURCE_REFERENCES = [
+    "docs/closeout/harbor-jig-source-map.md",
+    "docs/closeout/harbor-neighbor-tool-catalog.md",
+    "docs/closeout/harbor-reward-kit-evaluation.md",
+    "docs/closeout/harbor-agent-equipment-ab-prototype-results.md",
+    "docs/closeout/harbor-atif-job-artifacts-evaluation.md",
+    "docs/closeout/harbor-driver-gate.md",
+]
 HARBOR_JIG_SOURCE_MAP_COVERAGE_TERMS = [
     "task",
     "dataset",
@@ -950,6 +1005,13 @@ HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_ROUTES = [
     "#189",
     "#190",
     "#191",
+]
+HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_FINAL_ROUTES = HARBOR_FINAL_DISPOSITION_ROUTES
+HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_FINAL_TERMS = [
+    "research reference",
+    "supporting source material",
+    "selected first Jig Driver",
+    HARBOR_FINAL_DISPOSITION_PATH,
 ]
 HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_STATES = {"in progress", "complete"}
 EXTERNAL_TOOL_EVALUATION_DISPOSITIONS = {
@@ -3017,6 +3079,94 @@ def validate_harbor_driver_gate(root: Path) -> list[CheckResult]:
     ]
 
 
+def validate_harbor_final_disposition(root: Path) -> list[CheckResult]:
+    ok, detail, path = repo_relative_path_status(root, HARBOR_FINAL_DISPOSITION_PATH, "file")
+    if not ok:
+        return [
+            CheckResult(
+                "harbor_final_disposition:path",
+                False,
+                detail,
+                HARBOR_FINAL_DISPOSITION_PATH,
+            )
+        ]
+    markdown = path.read_text(encoding="utf-8")
+    visible_markdown = markdown_visible_text(markdown)
+    nonblank_lines = [line.strip() for line in visible_markdown.splitlines() if line.strip()]
+    headings = markdown_heading_texts(markdown)
+    searchable_markdown = markdown_link_search_text(markdown)
+    searchable_markdown_casefold = searchable_markdown.casefold()
+    results: list[CheckResult] = []
+    if "Status: Source Disposition Ledger" not in nonblank_lines[:8]:
+        results.append(
+            CheckResult(
+                "harbor_final_disposition:status",
+                False,
+                "status must be Source Disposition Ledger",
+                HARBOR_FINAL_DISPOSITION_PATH,
+            )
+        )
+    for required_section in HARBOR_FINAL_DISPOSITION_REQUIRED_SECTIONS:
+        if normalize_reference_label(required_section) not in headings:
+            results.append(
+                CheckResult(
+                    f"harbor_final_disposition:section:{required_section}",
+                    False,
+                    f"missing section: {required_section}",
+                    HARBOR_FINAL_DISPOSITION_PATH,
+                )
+            )
+    for required_term in HARBOR_FINAL_DISPOSITION_COVERAGE_TERMS:
+        if required_term.casefold() not in searchable_markdown_casefold:
+            results.append(
+                CheckResult(
+                    f"harbor_final_disposition:coverage:{required_term}",
+                    False,
+                    f"missing coverage term: {required_term}",
+                    HARBOR_FINAL_DISPOSITION_PATH,
+                )
+            )
+    for route in HARBOR_FINAL_DISPOSITION_ROUTES:
+        if not required_downstream_route_present(searchable_markdown, route):
+            results.append(
+                CheckResult(
+                    f"harbor_final_disposition:routing:{route}",
+                    False,
+                    f"missing downstream route: {route}",
+                    HARBOR_FINAL_DISPOSITION_PATH,
+                )
+            )
+    for source_reference in HARBOR_FINAL_DISPOSITION_SOURCE_REFERENCES:
+        if source_reference not in searchable_markdown:
+            results.append(
+                CheckResult(
+                    f"harbor_final_disposition:source:{source_reference}",
+                    False,
+                    f"missing source reference: {source_reference}",
+                    HARBOR_FINAL_DISPOSITION_PATH,
+                )
+            )
+    if HOST_LOCAL_PATH_RE.search(visible_markdown):
+        results.append(
+            CheckResult(
+                "harbor_final_disposition:portable_paths",
+                False,
+                "ledger must not preserve host-local paths",
+                HARBOR_FINAL_DISPOSITION_PATH,
+            )
+        )
+    if results:
+        return results
+    return [
+        CheckResult(
+            "harbor_final_disposition:ledger",
+            True,
+            "present",
+            HARBOR_FINAL_DISPOSITION_PATH,
+        )
+    ]
+
+
 def validate_external_tool_evaluation(root: Path) -> list[CheckResult]:
     ok, detail, path = repo_relative_path_status(root, EXTERNAL_TOOL_EVALUATION_PATH, "file")
     if not ok:
@@ -3188,6 +3338,27 @@ def validate_harbor_external_tool_evaluation_record(root: Path) -> list[CheckRes
                     HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
                 )
             )
+    if state_folded == "complete":
+        for required_term in HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_FINAL_TERMS:
+            if required_term.casefold() not in searchable_markdown_casefold:
+                results.append(
+                    CheckResult(
+                        f"harbor_external_tool_evaluation_record:final_coverage:{required_term}",
+                        False,
+                        f"complete evaluation missing final projection term: {required_term}",
+                        HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+                    )
+                )
+        for route in HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_FINAL_ROUTES:
+            if not required_downstream_route_present(searchable_markdown, route):
+                results.append(
+                    CheckResult(
+                        f"harbor_external_tool_evaluation_record:final_routing:{route}",
+                        False,
+                        f"complete evaluation missing final projection route: {route}",
+                        HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+                    )
+                )
     if HOST_LOCAL_PATH_RE.search(visible_markdown):
         results.append(
             CheckResult(
@@ -7380,6 +7551,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
         HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH,
         HARBOR_ATIF_JOB_ARTIFACTS_EVALUATION_PATH,
         HARBOR_DRIVER_GATE_PATH,
+        HARBOR_FINAL_DISPOSITION_PATH,
         EXTERNAL_TOOL_EVALUATION_PATH,
         HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
         SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
@@ -7425,6 +7597,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
     results.extend(validate_harbor_agent_equipment_ab_prototype_results(root))
     results.extend(validate_harbor_atif_job_artifacts_evaluation(root))
     results.extend(validate_harbor_driver_gate(root))
+    results.extend(validate_harbor_final_disposition(root))
     results.extend(validate_external_tool_evaluation(root))
     results.extend(validate_harbor_external_tool_evaluation_record(root))
     results.extend(validate_skill_eval_methodology_source_intake(root))
