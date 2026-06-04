@@ -184,6 +184,11 @@ VALIDATION_INVENTORY = [
         "relationship": "Top-level repository integrity check for the durable Harbor ATIF and job artifacts source-disposition ledger.",
     },
     {
+        "check": "harbor_driver_gate",
+        "boundary": "armory_integrity",
+        "relationship": "Top-level repository integrity check for the durable Harbor driver-gate source-disposition ledger.",
+    },
+    {
         "check": "external_tool_evaluation",
         "boundary": "armory_integrity",
         "relationship": "Top-level repository integrity check for the reusable external-tool evaluation operating contract.",
@@ -555,6 +560,7 @@ HARBOR_NEIGHBOR_TOOL_CATALOG_PATH = "docs/closeout/harbor-neighbor-tool-catalog.
 HARBOR_REWARD_KIT_EVALUATION_PATH = "docs/closeout/harbor-reward-kit-evaluation.md"
 HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH = "docs/closeout/harbor-agent-equipment-ab-prototype-results.md"
 HARBOR_ATIF_JOB_ARTIFACTS_EVALUATION_PATH = "docs/closeout/harbor-atif-job-artifacts-evaluation.md"
+HARBOR_DRIVER_GATE_PATH = "docs/closeout/harbor-driver-gate.md"
 EXTERNAL_TOOL_EVALUATION_PATH = "docs/external-tool-evaluation.md"
 HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH = "docs/evaluations/harbor.md"
 SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH = "docs/closeout/skill-eval-methodology-source-intake.md"
@@ -700,6 +706,63 @@ HARBOR_ATIF_JOB_ARTIFACTS_EVALUATION_SOURCE_URLS = [
     "https://www.harborframework.com/docs/run-jobs/results-and-artifacts",
     "https://github.com/harbor-framework/harbor/blob/main/rfcs/0001-trajectory-format.md",
     "https://github.com/harbor-framework/harbor",
+]
+HARBOR_DRIVER_GATE_REQUIRED_SECTIONS = [
+    "Scope Boundary",
+    "Portable Source Inventory",
+    "Driver Gate Matrix",
+    "Recommendation",
+    "Security Review",
+    "Downstream Routing",
+    "Deferments And Nonportable Claims",
+    "Security Privacy And Durability",
+    "Closeout Evidence",
+]
+HARBOR_DRIVER_GATE_COVERAGE_TERMS = [
+    "ADR 0022",
+    "Jig Driver",
+    "Docker",
+    "cloud sandbox",
+    "Daytona",
+    "Modal",
+    "E2B",
+    "Runloop",
+    "Tensorlake",
+    "Islo",
+    "CoreWeave Sandboxes",
+    "W&B Sandboxes",
+    "network policy",
+    "no-network",
+    "allowlist",
+    "sidecar",
+    "artifact manifest.json",
+    "best-effort",
+    "cleanup",
+    "reproducibility",
+    "portability",
+    "Codex workflow compatibility",
+    "maintenance cost",
+    "Docker credentials",
+    "verifier/reward tampering",
+    "artifact integrity",
+    "credential handling",
+    "unsupported isolation claims",
+    "provider account state",
+]
+HARBOR_DRIVER_GATE_ROUTES = [
+    "#183",
+    "#190",
+    "#163",
+    "#191",
+]
+HARBOR_DRIVER_GATE_SOURCE_URLS = [
+    "https://www.harborframework.com/docs/run-jobs/cloud-sandboxes",
+    "https://www.harborframework.com/docs/tasks",
+    "https://www.harborframework.com/docs/run-jobs/results-and-artifacts",
+    "https://github.com/harbor-framework/harbor/issues/1687",
+    "https://github.com/harbor-framework/harbor/issues/1694",
+    "https://github.com/harbor-framework/harbor/issues/1779",
+    "https://github.com/harbor-framework/harbor/issues/1795",
 ]
 HARBOR_JIG_SOURCE_MAP_COVERAGE_TERMS = [
     "task",
@@ -2851,6 +2914,104 @@ def validate_harbor_atif_job_artifacts_evaluation(root: Path) -> list[CheckResul
             True,
             "present",
             HARBOR_ATIF_JOB_ARTIFACTS_EVALUATION_PATH,
+        )
+    ]
+
+
+def validate_harbor_driver_gate(root: Path) -> list[CheckResult]:
+    ok, detail, path = repo_relative_path_status(root, HARBOR_DRIVER_GATE_PATH, "file")
+    if not ok:
+        return [
+            CheckResult(
+                "harbor_driver_gate:path",
+                False,
+                detail,
+                HARBOR_DRIVER_GATE_PATH,
+            )
+        ]
+    markdown = path.read_text(encoding="utf-8")
+    visible_markdown = markdown_visible_text(markdown)
+    nonblank_lines = [line.strip() for line in visible_markdown.splitlines() if line.strip()]
+    headings = markdown_heading_texts(markdown)
+    results: list[CheckResult] = []
+    if "Status: Source Disposition Ledger" not in nonblank_lines[:8]:
+        results.append(
+            CheckResult(
+                "harbor_driver_gate:status",
+                False,
+                "status must be Source Disposition Ledger",
+                HARBOR_DRIVER_GATE_PATH,
+            )
+        )
+    for required_section in HARBOR_DRIVER_GATE_REQUIRED_SECTIONS:
+        if normalize_reference_label(required_section) not in headings:
+            results.append(
+                CheckResult(
+                    f"harbor_driver_gate:section:{required_section}",
+                    False,
+                    f"missing section: {required_section}",
+                    HARBOR_DRIVER_GATE_PATH,
+                )
+            )
+    searchable_markdown = markdown_link_search_text(markdown)
+    searchable_markdown_casefold = searchable_markdown.casefold()
+    for required_term in HARBOR_DRIVER_GATE_COVERAGE_TERMS:
+        if required_term.casefold() not in searchable_markdown_casefold:
+            results.append(
+                CheckResult(
+                    f"harbor_driver_gate:coverage:{required_term}",
+                    False,
+                    f"missing coverage term: {required_term}",
+                    HARBOR_DRIVER_GATE_PATH,
+                )
+            )
+    for route in HARBOR_DRIVER_GATE_ROUTES:
+        if not required_downstream_route_present(searchable_markdown, route):
+            results.append(
+                CheckResult(
+                    f"harbor_driver_gate:routing:{route}",
+                    False,
+                    f"missing downstream route: {route}",
+                    HARBOR_DRIVER_GATE_PATH,
+                )
+            )
+    exact_link_targets = markdown_link_destinations(markdown)
+    for source_url in HARBOR_DRIVER_GATE_SOURCE_URLS:
+        if source_url not in exact_link_targets:
+            results.append(
+                CheckResult(
+                    f"harbor_driver_gate:source:{source_url}",
+                    False,
+                    f"missing source URL: {source_url}",
+                    HARBOR_DRIVER_GATE_PATH,
+                )
+            )
+    if "defer harbor as the first jig driver" not in searchable_markdown_casefold:
+        results.append(
+            CheckResult(
+                "harbor_driver_gate:recommendation",
+                False,
+                "recommendation must defer Harbor as the first Jig Driver",
+                HARBOR_DRIVER_GATE_PATH,
+            )
+        )
+    if HOST_LOCAL_PATH_RE.search(markdown):
+        results.append(
+            CheckResult(
+                "harbor_driver_gate:portable_paths",
+                False,
+                "ledger must not preserve host-local paths",
+                HARBOR_DRIVER_GATE_PATH,
+            )
+        )
+    if results:
+        return results
+    return [
+        CheckResult(
+            "harbor_driver_gate:ledger",
+            True,
+            "present",
+            HARBOR_DRIVER_GATE_PATH,
         )
     ]
 
@@ -7217,6 +7378,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
         HARBOR_REWARD_KIT_EVALUATION_PATH,
         HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH,
         HARBOR_ATIF_JOB_ARTIFACTS_EVALUATION_PATH,
+        HARBOR_DRIVER_GATE_PATH,
         EXTERNAL_TOOL_EVALUATION_PATH,
         HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
         SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
@@ -7261,6 +7423,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
     results.extend(validate_harbor_reward_kit_evaluation(root))
     results.extend(validate_harbor_agent_equipment_ab_prototype_results(root))
     results.extend(validate_harbor_atif_job_artifacts_evaluation(root))
+    results.extend(validate_harbor_driver_gate(root))
     results.extend(validate_external_tool_evaluation(root))
     results.extend(validate_harbor_external_tool_evaluation_record(root))
     results.extend(validate_skill_eval_methodology_source_intake(root))

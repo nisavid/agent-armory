@@ -72,18 +72,27 @@ and Harbor viewer affordances as later UX evidence for
 [#169](https://github.com/nisavid/agent-armory/issues/169), without replacing
 Armory result statuses or implementing UI in #189.
 
-Additional source inputs remain pending for driver gates and final projection.
+The accepted driver-gate input is
+[#190](https://github.com/nisavid/agent-armory/issues/190) and its durable
+[Harbor Driver Gate](../closeout/harbor-driver-gate.md). That ledger applies
+ADR 0022 and the Agent Test Jig driver rubric to Harbor's Docker, cloud
+sandbox, network policy, sidecar, artifact, cleanup, credential,
+reproducibility, portability, Codex compatibility, and maintenance surfaces.
+It recommends deferring Harbor as the first Jig Driver and retaining Harbor as
+a research reference plus supporting driver-component source material.
+
+Additional source input remains pending for final projection.
 
 ## Evidence Ledger
 
 | evidence class | current durable status |
 | --- | --- |
-| source-backed claims | Present for Harbor vocabulary and concept mapping through #184 and the Harbor Jig Source Map; present for Harbor-linked neighbor tools and surfaces through #186 and the Harbor-Neighbor Tool Catalog; present for Reward Kit and judge criteria fit through #188 and the Harbor Reward Kit Evaluation; present for bounded prototype behavior through #187 and the Harbor Agent Equipment A/B Prototype Results; present for ATIF, job result, trial result, artifact manifest, verifier output, and viewer-affordance fit through #189 and the Harbor ATIF And Job Artifact Evaluation. |
+| source-backed claims | Present for Harbor vocabulary and concept mapping through #184 and the Harbor Jig Source Map; present for Harbor-linked neighbor tools and surfaces through #186 and the Harbor-Neighbor Tool Catalog; present for Reward Kit and judge criteria fit through #188 and the Harbor Reward Kit Evaluation; present for bounded prototype behavior through #187 and the Harbor Agent Equipment A/B Prototype Results; present for ATIF, job result, trial result, artifact manifest, verifier output, and viewer-affordance fit through #189 and the Harbor ATIF And Job Artifact Evaluation; present for driver-gate fit through #190 and the Harbor Driver Gate. |
 | local observations | Limited to live repository and issue review during each child issue; not retained here as raw command output. |
 | prototype results | Accepted for #187 only as bounded evidence that Harbor produced a discriminating local A/B job with reward and artifact evidence. The prototype does not establish general skill superiority, Harbor adoption, Jig Driver fit, structured result-contract fit, cloud sandbox behavior, registry behavior, provider behavior, or verifier hardening. |
-| implementation inference | Reward Kit currently fits as concept source for deterministic Assertion Provider and Learned Oracle work, not a direct Armory result contract. Harbor ATIF and job artifacts fit as source material for #164 and #169, not as a direct Armory result contract. Other inferences must cite the source or prototype evidence that supports them. |
-| unknowns | Jig Driver gate fit and final projection remain unresolved. |
-| rejected claims | Reward Kit output files are rejected as the direct current Armory structured result contract; final Harbor rejection or adoption remains unassigned. |
+| implementation inference | Reward Kit currently fits as concept source for deterministic Assertion Provider and Learned Oracle work, not a direct Armory result contract. Harbor ATIF and job artifacts fit as source material for #164 and #169, not as a direct Armory result contract. Harbor fits as a research reference and source of supporting driver-component ideas, not the first Jig Driver. Other inferences must cite the source or prototype evidence that supports them. |
+| unknowns | Final projection remains unresolved. |
+| rejected claims | Reward Kit output files are rejected as the direct current Armory structured result contract; Harbor as the first Jig Driver is not accepted on current evidence; final Harbor rejection or adoption remains unassigned. |
 
 Child issues update this table with durable conclusions only. Raw logs,
 scratch output, transient command output, and unreviewed source extracts remain
@@ -98,7 +107,7 @@ outside the record.
 | [#187](https://github.com/nisavid/agent-armory/issues/187) | Harbor Agent Equipment A/B test prototype results. | Complete through the Harbor Agent Equipment A/B Prototype Results; bounded prototype evidence accepted. |
 | [#188](https://github.com/nisavid/agent-armory/issues/188) | Reward Kit and judge criteria fit for Assertion Provider and Learned Oracle questions. | Complete; borrow concepts and defer wrapping for both roles. |
 | [#189](https://github.com/nisavid/agent-armory/issues/189) | ATIF trajectory and artifact contract evidence for Jig Runner results. | Complete; use Harbor outputs as source material for #164 and viewer affordances as later UX evidence for #169, without replacing Armory result statuses. |
-| [#190](https://github.com/nisavid/agent-armory/issues/190) | Harbor driver gate evidence against ADR 0022 and Jig Driver requirements. | Pending. |
+| [#190](https://github.com/nisavid/agent-armory/issues/190) | Harbor driver gate evidence against ADR 0022 and Jig Driver requirements. | Complete; defer Harbor as the first Jig Driver and retain it as a research reference plus supporting driver-component source material. |
 | [#191](https://github.com/nisavid/agent-armory/issues/191) | Final disposition, projection state, and closeout coherence. | Pending. |
 
 ## Security Disclosure And Durability
@@ -106,8 +115,10 @@ outside the record.
 Public-safe Harbor security boundaries include provider/auth surfaces, sandbox
 network policy, verifier/reward tampering, artifact collection uncertainty,
 judge provider cost boundaries, Reward Kit agent judge execution, verifier
-output tampering, external observability integration risk, local Docker/Podman
-compatibility, and the no-network container runtime boundary observed by #187.
+output tampering, Docker credentials, artifact integrity, provider account
+state, unsupported isolation claims, external observability integration risk,
+local Docker/Podman compatibility, and the no-network container runtime
+boundary observed by #187.
 
 Do not commit or post credentials, private local paths, raw logs, raw
 trajectories, transcripts, model outputs, provider account state, exploit
@@ -129,7 +140,7 @@ changes Armory requirements across multiple implementation stories. It may
 propose an ADR if the evaluation resolves a hard-to-reverse tool, architecture,
 driver, or evidence-contract tradeoff.
 
-No new issue, PRD, or ADR projection is accepted by this record yet.
+No new issue, PRD, or ADR projection is accepted by #190 or this record yet.
 
 ## Final Disposition
 
@@ -138,8 +149,9 @@ unknown pending evidence.
 
 Final disposition issue #191 will assign one of the fixed outcomes after the
 child outputs are coherent. #187 no longer blocks on prototype evidence and
-#189 no longer blocks on ATIF/artifact evidence, but issues #190 and #191
-remain open. If evidence remains pending, #191 keeps the evaluation state in
-progress with unknown pending evidence. If #191 marks the evaluation complete,
-it must use a finalized disposition: adopted candidate, supporting component,
-research reference, deferred, or rejected.
+#189 no longer blocks on ATIF/artifact evidence. #190 no longer blocks on
+driver-gate evidence. #191 remains open for final projection. If evidence
+remains pending, #191 keeps the evaluation state in progress with unknown
+pending evidence. If #191 marks the evaluation complete, it must use a
+finalized disposition: adopted candidate, supporting component, research
+reference, deferred, or rejected.
