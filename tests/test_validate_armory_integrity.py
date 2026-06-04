@@ -23,6 +23,7 @@ from tools.validate_armory_integrity import (
     HARBOR_NEIGHBOR_TOOL_CATALOG_PATH,
     HARBOR_REWARD_KIT_EVALUATION_PATH,
     HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH,
+    HARBOR_ATIF_JOB_ARTIFACTS_EVALUATION_PATH,
     EXTERNAL_TOOL_EVALUATION_PATH,
     HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
     SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
@@ -57,6 +58,7 @@ from tools.validate_armory_integrity import (
     validate_harbor_neighbor_tool_catalog,
     validate_harbor_reward_kit_evaluation,
     validate_harbor_agent_equipment_ab_prototype_results,
+    validate_harbor_atif_job_artifacts_evaluation,
     validate_external_tool_evaluation,
     validate_harbor_external_tool_evaluation_record,
     validate_skill_eval_methodology_source_intake,
@@ -101,6 +103,8 @@ class ValidationBoundaryTests(unittest.TestCase):
         self.assertEqual(inventory["harbor_neighbor_tool_catalog"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["harbor_reward_kit_evaluation"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["harbor_agent_equipment_ab_prototype_results"]["boundary"], "armory_integrity")
+        self.assertIn("harbor_atif_job_artifacts_evaluation", inventory)
+        self.assertEqual(inventory["harbor_atif_job_artifacts_evaluation"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["external_tool_evaluation"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["harbor_external_tool_evaluation_record"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["skill_eval_methodology_source_intake"]["boundary"], "armory_integrity")
@@ -243,6 +247,31 @@ class ValidationBoundaryTests(unittest.TestCase):
                 ok=True,
                 detail="present",
                 path=HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH,
+            ),
+        )
+
+    def test_live_validator_run_includes_harbor_atif_job_artifacts_evaluation(self):
+        repo_root = Path(__file__).resolve().parents[1]
+
+        results = run(repo_root, final_closeout=True)
+        result_map = {result.name: result for result in results}
+
+        self.assertEqual(
+            result_map[f"required_path:{HARBOR_ATIF_JOB_ARTIFACTS_EVALUATION_PATH}"],
+            CheckResult(
+                name=f"required_path:{HARBOR_ATIF_JOB_ARTIFACTS_EVALUATION_PATH}",
+                ok=True,
+                detail="exists",
+                path=HARBOR_ATIF_JOB_ARTIFACTS_EVALUATION_PATH,
+            ),
+        )
+        self.assertEqual(
+            result_map["harbor_atif_job_artifacts_evaluation:ledger"],
+            CheckResult(
+                name="harbor_atif_job_artifacts_evaluation:ledger",
+                ok=True,
+                detail="present",
+                path=HARBOR_ATIF_JOB_ARTIFACTS_EVALUATION_PATH,
             ),
         )
 
@@ -755,6 +784,259 @@ class ValidatorPrimitiveTests(unittest.TestCase):
                     path=HARBOR_REWARD_KIT_EVALUATION_PATH,
                 )
             ],
+        )
+
+    def test_validate_harbor_atif_job_artifacts_evaluation_reports_missing_doc(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        self.assertTrue(
+            hasattr(validator, "validate_harbor_atif_job_artifacts_evaluation")
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = validator.validate_harbor_atif_job_artifacts_evaluation(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="harbor_atif_job_artifacts_evaluation:path",
+                    ok=False,
+                    detail="missing",
+                    path=validator.HARBOR_ATIF_JOB_ARTIFACTS_EVALUATION_PATH,
+                )
+            ],
+        )
+
+    def test_validate_harbor_atif_job_artifacts_evaluation_requires_ledger_shape(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_ATIF_JOB_ARTIFACTS_EVALUATION_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "# Harbor ATIF And Job Artifact Evaluation\n\nStatus: Draft\n\n## Scope Boundary\n\nIncomplete.\n",
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_atif_job_artifacts_evaluation(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_atif_job_artifacts_evaluation:status",
+                ok=False,
+                detail="status must be Source Disposition Ledger",
+                path=HARBOR_ATIF_JOB_ARTIFACTS_EVALUATION_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="harbor_atif_job_artifacts_evaluation:section:Portable Source Inventory",
+                ok=False,
+                detail="missing section: Portable Source Inventory",
+                path=HARBOR_ATIF_JOB_ARTIFACTS_EVALUATION_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_harbor_atif_job_artifacts_evaluation_requires_coverage_routes_and_sources(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_ATIF_JOB_ARTIFACTS_EVALUATION_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Harbor ATIF And Job Artifact Evaluation
+
+                    Status: Source Disposition Ledger
+
+                    ## Scope Boundary
+
+                    Issue #189 evaluates Harbor result files.
+
+                    ## Portable Source Inventory
+
+                    [Harbor Evals](https://www.harborframework.com/docs/run-jobs/run-evals)
+                    and [Harbor source](https://github.com/harbor-framework/harbor)
+                    cover result.json and trajectory.json.
+
+                    ## Harbor Output Fit Matrix
+
+                    job result and trial result.
+
+                    ## Compatibility Gaps
+
+                    pass and fail only.
+
+                    ## Evidence Durability
+
+                    raw logs and model outputs are scratch.
+
+                    ## Viewer And Review Surface Notes
+
+                    Viewer screenshots are scratch.
+
+                    ## Downstream Routing
+
+                    #189 and #191.
+
+                    ## Deferments And Nonportable Claims
+
+                    No schema change.
+
+                    ## Security Privacy And Durability
+
+                    local paths are scratch.
+
+                    ## Closeout Evidence
+
+                    TDD, Prototype, Impeccable, Codex Security, and Ralph Review Cycle.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_atif_job_artifacts_evaluation(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_atif_job_artifacts_evaluation:coverage:artifact manifest.json",
+                ok=False,
+                detail="missing coverage term: artifact manifest.json",
+                path=HARBOR_ATIF_JOB_ARTIFACTS_EVALUATION_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="harbor_atif_job_artifacts_evaluation:routing:#164",
+                ok=False,
+                detail="missing downstream route: #164",
+                path=HARBOR_ATIF_JOB_ARTIFACTS_EVALUATION_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="harbor_atif_job_artifacts_evaluation:source:https://www.harborframework.com/docs/run-jobs/results-and-artifacts",
+                ok=False,
+                detail="missing source URL: https://www.harborframework.com/docs/run-jobs/results-and-artifacts",
+                path=HARBOR_ATIF_JOB_ARTIFACTS_EVALUATION_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_harbor_atif_job_artifacts_evaluation_rejects_host_local_paths(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_ATIF_JOB_ARTIFACTS_EVALUATION_PATH
+            path.parent.mkdir(parents=True)
+            template = self.valid_harbor_atif_job_artifacts_evaluation().replace(
+                "raw tool output remains scratch evidence.",
+                "raw tool output remains scratch evidence. Scratch path: `{host_local_path}`.",
+            )
+
+            for host_local_path in (
+                "/home/agent/harbor/jobs/job-a/result.json",
+                r"C:\Users\agent\harbor\jobs\job-a\result.json",
+            ):
+                with self.subTest(host_local_path=host_local_path):
+                    path.write_text(
+                        template.format(host_local_path=host_local_path),
+                        encoding="utf-8",
+                    )
+                    results = validate_harbor_atif_job_artifacts_evaluation(root)
+
+                    self.assertIn(
+                        CheckResult(
+                            name="harbor_atif_job_artifacts_evaluation:portable_paths",
+                            ok=False,
+                            detail="ledger must not preserve host-local paths",
+                            path=HARBOR_ATIF_JOB_ARTIFACTS_EVALUATION_PATH,
+                        ),
+                        results,
+                    )
+
+    def test_validate_harbor_atif_job_artifacts_evaluation_accepts_complete_ledger(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_ATIF_JOB_ARTIFACTS_EVALUATION_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(self.valid_harbor_atif_job_artifacts_evaluation(), encoding="utf-8")
+
+            results = validate_harbor_atif_job_artifacts_evaluation(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="harbor_atif_job_artifacts_evaluation:ledger",
+                    ok=True,
+                    detail="present",
+                    path=HARBOR_ATIF_JOB_ARTIFACTS_EVALUATION_PATH,
+                )
+            ],
+        )
+
+    @staticmethod
+    def valid_harbor_atif_job_artifacts_evaluation() -> str:
+        return textwrap.dedent(
+            """\
+            # Harbor ATIF And Job Artifact Evaluation
+
+            Status: Source Disposition Ledger
+
+            ## Scope Boundary
+
+            Issue #189 evaluates Harbor ATIF and job artifacts for Jig Runner results.
+
+            ## Portable Source Inventory
+
+            [Harbor Evals](https://www.harborframework.com/docs/run-jobs/run-evals),
+            [Artifact Collection](https://www.harborframework.com/docs/run-jobs/results-and-artifacts),
+            [ATIF RFC](https://github.com/harbor-framework/harbor/blob/main/rfcs/0001-trajectory-format.md),
+            and [Harbor source](https://github.com/harbor-framework/harbor) cover
+            result.json, trajectory.json, artifact manifest.json, job result, trial result,
+            ATIF-v1.7, best-effort collection, viewer affordances, raw logs, model outputs,
+            viewer screenshots, and host-local paths.
+
+            ## Harbor Output Fit Matrix
+
+            pass, fail, inconclusive, disagreement, oracle_error, adjudicator_error,
+            infra_error, fixture_error, sandbox_error, timeout, and flaky are mapped
+            against Harbor job result, trial result, trajectory.json, and artifact manifest.json.
+
+            ## Compatibility Gaps
+
+            Harbor output is source material for #164, not a replacement result contract.
+
+            ## Evidence Durability
+
+            raw logs, local paths, trajectories, model outputs, viewer screenshots,
+            and raw tool output remains scratch evidence.
+
+            ## Viewer And Review Surface Notes
+
+            Viewer affordances can inform #169 after result artifacts exist.
+
+            ## Downstream Routing
+
+            #189, #164, #169, and #191.
+
+            ## Deferments And Nonportable Claims
+
+            No PRD, ADR, schema, Harbor adoption, or UI implementation is accepted.
+
+            ## Security Privacy And Durability
+
+            credentials, raw logs, local paths, trajectories, transcripts, model outputs,
+            viewer screenshots, provider account state, and external service usage stay scratch.
+
+            ## Closeout Evidence
+
+            TDD, Prototype, Impeccable, Codex Security, and Ralph Review Cycle.
+            """
         )
 
     @staticmethod

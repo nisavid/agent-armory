@@ -60,18 +60,29 @@ supports only the claim that Harbor produced a discriminating prototype job:
 baseline reward `0.5714`, equipped reward `1.0`, both with collected artifacts
 and no Harbor trial exceptions.
 
-Additional source inputs remain pending for trajectory/artifact contracts,
-driver gates, and final projection.
+The accepted ATIF and artifact input is
+[#189](https://github.com/nisavid/agent-armory/issues/189) and its durable
+[Harbor ATIF And Job Artifact Evaluation](../closeout/harbor-atif-job-artifacts-evaluation.md).
+That ledger evaluates Harbor job `result.json`, trial `result.json`,
+`trajectory.json`, artifact `manifest.json`, verifier outputs, viewer
+affordances, ATIF-v1.7, best-effort artifact collection, and evidence
+durability for Jig Runner result needs. It recommends using Harbor artifacts
+as source material for [#164](https://github.com/nisavid/agent-armory/issues/164)
+and Harbor viewer affordances as later UX evidence for
+[#169](https://github.com/nisavid/agent-armory/issues/169), without replacing
+Armory result statuses or implementing UI in #189.
+
+Additional source inputs remain pending for driver gates and final projection.
 
 ## Evidence Ledger
 
 | evidence class | current durable status |
 | --- | --- |
-| source-backed claims | Present for Harbor vocabulary and concept mapping through #184 and the Harbor Jig Source Map; present for Harbor-linked neighbor tools and surfaces through #186 and the Harbor-Neighbor Tool Catalog; present for Reward Kit and judge criteria fit through #188 and the Harbor Reward Kit Evaluation; present for bounded prototype behavior through #187 and the Harbor Agent Equipment A/B Prototype Results. |
+| source-backed claims | Present for Harbor vocabulary and concept mapping through #184 and the Harbor Jig Source Map; present for Harbor-linked neighbor tools and surfaces through #186 and the Harbor-Neighbor Tool Catalog; present for Reward Kit and judge criteria fit through #188 and the Harbor Reward Kit Evaluation; present for bounded prototype behavior through #187 and the Harbor Agent Equipment A/B Prototype Results; present for ATIF, job result, trial result, artifact manifest, verifier output, and viewer-affordance fit through #189 and the Harbor ATIF And Job Artifact Evaluation. |
 | local observations | Limited to live repository and issue review during each child issue; not retained here as raw command output. |
 | prototype results | Accepted for #187 only as bounded evidence that Harbor produced a discriminating local A/B job with reward and artifact evidence. The prototype does not establish general skill superiority, Harbor adoption, Jig Driver fit, structured result-contract fit, cloud sandbox behavior, registry behavior, provider behavior, or verifier hardening. |
-| implementation inference | Reward Kit currently fits as concept source for deterministic Assertion Provider and Learned Oracle work, not a direct Armory result contract. Other inferences must cite the source or prototype evidence that supports them. |
-| unknowns | ATIF/artifact contract fit, Jig Driver gate fit, and final projection remain unresolved. |
+| implementation inference | Reward Kit currently fits as concept source for deterministic Assertion Provider and Learned Oracle work, not a direct Armory result contract. Harbor ATIF and job artifacts fit as source material for #164 and #169, not as a direct Armory result contract. Other inferences must cite the source or prototype evidence that supports them. |
+| unknowns | Jig Driver gate fit and final projection remain unresolved. |
 | rejected claims | Reward Kit output files are rejected as the direct current Armory structured result contract; final Harbor rejection or adoption remains unassigned. |
 
 Child issues update this table with durable conclusions only. Raw logs,
@@ -86,7 +97,7 @@ outside the record.
 | [#186](https://github.com/nisavid/agent-armory/issues/186) | Neighbor-tool comparison against Harbor-relevant axes. | Complete through the Harbor-Neighbor Tool Catalog. |
 | [#187](https://github.com/nisavid/agent-armory/issues/187) | Harbor Agent Equipment A/B test prototype results. | Complete through the Harbor Agent Equipment A/B Prototype Results; bounded prototype evidence accepted. |
 | [#188](https://github.com/nisavid/agent-armory/issues/188) | Reward Kit and judge criteria fit for Assertion Provider and Learned Oracle questions. | Complete; borrow concepts and defer wrapping for both roles. |
-| [#189](https://github.com/nisavid/agent-armory/issues/189) | ATIF trajectory and artifact contract evidence for Jig Runner results. | Pending. |
+| [#189](https://github.com/nisavid/agent-armory/issues/189) | ATIF trajectory and artifact contract evidence for Jig Runner results. | Complete; use Harbor outputs as source material for #164 and viewer affordances as later UX evidence for #169, without replacing Armory result statuses. |
 | [#190](https://github.com/nisavid/agent-armory/issues/190) | Harbor driver gate evidence against ADR 0022 and Jig Driver requirements. | Pending. |
 | [#191](https://github.com/nisavid/agent-armory/issues/191) | Final disposition, projection state, and closeout coherence. | Pending. |
 
@@ -126,8 +137,9 @@ Current External Tool Evaluation Disposition:
 unknown pending evidence.
 
 Final disposition issue #191 will assign one of the fixed outcomes after the
-child outputs are coherent. #187 no longer blocks on prototype evidence, but
-issues #189, #190, and #191 remain open. If evidence remains pending, #191 keeps the
-evaluation state in progress with unknown pending evidence. If #191 marks the
-evaluation complete, it must use a finalized disposition: adopted candidate,
-supporting component, research reference, deferred, or rejected.
+child outputs are coherent. #187 no longer blocks on prototype evidence and
+#189 no longer blocks on ATIF/artifact evidence, but issues #190 and #191
+remain open. If evidence remains pending, #191 keeps the evaluation state in
+progress with unknown pending evidence. If #191 marks the evaluation complete,
+it must use a finalized disposition: adopted candidate, supporting component,
+research reference, deferred, or rejected.
