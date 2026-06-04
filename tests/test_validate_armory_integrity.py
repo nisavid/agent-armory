@@ -25,6 +25,7 @@ from tools.validate_armory_integrity import (
     HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH,
     HARBOR_ATIF_JOB_ARTIFACTS_EVALUATION_PATH,
     HARBOR_DRIVER_GATE_PATH,
+    HARBOR_FINAL_DISPOSITION_PATH,
     EXTERNAL_TOOL_EVALUATION_PATH,
     HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
     SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
@@ -61,6 +62,7 @@ from tools.validate_armory_integrity import (
     validate_harbor_agent_equipment_ab_prototype_results,
     validate_harbor_atif_job_artifacts_evaluation,
     validate_harbor_driver_gate,
+    validate_harbor_final_disposition,
     validate_external_tool_evaluation,
     validate_harbor_external_tool_evaluation_record,
     validate_skill_eval_methodology_source_intake,
@@ -109,6 +111,8 @@ class ValidationBoundaryTests(unittest.TestCase):
         self.assertEqual(inventory["harbor_atif_job_artifacts_evaluation"]["boundary"], "armory_integrity")
         self.assertIn("harbor_driver_gate", inventory)
         self.assertEqual(inventory["harbor_driver_gate"]["boundary"], "armory_integrity")
+        self.assertIn("harbor_final_disposition", inventory)
+        self.assertEqual(inventory["harbor_final_disposition"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["external_tool_evaluation"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["harbor_external_tool_evaluation_record"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["skill_eval_methodology_source_intake"]["boundary"], "armory_integrity")
@@ -301,6 +305,31 @@ class ValidationBoundaryTests(unittest.TestCase):
                 ok=True,
                 detail="present",
                 path=HARBOR_DRIVER_GATE_PATH,
+            ),
+        )
+
+    def test_live_validator_run_includes_harbor_final_disposition(self):
+        repo_root = Path(__file__).resolve().parents[1]
+
+        results = run(repo_root, final_closeout=True)
+        result_map = {result.name: result for result in results}
+
+        self.assertEqual(
+            result_map[f"required_path:{HARBOR_FINAL_DISPOSITION_PATH}"],
+            CheckResult(
+                name=f"required_path:{HARBOR_FINAL_DISPOSITION_PATH}",
+                ok=True,
+                detail="exists",
+                path=HARBOR_FINAL_DISPOSITION_PATH,
+            ),
+        )
+        self.assertEqual(
+            result_map["harbor_final_disposition:ledger"],
+            CheckResult(
+                name="harbor_final_disposition:ledger",
+                ok=True,
+                detail="present",
+                path=HARBOR_FINAL_DISPOSITION_PATH,
             ),
         )
 
@@ -3009,6 +3038,254 @@ class ValidatorPrimitiveTests(unittest.TestCase):
             ],
         )
 
+    def test_validate_harbor_final_disposition_reports_missing_doc(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = validate_harbor_final_disposition(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="harbor_final_disposition:path",
+                    ok=False,
+                    detail="missing",
+                    path=HARBOR_FINAL_DISPOSITION_PATH,
+                )
+            ],
+        )
+
+    def test_validate_harbor_final_disposition_requires_ledger_shape(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_FINAL_DISPOSITION_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "# Harbor Final Disposition\n\nStatus: Draft\n\n## Scope Boundary\n\nIncomplete.\n",
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_final_disposition(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_final_disposition:status",
+                ok=False,
+                detail="status must be Source Disposition Ledger",
+                path=HARBOR_FINAL_DISPOSITION_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="harbor_final_disposition:section:Disposition Decision",
+                ok=False,
+                detail="missing section: Disposition Decision",
+                path=HARBOR_FINAL_DISPOSITION_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_harbor_final_disposition_requires_projection_routes_and_terms(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_FINAL_DISPOSITION_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Harbor Final Disposition
+
+                    Status: Source Disposition Ledger
+
+                    ## Scope Boundary
+
+                    Issue #191 finalizes Harbor.
+
+                    ## Disposition Decision
+
+                    Harbor is useful.
+
+                    ## Evidence Basis
+
+                    Source-map, prototype, Reward Kit, ATIF, and driver-gate evidence.
+
+                    ## Projection Matrix
+
+                    #191.
+
+                    ## Non-Goals And Deferments
+
+                    No broad eval-platform survey.
+
+                    ## Security Privacy And Durability
+
+                    credentials, raw logs, local paths, trajectories, transcripts,
+                    model outputs, provider account state, and external service usage
+                    remain scratch.
+
+                    ## Closeout Evidence
+
+                    TDD, Codex Security, and Ralph Review Cycle.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_final_disposition(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_final_disposition:coverage:research reference",
+                ok=False,
+                detail="missing coverage term: research reference",
+                path=HARBOR_FINAL_DISPOSITION_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="harbor_final_disposition:routing:#163",
+                ok=False,
+                detail="missing downstream route: #163",
+                path=HARBOR_FINAL_DISPOSITION_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="harbor_final_disposition:routing:#183",
+                ok=False,
+                detail="missing downstream route: #183",
+                path=HARBOR_FINAL_DISPOSITION_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="harbor_final_disposition:source:docs/closeout/harbor-driver-gate.md",
+                ok=False,
+                detail="missing source reference: docs/closeout/harbor-driver-gate.md",
+                path=HARBOR_FINAL_DISPOSITION_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_harbor_final_disposition_rejects_host_local_paths(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_FINAL_DISPOSITION_PATH
+            path.parent.mkdir(parents=True)
+            template = self.valid_harbor_final_disposition().replace(
+                "raw tool output remain scratch evidence.",
+                "raw tool output remain scratch evidence. Scratch path: `{host_local_path}`.",
+            )
+
+            for host_local_path in (
+                "/home/agent/harbor/final-projection.json",
+                r"C:\Users\agent\harbor\final-projection.json",
+            ):
+                with self.subTest(host_local_path=host_local_path):
+                    path.write_text(template.format(host_local_path=host_local_path), encoding="utf-8")
+                    results = validate_harbor_final_disposition(root)
+
+                    self.assertIn(
+                        CheckResult(
+                            name="harbor_final_disposition:portable_paths",
+                            ok=False,
+                            detail="ledger must not preserve host-local paths",
+                            path=HARBOR_FINAL_DISPOSITION_PATH,
+                        ),
+                        results,
+                    )
+
+    def test_validate_harbor_final_disposition_accepts_complete_ledger(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_FINAL_DISPOSITION_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(self.valid_harbor_final_disposition(), encoding="utf-8")
+
+            results = validate_harbor_final_disposition(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="harbor_final_disposition:ledger",
+                    ok=True,
+                    detail="present",
+                    path=HARBOR_FINAL_DISPOSITION_PATH,
+                )
+            ],
+        )
+
+    @staticmethod
+    def valid_harbor_final_disposition() -> str:
+        return textwrap.dedent(
+            """\
+            # Harbor Final Disposition
+
+            Status: Source Disposition Ledger
+
+            ## Scope Boundary
+
+            Issue #191 completes Harbor final disposition for #183. It consumes
+            docs/closeout/harbor-jig-source-map.md,
+            docs/closeout/harbor-neighbor-tool-catalog.md,
+            docs/closeout/harbor-reward-kit-evaluation.md,
+            docs/closeout/harbor-agent-equipment-ab-prototype-results.md,
+            docs/closeout/harbor-atif-job-artifacts-evaluation.md, and
+            docs/closeout/harbor-driver-gate.md.
+
+            ## Disposition Decision
+
+            Final disposition: research reference. Harbor remains supporting source material,
+            not an adopted candidate, supporting component,
+            selected first Jig Driver, Assertion Provider, Learned Oracle,
+            Harness Test Suite evidence source, or direct Armory result contract.
+
+            ## Evidence Basis
+
+            #187 remains bounded prototype evidence only. Reward Kit informs
+            Assertion Provider and Learned Oracle work: borrow concepts and
+            defer wrapping. ATIF, result.json, trajectory.json, verifier output,
+            artifact manifest.json, and viewer affordances inform result/artifact
+            and review-surface design. Harbor Driver Gate defers Harbor as the
+            first Jig Driver.
+
+            ## Projection Matrix
+
+            #163 uses Harbor as comparison evidence for first Jig Driver selection.
+            #164 borrows job result, trial result, trajectory, verifier output, and
+            artifact manifest separation without replacing Armory statuses. #165
+            borrows deterministic Reward Kit criteria concepts. #166 borrows judge
+            TOML, trajectory evaluation, provider routing, and calibration pressure.
+            #167 and #177 receive no direct update until structured Jig Runner or
+            Harness Test Suite evidence exists. #169 may use Harbor viewer
+            affordances as later UX evidence. #183 and #191 receive final closeout.
+
+            ## Non-Goals And Deferments
+
+            no broad eval-platform survey, no PRD, no ADR, Harbor adoption, Harbor run,
+            cloud sandbox run, registry operation, provider credential use, UI
+            implementation, or first Jig Driver selection is accepted here.
+
+            ## Security Privacy And Durability
+
+            Credentials, raw logs, local paths, host-local paths, raw trajectories,
+            transcripts, model outputs, viewer screenshots, provider account state,
+            external service usage, raw GitHub API output, raw Firecrawl output, and
+            raw tool output remain scratch evidence.
+
+            ## Closeout Evidence
+
+            Triage, grill-with-docs, TDD, Codex Security, documentation closeout,
+            Cross-Boundary Coherence Ralph Review, and Story Quality Ralph Review.
+            """
+        )
+
     def test_validate_harbor_external_tool_evaluation_record_reports_missing_doc(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -3414,7 +3691,7 @@ class ValidatorPrimitiveTests(unittest.TestCase):
             results,
         )
 
-    def test_validate_harbor_external_tool_evaluation_record_accepts_finalized_disposition(self):
+    def test_validate_harbor_external_tool_evaluation_record_requires_final_projection_when_complete(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             path = root / HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH
@@ -3428,7 +3705,7 @@ class ValidatorPrimitiveTests(unittest.TestCase):
 
                     Evaluation state: complete
 
-                    Final disposition: rejected
+                    Final disposition: research reference
 
                     ## Scope
 
@@ -3456,11 +3733,90 @@ class ValidatorPrimitiveTests(unittest.TestCase):
 
                     ## Projection State
 
-                    update existing issues, create new issues, propose a PRD, and propose an ADR.
+                    update existing issues, create new issues, propose a PRD, propose an ADR,
+                    research reference, supporting source material, selected first Jig Driver,
+                    docs/closeout/harbor-final-disposition.md.
 
                     ## Final Disposition
 
-                    rejected.
+                    research reference.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_external_tool_evaluation_record(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_external_tool_evaluation_record:final_routing:#163",
+                ok=False,
+                detail="complete evaluation missing final projection route: #163",
+                path=HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="harbor_external_tool_evaluation_record:final_routing:#177",
+                ok=False,
+                detail="complete evaluation missing final projection route: #177",
+                path=HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_harbor_external_tool_evaluation_record_accepts_finalized_disposition(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Harbor External Tool Evaluation
+
+                    Status: External Tool Evaluation Record
+
+                    Evaluation state: complete
+
+                    Final disposition: research reference
+
+                    ## Scope
+
+                    Harbor evaluation for #183.
+
+                    ## Source Inputs
+
+                    #184. Harbor Agent Equipment A/B Prototype Results,
+                    bounded prototype evidence accepted, baseline reward, and
+                    equipped reward.
+
+                    ## Evidence Ledger
+
+                    source-backed claims, local observations, prototype results,
+                    implementation inference, unknowns, and rejected claims.
+
+                    ## Child Issue Outputs
+
+                    #185, #186, #187, #188, #189, #190, and #191.
+
+                    ## Security Disclosure And Durability
+
+                    credentials, local paths, raw logs, trajectories, transcripts,
+                    model outputs, and external service usage.
+
+                    ## Projection State
+
+                    update existing issues, create new issues, propose a PRD, propose an ADR,
+                    research reference, supporting source material, selected first Jig Driver,
+                    docs/closeout/harbor-final-disposition.md.
+                    Final projection routes: #163, #164, #165, #166, #167, #169,
+                    #177, #183, and #191.
+
+                    ## Final Disposition
+
+                    research reference.
                     """
                 ),
                 encoding="utf-8",
