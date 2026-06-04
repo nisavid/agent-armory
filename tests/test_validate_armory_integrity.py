@@ -24,6 +24,7 @@ from tools.validate_armory_integrity import (
     HARBOR_REWARD_KIT_EVALUATION_PATH,
     HARBOR_AGENT_EQUIPMENT_AB_PROTOTYPE_RESULTS_PATH,
     HARBOR_ATIF_JOB_ARTIFACTS_EVALUATION_PATH,
+    HARBOR_DRIVER_GATE_PATH,
     EXTERNAL_TOOL_EVALUATION_PATH,
     HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
     SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
@@ -59,6 +60,7 @@ from tools.validate_armory_integrity import (
     validate_harbor_reward_kit_evaluation,
     validate_harbor_agent_equipment_ab_prototype_results,
     validate_harbor_atif_job_artifacts_evaluation,
+    validate_harbor_driver_gate,
     validate_external_tool_evaluation,
     validate_harbor_external_tool_evaluation_record,
     validate_skill_eval_methodology_source_intake,
@@ -105,6 +107,8 @@ class ValidationBoundaryTests(unittest.TestCase):
         self.assertEqual(inventory["harbor_agent_equipment_ab_prototype_results"]["boundary"], "armory_integrity")
         self.assertIn("harbor_atif_job_artifacts_evaluation", inventory)
         self.assertEqual(inventory["harbor_atif_job_artifacts_evaluation"]["boundary"], "armory_integrity")
+        self.assertIn("harbor_driver_gate", inventory)
+        self.assertEqual(inventory["harbor_driver_gate"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["external_tool_evaluation"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["harbor_external_tool_evaluation_record"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["skill_eval_methodology_source_intake"]["boundary"], "armory_integrity")
@@ -272,6 +276,31 @@ class ValidationBoundaryTests(unittest.TestCase):
                 ok=True,
                 detail="present",
                 path=HARBOR_ATIF_JOB_ARTIFACTS_EVALUATION_PATH,
+            ),
+        )
+
+    def test_live_validator_run_includes_harbor_driver_gate(self):
+        repo_root = Path(__file__).resolve().parents[1]
+
+        results = run(repo_root, final_closeout=True)
+        result_map = {result.name: result for result in results}
+
+        self.assertEqual(
+            result_map[f"required_path:{HARBOR_DRIVER_GATE_PATH}"],
+            CheckResult(
+                name=f"required_path:{HARBOR_DRIVER_GATE_PATH}",
+                ok=True,
+                detail="exists",
+                path=HARBOR_DRIVER_GATE_PATH,
+            ),
+        )
+        self.assertEqual(
+            result_map["harbor_driver_gate:ledger"],
+            CheckResult(
+                name="harbor_driver_gate:ledger",
+                ok=True,
+                detail="present",
+                path=HARBOR_DRIVER_GATE_PATH,
             ),
         )
 
@@ -957,7 +986,6 @@ class ValidatorPrimitiveTests(unittest.TestCase):
                         ),
                         results,
                     )
-
     def test_validate_harbor_atif_job_artifacts_evaluation_accepts_complete_ledger(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -1032,6 +1060,292 @@ class ValidatorPrimitiveTests(unittest.TestCase):
 
             credentials, raw logs, local paths, trajectories, transcripts, model outputs,
             viewer screenshots, provider account state, and external service usage stay scratch.
+
+            ## Closeout Evidence
+
+            TDD, Prototype, Impeccable, Codex Security, and Ralph Review Cycle.
+            """
+        )
+
+    def test_validate_harbor_driver_gate_reports_missing_doc(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = validate_harbor_driver_gate(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="harbor_driver_gate:path",
+                    ok=False,
+                    detail="missing",
+                    path=HARBOR_DRIVER_GATE_PATH,
+                )
+            ],
+        )
+
+    def test_validate_harbor_driver_gate_requires_ledger_shape(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_DRIVER_GATE_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "# Harbor Driver Gate\n\nStatus: Draft\n\n## Scope Boundary\n\nIncomplete.\n",
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_driver_gate(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_driver_gate:status",
+                ok=False,
+                detail="status must be Source Disposition Ledger",
+                path=HARBOR_DRIVER_GATE_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="harbor_driver_gate:section:Portable Source Inventory",
+                ok=False,
+                detail="missing section: Portable Source Inventory",
+                path=HARBOR_DRIVER_GATE_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_harbor_driver_gate_requires_coverage_routes_sources_and_recommendation(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_DRIVER_GATE_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Harbor Driver Gate
+
+                    Status: Source Disposition Ledger
+
+                    ## Scope Boundary
+
+                    Issue #190 evaluates Harbor as a driver.
+
+                    ## Portable Source Inventory
+
+                    [Cloud Sandboxes](https://www.harborframework.com/docs/run-jobs/cloud-sandboxes)
+                    and [Tasks](https://www.harborframework.com/docs/tasks)
+                    cover Docker, cloud sandbox, Daytona, Modal, E2B, Runloop,
+                    Tensorlake, Islo, CoreWeave Sandboxes, W&B Sandboxes,
+                    network policy, no-network, allowlist, sidecar, cleanup,
+                    reproducibility, portability, Codex workflow compatibility,
+                    maintenance cost, Docker credentials, and verifier/reward tampering.
+
+                    ## Driver Gate Matrix
+
+                    ADR 0022 and Jig Driver evidence.
+
+                    ## Recommendation
+
+                    Research reference.
+
+                    ## Security Review
+
+                    credentials and artifact integrity.
+
+                    ## Downstream Routing
+
+                    #190 and #191.
+
+                    ## Deferments And Nonportable Claims
+
+                    No Harbor adoption.
+
+                    ## Security Privacy And Durability
+
+                    raw logs and local paths are scratch.
+
+                    ## Closeout Evidence
+
+                    TDD, Prototype, Impeccable, Codex Security, and Ralph Review Cycle.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_harbor_driver_gate(root)
+
+        self.assertIn(
+            CheckResult(
+                name="harbor_driver_gate:coverage:artifact manifest.json",
+                ok=False,
+                detail="missing coverage term: artifact manifest.json",
+                path=HARBOR_DRIVER_GATE_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="harbor_driver_gate:routing:#163",
+                ok=False,
+                detail="missing downstream route: #163",
+                path=HARBOR_DRIVER_GATE_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="harbor_driver_gate:source:https://www.harborframework.com/docs/run-jobs/results-and-artifacts",
+                ok=False,
+                detail="missing source URL: https://www.harborframework.com/docs/run-jobs/results-and-artifacts",
+                path=HARBOR_DRIVER_GATE_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="harbor_driver_gate:recommendation",
+                ok=False,
+                detail="recommendation must defer Harbor as the first Jig Driver",
+                path=HARBOR_DRIVER_GATE_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_harbor_driver_gate_rejects_host_local_paths(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_DRIVER_GATE_PATH
+            path.parent.mkdir(parents=True)
+            template = self.valid_harbor_driver_gate().replace(
+                "raw tool output remains scratch evidence.",
+                "raw tool output remains scratch evidence. Scratch path: `{host_local_path}`.",
+            )
+
+            for host_local_path in (
+                "/home/agent/harbor/jobs/job-a/result.json",
+                r"C:\Users\agent\harbor\jobs\job-a\result.json",
+            ):
+                with self.subTest(host_local_path=host_local_path):
+                    path.write_text(
+                        template.format(host_local_path=host_local_path),
+                        encoding="utf-8",
+                    )
+                    results = validate_harbor_driver_gate(root)
+
+                    self.assertIn(
+                        CheckResult(
+                            name="harbor_driver_gate:portable_paths",
+                            ok=False,
+                            detail="ledger must not preserve host-local paths",
+                            path=HARBOR_DRIVER_GATE_PATH,
+                        ),
+                        results,
+                    )
+            path.write_text(
+                self.valid_harbor_driver_gate()
+                + "\n```text\n/tmp/harbor/jobs/job-a/result.json\n```\n",
+                encoding="utf-8",
+            )
+            results = validate_harbor_driver_gate(root)
+
+            self.assertIn(
+                CheckResult(
+                    name="harbor_driver_gate:portable_paths",
+                    ok=False,
+                    detail="ledger must not preserve host-local paths",
+                    path=HARBOR_DRIVER_GATE_PATH,
+                ),
+                results,
+            )
+
+    def test_validate_harbor_driver_gate_accepts_complete_ledger(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / HARBOR_DRIVER_GATE_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(self.valid_harbor_driver_gate(), encoding="utf-8")
+
+            results = validate_harbor_driver_gate(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="harbor_driver_gate:ledger",
+                    ok=True,
+                    detail="present",
+                    path=HARBOR_DRIVER_GATE_PATH,
+                )
+            ],
+        )
+
+    @staticmethod
+    def valid_harbor_driver_gate() -> str:
+        return textwrap.dedent(
+            """\
+            # Harbor Driver Gate
+
+            Status: Source Disposition Ledger
+
+            ## Scope Boundary
+
+            Issue #190 applies ADR 0022 to Harbor as a Jig Driver candidate.
+
+            ## Portable Source Inventory
+
+            [Cloud Sandboxes](https://www.harborframework.com/docs/run-jobs/cloud-sandboxes),
+            [Tasks](https://www.harborframework.com/docs/tasks),
+            [Artifact Collection](https://www.harborframework.com/docs/run-jobs/results-and-artifacts),
+            [Docker credentials issue](https://github.com/harbor-framework/harbor/issues/1687),
+            [Sidecar state issue](https://github.com/harbor-framework/harbor/issues/1694),
+            [Verifier tampering issue](https://github.com/harbor-framework/harbor/issues/1779),
+            and [Modal network issue](https://github.com/harbor-framework/harbor/issues/1795)
+            cover Docker, cloud sandbox, Daytona, Modal, E2B, Runloop, Tensorlake,
+            Islo, CoreWeave Sandboxes, W&B Sandboxes, network policy, no-network,
+            allowlist, sidecar, artifact manifest.json, best-effort collection,
+            cleanup, reproducibility, portability, Codex workflow compatibility,
+            maintenance cost, Docker credentials, verifier/reward tampering,
+            artifact integrity, credential handling, unsupported isolation claims,
+            and provider account state.
+
+            ## Driver Gate Matrix
+
+            The Jig Driver gate covers safety, isolation from host state,
+            reproducibility, simplicity, local iteration speed, observability,
+            effect controls, fixture and mock support, cleanup reliability,
+            portability, Codex workflow compatibility, and maintenance cost.
+
+            ## Recommendation
+
+            The recommendation is to defer Harbor as the first Jig Driver and
+            retain Harbor as a research reference plus supporting driver-component
+            source material.
+
+            ## Security Review
+
+            The security review covers verifier/reward tampering, credential
+            handling, network effects, cloud provider trust, local path disclosure,
+            artifact integrity, and unsupported isolation claims.
+
+            ## Downstream Routing
+
+            #183 receives this driver-gate evidence. #190 owns this ledger. #163
+            can use it before selecting a first Jig Driver. #191 owns final Harbor
+            projection.
+
+            ## Deferments And Nonportable Claims
+
+            No Harbor adoption, ADR change, Agent Test Jig issue mutation, Harbor
+            execution, cloud sandbox run, provider account claim, or UI
+            implementation is accepted by this ledger.
+
+            ## Security Privacy And Durability
+
+            credentials, raw logs, local paths, trajectories, transcripts, model
+            outputs, viewer screenshots, provider account state, external service
+            usage, and raw tool output remains scratch evidence.
 
             ## Closeout Evidence
 
