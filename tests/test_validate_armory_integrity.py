@@ -12762,6 +12762,58 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
             ],
         )
 
+    def test_validate_published_equipment_delivery_accepts_completion_decision_at_deeper_heading(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_inventory(
+                root,
+                """
+                schema_version = "agent-armory.equipment-stock.v1"
+
+                [[equipment]]
+                id = "example"
+                name = "Example Equipment"
+                summary = "Demonstrates stock inventory validation."
+                promotion_state = "published"
+                delivery_compliance = "passed"
+                shop_card = "docs/equipment/shop-cards/example.md"
+                inspection_test_plan = "docs/equipment/inspection-test-plans/example.md"
+                """,
+            )
+            shop_card = root / "docs/equipment/shop-cards/example.md"
+            shop_card.parent.mkdir(parents=True, exist_ok=True)
+            shop_card.write_text("# Example Equipment\n\nStatus: Equipment Shop Card\n", encoding="utf-8")
+            plan = root / "docs/equipment/inspection-test-plans/example.md"
+            plan.parent.mkdir(parents=True, exist_ok=True)
+            plan.write_text(
+                "# Example Equipment Inspection and Test Plan\n\n"
+                "Status: Equipment Inspection and Test Plan\n\n"
+                "### Scope\n\nExample stock slice.\n\n"
+                "### Subject Under Inspection\n\nExample Equipment.\n\n"
+                "### Inspection Checklist\n\n- Inspect the stock record.\n\n"
+                "### Test Plan\n\n- Run the validator.\n\n"
+                "### Evidence Requirements\n\n- Record validation output.\n\n"
+                "### Completion Decision\n\n"
+                "Completion status: complete\n\n"
+                "Delivery compliance: passed\n",
+                encoding="utf-8",
+            )
+
+            results = validator.validate_published_equipment_delivery(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    "published_equipment_delivery:inventory",
+                    True,
+                    "valid stock inventory",
+                    "inventory/equipment.toml",
+                )
+            ],
+        )
+
     def test_validate_published_equipment_delivery_rejects_passed_delivery_for_unpublished_equipment(self):
         validator = importlib.import_module("tools.validate_armory_integrity")
         with tempfile.TemporaryDirectory() as tmpdir:

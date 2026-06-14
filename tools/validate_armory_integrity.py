@@ -6487,7 +6487,7 @@ def validate_published_equipment_delivery(root: Path) -> list[CheckResult]:
                                     inspection_test_plan,
                                 )
                             )
-                    completion_decision = markdown_section_body(plan_markdown, "Completion Decision") or ""
+                    completion_decision = markdown_heading_section_body(plan_markdown, "Completion Decision") or ""
                     if delivery_compliance == "passed" and not (
                         "Completion status: complete" in completion_decision
                         and "Delivery compliance: passed" in completion_decision
@@ -6616,6 +6616,21 @@ def markdown_section_body(markdown: str, heading: str) -> str | None:
     if match is None:
         return None
     return match.group("body")
+
+
+def markdown_heading_section_body(markdown: str, heading: str) -> str | None:
+    visible = markdown_visible_text(markdown)
+    heading_pattern = re.compile(r"(?m)^(?P<marks>#{1,6})\s+(?P<title>.+?)\s*$")
+    for match in heading_pattern.finditer(visible):
+        if normalize_reference_label(match.group("title")) != normalize_reference_label(heading):
+            continue
+        level = len(match.group("marks"))
+        body_start = match.end()
+        for next_match in heading_pattern.finditer(visible, body_start):
+            if len(next_match.group("marks")) <= level:
+                return visible[body_start : next_match.start()]
+        return visible[body_start:]
+    return None
 
 
 def markdown_bullet_items(markdown: str) -> list[str]:

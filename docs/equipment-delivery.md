@@ -98,9 +98,10 @@ Delivery compliance statuses are:
 
 `passed` requires `promotion_state = "published"` and a completed linked
 Equipment Inspection and Test Plan whose completion decision records
-`Delivery compliance: passed`. Published equipment may still have
-`not_evaluated`, `pending`, or `blocked` delivery compliance when historical
-publication predates this delivery standard or later evidence has not passed.
+`Completion status: complete` and `Delivery compliance: passed`. Published
+equipment may still have `not_evaluated`, `pending`, or `blocked` delivery
+compliance when historical publication predates this delivery standard or
+later evidence has not passed.
 
 ## Validation
 
