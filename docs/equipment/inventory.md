@@ -19,6 +19,12 @@ Equipment Shop Cards will live in the
 [shop-card index](shop-cards/README.md). Future stock records will reference
 cards from `inventory/equipment.toml`.
 
+## Inspection and Test Plans
+
+Equipment Inspection and Test Plans will live in the
+[ITP index](inspection-test-plans/README.md). Future stock records will
+reference ITPs from `inventory/equipment.toml`.
+
 ## Gear-Up Paths
 
 [Agent Equipment Config](agent-equipment-config.md) is available now as a

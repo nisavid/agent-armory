@@ -7,6 +7,7 @@ summary = "Describe the stockable equipment slice."
 promotion_state = "published"
 delivery_compliance = "pending"
 shop_card = "docs/equipment/shop-cards/example-equipment.md"
+inspection_test_plan = "docs/equipment/inspection-test-plans/example-equipment.md"
 notes = "Replace this example with current delivery context."
 
 [[equipment.components]]

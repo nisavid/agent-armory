@@ -9,10 +9,10 @@ separate from Smith-facing design evidence and from historical promotion state.
 ## Purpose
 
 A stockable equipment release or slice is ready for delivery only when its
-canonical stock record, shop card, advertised component manifest, and delivery
-status can be inspected together. The standard prevents a published claim from
-implying that planned, unavailable, or uninspectable components are ready to
-equip.
+canonical stock record, shop card, advertised component manifest, inspection
+and test plan, and delivery status can be inspected together. The standard
+prevents a published claim from implying that planned, unavailable, or
+uninspectable components are ready to equip.
 
 This standard does not stock Agent Equipment Config by itself. The first real
 Config stock record belongs to the delivery retrofit issue that consumes this
@@ -43,6 +43,16 @@ become the design authority.
 Shop cards live under `docs/equipment/shop-cards/`. Stock records must link to
 Markdown shop cards in that directory.
 
+## Equipment Inspection and Test Plans
+
+An Equipment Inspection and Test Plan is the delivery gate for one stockable
+equipment release or slice. It names the subject under inspection, checklist,
+test plan, required evidence, and completion decision.
+
+Inspection and Test Plans live under
+`docs/equipment/inspection-test-plans/`. Stock records must link to Markdown
+plans in that directory.
+
 ## Stock Inventory Records
 
 Each `[[equipment]]` record describes one stockable equipment release or slice:
@@ -53,6 +63,8 @@ Each `[[equipment]]` record describes one stockable equipment release or slice:
 - `promotion_state`: historical Equipment Promotion Path state.
 - `delivery_compliance`: current delivery status under this standard.
 - `shop_card`: repo-relative Markdown path under `docs/equipment/shop-cards/`.
+- `inspection_test_plan`: repo-relative Markdown path under
+  `docs/equipment/inspection-test-plans/`.
 - `notes`: optional status context.
 
 Promotion state and delivery compliance are separate. Historical `published`
@@ -84,20 +96,19 @@ Delivery compliance statuses are:
 - `passed`: the release or slice satisfies the current delivery standard.
 - `blocked`: a known missing, unsafe, or unapproved condition prevents delivery.
 
-`passed` requires `promotion_state = "published"`. Published equipment may
-still have `not_evaluated`, `pending`, or `blocked` delivery compliance when
-historical publication predates this delivery standard or later evidence has
-not passed.
-
-The standard Equipment ITP gate is defined by the follow-up ITP slice. This
-standard may name ITP linkage, but it does not require ITP completion yet.
+`passed` requires `promotion_state = "published"` and a completed linked
+Equipment Inspection and Test Plan whose completion decision records
+`Delivery compliance: passed`. Published equipment may still have
+`not_evaluated`, `pending`, or `blocked` delivery compliance when historical
+publication predates this delivery standard or later evidence has not passed.
 
 ## Validation
 
 Armory Integrity Validation checks the inventory schema version, record fields,
 delivery-compliance vocabulary, promotion and delivery consistency, shop-card
-path boundary, component statuses, required component paths, planned and
-unavailable component notes, and repo-relative path safety.
+and inspection-test-plan path boundaries, ITP sections and completion evidence,
+component statuses, required component paths, planned and unavailable component
+notes, and repo-relative path safety.
 
 The validator does not infer stock from README copy, docs lists, templates,
 issue labels, or Capability Cards. Stock authority starts at
