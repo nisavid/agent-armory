@@ -274,6 +274,12 @@ A separable behavior, policy, route, or integration within an Existing
 Equipment Surface that can receive its own disposition.
 _Avoid_: whole equipment item, source file
 
+**Equipment Inspection and Test Plan**:
+The delivery-gate artifact for a stockable equipment release or slice, covering
+the inspection checklist, test plan, evidence requirements, and completion
+decision.
+_Avoid_: shop card, Capability Card, generic test notes
+
 **Equipment Promotion Path**:
 The lifecycle that moves an equipment idea from example or spec toward Published Agent Equipment.
 _Avoid_: treating example, specified, planned, implemented, validated, and published as interchangeable states

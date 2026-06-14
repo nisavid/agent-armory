@@ -1502,6 +1502,7 @@ TEMPLATE_REQUIRED_PATHS = [
     "templates/config/example.toml",
     "templates/security-review.md",
     "templates/context-budget-review.md",
+    "templates/equipment-inspection-test-plan.md",
     "templates/equipment-stock-record.toml",
 ]
 EXAMPLE_DIRECTORIES = [
@@ -1564,8 +1565,10 @@ PUBLISHED_EQUIPMENT_DELIVERY_DOC_PATH = "docs/equipment-delivery.md"
 PUBLISHED_EQUIPMENT_INVENTORY_PATH = "inventory/equipment.toml"
 PUBLISHED_EQUIPMENT_INVENTORY_VIEW_PATH = "docs/equipment/inventory.md"
 PUBLISHED_EQUIPMENT_SHOP_CARD_INDEX_PATH = "docs/equipment/shop-cards/README.md"
+PUBLISHED_EQUIPMENT_INSPECTION_TEST_PLAN_INDEX_PATH = "docs/equipment/inspection-test-plans/README.md"
 PUBLISHED_EQUIPMENT_INVENTORY_SCHEMA_VERSION = "agent-armory.equipment-stock.v1"
 PUBLISHED_EQUIPMENT_SHOP_CARD_DIR = "docs/equipment/shop-cards"
+PUBLISHED_EQUIPMENT_INSPECTION_TEST_PLAN_DIR = "docs/equipment/inspection-test-plans"
 PUBLISHED_EQUIPMENT_EMPTY_STOCK_SENTENCE = (
     "No stocked equipment is recorded in `inventory/equipment.toml` yet."
 )
@@ -1589,6 +1592,14 @@ PUBLISHED_EQUIPMENT_COMPONENT_STATUSES = {
     "planned",
     "unavailable",
 }
+PUBLISHED_EQUIPMENT_INSPECTION_TEST_PLAN_REQUIRED_SECTIONS = (
+    "Scope",
+    "Subject Under Inspection",
+    "Inspection Checklist",
+    "Test Plan",
+    "Evidence Requirements",
+    "Completion Decision",
+)
 PUBLISHED_EQUIPMENT_REQUIRED_FIELDS = (
     "id",
     "name",
@@ -1596,6 +1607,7 @@ PUBLISHED_EQUIPMENT_REQUIRED_FIELDS = (
     "promotion_state",
     "delivery_compliance",
     "shop_card",
+    "inspection_test_plan",
 )
 PUBLISHED_EQUIPMENT_COMPONENT_REQUIRED_FIELDS = ("name", "kind", "status", "paths")
 EXISTING_EQUIPMENT_ONBOARDING_PRD_PATH = "docs/prd/existing-equipment-onboarding.md"
@@ -1797,6 +1809,7 @@ FORBIDDEN_SPEC_CLAIMS = FORBIDDEN_EXAMPLE_CLAIMS
 ROOT_TEMPLATE_FILES = [
     "templates/capability-card.md",
     "templates/equipment-shop-card.md",
+    "templates/equipment-inspection-test-plan.md",
     "templates/interface-decision-record.md",
     "templates/security-review.md",
     "templates/context-budget-review.md",
@@ -1827,6 +1840,9 @@ ROOT_TEMPLATE_REQUIRED_SECTIONS = {
         "Inspection and evidence",
         "Support and lifecycle",
     ],
+    "templates/equipment-inspection-test-plan.md": list(
+        PUBLISHED_EQUIPMENT_INSPECTION_TEST_PLAN_REQUIRED_SECTIONS
+    ),
     "templates/interface-decision-record.md": [
         "Requirement",
         "Vision alignment",
@@ -6430,6 +6446,63 @@ def validate_published_equipment_delivery(root: Path) -> list[CheckResult]:
                             shop_card,
                         )
                     )
+        inspection_test_plan = record.get("inspection_test_plan")
+        if isinstance(inspection_test_plan, str) and inspection_test_plan.strip():
+            if not (
+                inspection_test_plan.startswith(f"{PUBLISHED_EQUIPMENT_INSPECTION_TEST_PLAN_DIR}/")
+                and inspection_test_plan.endswith(".md")
+            ):
+                results.append(
+                    CheckResult(
+                        f"published_equipment_delivery:equipment:{equipment_id}:inspection_test_plan",
+                        False,
+                        "inspection_test_plan must be a Markdown file under docs/equipment/inspection-test-plans/",
+                        PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+                    )
+                )
+            else:
+                plan_ok, plan_detail, plan_path = repo_relative_path_status(root, inspection_test_plan, "file")
+                if not plan_ok:
+                    results.append(
+                        CheckResult(
+                            f"published_equipment_delivery:equipment:{equipment_id}:inspection_test_plan",
+                            False,
+                            plan_detail,
+                            inspection_test_plan,
+                        )
+                    )
+                else:
+                    plan_markdown = plan_path.read_text(encoding="utf-8")
+                    plan_headings = markdown_heading_texts(plan_markdown)
+                    for required_section in PUBLISHED_EQUIPMENT_INSPECTION_TEST_PLAN_REQUIRED_SECTIONS:
+                        if normalize_reference_label(required_section) not in plan_headings:
+                            results.append(
+                                CheckResult(
+                                    (
+                                        "published_equipment_delivery:equipment:"
+                                        f"{equipment_id}:inspection_test_plan:section:{required_section}"
+                                    ),
+                                    False,
+                                    f"missing section: {required_section}",
+                                    inspection_test_plan,
+                                )
+                            )
+                    completion_decision = markdown_section_body(plan_markdown, "Completion Decision") or ""
+                    if delivery_compliance == "passed" and not (
+                        "Completion status: complete" in completion_decision
+                        and "Delivery compliance: passed" in completion_decision
+                    ):
+                        results.append(
+                            CheckResult(
+                                (
+                                    "published_equipment_delivery:equipment:"
+                                    f"{equipment_id}:inspection_test_plan:completion"
+                                ),
+                                False,
+                                "delivery_compliance passed requires completed ITP evidence",
+                                inspection_test_plan,
+                            )
+                        )
         components = record.get("components", [])
         if not isinstance(components, list):
             results.append(
@@ -6639,6 +6712,15 @@ def validate_published_equipment_inventory_view(root: Path) -> list[CheckResult]
                 PUBLISHED_EQUIPMENT_INVENTORY_VIEW_PATH,
             )
         )
+    if "inspection-test-plans/README.md" not in links:
+        results.append(
+            CheckResult(
+                "published_equipment_inventory_view:inspection_test_plans",
+                False,
+                "missing inspection-test-plan index link",
+                PUBLISHED_EQUIPMENT_INVENTORY_VIEW_PATH,
+            )
+        )
 
     stock_records = markdown_section_body(markdown, "Stock Records")
     if stock_records is None:
@@ -6701,7 +6783,8 @@ def validate_published_equipment_inventory_view(root: Path) -> list[CheckResult]
             name = record.get("name")
             delivery_compliance = record.get("delivery_compliance")
             shop_card = record.get("shop_card")
-            required_values = [equipment_id, name, delivery_compliance, shop_card]
+            inspection_test_plan = record.get("inspection_test_plan")
+            required_values = [equipment_id, name, delivery_compliance, shop_card, inspection_test_plan]
             if not all(isinstance(value, str) and value.strip() for value in required_values):
                 continue
             if not any(
@@ -6710,13 +6793,17 @@ def validate_published_equipment_inventory_view(root: Path) -> list[CheckResult]
                 and markdown_record_token_present(bullet, name)
                 and markdown_record_token_present(bullet, delivery_compliance)
                 and markdown_record_token_present(bullet, shop_card, path=True)
+                and markdown_record_token_present(bullet, inspection_test_plan, path=True)
                 for bullet in bullets
             ):
                 results.append(
                     CheckResult(
                         f"published_equipment_inventory_view:record:{equipment_id or index}",
                         False,
-                        "stock record bullet must include id, name, delivery_compliance, and shop_card",
+                        (
+                            "stock record bullet must include id, name, delivery_compliance, "
+                            "shop_card, and inspection_test_plan"
+                        ),
                         PUBLISHED_EQUIPMENT_INVENTORY_VIEW_PATH,
                     )
                 )
@@ -7543,6 +7630,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
         EXISTING_EQUIPMENT_ONBOARDING_PRD_PATH,
         PUBLISHED_EQUIPMENT_DELIVERY_DOC_PATH,
         PUBLISHED_EQUIPMENT_INVENTORY_VIEW_PATH,
+        PUBLISHED_EQUIPMENT_INSPECTION_TEST_PLAN_INDEX_PATH,
         PUBLISHED_EQUIPMENT_SHOP_CARD_INDEX_PATH,
         PUBLISHED_EQUIPMENT_INVENTORY_PATH,
         SOURCE_DISPOSITION_PATH,

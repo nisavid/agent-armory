@@ -7902,6 +7902,7 @@ class TemplateValidationTests(unittest.TestCase):
         "templates/config/example.toml",
         "templates/security-review.md",
         "templates/context-budget-review.md",
+        "templates/equipment-inspection-test-plan.md",
         "templates/equipment-stock-record.toml",
     ]
     template_readmes = [
@@ -7916,6 +7917,7 @@ class TemplateValidationTests(unittest.TestCase):
     root_template_files = [
         "templates/capability-card.md",
         "templates/equipment-shop-card.md",
+        "templates/equipment-inspection-test-plan.md",
         "templates/interface-decision-record.md",
         "templates/security-review.md",
         "templates/context-budget-review.md",
@@ -8024,6 +8026,27 @@ class TemplateValidationTests(unittest.TestCase):
             ## Inspection and evidence
 
             ## Support and lifecycle
+            """,
+        )
+        self.write_template(
+            root,
+            "templates/equipment-inspection-test-plan.md",
+            """\
+            # Equipment Inspection and Test Plan: <name>
+
+            Status: Template
+
+            ## Scope
+
+            ## Subject Under Inspection
+
+            ## Inspection Checklist
+
+            ## Test Plan
+
+            ## Evidence Requirements
+
+            ## Completion Decision
             """,
         )
         self.write_template(
@@ -12278,6 +12301,28 @@ class TemplateValidationTests(unittest.TestCase):
             results,
         )
 
+    def test_validate_templates_requires_equipment_inspection_test_plan_sections(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/equipment-inspection-test-plan.md",
+                "# Equipment Inspection and Test Plan\n\nStatus: Template\n\n## Scope\n",
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:section:templates/equipment-inspection-test-plan.md:Completion Decision",
+                False,
+                "missing section: Completion Decision",
+                "templates/equipment-inspection-test-plan.md",
+            ),
+            results,
+        )
+
     def test_validate_templates_requires_equipment_stock_record_schema_version(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -12344,6 +12389,32 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(textwrap.dedent(content).lstrip(), encoding="utf-8")
 
+    def write_inspection_test_plan(
+        self,
+        root: Path,
+        relative_path: str = "docs/equipment/inspection-test-plans/example.md",
+    ) -> None:
+        plan = root / relative_path
+        plan.parent.mkdir(parents=True, exist_ok=True)
+        plan.write_text(
+            "# Example Equipment Inspection and Test Plan\n\n"
+            "Status: Equipment Inspection and Test Plan\n\n"
+            "## Scope\n\n"
+            "Example stock slice.\n\n"
+            "## Subject Under Inspection\n\n"
+            "Example Equipment.\n\n"
+            "## Inspection Checklist\n\n"
+            "- Inspect the stock record.\n\n"
+            "## Test Plan\n\n"
+            "- Run the validator.\n\n"
+            "## Evidence Requirements\n\n"
+            "- Record validation output.\n\n"
+            "## Completion Decision\n\n"
+            "Completion status: complete\n\n"
+            "Delivery compliance: passed\n",
+            encoding="utf-8",
+        )
+
     def write_routing_docs(
         self,
         root: Path,
@@ -12401,7 +12472,7 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
             ],
         )
 
-    def test_validate_published_equipment_delivery_accepts_valid_stock_record_with_components(self):
+    def test_validate_published_equipment_delivery_rejects_missing_inspection_test_plan(self):
         validator = importlib.import_module("tools.validate_armory_integrity")
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -12438,6 +12509,224 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
             shop_card = root / "docs/equipment/shop-cards/example.md"
             shop_card.parent.mkdir(parents=True, exist_ok=True)
             shop_card.write_text("# Example Equipment\n\nStatus: Equipment Shop Card\n", encoding="utf-8")
+
+            results = validator.validate_published_equipment_delivery(root)
+
+        self.assertIn(
+            CheckResult(
+                "published_equipment_delivery:equipment:example:inspection_test_plan",
+                False,
+                "missing inspection_test_plan",
+                "inventory/equipment.toml",
+            ),
+            results,
+        )
+
+    def test_validate_published_equipment_delivery_rejects_inspection_test_plan_outside_itp_directory(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_inventory(
+                root,
+                """
+                schema_version = "agent-armory.equipment-stock.v1"
+
+                [[equipment]]
+                id = "example"
+                name = "Example Equipment"
+                summary = "Demonstrates stock inventory validation."
+                promotion_state = "published"
+                delivery_compliance = "pending"
+                shop_card = "docs/equipment/shop-cards/example.md"
+                inspection_test_plan = "docs/equipment/example-itp.md"
+                """,
+            )
+            shop_card = root / "docs/equipment/shop-cards/example.md"
+            shop_card.parent.mkdir(parents=True, exist_ok=True)
+            shop_card.write_text("# Example Equipment\n\nStatus: Equipment Shop Card\n", encoding="utf-8")
+            self.write_inspection_test_plan(root, "docs/equipment/example-itp.md")
+
+            results = validator.validate_published_equipment_delivery(root)
+
+        self.assertIn(
+            CheckResult(
+                "published_equipment_delivery:equipment:example:inspection_test_plan",
+                False,
+                "inspection_test_plan must be a Markdown file under docs/equipment/inspection-test-plans/",
+                "inventory/equipment.toml",
+            ),
+            results,
+        )
+
+    def test_validate_published_equipment_delivery_rejects_inspection_test_plan_missing_required_section(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_inventory(
+                root,
+                """
+                schema_version = "agent-armory.equipment-stock.v1"
+
+                [[equipment]]
+                id = "example"
+                name = "Example Equipment"
+                summary = "Demonstrates stock inventory validation."
+                promotion_state = "published"
+                delivery_compliance = "pending"
+                shop_card = "docs/equipment/shop-cards/example.md"
+                inspection_test_plan = "docs/equipment/inspection-test-plans/example.md"
+                """,
+            )
+            shop_card = root / "docs/equipment/shop-cards/example.md"
+            shop_card.parent.mkdir(parents=True, exist_ok=True)
+            shop_card.write_text("# Example Equipment\n\nStatus: Equipment Shop Card\n", encoding="utf-8")
+            plan = root / "docs/equipment/inspection-test-plans/example.md"
+            plan.parent.mkdir(parents=True, exist_ok=True)
+            plan.write_text(
+                "# Example Equipment Inspection and Test Plan\n\n"
+                "Status: Equipment Inspection and Test Plan\n\n"
+                "## Scope\n\nExample stock slice.\n\n"
+                "## Subject Under Inspection\n\nExample Equipment.\n\n"
+                "## Inspection Checklist\n\n- Inspect the stock record.\n\n"
+                "## Evidence Requirements\n\n- Record validation output.\n\n"
+                "## Completion Decision\n\nCompletion status: pending\n",
+                encoding="utf-8",
+            )
+
+            results = validator.validate_published_equipment_delivery(root)
+
+        self.assertIn(
+            CheckResult(
+                "published_equipment_delivery:equipment:example:inspection_test_plan:section:Test Plan",
+                False,
+                "missing section: Test Plan",
+                "docs/equipment/inspection-test-plans/example.md",
+            ),
+            results,
+        )
+
+    def test_validate_published_equipment_delivery_rejects_missing_inspection_test_plan_file(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_inventory(
+                root,
+                """
+                schema_version = "agent-armory.equipment-stock.v1"
+
+                [[equipment]]
+                id = "example"
+                name = "Example Equipment"
+                summary = "Demonstrates stock inventory validation."
+                promotion_state = "published"
+                delivery_compliance = "pending"
+                shop_card = "docs/equipment/shop-cards/example.md"
+                inspection_test_plan = "docs/equipment/inspection-test-plans/missing.md"
+                """,
+            )
+            shop_card = root / "docs/equipment/shop-cards/example.md"
+            shop_card.parent.mkdir(parents=True, exist_ok=True)
+            shop_card.write_text("# Example Equipment\n\nStatus: Equipment Shop Card\n", encoding="utf-8")
+
+            results = validator.validate_published_equipment_delivery(root)
+
+        self.assertIn(
+            CheckResult(
+                "published_equipment_delivery:equipment:example:inspection_test_plan",
+                False,
+                "missing",
+                "docs/equipment/inspection-test-plans/missing.md",
+            ),
+            results,
+        )
+
+    def test_validate_published_equipment_delivery_rejects_passed_delivery_without_completed_itp(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_inventory(
+                root,
+                """
+                schema_version = "agent-armory.equipment-stock.v1"
+
+                [[equipment]]
+                id = "example"
+                name = "Example Equipment"
+                summary = "Demonstrates stock inventory validation."
+                promotion_state = "published"
+                delivery_compliance = "passed"
+                shop_card = "docs/equipment/shop-cards/example.md"
+                inspection_test_plan = "docs/equipment/inspection-test-plans/example.md"
+                """,
+            )
+            shop_card = root / "docs/equipment/shop-cards/example.md"
+            shop_card.parent.mkdir(parents=True, exist_ok=True)
+            shop_card.write_text("# Example Equipment\n\nStatus: Equipment Shop Card\n", encoding="utf-8")
+            plan = root / "docs/equipment/inspection-test-plans/example.md"
+            plan.parent.mkdir(parents=True, exist_ok=True)
+            plan.write_text(
+                "# Example Equipment Inspection and Test Plan\n\n"
+                "Status: Equipment Inspection and Test Plan\n\n"
+                "## Scope\n\nExample stock slice.\n\n"
+                "## Subject Under Inspection\n\nExample Equipment.\n\n"
+                "## Inspection Checklist\n\n- Inspect the stock record.\n\n"
+                "## Test Plan\n\n- Run the validator.\n\n"
+                "## Evidence Requirements\n\n- Record validation output.\n\n"
+                "## Completion Decision\n\nCompletion status: pending\n",
+                encoding="utf-8",
+            )
+
+            results = validator.validate_published_equipment_delivery(root)
+
+        self.assertIn(
+            CheckResult(
+                "published_equipment_delivery:equipment:example:inspection_test_plan:completion",
+                False,
+                "delivery_compliance passed requires completed ITP evidence",
+                "docs/equipment/inspection-test-plans/example.md",
+            ),
+            results,
+        )
+
+    def test_validate_published_equipment_delivery_accepts_valid_stock_record_with_complete_itp(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            runtime = root / "tools/runtime.py"
+            runtime.parent.mkdir(parents=True, exist_ok=True)
+            runtime.write_text("print('runtime')\n", encoding="utf-8")
+            self.write_inventory(
+                root,
+                """
+                schema_version = "agent-armory.equipment-stock.v1"
+
+                [[equipment]]
+                id = "example"
+                name = "Example Equipment"
+                summary = "Demonstrates a valid stock inventory record."
+                promotion_state = "published"
+                delivery_compliance = "passed"
+                shop_card = "docs/equipment/shop-cards/example.md"
+                inspection_test_plan = "docs/equipment/inspection-test-plans/example.md"
+
+                [[equipment.components]]
+                name = "Runtime"
+                kind = "script"
+                status = "required"
+                paths = ["tools/runtime.py"]
+
+                [[equipment.components]]
+                name = "Future plugin"
+                kind = "plugin"
+                status = "planned"
+                paths = []
+                notes = "Future plugin is tracked but not part of the stocked slice."
+                """,
+            )
+            shop_card = root / "docs/equipment/shop-cards/example.md"
+            shop_card.parent.mkdir(parents=True, exist_ok=True)
+            shop_card.write_text("# Example Equipment\n\nStatus: Equipment Shop Card\n", encoding="utf-8")
+            self.write_inspection_test_plan(root)
 
             results = validator.validate_published_equipment_delivery(root)
 
@@ -12977,6 +13266,10 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
                 ## Shop Cards
 
                 Shop cards live in the [shop-card index](shop-cards/README.md).
+
+                ## Inspection and Test Plans
+
+                ITPs live in the [ITP index](inspection-test-plans/README.md).
                 """,
             )
 
@@ -13032,6 +13325,49 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
                 "published_equipment_inventory_view:empty_stock",
                 False,
                 "missing exact empty stock sentence",
+                "docs/equipment/inventory.md",
+            ),
+            results,
+        )
+
+    def test_validate_published_equipment_inventory_view_requires_itp_index_link(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_inventory(
+                root,
+                """
+                schema_version = "agent-armory.equipment-stock.v1"
+                equipment = []
+                """,
+            )
+            self.write_inventory_view(
+                root,
+                """
+                # Stocked Equipment Inventory
+
+                ## Stock Authority
+
+                [`inventory/equipment.toml`](../../inventory/equipment.toml)
+                uses schema `agent-armory.equipment-stock.v1`.
+
+                ## Stock Records
+
+                No stocked equipment is recorded in `inventory/equipment.toml` yet.
+
+                ## Shop Cards
+
+                [Shop-card index](shop-cards/README.md)
+                """,
+            )
+
+            results = validator.validate_published_equipment_inventory_view(root)
+
+        self.assertIn(
+            CheckResult(
+                "published_equipment_inventory_view:inspection_test_plans",
+                False,
+                "missing inspection-test-plan index link",
                 "docs/equipment/inventory.md",
             ),
             results,
@@ -13152,6 +13488,7 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
                 promotion_state = "published"
                 delivery_compliance = "pending"
                 shop_card = "docs/equipment/shop-cards/example.md"
+                inspection_test_plan = "docs/equipment/inspection-test-plans/example.md"
                 """,
             )
             self.write_inventory_view(
@@ -13167,11 +13504,16 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
                 ## Stock Records
 
                 - `example` - Example Equipment - `pending` -
-                  [shop card](../../docs/equipment/shop-cards/example.md)
+                  [shop card](../../docs/equipment/shop-cards/example.md) -
+                  [ITP](../../docs/equipment/inspection-test-plans/example.md)
 
                 ## Shop Cards
 
                 [Shop-card index](shop-cards/README.md)
+
+                ## Inspection and Test Plans
+
+                [ITP index](inspection-test-plans/README.md)
                 """,
             )
 
@@ -13205,6 +13547,7 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
                 promotion_state = "published"
                 delivery_compliance = "pending"
                 shop_card = "docs/equipment/shop-cards/example.md"
+                inspection_test_plan = "docs/equipment/inspection-test-plans/example.md"
                 """,
             )
             self.write_inventory_view(
@@ -13233,7 +13576,59 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
             CheckResult(
                 "published_equipment_inventory_view:record:example",
                 False,
-                "stock record bullet must include id, name, delivery_compliance, and shop_card",
+                "stock record bullet must include id, name, delivery_compliance, shop_card, and inspection_test_plan",
+                "docs/equipment/inventory.md",
+            ),
+            results,
+        )
+
+    def test_validate_published_equipment_inventory_view_rejects_stock_record_bullet_missing_itp(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_inventory(
+                root,
+                """
+                schema_version = "agent-armory.equipment-stock.v1"
+
+                [[equipment]]
+                id = "example"
+                name = "Example Equipment"
+                summary = "Demonstrates stock inventory validation."
+                promotion_state = "published"
+                delivery_compliance = "pending"
+                shop_card = "docs/equipment/shop-cards/example.md"
+                inspection_test_plan = "docs/equipment/inspection-test-plans/example.md"
+                """,
+            )
+            self.write_inventory_view(
+                root,
+                """
+                # Stocked Equipment Inventory
+
+                ## Stock Authority
+
+                [`inventory/equipment.toml`](../../inventory/equipment.toml)
+                uses schema `agent-armory.equipment-stock.v1`.
+
+                ## Stock Records
+
+                - `example` - Example Equipment - `pending` -
+                  [shop card](../../docs/equipment/shop-cards/example.md)
+
+                ## Shop Cards
+
+                [Shop-card index](shop-cards/README.md)
+                """,
+            )
+
+            results = validator.validate_published_equipment_inventory_view(root)
+
+        self.assertIn(
+            CheckResult(
+                "published_equipment_inventory_view:record:example",
+                False,
+                "stock record bullet must include id, name, delivery_compliance, shop_card, and inspection_test_plan",
                 "docs/equipment/inventory.md",
             ),
             results,
@@ -13255,6 +13650,7 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
                 promotion_state = "published"
                 delivery_compliance = "pending"
                 shop_card = "docs/equipment/shop-cards/example.md"
+                inspection_test_plan = "docs/equipment/inspection-test-plans/example.md"
                 """,
             )
             self.write_inventory_view(
@@ -13285,7 +13681,7 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
             CheckResult(
                 "published_equipment_inventory_view:record:example",
                 False,
-                "stock record bullet must include id, name, delivery_compliance, and shop_card",
+                "stock record bullet must include id, name, delivery_compliance, shop_card, and inspection_test_plan",
                 "docs/equipment/inventory.md",
             ),
             results,
@@ -13307,6 +13703,7 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
                 promotion_state = "published"
                 delivery_compliance = "pending"
                 shop_card = "docs/equipment/shop-cards/kit.md"
+                inspection_test_plan = "docs/equipment/inspection-test-plans/kit.md"
                 """,
             )
             self.write_inventory_view(
@@ -13336,7 +13733,10 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
             CheckResult(
                 name="published_equipment_inventory_view:record:kit",
                 ok=False,
-                detail="stock record bullet must include id, name, delivery_compliance, and shop_card",
+                detail=(
+                    "stock record bullet must include id, name, delivery_compliance, "
+                    "shop_card, and inspection_test_plan"
+                ),
                 path="docs/equipment/inventory.md",
             ),
             results,
@@ -13369,8 +13769,10 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
         for relative_path in [
             "docs/equipment-delivery.md",
             "docs/equipment/inventory.md",
+            "docs/equipment/inspection-test-plans/README.md",
             "docs/equipment/shop-cards/README.md",
             "inventory/equipment.toml",
+            "templates/equipment-inspection-test-plan.md",
             "templates/equipment-shop-card.md",
             "templates/equipment-stock-record.toml",
         ]:

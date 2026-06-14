@@ -13,7 +13,8 @@ the stock inventory.
 
 ## Delivery status
 
-State the delivery-compliance status and link to the canonical stock record.
+State the delivery-compliance status and link to the canonical stock record and
+Inspection and Test Plan.
 
 ## Gear-up paths
 
@@ -27,8 +28,9 @@ recorded in `inventory/equipment.toml`.
 
 ## Inspection and evidence
 
-Link to validation, security, documentation, and inspection evidence that a
-Wielder or Outfitter can inspect before relying on the equipment.
+Link to the Inspection and Test Plan, validation, security, documentation, and
+other evidence that a Wielder or Outfitter can inspect before relying on the
+equipment.
 
 ## Support and lifecycle
 
