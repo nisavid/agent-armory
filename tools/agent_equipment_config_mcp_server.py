@@ -41,10 +41,15 @@ def initialize_result(protocol_version: str) -> dict[str, Any]:
 
 
 def handle_request(message: dict[str, Any]) -> dict[str, Any] | None:
+    is_notification = "id" not in message
     request_id = message.get("id")
     method = message.get("method")
     params = message.get("params", {})
 
+    if not isinstance(method, str):
+        if is_notification:
+            return None
+        return jsonrpc_error(request_id, -32600, "JSON-RPC method must be a string")
     if method == "notifications/initialized":
         return None
     if method == "initialize":
@@ -71,8 +76,20 @@ def handle_request(message: dict[str, Any]) -> dict[str, Any] | None:
         if not isinstance(name, str):
             return jsonrpc_error(request_id, -32602, "tools/call params.name must be a string")
         arguments = params.get("arguments", {})
-        return jsonrpc_result(request_id, agent_equipment_config.call_mcp_tool(name, arguments))
+        try:
+            return jsonrpc_result(request_id, agent_equipment_config.call_mcp_tool(name, arguments))
+        except Exception:
+            return jsonrpc_result(
+                request_id,
+                {
+                    "content": [{"type": "text", "text": "internal error while calling Config tool"}],
+                    "isError": True,
+                    "structuredContent": {"tool": name, "error": "internal error while calling Config tool"},
+                },
+            )
 
+    if is_notification:
+        return None
     return jsonrpc_error(request_id, -32601, f"unknown method {method!r}")
 
 
@@ -92,6 +109,7 @@ def serve_stdio(stdin: Any = sys.stdin, stdout: Any = sys.stdout) -> int:
     for line in stdin:
         response = response_for_line(line)
         if response is not None:
+            # lgtm[py/clear-text-logging-sensitive-data] stdout is the MCP protocol channel; Config redacts tool results before this wrapper serializes them.
             stdout.write(json.dumps(response, separators=(",", ":")) + "\n")
             stdout.flush()
     return 0
