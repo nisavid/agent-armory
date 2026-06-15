@@ -58,9 +58,11 @@ foundation and its north star.
 
 ## Agent Equipment Forge
 
-The [stocked-equipment inventory](docs/equipment/inventory.md) is empty for now.
-What exists now is the **Agent Equipment Forge**: the workshop and quality
-system that prepares equipment before it reaches the Armory.
+The **Agent Equipment Forge** is the workshop and quality system that prepares
+equipment before it reaches the Armory. The
+[stocked-equipment inventory](docs/equipment/inventory.md) now records the
+Agent Equipment Config runtime slice as current stock with delivery compliance
+pending.
 
 The Forge helps agents turn a useful idea into something that can be trusted. It
 asks what the equipment is for, which harness it will run in, where each part
@@ -83,26 +85,26 @@ settled. It is useful today if you want to understand how equipment will be
 made, commission new equipment, or evaluate whether a future item was made with
 enough discipline to trust.
 
-[Agent Equipment Config](docs/equipment/agent-equipment-config.md) is available
-as a local runtime slice with fluent CLI operations and MCP parity tools for
-resolving, validating, diffing, onboarding, and migrating shared Config. It
-gives Smiths and Wielders a concrete way to load authored TOML layers, register
-schema fragments, explain policy decisions, and keep secret references
-unresolved. The
+[Agent Equipment Config](docs/equipment/shop-cards/agent-equipment-config.md)
+is stocked as a local runtime slice with fluent CLI operations and MCP parity
+tools for resolving, validating, diffing, onboarding, and migrating shared
+Config. It gives Smiths and Wielders a concrete way to load authored TOML
+layers, register schema fragments, explain policy decisions, and keep secret
+references unresolved. The
 [Config integration guide](docs/equipment/agent-equipment-config-integration.md)
 shows how Smiths, Wielders, and Outfitters connect that runtime to equipment and
 harness surfaces.
 
 The [Markdown inventory view](docs/equipment/inventory.md) shows current Armory
-stock and routes future shop cards. Config's stock record and shop card remain
-delivery-retrofit work, so the current inventory still records no stocked
-equipment.
+stock and routes shop cards. The canonical stock authority is
+[`inventory/equipment.toml`](inventory/equipment.toml), which marks Config
+delivery compliance pending until Codex gear-up validation passes.
 
 > [!IMPORTANT]
 > The examples and blueprints are not published agent equipment. They are
-> construction material for future equipment work. The Config runtime guide is
-> the current published equipment surface; it is not yet a stocked inventory
-> record.
+> construction material for future equipment work. Config is stocked as a
+> runtime slice, not as a plugin, routing skill, secret resolver, or completed
+> gear-up validation path.
 
 ## Why this matters
 

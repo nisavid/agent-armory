@@ -18,6 +18,8 @@ needs to provide local or session configuration for equipment that already
 declares a schema fragment.
 
 Use the
+[Config shop card](shop-cards/agent-equipment-config.md) when deciding whether
+the stocked runtime slice fits a Wielder or Outfitter task. Use the
 [Config integration guide](agent-equipment-config-integration.md) for the
 Smith, Wielder, and Outfitter paths that connect equipment, harness surfaces,
 and the current runtime.

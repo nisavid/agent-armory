@@ -1,2 +1,75 @@
 schema_version = "agent-armory.equipment-stock.v1"
-equipment = []
+
+[[equipment]]
+id = "agent-equipment-config"
+name = "Agent Equipment Config"
+summary = "Shared Config runtime slice for loading TOML policy layers, explaining effective configuration, and exposing CLI and MCP parity."
+promotion_state = "published"
+delivery_compliance = "pending"
+shop_card = "docs/equipment/shop-cards/agent-equipment-config.md"
+inspection_test_plan = "docs/equipment/inspection-test-plans/agent-equipment-config.md"
+closeout_record = "docs/closeout/agent-equipment-config-delivery-retrofit.md"
+notes = "Historical published runtime slice from #23 and #135; delivery compliance remains pending until Codex gear-up validation passes."
+
+[[equipment.components]]
+name = "Config CLI runtime"
+kind = "cli"
+status = "required"
+paths = ["tools/agent_equipment_config.py"]
+
+[[equipment.components]]
+name = "Stdio MCP server wrapper"
+kind = "mcp"
+status = "required"
+paths = [
+  "tools/agent_equipment_config_mcp_server.py",
+  "specs/agent-equipment-config/mcp-tools.md",
+]
+
+[[equipment.components]]
+name = "Runtime and integration docs"
+kind = "docs"
+status = "required"
+paths = [
+  "docs/equipment/agent-equipment-config.md",
+  "docs/equipment/agent-equipment-config-integration.md",
+  "specs/agent-equipment-config/README.md",
+]
+
+[[equipment.components]]
+name = "Example config layers"
+kind = "config"
+status = "optional"
+paths = [
+  "templates/config/agent-equipment-config-example.toml",
+  "templates/config/example.toml",
+  "templates/config/issue-tracker-ops-plain-handoff.toml",
+]
+
+[[equipment.components]]
+name = "Codex plugin"
+kind = "plugin"
+status = "planned"
+paths = []
+notes = "Tracked by #154; not part of the stocked runtime slice yet."
+
+[[equipment.components]]
+name = "Config routing skill"
+kind = "skill"
+status = "planned"
+paths = []
+notes = "Tracked by #155; not part of the stocked runtime slice yet."
+
+[[equipment.components]]
+name = "Codex gear-up validation"
+kind = "validation"
+status = "planned"
+paths = []
+notes = "Tracked by #156; delivery compliance remains pending until it passes."
+
+[[equipment.components]]
+name = "Secret value resolution"
+kind = "provider"
+status = "unavailable"
+paths = []
+notes = "Agent Equipment Config records secret references only; provider-owning surfaces resolve values outside the Config runtime."

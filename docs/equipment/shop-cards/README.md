@@ -1,7 +1,8 @@
 # Equipment Shop Cards
 
-No Equipment Shop Cards are stocked yet.
+Equipment Shop Cards are Wielder and Outfitter-facing catalog surfaces for
+stocked equipment records.
 
-Future cards live in this directory and are referenced from
-`inventory/equipment.toml`. Issue #152 owns the Agent Equipment Config shop-card
-retrofit without adding a Config card in the current inventory slice.
+Cards in this directory are referenced from `inventory/equipment.toml`.
+
+- [Agent Equipment Config](agent-equipment-config.md)

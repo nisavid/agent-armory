@@ -8,7 +8,8 @@ and Agent Equipment Config has its first published runtime slice.
 
 - **Wielding a loadout**: start with the [Armory Vision](vision.md), then the
   [Forge Tour](forge-tour.md). For shared equipment configuration, use
-  [Agent Equipment Config](equipment/agent-equipment-config.md) and the
+  the [Agent Equipment Config shop card](equipment/shop-cards/agent-equipment-config.md),
+  the [runtime guide](equipment/agent-equipment-config.md), and the
   [Config integration guide](equipment/agent-equipment-config-integration.md).
   Check the [stocked-equipment inventory](equipment/inventory.md) before
   treating any surface as current Armory stock.
@@ -97,6 +98,8 @@ agent equipment.
 - [Agent Equipment Config](equipment/agent-equipment-config.md): published
   runtime slice with fluent CLI operations and MCP parity tools for shared
   Config.
+- [Agent Equipment Config shop card](equipment/shop-cards/agent-equipment-config.md):
+  Wielder and Outfitter-facing stock card for the current Config runtime slice.
 - [Config integration guide](equipment/agent-equipment-config-integration.md):
   how Smiths, Wielders, and Outfitters connect equipment to shared Config.
 - [Stocked equipment inventory](equipment/inventory.md): human-facing view of

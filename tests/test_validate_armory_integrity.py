@@ -12548,6 +12548,74 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
             encoding="utf-8",
         )
 
+    def test_live_agent_equipment_config_delivery_retrofit_is_stocked(self):
+        repo_root = Path(__file__).resolve().parents[1]
+        inventory = load_toml(repo_root / "inventory/equipment.toml")
+        records = {
+            record.get("id"): record
+            for record in inventory.get("equipment", [])
+            if isinstance(record, dict)
+        }
+
+        config = records.get("agent-equipment-config")
+
+        self.assertIsNotNone(config)
+        if config is None:
+            return
+
+        self.assertEqual("Agent Equipment Config", config.get("name"))
+        self.assertEqual("published", config.get("promotion_state"))
+        self.assertEqual("pending", config.get("delivery_compliance"))
+        self.assertEqual(
+            "docs/equipment/shop-cards/agent-equipment-config.md",
+            config.get("shop_card"),
+        )
+        self.assertEqual(
+            "docs/equipment/inspection-test-plans/agent-equipment-config.md",
+            config.get("inspection_test_plan"),
+        )
+        self.assertEqual(
+            "docs/closeout/agent-equipment-config-delivery-retrofit.md",
+            config.get("closeout_record"),
+        )
+
+        expected_component_statuses = {
+            "Config CLI runtime": "required",
+            "Stdio MCP server wrapper": "required",
+            "Runtime and integration docs": "required",
+            "Example config layers": "optional",
+            "Codex plugin": "planned",
+            "Config routing skill": "planned",
+            "Codex gear-up validation": "planned",
+            "Secret value resolution": "unavailable",
+        }
+        components = {
+            component.get("name"): component
+            for component in config.get("components", [])
+            if isinstance(component, dict)
+        }
+
+        self.assertEqual(
+            expected_component_statuses,
+            {
+                name: components[name].get("status")
+                for name in expected_component_statuses
+                if name in components
+            },
+        )
+        self.assertEqual(set(expected_component_statuses), set(components))
+
+        for component_name in [
+            "Config CLI runtime",
+            "Stdio MCP server wrapper",
+            "Runtime and integration docs",
+            "Example config layers",
+        ]:
+            paths = components[component_name].get("paths", [])
+            self.assertTrue(paths, component_name)
+            for relative_path in paths:
+                self.assertTrue((repo_root / relative_path).exists(), relative_path)
+
     def test_validate_published_equipment_delivery_accepts_empty_stock_inventory(self):
         validator = importlib.import_module("tools.validate_armory_integrity")
         with tempfile.TemporaryDirectory() as tmpdir:
