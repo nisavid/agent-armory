@@ -747,19 +747,10 @@ class HarnessCapabilityProfileManagerTests(unittest.TestCase):
             self.write_canonical_validation_root(root)
             scout_input = self.write_refresh_scout_input(root)
             payload = json.loads(scout_input.read_text(encoding="utf-8"))
-            profile_path = root / "docs/harness-capabilities/vanilla/codex.toml"
-            profile_path.write_text(
-                profile_path.read_text(encoding="utf-8").replace(
-                    'checked_version = "0.128.0 stable"',
-                    'checked_version = "0.130.0 (rust-v0.130.0)"',
-                    1,
-                ),
-                encoding="utf-8",
-            )
             scout_report = root / "scratch/scout-report.json"
             analysis_report = root / "scratch/analysis-report.json"
 
-            payload["sources"][0]["observed_version"] = "rust-v0.130.0"
+            payload["sources"][0]["observed_version"] = "rust-v0.139.0"
             scout_input.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
             scout = self.run_manager(root, "scout", "--input", str(scout_input), "--write-output", str(scout_report), "--json")
             self.assertEqual(scout.returncode, 0, scout.stderr)

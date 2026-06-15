@@ -160,8 +160,10 @@ projections, tools, or adapters, not to the core Config merge engine.
 
 - The parser, merge behavior, and consumer decision helper are limited to the
   tested portable runtime slice.
-- No hook or approval gate consumes these diagnostics yet; Issue Tracker Ops
-  enforces only its adapter-owned GitHub API mutation preflight.
+- The Codex plugin guard hook consumes per-call `apply_authority` for Config
+  local-write MCP tools. No hook consumes the full runtime diagnostic model yet;
+  Issue Tracker Ops enforces only its adapter-owned GitHub API mutation
+  preflight.
 - No provider-specific secret resolver exists yet.
 - No general source patch or revision writer exists yet.
 - Onboarding output is deterministic JSON; no interactive harness projection

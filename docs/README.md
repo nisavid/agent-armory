@@ -96,10 +96,10 @@ agent equipment.
 - [Templates](../templates/): starting points an agent can copy while making
   future equipment.
 - [Agent Equipment Config](equipment/agent-equipment-config.md): published
-  runtime slice with fluent CLI operations and MCP parity tools for shared
-  Config.
+  runtime slice with fluent CLI operations, MCP parity tools, a Codex plugin,
+  and a routing skill for shared Config.
 - [Agent Equipment Config shop card](equipment/shop-cards/agent-equipment-config.md):
-  Wielder and Outfitter-facing stock card for the current Config runtime slice.
+  Wielder and Outfitter-facing stock card for the current Config surfaces.
 - [Config integration guide](equipment/agent-equipment-config-integration.md):
   how Smiths, Wielders, and Outfitters connect equipment to shared Config.
 - [Stocked equipment inventory](equipment/inventory.md): human-facing view of
@@ -121,7 +121,8 @@ agent equipment.
 - [Security Best Practices Baseline](security/security-best-practices.md):
   durable conclusions from the current executable-surface security refresh.
 - [Agent Equipment Config PRD](prd/agent-equipment-config.md): product
-  requirements for shared Config, including CLI and MCP operation surfaces.
+  requirements for shared Config, including CLI, MCP, and Codex plugin
+  operation surfaces.
 - [Published Equipment Delivery System PRD](prd/published-equipment-delivery.md):
   draft delivery standard for shop cards, inventory, storefronts, Equipment
   ITP, closeout gates, and the Config delivery retrofit.
@@ -137,10 +138,11 @@ The current roadmap points to equipment lines that still have future slices:
 
 - [Agent Equipment Config](../specs/agent-equipment-config/): shared,
   layerable, enforceable configuration across equipment; the
-  [runtime slice](equipment/agent-equipment-config.md) is published, and the
+  [runtime slice](equipment/agent-equipment-config.md), Codex plugin, and
+  routing skill are published, and the
   [integration guide](equipment/agent-equipment-config-integration.md) and
   [PRD](prd/agent-equipment-config.md) record the current user path and
-  required CLI and MCP operation surfaces.
+  required CLI, MCP, and Codex plugin operation surfaces.
 - [Issue Tracker Ops](../specs/issue-tracker-ops/): direct GitHub
   Issues baseline operations and future issue lifecycle equipment. Issue Ops
   is the accepted shorthand.

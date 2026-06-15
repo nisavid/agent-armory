@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3.14 -P \"${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/hooks/config_write_guard.py\"",
+            "statusMessage": "Checking Agent Equipment Config local-write authority"
+          }
+        ]
+      }
+    ]
+  }
+}

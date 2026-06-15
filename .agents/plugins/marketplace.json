@@ -1,0 +1,20 @@
+{
+  "name": "agent-armory",
+  "interface": {
+    "displayName": "Agent Armory"
+  },
+  "plugins": [
+    {
+      "name": "agent-equipment-config",
+      "source": {
+        "source": "local",
+        "path": "./plugins/agent-equipment-config"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

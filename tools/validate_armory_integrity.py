@@ -6,13 +6,17 @@ import ast
 import hashlib
 import importlib.util
 import json
+import os
 import posixpath
 import re
+import selectors
+import subprocess
 import sys
+import time
 import tomllib
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Iterable
+from typing import Callable, Iterable
 from urllib.parse import urlparse
 
 try:
@@ -123,6 +127,11 @@ VALIDATION_INVENTORY = [
         "check": "published_equipment_delivery",
         "boundary": "armory_integrity",
         "relationship": "Top-level stock inventory, shop card, ITP, and closeout-record validation for published equipment delivery claims.",
+    },
+    {
+        "check": "agent_equipment_config_codex_plugin",
+        "boundary": "armory_integrity",
+        "relationship": "Top-level validation for the repo marketplace, Codex plugin manifest, MCP launcher, guard hook, and routing skill for Agent Equipment Config.",
     },
     {
         "check": "published_equipment_inventory_view",
@@ -1576,6 +1585,51 @@ PUBLISHED_EQUIPMENT_INSPECTION_TEST_PLAN_DIR = "docs/equipment/inspection-test-p
 PUBLISHED_EQUIPMENT_EMPTY_STOCK_SENTENCE = (
     "No stocked equipment is recorded in `inventory/equipment.toml` yet."
 )
+AGENT_EQUIPMENT_CONFIG_PLUGIN_ROOT = "plugins/agent-equipment-config"
+AGENT_EQUIPMENT_CONFIG_PLUGIN_MARKETPLACE_PATH = ".agents/plugins/marketplace.json"
+AGENT_EQUIPMENT_CONFIG_PLUGIN_MANIFEST_PATH = (
+    f"{AGENT_EQUIPMENT_CONFIG_PLUGIN_ROOT}/.codex-plugin/plugin.json"
+)
+AGENT_EQUIPMENT_CONFIG_PLUGIN_MCP_PATH = f"{AGENT_EQUIPMENT_CONFIG_PLUGIN_ROOT}/.mcp.json"
+AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOKS_PATH = f"{AGENT_EQUIPMENT_CONFIG_PLUGIN_ROOT}/hooks/hooks.json"
+AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOK_GUARD_PATH = (
+    f"{AGENT_EQUIPMENT_CONFIG_PLUGIN_ROOT}/hooks/config_write_guard.py"
+)
+AGENT_EQUIPMENT_CONFIG_PLUGIN_LAUNCHER_PATH = (
+    f"{AGENT_EQUIPMENT_CONFIG_PLUGIN_ROOT}/mcp/agent_equipment_config_launcher.py"
+)
+AGENT_EQUIPMENT_CONFIG_PLUGIN_SKILL_PATH = (
+    f"{AGENT_EQUIPMENT_CONFIG_PLUGIN_ROOT}/skills/agent-equipment-config/SKILL.md"
+)
+AGENT_EQUIPMENT_CONFIG_PLUGIN_README_PATH = f"{AGENT_EQUIPMENT_CONFIG_PLUGIN_ROOT}/README.md"
+AGENT_EQUIPMENT_CONFIG_STANDALONE_MCP_SERVER_PATH = "tools/agent_equipment_config_mcp_server.py"
+AGENT_EQUIPMENT_CONFIG_PLUGIN_REQUIRED_PATHS = [
+    AGENT_EQUIPMENT_CONFIG_PLUGIN_MARKETPLACE_PATH,
+    AGENT_EQUIPMENT_CONFIG_PLUGIN_MANIFEST_PATH,
+    AGENT_EQUIPMENT_CONFIG_PLUGIN_MCP_PATH,
+    AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOKS_PATH,
+    AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOK_GUARD_PATH,
+    AGENT_EQUIPMENT_CONFIG_PLUGIN_LAUNCHER_PATH,
+    AGENT_EQUIPMENT_CONFIG_PLUGIN_SKILL_PATH,
+    AGENT_EQUIPMENT_CONFIG_PLUGIN_README_PATH,
+    AGENT_EQUIPMENT_CONFIG_STANDALONE_MCP_SERVER_PATH,
+]
+AGENT_EQUIPMENT_CONFIG_PLUGIN_STOCK_COMPONENT_PATHS = {
+    "Codex plugin": frozenset(
+        {
+            AGENT_EQUIPMENT_CONFIG_PLUGIN_MARKETPLACE_PATH,
+            AGENT_EQUIPMENT_CONFIG_PLUGIN_MANIFEST_PATH,
+            AGENT_EQUIPMENT_CONFIG_PLUGIN_MCP_PATH,
+            AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOKS_PATH,
+            AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOK_GUARD_PATH,
+            AGENT_EQUIPMENT_CONFIG_PLUGIN_LAUNCHER_PATH,
+            AGENT_EQUIPMENT_CONFIG_PLUGIN_README_PATH,
+        }
+    ),
+    "Config routing skill": frozenset({AGENT_EQUIPMENT_CONFIG_PLUGIN_SKILL_PATH}),
+}
+AGENT_EQUIPMENT_CONFIG_MCP_WRITE_TOOLS = ["config.apply", "migrate.config_apply"]
+AGENT_EQUIPMENT_CONFIG_GUARD_OUTPUT_LIMIT_BYTES = 8192
 PUBLISHED_EQUIPMENT_PROMOTION_STATES = {
     "example",
     "specified",
@@ -6777,6 +6831,2019 @@ def markdown_record_path_token_present(bullet: str, source_relative: str, value:
     return False
 
 
+def load_json_object(root: Path, relative_path: str) -> tuple[dict | None, CheckResult | None]:
+    ok, detail, path = repo_relative_path_status(root, relative_path, "file")
+    if not ok:
+        return None, CheckResult(
+            f"agent_equipment_config_codex_plugin:path:{relative_path}",
+            False,
+            detail,
+            relative_path,
+        )
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as error:
+        return None, CheckResult(
+            f"agent_equipment_config_codex_plugin:json:{relative_path}",
+            False,
+            f"JSON unreadable: {error}",
+            relative_path,
+        )
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError as error:
+        return None, CheckResult(
+            f"agent_equipment_config_codex_plugin:json:{relative_path}",
+            False,
+            f"JSON invalid: {error.msg}",
+            relative_path,
+        )
+    if not isinstance(data, dict):
+        return None, CheckResult(
+            f"agent_equipment_config_codex_plugin:json:{relative_path}",
+            False,
+            "JSON must be an object",
+            relative_path,
+        )
+    return data, None
+
+
+def plugin_manifest_path_value_is_safe(
+    root: Path, value: object, *, field: str, expected: str, expected_kind: str
+) -> CheckResult | None:
+    if value != expected:
+        return CheckResult(
+            f"agent_equipment_config_codex_plugin:manifest:{field}",
+            False,
+            f"{field} must be {expected}",
+            AGENT_EQUIPMENT_CONFIG_PLUGIN_MANIFEST_PATH,
+        )
+    target = posixpath.normpath(
+        posixpath.join(AGENT_EQUIPMENT_CONFIG_PLUGIN_ROOT, expected.removeprefix("./"))
+    )
+    ok, detail, _path = repo_relative_path_status(root, target, expected_kind)
+    if not ok:
+        return CheckResult(
+            f"agent_equipment_config_codex_plugin:manifest:{field}",
+            False,
+            detail,
+            target,
+        )
+    return None
+
+
+def ast_call_name(node: ast.AST) -> str | None:
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute):
+        parent = ast_call_name(node.value)
+        return f"{parent}.{node.attr}" if parent else node.attr
+    return None
+
+
+def ast_constant_path_assignment(tree: ast.Module, *, target: str, value: str) -> bool:
+    assignments = [
+        node
+        for node in tree.body
+        if isinstance(node, ast.Assign)
+        and any(isinstance(item, ast.Name) and item.id == target for item in node.targets)
+    ]
+    if len(assignments) != 1:
+        return False
+    node = assignments[0]
+    return (
+        isinstance(node.value, ast.Call)
+        and ast_call_name(node.value.func) == "Path"
+        and len(node.value.args) == 1
+        and isinstance(node.value.args[0], ast.Constant)
+        and node.value.args[0].value == value
+    )
+
+
+def ast_function(tree: ast.Module, name: str) -> ast.FunctionDef | None:
+    functions = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == name]
+    if len(functions) != 1:
+        return None
+    return functions[0]
+
+
+def ast_call_names(node: ast.AST) -> list[str]:
+    names: list[str] = []
+    for child in ast.walk(node):
+        if isinstance(child, ast.Call):
+            name = ast_call_name(child.func)
+            if name is not None:
+                names.append(name)
+    return names
+
+
+def ast_name_ids(node: ast.AST) -> set[str]:
+    return {child.id for child in ast.walk(node) if isinstance(child, ast.Name)}
+
+
+def ast_attribute_names(node: ast.AST) -> set[str]:
+    return {child.attr for child in ast.walk(node) if isinstance(child, ast.Attribute)}
+
+
+def ast_string_constants(node: ast.AST) -> set[str]:
+    return {
+        child.value
+        for child in ast.walk(node)
+        if isinstance(child, ast.Constant) and isinstance(child.value, str)
+    }
+
+
+def ast_assigns_name(node: ast.AST, name: str) -> bool:
+    return isinstance(node, ast.Assign) and any(
+        isinstance(target, ast.Name) and target.id == name for target in node.targets
+    )
+
+
+def ast_return_constant(node: ast.AST, value: object) -> bool:
+    return isinstance(node, ast.Return) and isinstance(node.value, ast.Constant) and node.value.value == value
+
+
+def ast_terminal_return_constant(statements: list[ast.stmt], value: object) -> bool:
+    return bool(statements) and ast_return_constant(statements[-1], value)
+
+
+def ast_none_default(node: ast.AST | None) -> bool:
+    return isinstance(node, ast.Constant) and node.value is None
+
+
+def ast_future_annotations(node: ast.AST) -> bool:
+    return (
+        isinstance(node, ast.ImportFrom)
+        and node.module == "__future__"
+        and len(node.names) == 1
+        and node.names[0].name == "annotations"
+        and node.names[0].asname is None
+    )
+
+
+def ast_import_exact(node: ast.AST, module: str) -> bool:
+    return (
+        isinstance(node, ast.Import)
+        and len(node.names) == 1
+        and node.names[0].name == module
+        and node.names[0].asname is None
+    )
+
+
+def ast_from_import_exact(node: ast.AST, module: str, name: str) -> bool:
+    return (
+        isinstance(node, ast.ImportFrom)
+        and node.level == 0
+        and node.module == module
+        and len(node.names) == 1
+        and node.names[0].name == name
+        and node.names[0].asname is None
+    )
+
+
+def ast_system_exit_entrypoint(node: ast.AST, target: str) -> bool:
+    if not isinstance(node, ast.If) or len(node.body) != 1 or node.orelse:
+        return False
+    test = node.test
+    if not (
+        isinstance(test, ast.Compare)
+        and isinstance(test.left, ast.Name)
+        and test.left.id == "__name__"
+        and len(test.ops) == 1
+        and isinstance(test.ops[0], ast.Eq)
+        and len(test.comparators) == 1
+        and isinstance(test.comparators[0], ast.Constant)
+        and test.comparators[0].value == "__main__"
+    ):
+        return False
+    statement = node.body[0]
+    if not isinstance(statement, ast.Raise) or statement.cause is not None:
+        return False
+    call = statement.exc
+    return (
+        isinstance(call, ast.Call)
+        and ast_call_name(call.func) == "SystemExit"
+        and len(call.args) == 1
+        and isinstance(call.args[0], ast.Call)
+        and ast_call_name(call.args[0].func) == target
+        and not call.args[0].args
+        and not call.args[0].keywords
+        and not call.keywords
+    )
+
+
+def ast_main_entrypoint(node: ast.AST) -> bool:
+    return ast_system_exit_entrypoint(node, "main") or ast_system_exit_entrypoint(node, "launch")
+
+
+def ast_launch_entrypoint(node: ast.AST) -> bool:
+    return ast_system_exit_entrypoint(node, "launch")
+
+
+def ast_entrypoint_is_final_after_function(
+    tree: ast.Module,
+    *,
+    function_name: str,
+    entrypoint_predicate: Callable[[ast.AST], bool],
+) -> bool:
+    if not tree.body or not entrypoint_predicate(tree.body[-1]):
+        return False
+    function_indexes = [
+        index
+        for index, node in enumerate(tree.body)
+        if isinstance(node, ast.FunctionDef) and node.name == function_name
+    ]
+    return len(function_indexes) == 1 and function_indexes[0] < len(tree.body) - 1
+
+
+def ast_constant_assignment(tree: ast.Module, *, target: str, value: object) -> bool:
+    assignments = [
+        node
+        for node in tree.body
+        if isinstance(node, ast.Assign)
+        and any(isinstance(item, ast.Name) and item.id == target for item in node.targets)
+    ]
+    if len(assignments) != 1:
+        return False
+    node = assignments[0]
+    return isinstance(node.value, ast.Constant) and node.value.value == value
+
+
+def ast_constant_set_assignment(tree: ast.Module, *, target: str, values: set[str]) -> bool:
+    assignments = [
+        node
+        for node in tree.body
+        if isinstance(node, ast.Assign)
+        and any(isinstance(item, ast.Name) and item.id == target for item in node.targets)
+    ]
+    if len(assignments) != 1:
+        return False
+    assigned = assignments[0].value
+    if not isinstance(assigned, ast.Set):
+        return False
+    return {
+        item.value for item in assigned.elts if isinstance(item, ast.Constant) and isinstance(item.value, str)
+    } == values and len(assigned.elts) == len(values)
+
+
+def ast_calls_are_allowlisted(
+    node: ast.AST, *, allowed_calls: set[str], allowed_method_names: set[str]
+) -> bool:
+    for name in ast_call_names(node):
+        if name in allowed_calls:
+            continue
+        if name.rsplit(".", 1)[-1] in allowed_method_names:
+            continue
+        return False
+    return True
+
+
+def ast_contains_loop(node: ast.AST) -> bool:
+    return any(isinstance(child, (ast.For, ast.AsyncFor, ast.While)) for child in ast.walk(node))
+
+
+def ast_launcher_signature_contract(function: ast.FunctionDef) -> bool:
+    args = function.args
+    return (
+        not args.posonlyargs
+        and [arg.arg for arg in args.args] == ["argv"]
+        and len(args.defaults) == 1
+        and ast_none_default(args.defaults[0])
+        and not args.kwonlyargs
+        and not args.kw_defaults
+        and args.vararg is None
+        and args.kwarg is None
+    )
+
+
+def ast_find_armory_root_signature_contract(function: ast.FunctionDef) -> bool:
+    args = function.args
+    return (
+        not args.posonlyargs
+        and not args.args
+        and not args.defaults
+        and [arg.arg for arg in args.kwonlyargs] == ["env_root", "start_dir"]
+        and len(args.kw_defaults) == 2
+        and all(ast_none_default(default) for default in args.kw_defaults)
+        and args.vararg is None
+        and args.kwarg is None
+    )
+
+
+def ast_os_environ_get_constant(node: ast.AST, value: str) -> bool:
+    return (
+        isinstance(node, ast.Call)
+        and ast_call_name(node.func) == "os.environ.get"
+        and len(node.args) == 1
+        and isinstance(node.args[0], ast.Constant)
+        and node.args[0].value == value
+        and not node.keywords
+    )
+
+
+def ast_root_assignment(node: ast.AST) -> bool:
+    if not ast_assigns_name(node, "root") or not isinstance(node, ast.Assign):
+        return False
+    call = node.value
+    return (
+        isinstance(call, ast.Call)
+        and ast_call_name(call.func) == "find_armory_root"
+        and not call.args
+        and len(call.keywords) == 1
+        and call.keywords[0].arg == "env_root"
+        and ast_os_environ_get_constant(call.keywords[0].value, "AGENT_ARMORY_ROOT")
+    )
+
+
+def ast_sys_argv_tail(node: ast.AST) -> bool:
+    return (
+        isinstance(node, ast.Subscript)
+        and isinstance(node.value, ast.Attribute)
+        and isinstance(node.value.value, ast.Name)
+        and node.value.value.id == "sys"
+        and node.value.attr == "argv"
+        and isinstance(node.slice, ast.Slice)
+        and isinstance(node.slice.lower, ast.Constant)
+        and node.slice.lower.value == 1
+        and node.slice.upper is None
+        and node.slice.step is None
+    )
+
+
+def ast_argv_assignment(node: ast.AST) -> bool:
+    if not ast_assigns_name(node, "_argv") or not isinstance(node, ast.Assign):
+        return False
+    value = node.value
+    return (
+        isinstance(value, ast.IfExp)
+        and isinstance(value.test, ast.Compare)
+        and isinstance(value.test.left, ast.Name)
+        and value.test.left.id == "argv"
+        and len(value.test.ops) == 1
+        and isinstance(value.test.ops[0], ast.IsNot)
+        and len(value.test.comparators) == 1
+        and isinstance(value.test.comparators[0], ast.Constant)
+        and value.test.comparators[0].value is None
+        and isinstance(value.body, ast.Name)
+        and value.body.id == "argv"
+        and ast_sys_argv_tail(value.orelse)
+    )
+
+
+def ast_root_none_guard_returns_2(node: ast.AST) -> bool:
+    if not isinstance(node, ast.If):
+        return False
+    test = node.test
+    if not (
+        isinstance(test, ast.Compare)
+        and isinstance(test.left, ast.Name)
+        and test.left.id == "root"
+        and len(test.ops) == 1
+        and isinstance(test.ops[0], ast.Is)
+        and len(test.comparators) == 1
+        and isinstance(test.comparators[0], ast.Constant)
+        and test.comparators[0].value is None
+    ):
+        return False
+    return not node.orelse and ast_terminal_return_constant(node.body, 2)
+
+
+def ast_server_assignment(node: ast.AST) -> bool:
+    if not ast_assigns_name(node, "server") or not isinstance(node, ast.Assign):
+        return False
+    value = node.value
+    return (
+        isinstance(value, ast.BinOp)
+        and isinstance(value.op, ast.Div)
+        and isinstance(value.left, ast.Name)
+        and value.left.id == "root"
+        and isinstance(value.right, ast.Name)
+        and value.right.id == "REPO_SERVER"
+    )
+
+
+def ast_server_file_guard_returns_2(node: ast.AST) -> bool:
+    if not isinstance(node, ast.If):
+        return False
+    test = node.test
+    if not (
+        isinstance(test, ast.UnaryOp)
+        and isinstance(test.op, ast.Not)
+        and isinstance(test.operand, ast.Call)
+        and ast_call_name(test.operand.func) == "server.is_file"
+        and not test.operand.args
+        and not test.operand.keywords
+    ):
+        return False
+    return not node.orelse and ast_terminal_return_constant(node.body, 2)
+
+
+def ast_expression_call(node: ast.AST, name: str) -> ast.Call | None:
+    if not isinstance(node, ast.Expr) or not isinstance(node.value, ast.Call):
+        return None
+    if ast_call_name(node.value.func) != name:
+        return None
+    return node.value
+
+
+def ast_chdir_root(node: ast.AST) -> bool:
+    call = ast_expression_call(node, "os.chdir")
+    return (
+        call is not None
+        and len(call.args) == 1
+        and isinstance(call.args[0], ast.Name)
+        and call.args[0].id == "root"
+        and not call.keywords
+    )
+
+
+def ast_execvpe_repo_server(node: ast.AST) -> bool:
+    call = ast_expression_call(node, "os.execvpe")
+    if call is None or len(call.args) != 3 or call.keywords:
+        return False
+    command = call.args[0]
+    argv = call.args[1]
+    env = call.args[2]
+    argv_items = argv.elts if isinstance(argv, ast.List) else []
+    if len(argv_items) != 3:
+        return False
+    forwarded_args = argv_items[2]
+    if not (
+        isinstance(forwarded_args, ast.Starred)
+        and isinstance(forwarded_args.value, ast.Name)
+        and forwarded_args.value.id == "_argv"
+    ):
+        return False
+    first_argv = argv_items[0] if argv_items else None
+    second_argv = argv_items[1] if len(argv_items) > 1 else None
+    has_python_command = (
+        isinstance(command, ast.Constant)
+        and command.value == "python3.14"
+        and isinstance(first_argv, ast.Constant)
+        and first_argv.value == "python3.14"
+    )
+    has_server_argv = (
+        isinstance(second_argv, ast.Call)
+        and ast_call_name(second_argv.func) == "str"
+        and len(second_argv.args) == 1
+        and isinstance(second_argv.args[0], ast.Name)
+        and second_argv.args[0].id == "server"
+        and not second_argv.keywords
+    )
+    env_copy = (
+        isinstance(env, ast.Call)
+        and ast_call_name(env.func) == "os.environ.copy"
+        and not env.args
+        and not env.keywords
+    )
+    return has_python_command and has_server_argv and env_copy
+
+
+def ast_execvpe_try_returns_127(node: ast.AST) -> bool:
+    if not isinstance(node, ast.Try) or len(node.body) != 1:
+        return False
+    if not ast_execvpe_repo_server(node.body[0]):
+        return False
+    if len(node.handlers) != 1 or node.orelse or node.finalbody:
+        return False
+    handler = node.handlers[0]
+    return ast_call_name(handler.type) == "OSError" and ast_terminal_return_constant(
+        handler.body,
+        127,
+    )
+
+
+def ast_launch_execs_repo_server(launch: ast.FunctionDef) -> bool:
+    stage = 0
+    has_argv_assignment = False
+    for statement in launch.body:
+        if stage == 0 and ast_argv_assignment(statement):
+            if has_argv_assignment:
+                return False
+            has_argv_assignment = True
+        elif stage == 0 and ast_root_assignment(statement):
+            stage = 1
+        elif stage == 1 and ast_root_none_guard_returns_2(statement):
+            stage = 2
+        elif stage == 2 and ast_server_assignment(statement):
+            stage = 3
+        elif stage == 3 and ast_server_file_guard_returns_2(statement):
+            stage = 4
+        elif stage == 4 and ast_chdir_root(statement):
+            stage = 5
+        elif stage == 5 and ast_execvpe_try_returns_127(statement):
+            stage = 6
+        elif stage == 6 and ast_return_constant(statement, 127):
+            continue
+        else:
+            return False
+    return stage == 6 and has_argv_assignment
+
+
+def ast_function_has_no_decorators(function: ast.FunctionDef) -> bool:
+    return not function.decorator_list
+
+
+def ast_has_armory_marketplace_contract(function: ast.FunctionDef) -> bool:
+    names = ast_name_ids(function)
+    calls = set(ast_call_names(function))
+    constants = ast_string_constants(function)
+    attrs = ast_attribute_names(function)
+    return (
+        "MARKETPLACE_MARKER" in names
+        and "json.loads" in calls
+        and "read_text" in calls
+        and "get" in attrs
+        and {
+            "agent-armory",
+            "agent-equipment-config",
+            "local",
+            "./plugins/agent-equipment-config",
+        }.issubset(constants)
+    )
+
+
+def ast_candidate_is_armory_root_contract(function: ast.FunctionDef) -> bool:
+    names = ast_name_ids(function)
+    calls = ast_call_names(function)
+    return (
+        {"REPO_SERVER", "REPO_MARKER"}.issubset(names)
+        and calls.count("is_file") >= 2
+        and "has_armory_marketplace" in calls
+    )
+
+
+def ast_find_armory_root_contract(function: ast.FunctionDef) -> bool:
+    kwonly_args = {arg.arg for arg in function.args.kwonlyargs}
+    names = ast_name_ids(function)
+    calls = ast_call_names(function)
+    attrs = ast_attribute_names(function)
+    constants = ast_string_constants(function)
+    return (
+        kwonly_args == {"env_root", "start_dir"}
+        and "env_root" in names
+        and "start_dir" in names
+        and "os" not in names
+        and "PWD" not in constants
+        and calls.count("candidate_is_armory_root") >= 2
+        and "Path" in calls
+        and "Path.cwd" in calls
+        and "expanduser" in calls
+        and "resolve" in attrs
+        and "parents" in attrs
+        and any(ast_return_constant(statement, None) for statement in function.body)
+    )
+
+
+def ast_launcher_module_contract(tree: ast.Module) -> bool:
+    allowed_functions = {
+        "has_armory_marketplace",
+        "candidate_is_armory_root",
+        "find_armory_root",
+        "launch",
+    }
+    seen_functions: set[str] = set()
+    launcher_entrypoints = 0
+    for node in tree.body:
+        if ast_launch_entrypoint(node):
+            launcher_entrypoints += 1
+            continue
+        if (
+            ast_future_annotations(node)
+            or ast_import_exact(node, "json")
+            or ast_import_exact(node, "os")
+            or ast_import_exact(node, "sys")
+            or ast_from_import_exact(node, "pathlib", "Path")
+        ):
+            continue
+        if isinstance(node, ast.Assign) and any(
+            isinstance(target, ast.Name)
+            and target.id in {"REPO_SERVER", "REPO_MARKER", "MARKETPLACE_MARKER"}
+            for target in node.targets
+        ):
+            continue
+        if (
+            isinstance(node, ast.FunctionDef)
+            and node.name in allowed_functions
+            and ast_function_has_no_decorators(node)
+        ):
+            seen_functions.add(node.name)
+            continue
+        return False
+    if launcher_entrypoints != 1 or seen_functions != allowed_functions:
+        return False
+    if not ast_entrypoint_is_final_after_function(
+        tree,
+        function_name="launch",
+        entrypoint_predicate=ast_launch_entrypoint,
+    ):
+        return False
+    scoped_calls = {
+        "has_armory_marketplace": (
+            {"any", "isinstance", "json.loads"},
+            {"get", "read_text"},
+        ),
+        "candidate_is_armory_root": (
+            {"has_armory_marketplace"},
+            {"is_file"},
+        ),
+        "find_armory_root": (
+            {"Path", "Path.cwd", "candidate_is_armory_root"},
+            {"expanduser", "resolve"},
+        ),
+        "launch": (
+            {"find_armory_root", "os.chdir", "os.environ.get", "os.execvpe", "print", "str"},
+            {"copy", "is_file"},
+        ),
+    }
+    return all(
+        (function := ast_function(tree, function_name)) is not None
+        and ast_function_has_no_decorators(function)
+        and ast_calls_are_allowlisted(
+            function,
+            allowed_calls=allowed_calls,
+            allowed_method_names=allowed_method_names,
+        )
+        for function_name, (allowed_calls, allowed_method_names) in scoped_calls.items()
+    )
+
+
+def ast_guard_module_contract(tree: ast.Module) -> bool:
+    allowed_functions = {
+        "normalized_tool_name",
+        "is_config_local_write_tool",
+        "tool_input",
+        "deny_decision",
+        "evaluate",
+        "main",
+    }
+    seen_functions: set[str] = set()
+    main_entrypoints = 0
+    for node in tree.body:
+        if ast_system_exit_entrypoint(node, "main"):
+            main_entrypoints += 1
+            continue
+        if (
+            ast_future_annotations(node)
+            or ast_import_exact(node, "json")
+            or ast_import_exact(node, "re")
+            or ast_import_exact(node, "sys")
+            or ast_from_import_exact(node, "typing", "Any")
+        ):
+            continue
+        if isinstance(node, ast.Assign) and any(
+            isinstance(target, ast.Name) and target.id in {"CONFIG_SERVER_NAME", "WRITE_TOOLS"}
+            for target in node.targets
+        ):
+            continue
+        if (
+            isinstance(node, ast.FunctionDef)
+            and node.name in allowed_functions
+            and ast_function_has_no_decorators(node)
+        ):
+            seen_functions.add(node.name)
+            continue
+        return False
+    if main_entrypoints != 1 or seen_functions != allowed_functions:
+        return False
+    if ast_contains_loop(tree):
+        return False
+    scoped_calls = {
+        "normalized_tool_name": (
+            {"re.sub"},
+            {"lower", "strip"},
+        ),
+        "is_config_local_write_tool": (
+            {"len", "normalized_tool_name"},
+            {"split"},
+        ),
+        "tool_input": (
+            {"isinstance"},
+            {"get"},
+        ),
+        "deny_decision": (
+            set(),
+            set(),
+        ),
+        "evaluate": (
+            {"deny_decision", "is_config_local_write_tool", "isinstance", "tool_input"},
+            {"get"},
+        ),
+        "main": (
+            {"deny_decision", "evaluate", "isinstance", "json.dumps", "json.load", "print"},
+            set(),
+        ),
+    }
+    return (
+        ast_constant_assignment(tree, target="CONFIG_SERVER_NAME", value="agent_equipment_config")
+        and ast_constant_set_assignment(tree, target="WRITE_TOOLS", values={"config_apply", "migrate_config_apply"})
+        and all(
+            (function := ast_function(tree, function_name)) is not None
+            and ast_function_has_no_decorators(function)
+            and ast_calls_are_allowlisted(
+                function,
+                allowed_calls=allowed_calls,
+                allowed_method_names=allowed_method_names,
+            )
+            for function_name, (allowed_calls, allowed_method_names) in scoped_calls.items()
+        )
+    )
+
+
+def launcher_discovery_probe_result(root: Path, launcher_path: Path) -> CheckResult | None:
+    script = """
+import importlib.util
+import json
+import sys
+from pathlib import Path
+
+launcher_path = Path(sys.argv[1])
+root = Path(sys.argv[2]).resolve()
+spec = importlib.util.spec_from_file_location("agent_equipment_config_launcher_probe", launcher_path)
+if spec is None or spec.loader is None:
+    raise RuntimeError(f"cannot import {launcher_path}")
+module = importlib.util.module_from_spec(spec)
+sys.dont_write_bytecode = True
+spec.loader.exec_module(module)
+plugin_mcp_dir = root / "plugins/agent-equipment-config/mcp"
+
+def render(value):
+    if value is None:
+        return None
+    return str(Path(value).resolve())
+
+print(
+    json.dumps(
+        {
+            "env": render(module.find_armory_root(env_root=str(root), start_dir=root.parent)),
+            "cwd": render(module.find_armory_root(env_root=None, start_dir=plugin_mcp_dir)),
+            "fallback": render(
+                module.find_armory_root(env_root=str(root / "missing"), start_dir=plugin_mcp_dir)
+            ),
+        },
+        sort_keys=True,
+    )
+)
+"""
+    try:
+        completed = subprocess.run(
+            [sys.executable, "-P", "-c", script, str(launcher_path), str(root)],
+            cwd=root,
+            env={},
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        return CheckResult(
+            "agent_equipment_config_codex_plugin:launcher:content",
+            False,
+            f"launcher discovery probe failed: {error}",
+            AGENT_EQUIPMENT_CONFIG_PLUGIN_LAUNCHER_PATH,
+        )
+    if completed.returncode != 0:
+        detail = (completed.stderr or completed.stdout).strip()
+        return CheckResult(
+            "agent_equipment_config_codex_plugin:launcher:content",
+            False,
+            f"launcher discovery probe exited {completed.returncode}: {detail}",
+            AGENT_EQUIPMENT_CONFIG_PLUGIN_LAUNCHER_PATH,
+        )
+    try:
+        observed = json.loads(completed.stdout)
+    except json.JSONDecodeError as error:
+        return CheckResult(
+            "agent_equipment_config_codex_plugin:launcher:content",
+            False,
+            f"launcher discovery probe returned invalid JSON: {error.msg}",
+            AGENT_EQUIPMENT_CONFIG_PLUGIN_LAUNCHER_PATH,
+        )
+    expected_root = str(root.resolve())
+    if observed != {"cwd": expected_root, "env": expected_root, "fallback": expected_root}:
+        return CheckResult(
+            "agent_equipment_config_codex_plugin:launcher:content",
+            False,
+            f"launcher discovery probe resolved unexpected roots: {observed!r}",
+            AGENT_EQUIPMENT_CONFIG_PLUGIN_LAUNCHER_PATH,
+        )
+    return None
+
+
+def launcher_behavior_results(root: Path) -> list[CheckResult]:
+    ok, detail, launcher_path = repo_relative_path_status(
+        root, AGENT_EQUIPMENT_CONFIG_PLUGIN_LAUNCHER_PATH, "file"
+    )
+    if not ok:
+        return [
+            CheckResult(
+                "agent_equipment_config_codex_plugin:launcher:content",
+                False,
+                detail,
+                AGENT_EQUIPMENT_CONFIG_PLUGIN_LAUNCHER_PATH,
+            )
+        ]
+
+    try:
+        text = launcher_path.read_text(encoding="utf-8")
+        tree = ast.parse(text, filename=str(launcher_path))
+    except (OSError, UnicodeDecodeError, SyntaxError) as error:
+        return [
+            CheckResult(
+                "agent_equipment_config_codex_plugin:launcher:content",
+                False,
+                f"launcher must be readable Python: {error}",
+                AGENT_EQUIPMENT_CONFIG_PLUGIN_LAUNCHER_PATH,
+            )
+        ]
+
+    has_armory_marketplace = ast_function(tree, "has_armory_marketplace")
+    candidate_is_armory_root = ast_function(tree, "candidate_is_armory_root")
+    find_armory_root = ast_function(tree, "find_armory_root")
+    launch = ast_function(tree, "launch")
+    valid = (
+        ast_launcher_module_contract(tree)
+        and ast_constant_path_assignment(
+            tree,
+            target="REPO_SERVER",
+            value="tools/agent_equipment_config_mcp_server.py",
+        )
+        and ast_constant_path_assignment(
+            tree,
+            target="MARKETPLACE_MARKER",
+            value=".agents/plugins/marketplace.json",
+        )
+        and ast_constant_path_assignment(
+            tree,
+            target="REPO_MARKER",
+            value="inventory/equipment.toml",
+        )
+        and has_armory_marketplace is not None
+        and ast_has_armory_marketplace_contract(has_armory_marketplace)
+        and candidate_is_armory_root is not None
+        and ast_candidate_is_armory_root_contract(candidate_is_armory_root)
+        and find_armory_root is not None
+        and ast_find_armory_root_signature_contract(find_armory_root)
+        and ast_find_armory_root_contract(find_armory_root)
+        and launch is not None
+        and ast_launcher_signature_contract(launch)
+        and ast_launch_execs_repo_server(launch)
+    )
+    if valid:
+        probe_error = launcher_discovery_probe_result(root, launcher_path)
+        if probe_error is None:
+            return []
+        return [probe_error]
+    return [
+        CheckResult(
+            "agent_equipment_config_codex_plugin:launcher:content",
+            False,
+            "launcher must resolve the Armory checkout and exec the standalone MCP server",
+            AGENT_EQUIPMENT_CONFIG_PLUGIN_LAUNCHER_PATH,
+        )
+    ]
+
+
+def run_bounded_subprocess(
+    args: list[str],
+    *,
+    input_bytes: bytes,
+    cwd: Path,
+    env: dict[str, str],
+    timeout: float,
+    output_limit_bytes: int,
+) -> tuple[int, bytes, bytes, bool]:
+    process = subprocess.Popen(
+        args,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=cwd,
+        env=env,
+    )
+    selector = selectors.DefaultSelector()
+    try:
+        if process.stdin is not None:
+            try:
+                process.stdin.write(input_bytes)
+                process.stdin.close()
+            except BrokenPipeError:
+                process.stdin.close()
+
+        buffers = {"stdout": bytearray(), "stderr": bytearray()}
+        for name, stream in (("stdout", process.stdout), ("stderr", process.stderr)):
+            if stream is None:
+                continue
+            os.set_blocking(stream.fileno(), False)
+            selector.register(stream, selectors.EVENT_READ, name)
+
+        exceeded = False
+        deadline = time.monotonic() + timeout
+        while selector.get_map():
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                process.kill()
+                raise subprocess.TimeoutExpired(args, timeout)
+            for key, _events in selector.select(remaining):
+                chunk = key.fileobj.read(4096)
+                if not chunk:
+                    selector.unregister(key.fileobj)
+                    key.fileobj.close()
+                    continue
+                buffer = buffers[key.data]
+                available = output_limit_bytes + 1 - len(buffer)
+                if available > 0:
+                    buffer.extend(chunk[:available])
+                if len(chunk) > available or len(buffer) > output_limit_bytes:
+                    exceeded = True
+                    process.kill()
+                    for entry in list(selector.get_map().values()):
+                        try:
+                            selector.unregister(entry.fileobj)
+                        except KeyError:
+                            pass
+                        entry.fileobj.close()
+                    break
+
+        try:
+            returncode = process.wait(timeout=max(0.0, deadline - time.monotonic()))
+        except subprocess.TimeoutExpired:
+            process.kill()
+            raise
+        return returncode, bytes(buffers["stdout"]), bytes(buffers["stderr"]), exceeded
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.wait()
+        selector.close()
+        for stream in (process.stdin, process.stdout, process.stderr):
+            if stream is not None and not stream.closed:
+                stream.close()
+
+
+def config_guard_behavior_results(root: Path) -> list[CheckResult]:
+    ok, detail, guard_path = repo_relative_path_status(
+        root, AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOK_GUARD_PATH, "file"
+    )
+    if not ok:
+        return [
+            CheckResult(
+                "agent_equipment_config_codex_plugin:hooks:guard:behavior",
+                False,
+                detail,
+                AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOK_GUARD_PATH,
+            )
+        ]
+    try:
+        guard_path = guard_path.resolve(strict=True)
+        root_path = root.resolve(strict=True)
+        guard_text = guard_path.read_text(encoding="utf-8")
+        guard_tree = ast.parse(guard_text, filename=str(guard_path))
+    except OSError as error:
+        return [
+            CheckResult(
+                "agent_equipment_config_codex_plugin:hooks:guard:behavior",
+                False,
+                f"guard behavior path resolution failed: {error}",
+                AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOK_GUARD_PATH,
+            )
+        ]
+    except (UnicodeDecodeError, SyntaxError) as error:
+        return [
+            CheckResult(
+                "agent_equipment_config_codex_plugin:hooks:guard:content",
+                False,
+                f"guard must be readable Python: {error}",
+                AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOK_GUARD_PATH,
+            )
+        ]
+    if not ast_guard_module_contract(guard_tree):
+        return [
+            CheckResult(
+                "agent_equipment_config_codex_plugin:hooks:guard:content",
+                False,
+                "guard must contain only reviewed imports, constants, functions, and entrypoint",
+                AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOK_GUARD_PATH,
+            )
+        ]
+
+    cases: list[tuple[str, str, bool]] = [
+        (
+            "config_apply_denies_missing_authority",
+            json.dumps(
+                {
+                    "hook_event_name": "PreToolUse",
+                    "tool_name": "mcp__agent_equipment_config__config.apply",
+                    "tool_input": {"plan": {"actions": []}},
+                },
+                separators=(",", ":"),
+            ),
+            True,
+        ),
+        (
+            "config_apply_allows_nested_operator_authority",
+            json.dumps(
+                {
+                    "hook_event_name": "PreToolUse",
+                    "tool_name": "mcp__agent_equipment_config__config.apply",
+                    "tool_input": {"arguments": {"apply_authority": "operator"}},
+                },
+                separators=(",", ":"),
+            ),
+            False,
+        ),
+        (
+            "config_apply_allows_top_level_operator_authority",
+            json.dumps(
+                {
+                    "hook_event_name": "PreToolUse",
+                    "tool_name": "mcp__agent_equipment_config__config.apply",
+                    "tool_input": {"apply_authority": "operator"},
+                },
+                separators=(",", ":"),
+            ),
+            False,
+        ),
+        (
+            "config_apply_denies_nested_non_operator_authority",
+            json.dumps(
+                {
+                    "hook_event_name": "PreToolUse",
+                    "tool_name": "mcp__agent_equipment_config__config.apply",
+                    "tool_input": {"arguments": {"apply_authority": "user"}},
+                },
+                separators=(",", ":"),
+            ),
+            True,
+        ),
+        (
+            "config_apply_denies_hyphenated_server_missing_authority",
+            json.dumps(
+                {
+                    "hook_event_name": "PreToolUse",
+                    "tool_name": "mcp__agent-equipment-config__config.apply",
+                    "tool_input": {"plan": {"actions": []}},
+                },
+                separators=(",", ":"),
+            ),
+            True,
+        ),
+        (
+            "config_apply_allows_hyphenated_server_nested_operator_authority",
+            json.dumps(
+                {
+                    "hook_event_name": "PreToolUse",
+                    "tool_name": "mcp__agent-equipment-config__config.apply",
+                    "tool_input": {"arguments": {"apply_authority": "operator"}},
+                },
+                separators=(",", ":"),
+            ),
+            False,
+        ),
+        (
+            "config_apply_allows_hyphenated_server_top_level_operator_authority",
+            json.dumps(
+                {
+                    "hook_event_name": "PreToolUse",
+                    "tool_name": "mcp__agent-equipment-config__config.apply",
+                    "tool_input": {"apply_authority": "operator"},
+                },
+                separators=(",", ":"),
+            ),
+            False,
+        ),
+        (
+            "config_apply_denies_hyphenated_server_nested_non_operator_authority",
+            json.dumps(
+                {
+                    "hook_event_name": "PreToolUse",
+                    "tool_name": "mcp__agent-equipment-config__config.apply",
+                    "tool_input": {"arguments": {"apply_authority": "user"}},
+                },
+                separators=(",", ":"),
+            ),
+            True,
+        ),
+        (
+            "config_apply_denies_sanitized_missing_authority",
+            json.dumps(
+                {
+                    "hook_event_name": "PreToolUse",
+                    "tool_name": "mcp__agent_equipment_config__config_apply",
+                    "tool_input": {"plan": {"actions": []}},
+                },
+                separators=(",", ":"),
+            ),
+            True,
+        ),
+        (
+            "config_apply_denies_non_operator_authority",
+            json.dumps(
+                {
+                    "hook_event_name": "PreToolUse",
+                    "tool_name": "mcp__agent_equipment_config__config_apply",
+                    "tool_input": {"apply_authority": "user"},
+                },
+                separators=(",", ":"),
+            ),
+            True,
+        ),
+        (
+            "migrate_config_apply_denies_missing_authority",
+            json.dumps(
+                {
+                    "hook_event_name": "PreToolUse",
+                    "tool_name": "mcp__agent_equipment_config__migrate.config_apply",
+                    "tool_input": {"layer_paths": []},
+                },
+                separators=(",", ":"),
+            ),
+            True,
+        ),
+        (
+            "migrate_config_apply_allows_nested_operator_authority",
+            json.dumps(
+                {
+                    "hook_event_name": "PreToolUse",
+                    "tool_name": "mcp__agent_equipment_config__migrate.config_apply",
+                    "tool_input": {"arguments": {"apply_authority": "operator"}},
+                },
+                separators=(",", ":"),
+            ),
+            False,
+        ),
+        (
+            "migrate_config_apply_allows_top_level_operator_authority",
+            json.dumps(
+                {
+                    "hook_event_name": "PreToolUse",
+                    "tool_name": "mcp__agent_equipment_config__migrate.config_apply",
+                    "tool_input": {"apply_authority": "operator"},
+                },
+                separators=(",", ":"),
+            ),
+            False,
+        ),
+        (
+            "migrate_config_apply_denies_nested_non_operator_authority",
+            json.dumps(
+                {
+                    "hook_event_name": "PreToolUse",
+                    "tool_name": "mcp__agent_equipment_config__migrate.config_apply",
+                    "tool_input": {"arguments": {"apply_authority": ""}},
+                },
+                separators=(",", ":"),
+            ),
+            True,
+        ),
+        (
+            "migrate_config_apply_denies_hyphenated_server_missing_authority",
+            json.dumps(
+                {
+                    "hook_event_name": "PreToolUse",
+                    "tool_name": "mcp__agent-equipment-config__migrate.config_apply",
+                    "tool_input": {"layer_paths": []},
+                },
+                separators=(",", ":"),
+            ),
+            True,
+        ),
+        (
+            "migrate_config_apply_allows_hyphenated_server_nested_operator_authority",
+            json.dumps(
+                {
+                    "hook_event_name": "PreToolUse",
+                    "tool_name": "mcp__agent-equipment-config__migrate.config_apply",
+                    "tool_input": {"arguments": {"apply_authority": "operator"}},
+                },
+                separators=(",", ":"),
+            ),
+            False,
+        ),
+        (
+            "migrate_config_apply_allows_hyphenated_server_top_level_operator_authority",
+            json.dumps(
+                {
+                    "hook_event_name": "PreToolUse",
+                    "tool_name": "mcp__agent-equipment-config__migrate.config_apply",
+                    "tool_input": {"apply_authority": "operator"},
+                },
+                separators=(",", ":"),
+            ),
+            False,
+        ),
+        (
+            "migrate_config_apply_denies_hyphenated_server_nested_non_operator_authority",
+            json.dumps(
+                {
+                    "hook_event_name": "PreToolUse",
+                    "tool_name": "mcp__agent-equipment-config__migrate.config_apply",
+                    "tool_input": {"arguments": {"apply_authority": ""}},
+                },
+                separators=(",", ":"),
+            ),
+            True,
+        ),
+        (
+            "migrate_config_apply_denies_sanitized_missing_authority",
+            json.dumps(
+                {
+                    "hook_event_name": "PreToolUse",
+                    "tool_name": "mcp__agent_equipment_config__migrate_config_apply",
+                    "tool_input": {"layer_paths": []},
+                },
+                separators=(",", ":"),
+            ),
+            True,
+        ),
+        (
+            "migrate_config_apply_denies_non_operator_authority",
+            json.dumps(
+                {
+                    "hook_event_name": "PreToolUse",
+                    "tool_name": "mcp__agent_equipment_config__migrate_config_apply",
+                    "tool_input": {"apply_authority": ""},
+                },
+                separators=(",", ":"),
+            ),
+            True,
+        ),
+        (
+            "ignore_unrelated_tool",
+            json.dumps(
+                {
+                    "hook_event_name": "PreToolUse",
+                    "tool_name": "mcp__other_server__config.apply",
+                    "tool_input": {},
+                },
+                separators=(",", ":"),
+            ),
+            False,
+        ),
+        ("malformed_json_denies", "{", True),
+        ("non_object_json_denies", "[]", True),
+    ]
+
+    results: list[CheckResult] = []
+    for case_name, payload, expects_denial in cases:
+        try:
+            returncode, stdout_bytes, stderr_bytes, output_exceeded = run_bounded_subprocess(
+                [sys.executable, "-P", str(guard_path)],
+                input_bytes=payload.encode("utf-8"),
+                cwd=root_path,
+                env={},
+                timeout=5,
+                output_limit_bytes=AGENT_EQUIPMENT_CONFIG_GUARD_OUTPUT_LIMIT_BYTES,
+            )
+        except (OSError, subprocess.TimeoutExpired) as error:
+            results.append(
+                CheckResult(
+                    f"agent_equipment_config_codex_plugin:hooks:guard:behavior:{case_name}",
+                    False,
+                    f"guard behavior check failed: {error}",
+                    AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOK_GUARD_PATH,
+                )
+            )
+            continue
+        stdout = stdout_bytes.decode("utf-8", errors="replace")
+        stderr = stderr_bytes.decode("utf-8", errors="replace")
+        if output_exceeded:
+            results.append(
+                CheckResult(
+                    f"agent_equipment_config_codex_plugin:hooks:guard:behavior:{case_name}",
+                    False,
+                    "guard output exceeded validation limit",
+                    AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOK_GUARD_PATH,
+                )
+            )
+            continue
+        if returncode != 0:
+            stderr_text = stderr.strip()
+            detail = f"guard exited {returncode}" + (f": {stderr_text}" if stderr_text else "")
+            results.append(
+                CheckResult(
+                    f"agent_equipment_config_codex_plugin:hooks:guard:behavior:{case_name}",
+                    False,
+                    detail,
+                    AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOK_GUARD_PATH,
+                )
+            )
+            continue
+        if stderr.strip():
+            results.append(
+                CheckResult(
+                    f"agent_equipment_config_codex_plugin:hooks:guard:behavior:{case_name}",
+                    False,
+                    "guard must not write to stderr during validation",
+                    AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOK_GUARD_PATH,
+                )
+            )
+            continue
+        stdout = stdout.strip()
+        if not expects_denial:
+            if stdout:
+                results.append(
+                    CheckResult(
+                        f"agent_equipment_config_codex_plugin:hooks:guard:behavior:{case_name}",
+                        False,
+                        "guard must not emit a deny decision for allowed or unrelated calls",
+                        AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOK_GUARD_PATH,
+                    )
+                )
+            continue
+        if not stdout:
+            results.append(
+                CheckResult(
+                    f"agent_equipment_config_codex_plugin:hooks:guard:behavior:{case_name}",
+                    False,
+                    "guard must deny Config local-write calls missing operator authority",
+                    AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOK_GUARD_PATH,
+                )
+            )
+            continue
+        try:
+            decision = json.loads(stdout)
+        except json.JSONDecodeError as error:
+            results.append(
+                CheckResult(
+                    f"agent_equipment_config_codex_plugin:hooks:guard:behavior:{case_name}",
+                    False,
+                    f"guard emitted invalid JSON: {error.msg}",
+                    AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOK_GUARD_PATH,
+                )
+            )
+            continue
+        hook_output = decision.get("hookSpecificOutput") if isinstance(decision, dict) else None
+        if not isinstance(hook_output, dict) or hook_output.get("permissionDecision") != "deny":
+            results.append(
+                CheckResult(
+                    f"agent_equipment_config_codex_plugin:hooks:guard:behavior:{case_name}",
+                    False,
+                    "guard denial must use hookSpecificOutput.permissionDecision = deny",
+                    AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOK_GUARD_PATH,
+                )
+            )
+        reason = hook_output.get("permissionDecisionReason") if isinstance(hook_output, dict) else None
+        if not isinstance(reason, str):
+            results.append(
+                CheckResult(
+                    f"agent_equipment_config_codex_plugin:hooks:guard:behavior:{case_name}",
+                    False,
+                    "guard denial reason must be a string",
+                    AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOK_GUARD_PATH,
+                )
+            )
+        elif case_name not in {"malformed_json_denies", "non_object_json_denies"} and 'apply_authority = "operator"' not in reason:
+            results.append(
+                CheckResult(
+                    f"agent_equipment_config_codex_plugin:hooks:guard:behavior:{case_name}",
+                    False,
+                    "guard denial reason must name apply_authority = \"operator\"",
+                    AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOK_GUARD_PATH,
+                )
+            )
+    return results
+
+
+def validate_agent_equipment_config_codex_plugin_inventory(root: Path) -> list[CheckResult]:
+    ok, detail, inventory_path = repo_relative_path_status(root, PUBLISHED_EQUIPMENT_INVENTORY_PATH, "file")
+    if not ok:
+        return [
+            CheckResult(
+                "agent_equipment_config_codex_plugin:inventory:path",
+                False,
+                detail,
+                PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+            )
+        ]
+    try:
+        inventory = load_toml(inventory_path)
+    except tomllib.TOMLDecodeError as error:
+        return [
+            CheckResult(
+                "agent_equipment_config_codex_plugin:inventory:toml",
+                False,
+                f"TOML invalid: {error.msg}",
+                PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+            )
+        ]
+    equipment_records = inventory.get("equipment")
+    if not isinstance(equipment_records, list):
+        return [
+            CheckResult(
+                "agent_equipment_config_codex_plugin:inventory:equipment",
+                False,
+                "equipment must be a list",
+                PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+            )
+        ]
+    matches = [
+        record
+        for record in equipment_records
+        if isinstance(record, dict) and record.get("id") == "agent-equipment-config"
+    ]
+    if len(matches) != 1:
+        return [
+            CheckResult(
+                "agent_equipment_config_codex_plugin:inventory:agent-equipment-config",
+                False,
+                "inventory must contain exactly one agent-equipment-config record",
+                PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+            )
+        ]
+    components = matches[0].get("components")
+    if not isinstance(components, list):
+        return [
+            CheckResult(
+                "agent_equipment_config_codex_plugin:inventory:components",
+                False,
+                "agent-equipment-config components must be a list",
+                PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+            )
+        ]
+    results: list[CheckResult] = []
+    for component_name, expected_paths in AGENT_EQUIPMENT_CONFIG_PLUGIN_STOCK_COMPONENT_PATHS.items():
+        component_key = component_name.lower().replace(" ", "_")
+        component_matches = [
+            component
+            for component in components
+            if isinstance(component, dict) and component.get("name") == component_name
+        ]
+        component = component_matches[0] if len(component_matches) == 1 else None
+        component_paths = component.get("paths") if isinstance(component, dict) else None
+        path_set = {path for path in component_paths if isinstance(path, str)} if isinstance(component_paths, list) else set()
+        missing_paths = sorted(expected_paths - path_set)
+        if (
+            len(component_matches) != 1
+            or not isinstance(component, dict)
+            or component.get("status") != "required"
+            or missing_paths
+        ):
+            missing_detail = f"; missing paths: {', '.join(missing_paths)}" if missing_paths else ""
+            results.append(
+                CheckResult(
+                    f"agent_equipment_config_codex_plugin:inventory:{component_key}",
+                    False,
+                    f"{component_name} must be required and list stocked paths{missing_detail}",
+                    PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+                )
+            )
+    return results
+
+
+def validate_agent_equipment_config_codex_plugin(root: Path) -> list[CheckResult]:
+    results: list[CheckResult] = []
+    for required_path in AGENT_EQUIPMENT_CONFIG_PLUGIN_REQUIRED_PATHS:
+        ok, detail, _path = repo_relative_path_status(root, required_path, "file")
+        if not ok:
+            results.append(
+                CheckResult(
+                    f"agent_equipment_config_codex_plugin:path:{required_path}",
+                    False,
+                    detail,
+                    required_path,
+                )
+            )
+    results.extend(validate_agent_equipment_config_codex_plugin_inventory(root))
+
+    marketplace, error = load_json_object(root, AGENT_EQUIPMENT_CONFIG_PLUGIN_MARKETPLACE_PATH)
+    if error is not None:
+        results.append(error)
+    elif marketplace is not None:
+        if marketplace.get("name") != "agent-armory":
+            results.append(
+                CheckResult(
+                    "agent_equipment_config_codex_plugin:marketplace:name",
+                    False,
+                    "marketplace name must be agent-armory",
+                    AGENT_EQUIPMENT_CONFIG_PLUGIN_MARKETPLACE_PATH,
+                )
+            )
+        plugins = marketplace.get("plugins")
+        plugin_records = plugins if isinstance(plugins, list) else []
+        matching_records = [
+            item
+            for item in plugin_records
+            if isinstance(item, dict) and item.get("name") == "agent-equipment-config"
+        ]
+        record = matching_records[0] if len(matching_records) == 1 else None
+        if len(matching_records) != 1:
+            results.append(
+                CheckResult(
+                    "agent_equipment_config_codex_plugin:marketplace:agent-equipment-config",
+                    False,
+                    "marketplace must contain exactly one agent-equipment-config plugin",
+                    AGENT_EQUIPMENT_CONFIG_PLUGIN_MARKETPLACE_PATH,
+                )
+            )
+        else:
+            source = record.get("source")
+            source_path = source.get("path") if isinstance(source, dict) else None
+            source_type = source.get("source") if isinstance(source, dict) else None
+            if source_type != "local" or source_path != "./plugins/agent-equipment-config":
+                results.append(
+                    CheckResult(
+                        "agent_equipment_config_codex_plugin:marketplace:source",
+                        False,
+                        "marketplace source must be local ./plugins/agent-equipment-config",
+                        AGENT_EQUIPMENT_CONFIG_PLUGIN_MARKETPLACE_PATH,
+                    )
+                )
+            elif invalid_repo_relative_target(source_path.removeprefix("./")):
+                results.append(
+                    CheckResult(
+                        "agent_equipment_config_codex_plugin:marketplace:source",
+                        False,
+                        "marketplace source path invalid",
+                        AGENT_EQUIPMENT_CONFIG_PLUGIN_MARKETPLACE_PATH,
+                    )
+                )
+            policy = record.get("policy")
+            installation = policy.get("installation") if isinstance(policy, dict) else None
+            authentication = policy.get("authentication") if isinstance(policy, dict) else None
+            if installation != "AVAILABLE":
+                results.append(
+                    CheckResult(
+                        "agent_equipment_config_codex_plugin:marketplace:policy:installation",
+                        False,
+                        "policy.installation must be AVAILABLE",
+                        AGENT_EQUIPMENT_CONFIG_PLUGIN_MARKETPLACE_PATH,
+                    )
+                )
+            if authentication != "ON_INSTALL":
+                results.append(
+                    CheckResult(
+                        "agent_equipment_config_codex_plugin:marketplace:policy:authentication",
+                        False,
+                        "policy.authentication must be ON_INSTALL",
+                        AGENT_EQUIPMENT_CONFIG_PLUGIN_MARKETPLACE_PATH,
+                    )
+                )
+            if not isinstance(record.get("category"), str) or not record.get("category").strip():
+                results.append(
+                    CheckResult(
+                        "agent_equipment_config_codex_plugin:marketplace:category",
+                        False,
+                        "category must be present",
+                        AGENT_EQUIPMENT_CONFIG_PLUGIN_MARKETPLACE_PATH,
+                    )
+                )
+
+    manifest, error = load_json_object(root, AGENT_EQUIPMENT_CONFIG_PLUGIN_MANIFEST_PATH)
+    if error is not None:
+        results.append(error)
+    elif manifest is not None:
+        required_manifest_values = {
+            "name": "agent-equipment-config",
+            "version": "0.1.0",
+            "description": None,
+            "repository": "https://github.com/nisavid/agent-armory",
+        }
+        allowed_manifest_keys = {
+            "name",
+            "version",
+            "description",
+            "repository",
+            "author",
+            "homepage",
+            "license",
+            "keywords",
+            "skills",
+            "mcpServers",
+            "hooks",
+            "interface",
+        }
+        unexpected_manifest_keys = sorted(set(manifest) - allowed_manifest_keys)
+        if unexpected_manifest_keys:
+            results.append(
+                CheckResult(
+                    "agent_equipment_config_codex_plugin:manifest:unexpected",
+                    False,
+                    f"unexpected manifest keys: {', '.join(unexpected_manifest_keys)}",
+                    AGENT_EQUIPMENT_CONFIG_PLUGIN_MANIFEST_PATH,
+                )
+            )
+        for field, expected in required_manifest_values.items():
+            value = manifest.get(field)
+            if expected is None:
+                valid = isinstance(value, str) and bool(value.strip())
+                detail = f"{field} must be a non-empty string"
+            else:
+                valid = value == expected
+                detail = f"{field} must be {expected}"
+            if not valid:
+                results.append(
+                    CheckResult(
+                        f"agent_equipment_config_codex_plugin:manifest:{field}",
+                        False,
+                        detail,
+                        AGENT_EQUIPMENT_CONFIG_PLUGIN_MANIFEST_PATH,
+                    )
+                )
+        author = manifest.get("author")
+        if not (
+            isinstance(author, dict)
+            and isinstance(author.get("name"), str)
+            and author.get("name", "").strip()
+            and isinstance(author.get("url"), str)
+            and author.get("url", "").strip()
+        ):
+            results.append(
+                CheckResult(
+                    "agent_equipment_config_codex_plugin:manifest:author",
+                    False,
+                    "author.name and author.url must be non-empty strings",
+                    AGENT_EQUIPMENT_CONFIG_PLUGIN_MANIFEST_PATH,
+                )
+            )
+        for field, expected, kind in [
+            ("skills", "./skills/", "directory"),
+            ("mcpServers", "./.mcp.json", "file"),
+            ("hooks", "./hooks/hooks.json", "file"),
+        ]:
+            path_result = plugin_manifest_path_value_is_safe(
+                root,
+                manifest.get(field),
+                field=field,
+                expected=expected,
+                expected_kind=kind,
+            )
+            if path_result is not None:
+                results.append(path_result)
+        interface = manifest.get("interface")
+        if not isinstance(interface, dict):
+            results.append(
+                CheckResult(
+                    "agent_equipment_config_codex_plugin:manifest:interface",
+                    False,
+                    "interface must be an object",
+                    AGENT_EQUIPMENT_CONFIG_PLUGIN_MANIFEST_PATH,
+                )
+            )
+        else:
+            for field in [
+                "displayName",
+                "developerName",
+                "shortDescription",
+                "longDescription",
+                "category",
+                "websiteURL",
+                "privacyPolicyURL",
+                "termsOfServiceURL",
+            ]:
+                value = interface.get(field)
+                if not isinstance(value, str) or not value.strip():
+                    results.append(
+                        CheckResult(
+                            f"agent_equipment_config_codex_plugin:manifest:interface:{field}",
+                            False,
+                            f"interface.{field} must be a non-empty string",
+                            AGENT_EQUIPMENT_CONFIG_PLUGIN_MANIFEST_PATH,
+                        )
+                    )
+            allowed_interface_keys = {
+                "displayName",
+                "shortDescription",
+                "longDescription",
+                "developerName",
+                "category",
+                "capabilities",
+                "websiteURL",
+                "privacyPolicyURL",
+                "termsOfServiceURL",
+                "defaultPrompt",
+                "brandColor",
+                "composerIcon",
+                "logo",
+                "screenshots",
+            }
+            unexpected_interface_keys = sorted(set(interface) - allowed_interface_keys)
+            if unexpected_interface_keys:
+                results.append(
+                    CheckResult(
+                        "agent_equipment_config_codex_plugin:manifest:interface:unexpected",
+                        False,
+                        f"unexpected interface keys: {', '.join(unexpected_interface_keys)}",
+                        AGENT_EQUIPMENT_CONFIG_PLUGIN_MANIFEST_PATH,
+                    )
+                )
+
+    mcp_config, error = load_json_object(root, AGENT_EQUIPMENT_CONFIG_PLUGIN_MCP_PATH)
+    if error is not None:
+        results.append(error)
+    elif mcp_config is not None:
+        wrapper_keys = sorted(set(mcp_config) & {"mcpServers", "mcp_servers"})
+        if wrapper_keys:
+            results.append(
+                CheckResult(
+                    "agent_equipment_config_codex_plugin:mcp:wrapper",
+                    False,
+                    f".mcp.json must use a direct MCP server map, not wrapper keys: {', '.join(wrapper_keys)}",
+                    AGENT_EQUIPMENT_CONFIG_PLUGIN_MCP_PATH,
+                )
+            )
+        mcp_servers = mcp_config
+        if not isinstance(mcp_servers, dict):
+            results.append(
+                CheckResult(
+                    "agent_equipment_config_codex_plugin:mcp:server_map",
+                    False,
+                    ".mcp.json must be a direct MCP server map object",
+                    AGENT_EQUIPMENT_CONFIG_PLUGIN_MCP_PATH,
+                )
+            )
+            server = None
+        else:
+            unexpected_servers = sorted(set(mcp_servers) - {"agent-equipment-config"})
+            if unexpected_servers:
+                results.append(
+                    CheckResult(
+                        "agent_equipment_config_codex_plugin:mcp:server_map:unexpected",
+                        False,
+                        f"unexpected MCP server entries: {', '.join(unexpected_servers)}",
+                        AGENT_EQUIPMENT_CONFIG_PLUGIN_MCP_PATH,
+                    )
+                )
+            server = mcp_servers.get("agent-equipment-config")
+        if not isinstance(server, dict):
+            results.append(
+                CheckResult(
+                    "agent_equipment_config_codex_plugin:mcp:agent-equipment-config",
+                    False,
+                    "missing agent-equipment-config MCP server",
+                    AGENT_EQUIPMENT_CONFIG_PLUGIN_MCP_PATH,
+                )
+            )
+        else:
+            allowed_server_keys = {
+                "cwd",
+                "command",
+                "args",
+                "env_vars",
+                "default_tools_approval_mode",
+                "tools",
+            }
+            unexpected_server_keys = sorted(set(server) - allowed_server_keys)
+            if unexpected_server_keys:
+                results.append(
+                    CheckResult(
+                        "agent_equipment_config_codex_plugin:mcp:agent-equipment-config:unexpected",
+                        False,
+                        f"unexpected MCP server keys: {', '.join(unexpected_server_keys)}",
+                        AGENT_EQUIPMENT_CONFIG_PLUGIN_MCP_PATH,
+                    )
+                )
+            if server.get("cwd") != ".":
+                results.append(
+                    CheckResult(
+                        "agent_equipment_config_codex_plugin:mcp:agent-equipment-config:cwd",
+                        False,
+                        "cwd must be . so the launcher resolves from the installed plugin root",
+                        AGENT_EQUIPMENT_CONFIG_PLUGIN_MCP_PATH,
+                    )
+                )
+            if server.get("command") != "python3.14":
+                results.append(
+                    CheckResult(
+                        "agent_equipment_config_codex_plugin:mcp:agent-equipment-config:command",
+                        False,
+                        "command must be python3.14",
+                        AGENT_EQUIPMENT_CONFIG_PLUGIN_MCP_PATH,
+                    )
+                )
+            if server.get("args") != ["./mcp/agent_equipment_config_launcher.py"]:
+                results.append(
+                    CheckResult(
+                        "agent_equipment_config_codex_plugin:mcp:agent-equipment-config:args",
+                        False,
+                        "args must launch ./mcp/agent_equipment_config_launcher.py",
+                        AGENT_EQUIPMENT_CONFIG_PLUGIN_MCP_PATH,
+                    )
+                )
+            env_vars = server.get("env_vars")
+            if env_vars != ["AGENT_ARMORY_ROOT"]:
+                results.append(
+                    CheckResult(
+                        "agent_equipment_config_codex_plugin:mcp:agent-equipment-config:env_vars",
+                        False,
+                        "env_vars must pass through only AGENT_ARMORY_ROOT",
+                        AGENT_EQUIPMENT_CONFIG_PLUGIN_MCP_PATH,
+                    )
+                )
+            if server.get("default_tools_approval_mode") != "prompt":
+                results.append(
+                    CheckResult(
+                        "agent_equipment_config_codex_plugin:mcp:agent-equipment-config:default_tools_approval_mode",
+                        False,
+                        "default_tools_approval_mode must be prompt",
+                        AGENT_EQUIPMENT_CONFIG_PLUGIN_MCP_PATH,
+                    )
+                )
+            tools = server.get("tools")
+            if isinstance(tools, dict):
+                unexpected_tools = sorted(set(tools) - set(AGENT_EQUIPMENT_CONFIG_MCP_WRITE_TOOLS))
+                if unexpected_tools:
+                    results.append(
+                        CheckResult(
+                            "agent_equipment_config_codex_plugin:mcp:agent-equipment-config:tools:unexpected",
+                            False,
+                            f"unexpected MCP tool approval overrides: {', '.join(unexpected_tools)}",
+                            AGENT_EQUIPMENT_CONFIG_PLUGIN_MCP_PATH,
+                        )
+                    )
+            for tool_name in AGENT_EQUIPMENT_CONFIG_MCP_WRITE_TOOLS:
+                tool_config = tools.get(tool_name) if isinstance(tools, dict) else None
+                if not isinstance(tool_config, dict) or tool_config.get("approval_mode") != "prompt":
+                    results.append(
+                        CheckResult(
+                            f"agent_equipment_config_codex_plugin:mcp:agent-equipment-config:tools:{tool_name}",
+                            False,
+                            "local-write tool approval_mode must be prompt",
+                            AGENT_EQUIPMENT_CONFIG_PLUGIN_MCP_PATH,
+                        )
+                    )
+
+    hooks, error = load_json_object(root, AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOKS_PATH)
+    if error is not None:
+        results.append(error)
+    elif hooks is not None:
+        unexpected_hooks_keys = sorted(set(hooks) - {"hooks"})
+        if unexpected_hooks_keys:
+            results.append(
+                CheckResult(
+                    "agent_equipment_config_codex_plugin:hooks:unexpected",
+                    False,
+                    f"unexpected hooks.json top-level keys: {', '.join(unexpected_hooks_keys)}",
+                    AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOKS_PATH,
+                )
+            )
+        hooks_root = hooks.get("hooks")
+        if isinstance(hooks_root, dict) and set(hooks_root) != {"PreToolUse"}:
+            results.append(
+                CheckResult(
+                    "agent_equipment_config_codex_plugin:hooks:events",
+                    False,
+                    "hooks.json must define only the reviewed PreToolUse hook event",
+                    AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOKS_PATH,
+                )
+            )
+        pre_tool_use = hooks_root.get("PreToolUse") if isinstance(hooks_root, dict) else None
+        hook_record = None
+        if isinstance(pre_tool_use, list) and pre_tool_use:
+            if len(pre_tool_use) != 1:
+                results.append(
+                    CheckResult(
+                        "agent_equipment_config_codex_plugin:hooks:PreToolUse:groups",
+                        False,
+                        "PreToolUse must contain exactly one reviewed hook group",
+                        AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOKS_PATH,
+                    )
+                )
+            first = pre_tool_use[0]
+            if isinstance(first, dict):
+                unexpected_group_keys = sorted(set(first) - {"matcher", "hooks"})
+                if unexpected_group_keys:
+                    results.append(
+                        CheckResult(
+                            "agent_equipment_config_codex_plugin:hooks:PreToolUse:group_keys",
+                            False,
+                            f"unexpected PreToolUse group keys: {', '.join(unexpected_group_keys)}",
+                            AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOKS_PATH,
+                        )
+                    )
+                hook_entries = first.get("hooks")
+                if isinstance(hook_entries, list) and hook_entries:
+                    if len(hook_entries) != 1:
+                        results.append(
+                            CheckResult(
+                                "agent_equipment_config_codex_plugin:hooks:PreToolUse:extra_hooks",
+                                False,
+                                "PreToolUse must contain exactly one reviewed command hook",
+                                AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOKS_PATH,
+                            )
+                    )
+                    if isinstance(hook_entries[0], dict):
+                        hook_record = hook_entries[0]
+                if first.get("matcher") != "mcp__.*":
+                    results.append(
+                        CheckResult(
+                            "agent_equipment_config_codex_plugin:hooks:PreToolUse:matcher",
+                            False,
+                            "PreToolUse matcher must be mcp__.*",
+                            AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOKS_PATH,
+                        )
+                    )
+        if hook_record is None:
+            results.append(
+                CheckResult(
+                    "agent_equipment_config_codex_plugin:hooks:PreToolUse",
+                    False,
+                    "missing PreToolUse command hook",
+                    AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOKS_PATH,
+                )
+            )
+        else:
+            if hook_record.get("type") != "command":
+                results.append(
+                    CheckResult(
+                        "agent_equipment_config_codex_plugin:hooks:PreToolUse:type",
+                        False,
+                        "PreToolUse hook type must be command",
+                        AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOKS_PATH,
+                    )
+                )
+            expected_command = (
+                'python3.14 -P "${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/hooks/config_write_guard.py"'
+            )
+            if hook_record.get("command") != expected_command:
+                results.append(
+                    CheckResult(
+                        "agent_equipment_config_codex_plugin:hooks:PreToolUse:command",
+                        False,
+                        f"PreToolUse hook must use {expected_command}",
+                        AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOKS_PATH,
+                    )
+                )
+            unexpected_hook_keys = sorted(set(hook_record) - {"type", "command", "statusMessage"})
+            if unexpected_hook_keys:
+                results.append(
+                    CheckResult(
+                        "agent_equipment_config_codex_plugin:hooks:PreToolUse:hook_keys",
+                        False,
+                        f"unexpected PreToolUse hook keys: {', '.join(unexpected_hook_keys)}",
+                        AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOKS_PATH,
+                    )
+                )
+
+    results.extend(launcher_behavior_results(root))
+
+    results.extend(config_guard_behavior_results(root))
+
+    skill_ok, _detail, skill_path = repo_relative_path_status(
+        root, AGENT_EQUIPMENT_CONFIG_PLUGIN_SKILL_PATH, "file"
+    )
+    if skill_ok:
+        skill_text = skill_path.read_text(encoding="utf-8")
+        visible_skill_text = markdown_visible_text(skill_text)
+        frontmatter = markdown_frontmatter(skill_text)
+        required_skill_terms = [
+            "docs/equipment/agent-equipment-config.md",
+            "docs/equipment/agent-equipment-config-integration.md",
+            "specs/agent-equipment-config/mcp-tools.md",
+        ]
+        if frontmatter.get("name") != "agent-equipment-config":
+            results.append(
+                CheckResult(
+                    "agent_equipment_config_codex_plugin:skill:name",
+                    False,
+                    "skill name must be agent-equipment-config",
+                    AGENT_EQUIPMENT_CONFIG_PLUGIN_SKILL_PATH,
+                )
+            )
+        if not frontmatter.get("description"):
+            results.append(
+                CheckResult(
+                    "agent_equipment_config_codex_plugin:skill:description",
+                    False,
+                    "skill description must be present",
+                    AGENT_EQUIPMENT_CONFIG_PLUGIN_SKILL_PATH,
+                )
+            )
+        for term in required_skill_terms:
+            if term not in visible_skill_text:
+                results.append(
+                    CheckResult(
+                        f"agent_equipment_config_codex_plugin:skill:route:{term}",
+                        False,
+                        "missing routing target",
+                        AGENT_EQUIPMENT_CONFIG_PLUGIN_SKILL_PATH,
+                    )
+                )
+                continue
+            target_ok, target_detail, _target_path = repo_relative_path_status(root, term, "file")
+            if not target_ok:
+                results.append(
+                    CheckResult(
+                        f"agent_equipment_config_codex_plugin:skill:route:{term}:target",
+                        False,
+                        target_detail,
+                        term,
+                    )
+                )
+
+    if results:
+        return results
+    return [
+        CheckResult(
+            "agent_equipment_config_codex_plugin:contract",
+            True,
+            "valid Codex plugin bundle",
+            AGENT_EQUIPMENT_CONFIG_PLUGIN_ROOT,
+        )
+    ]
+
+
 def validate_published_equipment_inventory_view(root: Path) -> list[CheckResult]:
     view_ok, view_detail, view_path = repo_relative_path_status(
         root, PUBLISHED_EQUIPMENT_INVENTORY_VIEW_PATH, "file"
@@ -7806,6 +9873,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
         *validate_harness_catalog(root),
         *validate_templates(root),
         *validate_published_equipment_delivery(root),
+        *validate_agent_equipment_config_codex_plugin(root),
         *validate_published_equipment_inventory_view(root),
         *validate_published_equipment_inventory_routing(root),
         *validate_examples(root),

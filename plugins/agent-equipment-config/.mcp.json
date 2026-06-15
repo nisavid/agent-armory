@@ -1,0 +1,21 @@
+{
+  "agent-equipment-config": {
+    "cwd": ".",
+    "command": "python3.14",
+    "args": [
+      "./mcp/agent_equipment_config_launcher.py"
+    ],
+    "env_vars": [
+      "AGENT_ARMORY_ROOT"
+    ],
+    "default_tools_approval_mode": "prompt",
+    "tools": {
+      "config.apply": {
+        "approval_mode": "prompt"
+      },
+      "migrate.config_apply": {
+        "approval_mode": "prompt"
+      }
+    }
+  }
+}

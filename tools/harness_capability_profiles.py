@@ -1955,7 +1955,7 @@ def render_summary(profiles: list[dict[str, Any]]) -> str:
         "",
         f"Checked at: {checked_at_summary}.",
         "",
-        "The profiles preserve source-backed version, component, scheduling, limitation, uncertainty, refresh-note, local-observation, claim-triage, and enrichment fields. No local harness binaries, workspace configs, gateways, plugin installs, cloud agents, or automation state were inspected during the issue #45 profile refresh.",
+        "The profiles preserve source-backed version, component, scheduling, limitation, uncertainty, refresh-note, local-observation, claim-triage, and enrichment fields. Local observations are recorded per profile; workspace configs, gateways, plugin installs, cloud agents, and automation state remain profile-scoped evidence surfaces.",
         "",
         "Documentation indexes can lag behind current release evidence. For version anchors, prefer GitHub releases or official changelogs over generated indexes or secondary metadata.",
         "",

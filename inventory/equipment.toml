@@ -49,16 +49,22 @@ paths = [
 [[equipment.components]]
 name = "Codex plugin"
 kind = "plugin"
-status = "planned"
-paths = []
-notes = "Tracked by #154; not part of the stocked runtime slice yet."
+status = "required"
+paths = [
+  ".agents/plugins/marketplace.json",
+  "plugins/agent-equipment-config/.codex-plugin/plugin.json",
+  "plugins/agent-equipment-config/.mcp.json",
+  "plugins/agent-equipment-config/mcp/agent_equipment_config_launcher.py",
+  "plugins/agent-equipment-config/hooks/hooks.json",
+  "plugins/agent-equipment-config/hooks/config_write_guard.py",
+  "plugins/agent-equipment-config/README.md",
+]
 
 [[equipment.components]]
 name = "Config routing skill"
 kind = "skill"
-status = "planned"
-paths = []
-notes = "Tracked by #155; not part of the stocked runtime slice yet."
+status = "required"
+paths = ["plugins/agent-equipment-config/skills/agent-equipment-config/SKILL.md"]
 
 [[equipment.components]]
 name = "Codex gear-up validation"

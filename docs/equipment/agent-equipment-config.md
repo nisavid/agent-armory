@@ -38,6 +38,7 @@ and the current runtime.
 - Plain Issue Tracker Ops handoff:
   `templates/config/issue-tracker-ops-plain-handoff.toml`
 - Generic config template: `templates/config/example.toml`
+- Codex plugin: `plugins/agent-equipment-config/`
 
 The runtime reads local files supplied by the caller and emits JSON to stdout.
 It does not discover files by itself, resolve secret values, mutate external
@@ -78,6 +79,16 @@ Config product surface. Use the CLI commands above when the harness cannot
 launch an MCP server or when command output is the clearer review artifact.
 Local-write MCP tools still require their per-call authority and host approval
 friction before a mutation-capable call.
+
+The Codex plugin in `plugins/agent-equipment-config/` equips a thin routing
+skill, plugin-local MCP launcher, and `PreToolUse` guard hook. Its launcher
+finds this repository's standalone MCP server only from `AGENT_ARMORY_ROOT`
+when the server marker (`tools/agent_equipment_config_mcp_server.py`),
+inventory marker (`inventory/equipment.toml`), and repo marketplace marker
+(`.agents/plugins/marketplace.json`) are present, then runs the server from the
+resolved checkout root. Its guard hook denies Config local-write MCP calls that
+omit `apply_authority = "operator"`; Codex hook trust and MCP approval prompts
+remain host policy surfaces.
 
 ## Load contract
 

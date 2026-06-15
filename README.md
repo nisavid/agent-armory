@@ -86,14 +86,14 @@ made, commission new equipment, or evaluate whether a future item was made with
 enough discipline to trust.
 
 [Agent Equipment Config](docs/equipment/shop-cards/agent-equipment-config.md)
-is stocked as a local runtime slice with fluent CLI operations and MCP parity
-tools for resolving, validating, diffing, onboarding, and migrating shared
-Config. It gives Smiths and Wielders a concrete way to load authored TOML
-layers, register schema fragments, explain policy decisions, and keep secret
-references unresolved. The
+is stocked as a local runtime slice with fluent CLI operations, MCP parity
+tools, a Codex plugin, and a routing skill for resolving, validating, diffing,
+onboarding, and migrating shared Config. It gives Smiths and Wielders a
+concrete way to load authored TOML layers, register schema fragments, explain
+policy decisions, and keep secret references unresolved. The
 [Config integration guide](docs/equipment/agent-equipment-config-integration.md)
-shows how Smiths, Wielders, and Outfitters connect that runtime to equipment and
-harness surfaces.
+shows how Smiths, Wielders, and Outfitters connect those surfaces to equipment
+and harness workflows.
 
 The [Markdown inventory view](docs/equipment/inventory.md) shows current Armory
 stock and routes shop cards. The canonical stock authority is
@@ -103,8 +103,8 @@ delivery compliance pending until Codex gear-up validation passes.
 > [!IMPORTANT]
 > The examples and blueprints are not published agent equipment. They are
 > construction material for future equipment work. Config is stocked as a
-> runtime slice, not as a plugin, routing skill, secret resolver, or completed
-> gear-up validation path.
+> runtime slice, Codex plugin, and routing skill, not as a secret resolver or
+> completed gear-up validation path.
 
 ## Why this matters
 
@@ -147,8 +147,8 @@ The current roadmap includes these equipment lines:
 
 - [Agent Equipment Config](specs/agent-equipment-config/), for shared,
   layerable, enforceable configuration across equipment. Its
-  [published runtime slice](docs/equipment/agent-equipment-config.md) is
-  available now, the
+  [published runtime slice](docs/equipment/agent-equipment-config.md), Codex
+  plugin, and routing skill are available now, the
   [integration guide](docs/equipment/agent-equipment-config-integration.md)
   covers current integration paths, and follow-up cards carry enforcement,
   secret-reference provider, and broader authoring boundaries.
