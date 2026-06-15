@@ -109,8 +109,8 @@ def serve_stdio(stdin: Any = sys.stdin, stdout: Any = sys.stdout) -> int:
     for line in stdin:
         response = response_for_line(line)
         if response is not None:
-            # lgtm[py/clear-text-logging-sensitive-data] stdout is the MCP protocol channel; Config redacts tool results before this wrapper serializes them.
-            stdout.write(json.dumps(response, separators=(",", ":")) + "\n")
+            # stdout is the MCP protocol channel; Config redacts tool results before this wrapper serializes them.
+            stdout.write(json.dumps(response, separators=(",", ":")) + "\n")  # lgtm[py/clear-text-logging-sensitive-data]
             stdout.flush()
     return 0
 
