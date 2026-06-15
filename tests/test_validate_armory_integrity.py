@@ -14907,7 +14907,8 @@ class SpecValidationTests(unittest.TestCase):
 
                 MCP parity tools expose typed input schemas, output schemas,
                 read/write classification, auth source, side effects, approval
-                requirements, mutation gates, and failure modes.
+                requirements, mutation gates, and failure modes. The current
+                stdio MCP server is tools/agent_equipment_config_mcp_server.py.
 
                 ## Operation map
 
@@ -14983,6 +14984,7 @@ class SpecValidationTests(unittest.TestCase):
                 ## Deterministic checks
 
                 python3.14 -m unittest tests.test_agent_equipment_config
+                python3.14 -m unittest tests.test_agent_equipment_config_mcp_server
                 Validation covers absent config equipment, partial config,
                 conflicting layers, semantic validators, schema migration,
                 session overrides, local-only overrides, committed config,
@@ -15302,6 +15304,9 @@ class SpecValidationTests(unittest.TestCase):
             "plain equipment-specific config handoff",
             "secret references",
             "consumer action decision",
+            "stdio MCP server",
+            "agent_equipment_config_mcp_server.py",
+            "python3.14 -m unittest tests.test_agent_equipment_config_mcp_server",
             "progressive fallback",
             "Issue Tracker Ops",
             "config propose",

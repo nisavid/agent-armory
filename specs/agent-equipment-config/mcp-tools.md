@@ -7,9 +7,12 @@ Agent Equipment Config exposes MCP parity for the safe read, authoring,
 onboarding, migration-preview, and apply CLI/runtime slices through typed tool
 definitions and structured tool-call results. The importable runtime source is
 `tools.agent_equipment_config.mcp_tool_definitions()` for tool metadata and
-`tools.agent_equipment_config.call_mcp_tool()` for direct tool dispatch. A
-harness-specific MCP server can wrap those functions without redefining Config
-behavior.
+`tools.agent_equipment_config.call_mcp_tool()` for direct tool dispatch. The
+current standalone server is the stdio JSON-RPC wrapper at
+`tools/agent_equipment_config_mcp_server.py`. It wraps those functions without
+redefining Config behavior and intentionally does not add HTTP, SSE, network
+access, secret resolution, config discovery, or a separate Config product
+surface.
 
 This spec describes desired behavior and the current runtime boundary. It does not implement Agent Equipment.
 
@@ -30,6 +33,22 @@ paired CLI operation, read/write classification, and the redacted runtime
 result.
 The direct dispatcher rejects arguments outside the published input schema and
 requires every schema-required argument before invoking runtime behavior.
+
+## Standalone stdio server
+
+Launch the standalone server with:
+
+```bash
+python3.14 tools/agent_equipment_config_mcp_server.py
+```
+
+The server reads newline-delimited JSON-RPC messages from stdin and writes only
+newline-delimited JSON-RPC responses to stdout. It supports MCP protocol
+versions `2025-11-25` and `2025-06-18`, advertises the static tool list, and
+handles `initialize`, `notifications/initialized`, `tools/list`, and
+`tools/call`. Tool-call failures are returned as MCP result objects with
+`isError: true`; malformed JSON-RPC envelopes are transport errors. Diagnostics
+must not be written to stdout.
 
 ## Operation map
 

@@ -8,7 +8,7 @@ standard-library runtime engine slice for fluent Config CLI operations,
 effective-config, config-diff, diagnostics, plain handoff promotion, authority
 checks, projection classification, reusable consumer action decisions,
 read-only authoring proposal and plan-generation surfaces, and MCP parity tool
-definitions. It does not implement Agent Equipment beyond this runtime slice,
+definitions plus the standalone stdio MCP server wrapper. It does not implement Agent Equipment beyond this runtime slice,
 publish assets, resolve secrets, mutate external systems, implement harness
 controls, or expose general edit surfaces beyond reviewed plan artifacts.
 Source mutation is limited to explicit migration apply and reviewed
@@ -19,6 +19,8 @@ plan-artifact apply for eligible local TOML sources.
 This validation plan covers the v0 contract and current portable runtime slice.
 The current bundle change validates repository shape, contract coverage, and the
 standard-library engine behaviors covered by `tests.test_agent_equipment_config`.
+The standalone MCP server wrapper is covered by
+`tests.test_agent_equipment_config_mcp_server`.
 It also treats `docs/prd/agent-equipment-config.md` as the product source for
 required CLI/MCP operation-surface parity.
 
@@ -26,6 +28,7 @@ required CLI/MCP operation-surface parity.
 
 - `python3.14 -m unittest tests.test_validate_armory_integrity.SpecValidationTests`
 - `python3.14 -m unittest tests.test_agent_equipment_config`
+- `python3.14 -m unittest tests.test_agent_equipment_config_mcp_server`
 - `python3.14 -m unittest tests.test_validate_armory_integrity`
 - `python3.14 -m unittest`
 - `python3.14 tools/validate_armory_integrity.py`
@@ -109,6 +112,9 @@ Before #23 closes, validation must cover the PRD's MVP operation map:
 - `migrate config preview` and `migrate config apply` map to migration-apply
   preview and authorized write behavior.
 - MCP tools mirror those safe operation families with typed inputs and outputs.
+- `python3.14 tools/agent_equipment_config_mcp_server.py` exposes the current
+  stdio MCP server for harnesses that can launch it, while the CLI remains the
+  fallback evidence surface.
 
 Implemented by the v0 engine slice:
 
