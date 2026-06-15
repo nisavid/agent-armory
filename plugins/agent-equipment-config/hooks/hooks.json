@@ -2,7 +2,7 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "mcp__.*",
+        "matcher": "mcp__agent[-_]equipment[-_]config__(config[._]apply|migrate[._]config[._]apply)",
         "hooks": [
           {
             "type": "command",

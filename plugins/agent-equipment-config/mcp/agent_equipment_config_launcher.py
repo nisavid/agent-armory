@@ -47,7 +47,7 @@ def find_armory_root(*, env_root: str | None = None, start_dir: Path | None = No
             return env_candidate.resolve()
     current = (start_dir if start_dir is not None else Path.cwd()).expanduser().resolve()
     if candidate_is_armory_root(current):
-        return current.resolve()
+        return current
     for candidate in current.parents:
         if candidate_is_armory_root(candidate):
             return candidate.resolve()
@@ -78,14 +78,20 @@ def launch(argv: list[str] | None = None) -> int:
         return 2
 
     os.chdir(root)
+    python_executable = str(Path(sys.executable).resolve())
     try:
-        os.execvpe("python3.14", ["python3.14", str(server), *_argv], os.environ.copy())
+        os.execve(
+            python_executable,
+            [python_executable, str(server), *_argv],
+            os.environ.copy(),
+        )
     except OSError as error:
         print(
-            f"Agent Equipment Config MCP launcher could not execute python3.14: {error}",
+            f"Agent Equipment Config MCP launcher could not execute {python_executable}: {error}",
             file=sys.stderr,
         )
         return 127
+    return 127
 
 
 if __name__ == "__main__":

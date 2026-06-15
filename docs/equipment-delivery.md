@@ -94,8 +94,8 @@ current delivery standard has passed.
 Each equipment record may list `[[equipment.components]]` entries:
 
 - `name`: component label shown to Wielders and Outfitters.
-- `kind`: component type, such as `cli`, `mcp`, `plugin`, `skill`, `script`,
-  `config`, or `docs`.
+- `kind`: component type, such as `cli`, `mcp`, `docs`, `config`, `plugin`,
+  `skill`, `validation`, or `provider`.
 - `status`: one of `required`, `optional`, `planned`, or `unavailable`.
 - `paths`: repo-relative paths that make the component inspectable.
 - `notes`: required for `planned` and `unavailable` components.

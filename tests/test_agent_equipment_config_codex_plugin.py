@@ -267,7 +267,7 @@ class AgentEquipmentConfigCodexPluginValidationTests(unittest.TestCase):
                 LAUNCHER_PATH,
                 """
                 # REPO_SERVER tools/agent_equipment_config_mcp_server.py
-                # MARKETPLACE_MARKER find_armory_root os.chdir(root) os.execvpe return 2
+                # MARKETPLACE_MARKER find_armory_root os.chdir(root) os.execve return 2
                 def launch():
                     return 0
                 """,
@@ -605,8 +605,8 @@ class AgentEquipmentConfigCodexPluginValidationTests(unittest.TestCase):
             launcher_text = launcher_path.read_text(encoding="utf-8")
             launcher_path.write_text(
                 launcher_text.replace(
-                    '["python3.14", str(server), *_argv]',
-                    '["python3.14", str(server)]',
+                    "[python_executable, str(server), *_argv]",
+                    "[python_executable, str(server)]",
                 ),
                 encoding="utf-8",
             )
@@ -684,7 +684,7 @@ class AgentEquipmentConfigCodexPluginValidationTests(unittest.TestCase):
             CheckResult(
                 "agent_equipment_config_codex_plugin:inventory:codex_plugin",
                 False,
-                "Codex plugin must be required and list stocked paths; missing paths: "
+                "Codex plugin must be a required plugin component and list stocked paths; missing paths: "
                 "plugins/agent-equipment-config/README.md",
                 "inventory/equipment.toml",
             ),
@@ -710,7 +710,32 @@ class AgentEquipmentConfigCodexPluginValidationTests(unittest.TestCase):
             CheckResult(
                 "agent_equipment_config_codex_plugin:inventory:config_routing_skill",
                 False,
-                "Config routing skill must be required and list stocked paths",
+                "Config routing skill must be a required skill component and list stocked paths",
+                "inventory/equipment.toml",
+            ),
+            results,
+        )
+
+    def test_validator_rejects_inventory_with_wrong_required_component_kind(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_valid_plugin_fixture(root)
+            inventory_path = root / "inventory/equipment.toml"
+            inventory_path.write_text(
+                inventory_path.read_text(encoding="utf-8").replace(
+                    'name = "Codex plugin"\nkind = "plugin"\nstatus = "required"\n',
+                    'name = "Codex plugin"\nkind = "docs"\nstatus = "required"\n',
+                ),
+                encoding="utf-8",
+            )
+
+            results = validator.validate_agent_equipment_config_codex_plugin(root)
+
+        self.assertIn(
+            CheckResult(
+                "agent_equipment_config_codex_plugin:inventory:codex_plugin",
+                False,
+                "Codex plugin must be a required plugin component and list stocked paths",
                 "inventory/equipment.toml",
             ),
             results,
@@ -756,6 +781,7 @@ class AgentEquipmentConfigCodexPluginValidationTests(unittest.TestCase):
                 LAUNCHER_PATH,
                 """
                 import os
+                import sys
                 from pathlib import Path
                 REPO_SERVER = Path("tools/agent_equipment_config_mcp_server.py")
                 MARKETPLACE_MARKER = Path(".agents/plugins/marketplace.json")
@@ -767,7 +793,8 @@ class AgentEquipmentConfigCodexPluginValidationTests(unittest.TestCase):
                         return 2
                     server = root / REPO_SERVER
                     os.chdir(root)
-                    os.execvpe("python3.14", ["python3.14", "-c", "print(1)"], os.environ.copy())
+                    python_executable = str(Path(sys.executable).resolve())
+                    os.execve(python_executable, [python_executable, "-c", "print(1)"], os.environ.copy())
                 """,
             )
 
@@ -863,7 +890,8 @@ class AgentEquipmentConfigCodexPluginValidationTests(unittest.TestCase):
                 launcher_text.replace(
                     "def candidate_is_armory_root(candidate: Path) -> bool:\n",
                     "def candidate_is_armory_root(candidate: Path) -> bool:\n"
-                    "    os.execvpe(\"python3.14\", [\"python3.14\", str(candidate / REPO_SERVER)], os.environ.copy())\n",
+                    "    python_executable = str(Path(sys.executable).resolve())\n"
+                    "    os.execve(python_executable, [python_executable, str(candidate / REPO_SERVER)], os.environ.copy())\n",
                 ),
                 encoding="utf-8",
             )
@@ -887,6 +915,7 @@ class AgentEquipmentConfigCodexPluginValidationTests(unittest.TestCase):
                 LAUNCHER_PATH,
                 """
                 import os
+                import sys
                 from pathlib import Path
                 REPO_SERVER = Path("tools/agent_equipment_config_mcp_server.py")
                 MARKETPLACE_MARKER = Path(".agents/plugins/marketplace.json")
@@ -899,7 +928,8 @@ class AgentEquipmentConfigCodexPluginValidationTests(unittest.TestCase):
                         return 2
                     server = root / REPO_SERVER
                     os.chdir(root)
-                    os.execvpe("python3.14", ["python3.14", str(server)], os.environ.copy())
+                    python_executable = str(Path(sys.executable).resolve())
+                    os.execve(python_executable, [python_executable, str(server)], os.environ.copy())
                 """,
             )
 
@@ -924,6 +954,7 @@ class AgentEquipmentConfigCodexPluginValidationTests(unittest.TestCase):
                 LAUNCHER_PATH,
                 """
                 import os
+                import sys
                 from pathlib import Path
                 REPO_SERVER = Path("tools/agent_equipment_config_mcp_server.py")
                 REPO_MARKER = Path("inventory/equipment.toml")
@@ -941,8 +972,9 @@ class AgentEquipmentConfigCodexPluginValidationTests(unittest.TestCase):
                     if not server.is_file():
                         return 2
                     os.chdir(root)
+                    python_executable = str(Path(sys.executable).resolve())
                     try:
-                        os.execvpe("python3.14", ["python3.14", str(server)], os.environ.copy())
+                        os.execve(python_executable, [python_executable, str(server)], os.environ.copy())
                     except OSError:
                         return 127
                 """,
@@ -969,6 +1001,7 @@ class AgentEquipmentConfigCodexPluginValidationTests(unittest.TestCase):
                 LAUNCHER_PATH,
                 """
                 import os
+                import sys
                 from pathlib import Path
                 REPO_SERVER = Path("tools/agent_equipment_config_mcp_server.py")
                 MARKETPLACE_MARKER = Path(".agents/plugins/marketplace.json")
@@ -983,8 +1016,9 @@ class AgentEquipmentConfigCodexPluginValidationTests(unittest.TestCase):
                         return 2
                     os.environ.clear()
                     os.chdir(root)
+                    python_executable = str(Path(sys.executable).resolve())
                     try:
-                        os.execvpe("python3.14", ["python3.14", str(server)], os.environ.copy())
+                        os.execve(python_executable, [python_executable, str(server)], os.environ.copy())
                     except OSError:
                         return 127
                 """,
@@ -1062,7 +1096,7 @@ class AgentEquipmentConfigLauncherTests(unittest.TestCase):
             )
             exec_call = {}
 
-            def fake_execvpe(command, args, env) -> NoReturn:
+            def fake_execve(command, args, env) -> NoReturn:
                 exec_call["command"] = command
                 exec_call["args"] = args
                 exec_call["env"] = env
@@ -1072,15 +1106,16 @@ class AgentEquipmentConfigLauncherTests(unittest.TestCase):
             with mock.patch.dict(launcher.os.environ, {"PWD": str(spoofed)}, clear=True):
                 with mock.patch.object(launcher.Path, "cwd", return_value=nested):
                     with mock.patch.object(launcher.os, "chdir") as chdir:
-                        with mock.patch.object(launcher.os, "execvpe", side_effect=fake_execvpe):
+                        with mock.patch.object(launcher.os, "execve", side_effect=fake_execve):
                             with self.assertRaisesRegex(RuntimeError, "stop before exec"):
                                 launcher.launch(["--stdio"])
 
         self.assertEqual(root.resolve(), found)
         chdir.assert_called_once_with(root.resolve())
-        self.assertEqual("python3.14", exec_call["command"])
+        python_executable = str(Path(launcher.sys.executable).resolve())
+        self.assertEqual(python_executable, exec_call["command"])
         self.assertEqual(
-            ["python3.14", str(root.resolve() / "tools/agent_equipment_config_mcp_server.py"), "--stdio"],
+            [python_executable, str(root.resolve() / "tools/agent_equipment_config_mcp_server.py"), "--stdio"],
             exec_call["args"],
         )
 
@@ -1115,7 +1150,7 @@ class AgentEquipmentConfigLauncherTests(unittest.TestCase):
             )
             exec_call = {}
 
-            def fake_execvpe(command, args, env) -> NoReturn:
+            def fake_execve(command, args, env) -> NoReturn:
                 exec_call["command"] = command
                 exec_call["args"] = args
                 exec_call["env"] = env
@@ -1123,14 +1158,15 @@ class AgentEquipmentConfigLauncherTests(unittest.TestCase):
 
             with mock.patch.dict(launcher.os.environ, {"AGENT_ARMORY_ROOT": str(root)}, clear=True):
                 with mock.patch.object(launcher.os, "chdir") as chdir:
-                    with mock.patch.object(launcher.os, "execvpe", side_effect=fake_execvpe):
+                    with mock.patch.object(launcher.os, "execve", side_effect=fake_execve):
                         with self.assertRaisesRegex(RuntimeError, "stop before exec"):
                             launcher.launch(["--stdio"])
 
         chdir.assert_called_once_with(root.resolve())
-        self.assertEqual("python3.14", exec_call["command"])
+        python_executable = str(Path(launcher.sys.executable).resolve())
+        self.assertEqual(python_executable, exec_call["command"])
         self.assertEqual(
-            ["python3.14", str(root.resolve() / "tools/agent_equipment_config_mcp_server.py"), "--stdio"],
+            [python_executable, str(root.resolve() / "tools/agent_equipment_config_mcp_server.py"), "--stdio"],
             exec_call["args"],
         )
 
@@ -1151,13 +1187,13 @@ class AgentEquipmentConfigLauncherTests(unittest.TestCase):
 
             with mock.patch.object(launcher, "find_armory_root", side_effect=fake_find_armory_root):
                 with mock.patch.object(launcher.os, "chdir") as chdir:
-                    with mock.patch.object(launcher.os, "execvpe") as execvpe:
+                    with mock.patch.object(launcher.os, "execve") as execve:
                         with mock.patch.object(launcher.sys, "stderr", stderr):
                             exit_code = launcher.launch(["--stdio"])
 
         self.assertEqual(2, exit_code)
         chdir.assert_not_called()
-        execvpe.assert_not_called()
+        execve.assert_not_called()
         self.assertIn("could not find", stderr.getvalue())
 
     def test_launcher_reports_exec_failure(self):
@@ -1174,12 +1210,13 @@ class AgentEquipmentConfigLauncherTests(unittest.TestCase):
 
             with mock.patch.dict(launcher.os.environ, {"AGENT_ARMORY_ROOT": str(root)}, clear=True):
                 with mock.patch.object(launcher.os, "chdir"):
-                    with mock.patch.object(launcher.os, "execvpe", side_effect=FileNotFoundError("python3.14")):
+                    with mock.patch.object(launcher.os, "execve", side_effect=FileNotFoundError("python")):
                         with mock.patch.object(launcher.sys, "stderr", stderr):
                             exit_code = launcher.launch(["--stdio"])
 
         self.assertEqual(127, exit_code)
-        self.assertIn("could not execute python3.14", stderr.getvalue())
+        self.assertIn("could not execute", stderr.getvalue())
+        self.assertIn(str(Path(launcher.sys.executable).resolve()), stderr.getvalue())
 
 
 class AgentEquipmentConfigGuardHookTests(unittest.TestCase):

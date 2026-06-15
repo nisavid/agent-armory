@@ -8313,7 +8313,7 @@ class TemplateValidationTests(unittest.TestCase):
 
             [[equipment.components]]
             name = "Runtime"
-            kind = "script"
+            kind = "cli"
             status = "required"
             paths = ["tools/example.py"]
             """,
@@ -12594,12 +12594,21 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
             "Codex gear-up validation": "planned",
             "Secret value resolution": "unavailable",
         }
-        components = {
-            component.get("name"): component
+        component_records = [
+            component
             for component in config.get("components", [])
             if isinstance(component, dict)
+        ]
+        components = {
+            component.get("name"): component
+            for component in component_records
         }
 
+        self.assertEqual(
+            len(component_records),
+            len(components),
+            "duplicate component names must not be hidden",
+        )
         self.assertEqual(
             expected_component_statuses,
             {
@@ -12610,14 +12619,10 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
         )
         self.assertEqual(set(expected_component_statuses), set(components))
 
-        for component_name in [
-            "Config CLI runtime",
-            "Stdio MCP server wrapper",
-            "Runtime and integration docs",
-            "Example config layers",
-        ]:
-            paths = components[component_name].get("paths", [])
-            self.assertTrue(paths, component_name)
+        for component_name, component in components.items():
+            paths = component.get("paths", [])
+            if component.get("status") == "required":
+                self.assertTrue(paths, component_name)
             for relative_path in paths:
                 self.assertTrue((repo_root / relative_path).exists(), relative_path)
 
@@ -12669,7 +12674,7 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
 
                 [[equipment.components]]
                 name = "Runtime"
-                kind = "script"
+                kind = "cli"
                 status = "required"
                 paths = ["tools/runtime.py"]
 
@@ -13120,7 +13125,7 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
 
                 [[equipment.components]]
                 name = "Runtime"
-                kind = "script"
+                kind = "cli"
                 status = "required"
                 paths = ["tools/runtime.py"]
 
@@ -13275,7 +13280,7 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
 
                 [[equipment.components]]
                 name = "Runtime"
-                kind = "script"
+                kind = "cli"
                 status = "required"
                 paths = []
                 """,
@@ -13322,11 +13327,11 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
                 status = "required"
                 paths = []
 
-                [[equipment.components]]
-                name = "Docs"
-                kind = "documentation"
-                status = "optional"
-                """,
+            [[equipment.components]]
+            name = "Docs"
+            kind = "docs"
+            status = "optional"
+            """,
             )
             shop_card = root / "docs/equipment/shop-cards/example.md"
             shop_card.parent.mkdir(parents=True, exist_ok=True)
@@ -13371,6 +13376,42 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
             results,
         )
 
+    def test_validate_published_equipment_delivery_rejects_unknown_component_kind(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_inventory(
+                root,
+                """
+                schema_version = "agent-armory.equipment-stock.v1"
+
+                [[equipment]]
+                id = "example"
+                name = "Example"
+                summary = "Example equipment."
+                promotion_state = "implemented"
+
+                [[equipment.components]]
+                name = "Runtime"
+                kind = "runtime"
+                status = "required"
+                paths = ["README.md"]
+                """,
+            )
+            (root / "README.md").write_text("# Example\n", encoding="utf-8")
+
+            results = validator.validate_published_equipment_delivery(root)
+
+        self.assertIn(
+            CheckResult(
+                "published_equipment_delivery:equipment:example:component:Runtime:kind",
+                False,
+                "component kind must be cli, mcp, docs, config, plugin, skill, validation, or provider",
+                "inventory/equipment.toml",
+            ),
+            results,
+        )
+
     def test_validate_published_equipment_delivery_rejects_missing_component_path(self):
         validator = importlib.import_module("tools.validate_armory_integrity")
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -13390,7 +13431,7 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
 
                 [[equipment.components]]
                 name = "Runtime"
-                kind = "script"
+                kind = "cli"
                 status = "required"
                 paths = ["tools/missing-runtime.py"]
                 """,
@@ -13430,7 +13471,7 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
 
                 [[equipment.components]]
                 name = "Runtime"
-                kind = "script"
+                kind = "cli"
                 status = "required"
                 paths = [""]
                 """,
@@ -13473,7 +13514,7 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
 
                 [[equipment.components]]
                 name = "Runtime"
-                kind = "script"
+                kind = "cli"
                 status = "required"
                 paths = ["tools/runtime.py", "../outside.py"]
                 """,
@@ -13518,7 +13559,7 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
 
                 [[equipment.components]]
                 name = "Runtime"
-                kind = "script"
+                kind = "cli"
                 status = "required"
                 paths = ["tools/runtime.py"]
                 """,

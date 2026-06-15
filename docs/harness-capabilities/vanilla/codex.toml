@@ -250,7 +250,7 @@ evidence_class = "source_backed"
 id = "claim-codex-mcp_tools"
 family = "mcp_tools"
 status = "supported"
-statement = "Codex plugins can bundle MCP servers through plugin manifest mcpServers fields that point at .mcp.json files. Direct server maps are locally verified for plugin installs on codex-cli 0.139.0; the documented mcp_servers wrapper is not treated as verified for this plugin because it did not appear in codex mcp list during the local install prototype."
+statement = "Codex plugins can bundle MCP servers through plugin manifest mcpServers fields that point at .mcp.json files. Direct server maps are locally verified for plugin installs on codex-cli 0.139.0. The documented mcp_servers wrapper is not treated as verified for the agent-equipment-config plugin because it did not appear in codex mcp list during the local install prototype."
 evidence_ids = [
     "ev-codex-plugin-support-ebef8b225b",
     "ev-codex-plugin-authoring-support-0d95e14458",

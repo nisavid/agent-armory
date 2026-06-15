@@ -17,7 +17,8 @@ working directory resolves to a checkout containing these markers:
 - `.agents/plugins/marketplace.json`
 
 The MCP launcher changes directory to the resolved checkout before executing
-`tools/agent_equipment_config_mcp_server.py` with `python3.14`.
+`tools/agent_equipment_config_mcp_server.py` with the absolute path of the
+current Python interpreter.
 
 ## Controls
 
@@ -26,8 +27,9 @@ The MCP launcher changes directory to the resolved checkout before executing
   and prompt overrides for `config.apply` and `migrate.config_apply`.
 - No static secrets, HTTP MCP endpoint, broad environment pass-through, or
   alternate executable path is allowed by the validator.
-- The launcher rejects lookalike roots without the Armory marketplace marker and
-  fails closed with install guidance when no trusted checkout is found.
+- The launcher rejects lookalike roots without the Armory marketplace marker,
+  uses an absolute interpreter path for the final `exec`, and fails closed with
+  install guidance when no trusted checkout is found.
 - The guard hook no-ops unrelated tools and denies Config local-write MCP calls
   unless the tool input includes `apply_authority = "operator"`.
 - The validator statically restricts launcher and hook imports, functions,
