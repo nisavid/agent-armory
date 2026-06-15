@@ -10,8 +10,7 @@ rebuild policy loading, provenance, effective-config explanation, config diff,
 or local Config source-write gates.
 
 It fits local repository and session configuration work. It does not fit secret
-value resolution, harness enforcement, external mutation, package discovery, or
-plugin installation.
+value resolution, harness enforcement, external mutation, or package discovery.
 
 ## What is stocked
 

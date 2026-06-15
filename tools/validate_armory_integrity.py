@@ -1628,7 +1628,14 @@ AGENT_EQUIPMENT_CONFIG_PLUGIN_STOCK_COMPONENT_PATHS = {
     ),
     "Config routing skill": frozenset({AGENT_EQUIPMENT_CONFIG_PLUGIN_SKILL_PATH}),
 }
+AGENT_EQUIPMENT_CONFIG_PLUGIN_STOCK_COMPONENT_KINDS = {
+    "Codex plugin": "plugin",
+    "Config routing skill": "skill",
+}
 AGENT_EQUIPMENT_CONFIG_MCP_WRITE_TOOLS = ["config.apply", "migrate.config_apply"]
+AGENT_EQUIPMENT_CONFIG_HOOK_MATCHER = (
+    r"mcp__agent[-_]equipment[-_]config__(config[._]apply|migrate[._]config[._]apply)"
+)
 AGENT_EQUIPMENT_CONFIG_GUARD_OUTPUT_LIMIT_BYTES = 8192
 PUBLISHED_EQUIPMENT_PROMOTION_STATES = {
     "example",
@@ -1649,6 +1656,16 @@ PUBLISHED_EQUIPMENT_COMPONENT_STATUSES = {
     "optional",
     "planned",
     "unavailable",
+}
+PUBLISHED_EQUIPMENT_COMPONENT_KINDS = {
+    "cli",
+    "mcp",
+    "docs",
+    "config",
+    "plugin",
+    "skill",
+    "validation",
+    "provider",
 }
 PUBLISHED_EQUIPMENT_INSPECTION_TEST_PLAN_REQUIRED_SECTIONS = (
     "Scope",
@@ -6709,6 +6726,16 @@ def validate_published_equipment_delivery(root: Path) -> list[CheckResult]:
                         PUBLISHED_EQUIPMENT_INVENTORY_PATH,
                     )
                 )
+            kind = component.get("kind")
+            if isinstance(kind, str) and kind.strip() and kind not in PUBLISHED_EQUIPMENT_COMPONENT_KINDS:
+                results.append(
+                    CheckResult(
+                        f"published_equipment_delivery:equipment:{equipment_id}:component:{component_name}:kind",
+                        False,
+                        "component kind must be cli, mcp, docs, config, plugin, skill, validation, or provider",
+                        PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+                    )
+                )
             paths = component.get("paths", [])
             if not isinstance(paths, list) or not all(
                 isinstance(item, str) and item.strip() for item in paths
@@ -7257,8 +7284,31 @@ def ast_chdir_root(node: ast.AST) -> bool:
     )
 
 
-def ast_execvpe_repo_server(node: ast.AST) -> bool:
-    call = ast_expression_call(node, "os.execvpe")
+def ast_python_executable_assignment(node: ast.AST) -> bool:
+    if not ast_assigns_name(node, "python_executable") or not isinstance(node, ast.Assign):
+        return False
+    value = node.value
+    return (
+        isinstance(value, ast.Call)
+        and ast_call_name(value.func) == "str"
+        and len(value.args) == 1
+        and isinstance(value.args[0], ast.Call)
+        and ast_call_name(value.args[0].func) == "resolve"
+        and not value.args[0].args
+        and not value.args[0].keywords
+        and isinstance(value.args[0].func, ast.Attribute)
+        and isinstance(value.args[0].func.value, ast.Call)
+        and ast_call_name(value.args[0].func.value.func) == "Path"
+        and len(value.args[0].func.value.args) == 1
+        and isinstance(value.args[0].func.value.args[0], ast.Attribute)
+        and ast_call_name(value.args[0].func.value.args[0]) == "sys.executable"
+        and not value.args[0].func.value.keywords
+        and not value.keywords
+    )
+
+
+def ast_execve_repo_server(node: ast.AST) -> bool:
+    call = ast_expression_call(node, "os.execve")
     if call is None or len(call.args) != 3 or call.keywords:
         return False
     command = call.args[0]
@@ -7277,10 +7327,10 @@ def ast_execvpe_repo_server(node: ast.AST) -> bool:
     first_argv = argv_items[0] if argv_items else None
     second_argv = argv_items[1] if len(argv_items) > 1 else None
     has_python_command = (
-        isinstance(command, ast.Constant)
-        and command.value == "python3.14"
-        and isinstance(first_argv, ast.Constant)
-        and first_argv.value == "python3.14"
+        isinstance(command, ast.Name)
+        and command.id == "python_executable"
+        and isinstance(first_argv, ast.Name)
+        and first_argv.id == "python_executable"
     )
     has_server_argv = (
         isinstance(second_argv, ast.Call)
@@ -7299,10 +7349,10 @@ def ast_execvpe_repo_server(node: ast.AST) -> bool:
     return has_python_command and has_server_argv and env_copy
 
 
-def ast_execvpe_try_returns_127(node: ast.AST) -> bool:
+def ast_execve_try_returns_127(node: ast.AST) -> bool:
     if not isinstance(node, ast.Try) or len(node.body) != 1:
         return False
-    if not ast_execvpe_repo_server(node.body[0]):
+    if not ast_execve_repo_server(node.body[0]):
         return False
     if len(node.handlers) != 1 or node.orelse or node.finalbody:
         return False
@@ -7331,13 +7381,15 @@ def ast_launch_execs_repo_server(launch: ast.FunctionDef) -> bool:
             stage = 4
         elif stage == 4 and ast_chdir_root(statement):
             stage = 5
-        elif stage == 5 and ast_execvpe_try_returns_127(statement):
+        elif stage == 5 and ast_python_executable_assignment(statement):
             stage = 6
-        elif stage == 6 and ast_return_constant(statement, 127):
+        elif stage == 6 and ast_execve_try_returns_127(statement):
+            stage = 7
+        elif stage == 7 and ast_return_constant(statement, 127):
             continue
         else:
             return False
-    return stage == 6 and has_argv_assignment
+    return stage == 7 and has_argv_assignment
 
 
 def ast_function_has_no_decorators(function: ast.FunctionDef) -> bool:
@@ -7452,8 +7504,8 @@ def ast_launcher_module_contract(tree: ast.Module) -> bool:
             {"expanduser", "resolve"},
         ),
         "launch": (
-            {"find_armory_root", "os.chdir", "os.environ.get", "os.execvpe", "print", "str"},
-            {"copy", "is_file"},
+            {"Path", "find_armory_root", "os.chdir", "os.environ.get", "os.execve", "print", "str"},
+            {"copy", "is_file", "resolve"},
         ),
     }
     return all(
@@ -7767,7 +7819,8 @@ def run_bounded_subprocess(
                     break
 
         try:
-            returncode = process.wait(timeout=max(0.0, deadline - time.monotonic()))
+            wait_timeout = max(0.5 if exceeded else 0.0, deadline - time.monotonic())
+            returncode = process.wait(timeout=wait_timeout)
         except subprocess.TimeoutExpired:
             process.kill()
             raise
@@ -8274,9 +8327,11 @@ def validate_agent_equipment_config_codex_plugin_inventory(root: Path) -> list[C
         component_paths = component.get("paths") if isinstance(component, dict) else None
         path_set = {path for path in component_paths if isinstance(path, str)} if isinstance(component_paths, list) else set()
         missing_paths = sorted(expected_paths - path_set)
+        expected_kind = AGENT_EQUIPMENT_CONFIG_PLUGIN_STOCK_COMPONENT_KINDS[component_name]
         if (
             len(component_matches) != 1
             or not isinstance(component, dict)
+            or component.get("kind") != expected_kind
             or component.get("status") != "required"
             or missing_paths
         ):
@@ -8285,7 +8340,7 @@ def validate_agent_equipment_config_codex_plugin_inventory(root: Path) -> list[C
                 CheckResult(
                     f"agent_equipment_config_codex_plugin:inventory:{component_key}",
                     False,
-                    f"{component_name} must be required and list stocked paths{missing_detail}",
+                    f"{component_name} must be a required {expected_kind} component and list stocked paths{missing_detail}",
                     PUBLISHED_EQUIPMENT_INVENTORY_PATH,
                 )
             )
@@ -8725,12 +8780,12 @@ def validate_agent_equipment_config_codex_plugin(root: Path) -> list[CheckResult
                     )
                     if isinstance(hook_entries[0], dict):
                         hook_record = hook_entries[0]
-                if first.get("matcher") != "mcp__.*":
+                if first.get("matcher") != AGENT_EQUIPMENT_CONFIG_HOOK_MATCHER:
                     results.append(
                         CheckResult(
                             "agent_equipment_config_codex_plugin:hooks:PreToolUse:matcher",
                             False,
-                            "PreToolUse matcher must be mcp__.*",
+                            f"PreToolUse matcher must be {AGENT_EQUIPMENT_CONFIG_HOOK_MATCHER}",
                             AGENT_EQUIPMENT_CONFIG_PLUGIN_HOOKS_PATH,
                         )
                     )

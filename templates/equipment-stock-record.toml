@@ -13,7 +13,7 @@ notes = "Replace this example with current delivery context."
 
 [[equipment.components]]
 name = "Runtime"
-kind = "script"
+kind = "cli"
 status = "required"
 paths = ["tools/example.py"]
 
