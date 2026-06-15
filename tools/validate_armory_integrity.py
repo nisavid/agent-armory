@@ -7366,8 +7366,15 @@ def ast_execve_repo_server(node: ast.AST) -> bool:
     return has_python_command and has_server_argv and env_allowlist
 
 
-def ast_print_expr(node: ast.AST) -> bool:
-    return ast_expression_call(node, "print") is not None
+def ast_stderr_print_expr(node: ast.AST) -> bool:
+    call = ast_expression_call(node, "print")
+    return (
+        call is not None
+        and any(
+            keyword.arg == "file" and ast_call_name(keyword.value) == "sys.stderr"
+            for keyword in call.keywords
+        )
+    )
 
 
 def ast_execve_try_returns_127(node: ast.AST) -> bool:
@@ -7381,7 +7388,7 @@ def ast_execve_try_returns_127(node: ast.AST) -> bool:
     return (
         ast_call_name(handler.type) == "OSError"
         and len(handler.body) == 2
-        and ast_print_expr(handler.body[0])
+        and ast_stderr_print_expr(handler.body[0])
         and ast_return_constant(handler.body[1], 127)
     )
 
@@ -7683,6 +7690,13 @@ module = importlib.util.module_from_spec(spec)
 sys.dont_write_bytecode = True
 spec.loader.exec_module(module)
 plugin_mcp_dir = root / "plugins/agent-equipment-config/mcp"
+module.os.environ.clear()
+module.os.environ.update(
+    {
+        "AGENT_ARMORY_ROOT": str(root),
+        "SHOULD_NOT_REACH_MCP": "secret",
+    }
+)
 
 def render(value):
     if value is None:
@@ -7697,6 +7711,7 @@ print(
             "fallback": render(
                 module.find_armory_root(env_root=str(root / "missing"), start_dir=plugin_mcp_dir)
             ),
+            "server_environment": dict(module.server_environment()),
         },
         sort_keys=True,
     )
@@ -7738,7 +7753,13 @@ print(
             AGENT_EQUIPMENT_CONFIG_PLUGIN_LAUNCHER_PATH,
         )
     expected_root = str(root.resolve())
-    if observed != {"cwd": expected_root, "env": expected_root, "fallback": expected_root}:
+    expected = {
+        "cwd": expected_root,
+        "env": expected_root,
+        "fallback": expected_root,
+        "server_environment": {"AGENT_ARMORY_ROOT": expected_root},
+    }
+    if observed != expected:
         return CheckResult(
             "agent_equipment_config_codex_plugin:launcher:content",
             False,

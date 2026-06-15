@@ -57,6 +57,19 @@ and exposed the bundled MCP server from the cached plugin path. That confirms
 the marketplace source path is resolved from the marketplace root, not the JSON
 file's directory.
 
-Codex Security diff scan applies to the executable plugin boundary. Final
-security evidence is recorded in the PR body with the scan artifact path,
-findings disposition, and validation commands.
+## Evidence
+
+This committed closeout is the durable security evidence record for the Codex
+plugin delivery. The Codex Security diff scan covered the executable plugin
+boundary and found no reportable findings. Instance-scoped scan output stayed in
+scratch storage; the durable conclusion is this document's scope, controls, and
+findings disposition.
+
+Validation commands completed for the security-relevant surface:
+
+- `python3.14 -m unittest tests.test_agent_equipment_config_codex_plugin`
+- `python3.14 -m unittest tests.test_validate_armory_integrity`
+- `python3.14 -m unittest`
+- `python3.14 tools/harness_capability_profiles.py validate --json`
+- `python3.14 tools/validate_armory_integrity.py --final-closeout --json`
+- `git diff --check`
