@@ -6,6 +6,7 @@ import ast
 import hashlib
 import importlib.util
 import json
+import posixpath
 import re
 import sys
 import tomllib
@@ -6765,6 +6766,17 @@ def markdown_record_token_present(bullet: str, value: str, *, path: bool = False
     return re.search(pattern, bullet) is not None
 
 
+def markdown_record_path_token_present(bullet: str, source_relative: str, value: str) -> bool:
+    if markdown_record_token_present(bullet, value, path=True):
+        return True
+    source_dir = posixpath.dirname(source_relative)
+    for link in find_markdown_links(bullet):
+        normalized = posixpath.normpath(posixpath.join(source_dir, link))
+        if normalized == value:
+            return True
+    return False
+
+
 def validate_published_equipment_inventory_view(root: Path) -> list[CheckResult]:
     view_ok, view_detail, view_path = repo_relative_path_status(
         root, PUBLISHED_EQUIPMENT_INVENTORY_VIEW_PATH, "file"
@@ -6909,8 +6921,14 @@ def validate_published_equipment_inventory_view(root: Path) -> list[CheckResult]
                 and markdown_record_token_present(bullet, equipment_id)
                 and markdown_record_token_present(bullet, name)
                 and markdown_record_token_present(bullet, delivery_compliance)
-                and markdown_record_token_present(bullet, shop_card, path=True)
-                and markdown_record_token_present(bullet, inspection_test_plan, path=True)
+                and markdown_record_path_token_present(
+                    bullet, PUBLISHED_EQUIPMENT_INVENTORY_VIEW_PATH, shop_card
+                )
+                and markdown_record_path_token_present(
+                    bullet,
+                    PUBLISHED_EQUIPMENT_INVENTORY_VIEW_PATH,
+                    inspection_test_plan,
+                )
                 for bullet in bullets
             ):
                 results.append(

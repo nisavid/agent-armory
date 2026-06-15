@@ -63,9 +63,9 @@ delivery authority.
   stock truth.
 - Security evidence: GitHub secret scanning was unavailable because GitHub
   Advanced Security is not enabled for this repository. A local fallback scan
-  over the changed docs, TOML, and test surfaces found only prose references to
-  secret boundaries and existing test fixture text; no secret values,
-  credentials, tokens, private keys, external mutation surfaces, network
+  over the changed docs, TOML, tests, and validator code found only prose
+  references to secret boundaries and existing test fixture text; no secret
+  values, credentials, tokens, private keys, external mutation surfaces, network
   behavior, or new runtime write paths were added.
 - Documentation evidence: human-facing routes now point to the Config shop card
   and inventory view; agent-facing always-loaded policy did not need a change

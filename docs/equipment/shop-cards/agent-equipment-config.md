@@ -65,8 +65,8 @@ keeps delivery compliance pending until Codex gear-up validation passes.
 - Required: Config CLI runtime,
   [`tools/agent_equipment_config.py`](../../../tools/agent_equipment_config.py).
 - Required: stdio MCP server wrapper,
-  [`tools/agent_equipment_config_mcp_server.py`](../../../tools/agent_equipment_config_mcp_server.py),
-  with MCP behavior specified in
+  [`tools/agent_equipment_config_mcp_server.py`](../../../tools/agent_equipment_config_mcp_server.py).
+  MCP behavior is specified in
   [`specs/agent-equipment-config/mcp-tools.md`](../../../specs/agent-equipment-config/mcp-tools.md).
 - Required: runtime and integration docs,
   [runtime guide](../agent-equipment-config.md),
