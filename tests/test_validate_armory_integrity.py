@@ -13961,8 +13961,8 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
                 ## Stock Records
 
                 - `example` - Example Equipment - `pending` -
-                  [shop card](../../docs/equipment/shop-cards/example.md) -
-                  [ITP](../../docs/equipment/inspection-test-plans/example.md)
+                  [shop card](shop-cards/example.md) -
+                  [ITP](inspection-test-plans/example.md)
 
                 ## Shop Cards
 

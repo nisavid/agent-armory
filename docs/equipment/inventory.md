@@ -12,8 +12,8 @@ inventory uses schema `agent-armory.equipment-stock.v1`.
 ## Stock Records
 
 - `agent-equipment-config` - Agent Equipment Config - `pending` -
-  [shop card](../../docs/equipment/shop-cards/agent-equipment-config.md) -
-  [ITP](../../docs/equipment/inspection-test-plans/agent-equipment-config.md)
+  [shop card](shop-cards/agent-equipment-config.md) -
+  [ITP](inspection-test-plans/agent-equipment-config.md)
 
 ## Shop Cards
 
