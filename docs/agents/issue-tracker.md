@@ -141,6 +141,19 @@ and next action without reconstructing the whole session.
 See `docs/agents/triage-labels.md` for the current label axes and triage-record
 template.
 
+## Equipment Delivery Projection
+
+When an issue or PR projects a published or delivery-compliant stockable
+equipment claim, verify the stock record's linked Equipment Epic Closeout
+Record under `docs/closeout/` before publishing the projection. Issue comments
+may summarize the closeout record, point to it, or record tracker-specific
+state, but they are not the delivery authority.
+
+Do not treat an issue comment as sufficient evidence to close an equipment epic
+as delivered when the stock record, shop card, inspection and test plan,
+closeout record, advertised gear-up surfaces, or validation evidence is missing
+or incomplete.
+
 ## Reflection Findings
 
 A Reflection Finding is durable output from manual or ad hoc reflection that

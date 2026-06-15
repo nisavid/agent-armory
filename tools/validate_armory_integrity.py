@@ -121,7 +121,7 @@ VALIDATION_INVENTORY = [
     {
         "check": "published_equipment_delivery",
         "boundary": "armory_integrity",
-        "relationship": "Top-level stock inventory and Equipment Shop Card standard validation for published equipment delivery claims.",
+        "relationship": "Top-level stock inventory, shop card, ITP, and closeout-record validation for published equipment delivery claims.",
     },
     {
         "check": "published_equipment_inventory_view",
@@ -1281,6 +1281,7 @@ CANONICAL_DOC_REQUIRED_SECTIONS = {
         "Purpose",
         "Authority",
         "Equipment Shop Cards",
+        "Equipment Epic Closeout Records",
         "Stock Inventory Records",
         "Component Manifests",
         "Delivery Compliance",
@@ -1484,6 +1485,7 @@ REQUIRED_HARNESSES = [
 ]
 TEMPLATE_REQUIRED_PATHS = [
     "templates/capability-card.md",
+    "templates/equipment-epic-closeout.md",
     "templates/equipment-shop-card.md",
     "templates/interface-decision-record.md",
     "templates/skill/README.md",
@@ -1567,6 +1569,7 @@ PUBLISHED_EQUIPMENT_INVENTORY_VIEW_PATH = "docs/equipment/inventory.md"
 PUBLISHED_EQUIPMENT_SHOP_CARD_INDEX_PATH = "docs/equipment/shop-cards/README.md"
 PUBLISHED_EQUIPMENT_INSPECTION_TEST_PLAN_INDEX_PATH = "docs/equipment/inspection-test-plans/README.md"
 PUBLISHED_EQUIPMENT_INVENTORY_SCHEMA_VERSION = "agent-armory.equipment-stock.v1"
+PUBLISHED_EQUIPMENT_CLOSEOUT_RECORD_DIR = "docs/closeout"
 PUBLISHED_EQUIPMENT_SHOP_CARD_DIR = "docs/equipment/shop-cards"
 PUBLISHED_EQUIPMENT_INSPECTION_TEST_PLAN_DIR = "docs/equipment/inspection-test-plans"
 PUBLISHED_EQUIPMENT_EMPTY_STOCK_SENTENCE = (
@@ -1600,6 +1603,23 @@ PUBLISHED_EQUIPMENT_INSPECTION_TEST_PLAN_REQUIRED_SECTIONS = (
     "Evidence Requirements",
     "Completion Decision",
 )
+PUBLISHED_EQUIPMENT_SHOP_CARD_REQUIRED_SECTIONS = (
+    "Fit",
+    "What is stocked",
+    "Delivery status",
+    "Gear-up paths",
+    "Component manifest",
+    "Inspection and evidence",
+    "Support and lifecycle",
+)
+PUBLISHED_EQUIPMENT_CLOSEOUT_RECORD_REQUIRED_SECTIONS = (
+    "Scope",
+    "Delivery Surfaces",
+    "Issue Ops Projection",
+    "Validation and Evidence",
+    "Ralph Review Until Clean",
+    "Completion Decision",
+)
 PUBLISHED_EQUIPMENT_REQUIRED_FIELDS = (
     "id",
     "name",
@@ -1608,6 +1628,7 @@ PUBLISHED_EQUIPMENT_REQUIRED_FIELDS = (
     "delivery_compliance",
     "shop_card",
     "inspection_test_plan",
+    "closeout_record",
 )
 PUBLISHED_EQUIPMENT_COMPONENT_REQUIRED_FIELDS = ("name", "kind", "status", "paths")
 EXISTING_EQUIPMENT_ONBOARDING_PRD_PATH = "docs/prd/existing-equipment-onboarding.md"
@@ -1808,6 +1829,7 @@ FORBIDDEN_EXAMPLE_CLAIMS = [
 FORBIDDEN_SPEC_CLAIMS = FORBIDDEN_EXAMPLE_CLAIMS
 ROOT_TEMPLATE_FILES = [
     "templates/capability-card.md",
+    "templates/equipment-epic-closeout.md",
     "templates/equipment-shop-card.md",
     "templates/equipment-inspection-test-plan.md",
     "templates/interface-decision-record.md",
@@ -1831,6 +1853,9 @@ ROOT_TEMPLATE_REQUIRED_SECTIONS = {
         "Evidence",
         "Open questions",
     ],
+    "templates/equipment-epic-closeout.md": list(
+        PUBLISHED_EQUIPMENT_CLOSEOUT_RECORD_REQUIRED_SECTIONS
+    ),
     "templates/equipment-shop-card.md": [
         "Fit",
         "What is stocked",
@@ -3548,6 +3573,25 @@ def markdown_heading_texts(markdown: str) -> set[str]:
         if text:
             headings.add(normalize_reference_label(text))
     return headings
+
+
+def missing_markdown_section_results(
+    check_prefix: str,
+    markdown: str,
+    required_sections: Iterable[str],
+    path: str,
+) -> list[CheckResult]:
+    headings = markdown_heading_texts(markdown)
+    return [
+        CheckResult(
+            f"{check_prefix}:section:{required_section}",
+            False,
+            f"missing section: {required_section}",
+            path,
+        )
+        for required_section in required_sections
+        if normalize_reference_label(required_section) not in headings
+    ]
 
 
 def story_closeout_gate_order_valid(markdown: str) -> bool:
@@ -6446,6 +6490,16 @@ def validate_published_equipment_delivery(root: Path) -> list[CheckResult]:
                             shop_card,
                         )
                     )
+                else:
+                    card_markdown = _card_path.read_text(encoding="utf-8")
+                    results.extend(
+                        missing_markdown_section_results(
+                            f"published_equipment_delivery:equipment:{equipment_id}:shop_card",
+                            card_markdown,
+                            PUBLISHED_EQUIPMENT_SHOP_CARD_REQUIRED_SECTIONS,
+                            shop_card,
+                        )
+                    )
         inspection_test_plan = record.get("inspection_test_plan")
         if isinstance(inspection_test_plan, str) and inspection_test_plan.strip():
             if not (
@@ -6473,20 +6527,14 @@ def validate_published_equipment_delivery(root: Path) -> list[CheckResult]:
                     )
                 else:
                     plan_markdown = plan_path.read_text(encoding="utf-8")
-                    plan_headings = markdown_heading_texts(plan_markdown)
-                    for required_section in PUBLISHED_EQUIPMENT_INSPECTION_TEST_PLAN_REQUIRED_SECTIONS:
-                        if normalize_reference_label(required_section) not in plan_headings:
-                            results.append(
-                                CheckResult(
-                                    (
-                                        "published_equipment_delivery:equipment:"
-                                        f"{equipment_id}:inspection_test_plan:section:{required_section}"
-                                    ),
-                                    False,
-                                    f"missing section: {required_section}",
-                                    inspection_test_plan,
-                                )
-                            )
+                    results.extend(
+                        missing_markdown_section_results(
+                            f"published_equipment_delivery:equipment:{equipment_id}:inspection_test_plan",
+                            plan_markdown,
+                            PUBLISHED_EQUIPMENT_INSPECTION_TEST_PLAN_REQUIRED_SECTIONS,
+                            inspection_test_plan,
+                        )
+                    )
                     completion_decision = markdown_heading_section_body(plan_markdown, "Completion Decision") or ""
                     if delivery_compliance == "passed" and not (
                         "Completion status: complete" in completion_decision
@@ -6501,6 +6549,57 @@ def validate_published_equipment_delivery(root: Path) -> list[CheckResult]:
                                 False,
                                 "delivery_compliance passed requires completed ITP evidence",
                                 inspection_test_plan,
+                            )
+                        )
+        closeout_record = record.get("closeout_record")
+        if isinstance(closeout_record, str) and closeout_record.strip():
+            if not (
+                closeout_record.startswith(f"{PUBLISHED_EQUIPMENT_CLOSEOUT_RECORD_DIR}/")
+                and closeout_record.endswith(".md")
+            ):
+                results.append(
+                    CheckResult(
+                        f"published_equipment_delivery:equipment:{equipment_id}:closeout_record",
+                        False,
+                        "closeout_record must be a Markdown file under docs/closeout/",
+                        PUBLISHED_EQUIPMENT_INVENTORY_PATH,
+                    )
+                )
+            else:
+                closeout_ok, closeout_detail, closeout_path = repo_relative_path_status(root, closeout_record, "file")
+                if not closeout_ok:
+                    results.append(
+                        CheckResult(
+                            f"published_equipment_delivery:equipment:{equipment_id}:closeout_record",
+                            False,
+                            closeout_detail,
+                            closeout_record,
+                        )
+                    )
+                else:
+                    closeout_markdown = closeout_path.read_text(encoding="utf-8")
+                    results.extend(
+                        missing_markdown_section_results(
+                            f"published_equipment_delivery:equipment:{equipment_id}:closeout_record",
+                            closeout_markdown,
+                            PUBLISHED_EQUIPMENT_CLOSEOUT_RECORD_REQUIRED_SECTIONS,
+                            closeout_record,
+                        )
+                    )
+                    completion_decision = markdown_heading_section_body(closeout_markdown, "Completion Decision") or ""
+                    if delivery_compliance == "passed" and not (
+                        "Completion status: complete" in completion_decision
+                        and "Delivery compliance: passed" in completion_decision
+                    ):
+                        results.append(
+                            CheckResult(
+                                (
+                                    "published_equipment_delivery:equipment:"
+                                    f"{equipment_id}:closeout_record:completion"
+                                ),
+                                False,
+                                "delivery_compliance passed requires completed closeout evidence",
+                                closeout_record,
                             )
                         )
         components = record.get("components", [])

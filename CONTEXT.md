@@ -264,6 +264,13 @@ A reviewed decision for how onboarding handles an Existing Equipment Surface or
 Equipment Facet.
 _Avoid_: installed state, inferred user intent, Source Material Disposition
 
+**Equipment Epic Closeout Record**:
+The durable repo artifact that records the story-level completion decision for
+one stockable equipment release or slice, including delivery surfaces, Issue
+Ops projection, validation evidence, Ralph Review Until Clean evidence, and
+completion status.
+_Avoid_: issue comment, PR summary, shop card, inspection test plan
+
 **Equipment Evidence Entry**:
 A structured evidence item that supports equipment dispositions, risk
 acceptances, compatibility decisions, or derived coverage claims.
@@ -744,8 +751,9 @@ _Avoid_: vague note, unstructured context dump
 
 **Stock Inventory Record**:
 The canonical structured record for one stockable equipment release or slice in
-the Armory stock inventory.
-_Avoid_: shop card, Capability Card, promotion state
+the Armory stock inventory, including links to its shop card, inspection and
+test plan, and closeout record.
+_Avoid_: shop card, Capability Card, promotion state, issue comment
 
 **Source Disposition Ledger**:
 A durable, self-contained closeout surface that records source-handoff coverage, retained claim summaries, operator dispositions, and source-retirement evidence after raw source handoff materials are retired.

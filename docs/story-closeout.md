@@ -21,14 +21,22 @@ Run closeout gates in this order:
    discovered during the story, then route publishable findings into the issue
    tracker, Tooling Request, or the relevant Equipment Candidate, or record why
    the insight is not durable or not projectable.
-7. Run Cross-Boundary Coherence before Story Quality because quality review depends on coherent process evidence.
-8. Run Story Quality Ralph Review after coherence findings are fixed or soundly rejected.
-9. Run final validation and publication-readiness checks required by the active plan or repository policy. For current repository integrity, `.python-version` declares the Python 3.14 runtime and `python3.14 tools/validate_armory_integrity.py --final-closeout` is the branch-push and external-projection readiness check.
-10. Push or otherwise publish the branch only when the active plan, operator direction, or issue-projection surface needs a pushed commit before PR creation. A stated operator pause point may occur here.
-11. Publish or update issue, PR, release, and handoff surfaces from the clean final story evidence.
-12. Perform publication actions that remain in scope, respecting repository policy and stated operator pause points.
+7. When the story claims published or delivery-compliant stockable equipment,
+   complete the linked Equipment Epic Closeout Record under `docs/closeout/`
+   before issue, PR, release, or handoff projection treats the equipment as
+   delivered.
+8. Run Cross-Boundary Coherence before Story Quality because quality review depends on coherent process evidence.
+9. Run Story Quality Ralph Review after coherence findings are fixed or soundly rejected.
+10. Run final validation and publication-readiness checks required by the active plan or repository policy. For current repository integrity, `.python-version` declares the Python 3.14 runtime and `python3.14 tools/validate_armory_integrity.py --final-closeout` is the branch-push and external-projection readiness check.
+11. Push or otherwise publish the branch only when the active plan, operator direction, or issue-projection surface needs a pushed commit before PR creation. A stated operator pause point may occur here.
+12. Publish or update issue, PR, release, and handoff surfaces from the clean final story evidence.
+13. Perform publication actions that remain in scope, respecting repository policy and stated operator pause points.
 
 Do not use issue projection, a PR body, or a final chat summary to make stale committed docs look current. Update the repo surface first when the evidence belongs in the repo.
+
+Do not close a stockable equipment epic as delivered from issue comments alone.
+The stock record must link to the current Equipment Epic Closeout Record, and
+projection surfaces must summarize that record rather than replace it.
 
 Before committing or externally projecting closeout evidence, classify evidence artifacts by durability. Durable project evidence and portable review summaries may be committed or projected. Instance-scoped scratch artifacts, including raw tool reports, local scan bundles, copied diffs, host-local paths, screenshots, or work directories, should be summarized by scope, disposition, and durable conclusions instead of treated as project truth.
 
@@ -84,6 +92,9 @@ A story is ready to close when:
 - Story Quality has checked alignment with the [Armory Vision](vision.md) where
   the story affects ideation, architecture, design, strategy, validation,
   maintenance, or the intended agent and operator experience;
+- stockable equipment delivery claims have a linked Equipment Epic Closeout
+  Record with complete delivery-surface, validation, review, projection, and
+  completion-decision evidence;
 - issue, PR, release, and handoff drafts or published surfaces are projected from the same current repo facts;
 - actionable Reflection Findings have privacy and disclosure limits classified,
   then are routed to the issue tracker, Tooling Request, or the relevant

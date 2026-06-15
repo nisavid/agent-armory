@@ -7902,6 +7902,7 @@ class TemplateValidationTests(unittest.TestCase):
         "templates/config/example.toml",
         "templates/security-review.md",
         "templates/context-budget-review.md",
+        "templates/equipment-epic-closeout.md",
         "templates/equipment-inspection-test-plan.md",
         "templates/equipment-stock-record.toml",
     ]
@@ -7916,6 +7917,7 @@ class TemplateValidationTests(unittest.TestCase):
     ]
     root_template_files = [
         "templates/capability-card.md",
+        "templates/equipment-epic-closeout.md",
         "templates/equipment-shop-card.md",
         "templates/equipment-inspection-test-plan.md",
         "templates/interface-decision-record.md",
@@ -8026,6 +8028,27 @@ class TemplateValidationTests(unittest.TestCase):
             ## Inspection and evidence
 
             ## Support and lifecycle
+            """,
+        )
+        self.write_template(
+            root,
+            "templates/equipment-epic-closeout.md",
+            """\
+            # Equipment Epic Closeout: <name>
+
+            Status: Template
+
+            ## Scope
+
+            ## Delivery Surfaces
+
+            ## Issue Ops Projection
+
+            ## Validation and Evidence
+
+            ## Ralph Review Until Clean
+
+            ## Completion Decision
             """,
         )
         self.write_template(
@@ -12323,6 +12346,28 @@ class TemplateValidationTests(unittest.TestCase):
             results,
         )
 
+    def test_validate_templates_requires_equipment_epic_closeout_sections(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_all_templates(root)
+            self.write_template(
+                root,
+                "templates/equipment-epic-closeout.md",
+                "# Equipment Epic Closeout\n\nStatus: Template\n\n## Scope\n",
+            )
+
+            results = run(root)
+
+        self.assertIn(
+            CheckResult(
+                "template:section:templates/equipment-epic-closeout.md:Completion Decision",
+                False,
+                "missing section: Completion Decision",
+                "templates/equipment-epic-closeout.md",
+            ),
+            results,
+        )
+
     def test_validate_templates_requires_equipment_stock_record_schema_version(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -12412,6 +12457,63 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
             "## Completion Decision\n\n"
             "Completion status: complete\n\n"
             "Delivery compliance: passed\n",
+            encoding="utf-8",
+        )
+
+    def write_shop_card(
+        self,
+        root: Path,
+        relative_path: str = "docs/equipment/shop-cards/example.md",
+    ) -> None:
+        card = root / relative_path
+        card.parent.mkdir(parents=True, exist_ok=True)
+        card.write_text(
+            "# Example Equipment\n\n"
+            "Status: Equipment Shop Card\n\n"
+            "## Fit\n\n"
+            "Example fit.\n\n"
+            "## What is stocked\n\n"
+            "Example stock slice.\n\n"
+            "## Delivery status\n\n"
+            "Delivery compliance: passed\n\n"
+            "## Gear-up paths\n\n"
+            "- Use the stocked runtime.\n\n"
+            "## Component manifest\n\n"
+            "- Runtime: required.\n\n"
+            "## Inspection and evidence\n\n"
+            "- Inspection test plan records evidence.\n\n"
+            "## Support and lifecycle\n\n"
+            "Supported by the owning stock record.\n",
+            encoding="utf-8",
+        )
+
+    def write_closeout_record(
+        self,
+        root: Path,
+        relative_path: str = "docs/closeout/example.md",
+        *,
+        completion_status: str = "complete",
+        delivery_compliance: str = "passed",
+    ) -> None:
+        closeout = root / relative_path
+        closeout.parent.mkdir(parents=True, exist_ok=True)
+        closeout.write_text(
+            "# Example Equipment Epic Closeout\n\n"
+            "Status: Equipment Epic Closeout Record\n\n"
+            "## Scope\n\n"
+            "Example stock slice.\n\n"
+            "## Delivery Surfaces\n\n"
+            "- Stock inventory record: `inventory/equipment.toml`.\n\n"
+            "## Issue Ops Projection\n\n"
+            "- Project issue comments from this closeout record.\n\n"
+            "## Validation and Evidence\n\n"
+            "- Validator passed.\n\n"
+            "## Ralph Review Until Clean\n\n"
+            "- Cross-Boundary Coherence Ralph Review: `Ralph Review Cycle 1`.\n"
+            "- Story Quality Ralph Review: `Ralph Review Cycle 1`.\n\n"
+            "## Completion Decision\n\n"
+            f"Completion status: {completion_status}\n\n"
+            f"Delivery compliance: {delivery_compliance}\n",
             encoding="utf-8",
         )
 
@@ -12518,6 +12620,239 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
                 False,
                 "missing inspection_test_plan",
                 "inventory/equipment.toml",
+            ),
+            results,
+        )
+
+    def test_validate_published_equipment_delivery_rejects_missing_closeout_record(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_inventory(
+                root,
+                """
+                schema_version = "agent-armory.equipment-stock.v1"
+
+                [[equipment]]
+                id = "example"
+                name = "Example Equipment"
+                summary = "Demonstrates stock inventory validation."
+                promotion_state = "published"
+                delivery_compliance = "pending"
+                shop_card = "docs/equipment/shop-cards/example.md"
+                inspection_test_plan = "docs/equipment/inspection-test-plans/example.md"
+                """,
+            )
+            self.write_shop_card(root)
+            self.write_inspection_test_plan(root)
+
+            results = validator.validate_published_equipment_delivery(root)
+
+        self.assertIn(
+            CheckResult(
+                "published_equipment_delivery:equipment:example:closeout_record",
+                False,
+                "missing closeout_record",
+                "inventory/equipment.toml",
+            ),
+            results,
+        )
+
+    def test_validate_published_equipment_delivery_rejects_closeout_record_outside_closeout_directory(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_inventory(
+                root,
+                """
+                schema_version = "agent-armory.equipment-stock.v1"
+
+                [[equipment]]
+                id = "example"
+                name = "Example Equipment"
+                summary = "Demonstrates stock inventory validation."
+                promotion_state = "published"
+                delivery_compliance = "pending"
+                shop_card = "docs/equipment/shop-cards/example.md"
+                inspection_test_plan = "docs/equipment/inspection-test-plans/example.md"
+                closeout_record = "docs/equipment/example-closeout.md"
+                """,
+            )
+            self.write_shop_card(root)
+            self.write_inspection_test_plan(root)
+            self.write_closeout_record(root, "docs/equipment/example-closeout.md")
+
+            results = validator.validate_published_equipment_delivery(root)
+
+        self.assertIn(
+            CheckResult(
+                "published_equipment_delivery:equipment:example:closeout_record",
+                False,
+                "closeout_record must be a Markdown file under docs/closeout/",
+                "inventory/equipment.toml",
+            ),
+            results,
+        )
+
+    def test_validate_published_equipment_delivery_rejects_closeout_record_path_escape(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_inventory(
+                root,
+                """
+                schema_version = "agent-armory.equipment-stock.v1"
+
+                [[equipment]]
+                id = "example"
+                name = "Example Equipment"
+                summary = "Demonstrates stock inventory validation."
+                promotion_state = "published"
+                delivery_compliance = "pending"
+                shop_card = "docs/equipment/shop-cards/example.md"
+                inspection_test_plan = "docs/equipment/inspection-test-plans/example.md"
+                closeout_record = "docs/closeout/../example.md"
+                """,
+            )
+            self.write_shop_card(root)
+            self.write_inspection_test_plan(root)
+
+            results = validator.validate_published_equipment_delivery(root)
+
+        self.assertIn(
+            CheckResult(
+                "published_equipment_delivery:equipment:example:closeout_record",
+                False,
+                "path invalid",
+                "docs/closeout/../example.md",
+            ),
+            results,
+        )
+
+    def test_validate_published_equipment_delivery_rejects_closeout_record_missing_required_section(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_inventory(
+                root,
+                """
+                schema_version = "agent-armory.equipment-stock.v1"
+
+                [[equipment]]
+                id = "example"
+                name = "Example Equipment"
+                summary = "Demonstrates stock inventory validation."
+                promotion_state = "published"
+                delivery_compliance = "pending"
+                shop_card = "docs/equipment/shop-cards/example.md"
+                inspection_test_plan = "docs/equipment/inspection-test-plans/example.md"
+                closeout_record = "docs/closeout/example.md"
+                """,
+            )
+            self.write_shop_card(root)
+            self.write_inspection_test_plan(root)
+            closeout = root / "docs/closeout/example.md"
+            closeout.parent.mkdir(parents=True, exist_ok=True)
+            closeout.write_text(
+                "# Example Equipment Epic Closeout\n\n"
+                "Status: Equipment Epic Closeout Record\n\n"
+                "## Scope\n\nExample stock slice.\n\n"
+                "## Delivery Surfaces\n\n- Stock inventory record.\n\n"
+                "## Validation and Evidence\n\n- Validator passed.\n\n"
+                "## Ralph Review Until Clean\n\n"
+                "- Cross-Boundary Coherence Ralph Review: `Ralph Review Cycle 1`.\n"
+                "- Story Quality Ralph Review: `Ralph Review Cycle 1`.\n\n"
+                "## Completion Decision\n\nCompletion status: pending\n",
+                encoding="utf-8",
+            )
+
+            results = validator.validate_published_equipment_delivery(root)
+
+        self.assertIn(
+            CheckResult(
+                "published_equipment_delivery:equipment:example:closeout_record:section:Issue Ops Projection",
+                False,
+                "missing section: Issue Ops Projection",
+                "docs/closeout/example.md",
+            ),
+            results,
+        )
+
+    def test_validate_published_equipment_delivery_rejects_passed_delivery_without_completed_closeout(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_inventory(
+                root,
+                """
+                schema_version = "agent-armory.equipment-stock.v1"
+
+                [[equipment]]
+                id = "example"
+                name = "Example Equipment"
+                summary = "Demonstrates stock inventory validation."
+                promotion_state = "published"
+                delivery_compliance = "passed"
+                shop_card = "docs/equipment/shop-cards/example.md"
+                inspection_test_plan = "docs/equipment/inspection-test-plans/example.md"
+                closeout_record = "docs/closeout/example.md"
+                """,
+            )
+            self.write_shop_card(root)
+            self.write_inspection_test_plan(root)
+            self.write_closeout_record(root, completion_status="pending", delivery_compliance="pending")
+
+            results = validator.validate_published_equipment_delivery(root)
+
+        self.assertIn(
+            CheckResult(
+                "published_equipment_delivery:equipment:example:closeout_record:completion",
+                False,
+                "delivery_compliance passed requires completed closeout evidence",
+                "docs/closeout/example.md",
+            ),
+            results,
+        )
+
+    def test_validate_published_equipment_delivery_rejects_shop_card_missing_required_section(self):
+        validator = importlib.import_module("tools.validate_armory_integrity")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_inventory(
+                root,
+                """
+                schema_version = "agent-armory.equipment-stock.v1"
+
+                [[equipment]]
+                id = "example"
+                name = "Example Equipment"
+                summary = "Demonstrates stock inventory validation."
+                promotion_state = "published"
+                delivery_compliance = "pending"
+                shop_card = "docs/equipment/shop-cards/example.md"
+                inspection_test_plan = "docs/equipment/inspection-test-plans/example.md"
+                closeout_record = "docs/closeout/example.md"
+                """,
+            )
+            shop_card = root / "docs/equipment/shop-cards/example.md"
+            shop_card.parent.mkdir(parents=True, exist_ok=True)
+            shop_card.write_text(
+                "# Example Equipment\n\n"
+                "Status: Equipment Shop Card\n\n"
+                "## Fit\n\nExample fit.\n\n",
+                encoding="utf-8",
+            )
+            self.write_inspection_test_plan(root)
+            self.write_closeout_record(root)
+
+            results = validator.validate_published_equipment_delivery(root)
+
+        self.assertIn(
+            CheckResult(
+                "published_equipment_delivery:equipment:example:shop_card:section:What is stocked",
+                False,
+                "missing section: What is stocked",
+                "docs/equipment/shop-cards/example.md",
             ),
             results,
         )
@@ -12708,6 +13043,7 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
                 delivery_compliance = "passed"
                 shop_card = "docs/equipment/shop-cards/example.md"
                 inspection_test_plan = "docs/equipment/inspection-test-plans/example.md"
+                closeout_record = "docs/closeout/example.md"
 
                 [[equipment.components]]
                 name = "Runtime"
@@ -12723,10 +13059,9 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
                 notes = "Future plugin is tracked but not part of the stocked slice."
                 """,
             )
-            shop_card = root / "docs/equipment/shop-cards/example.md"
-            shop_card.parent.mkdir(parents=True, exist_ok=True)
-            shop_card.write_text("# Example Equipment\n\nStatus: Equipment Shop Card\n", encoding="utf-8")
+            self.write_shop_card(root)
             self.write_inspection_test_plan(root)
+            self.write_closeout_record(root)
 
             results = validator.validate_published_equipment_delivery(root)
 
@@ -12779,11 +13114,10 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
                 delivery_compliance = "passed"
                 shop_card = "docs/equipment/shop-cards/example.md"
                 inspection_test_plan = "docs/equipment/inspection-test-plans/example.md"
+                closeout_record = "docs/closeout/example.md"
                 """,
             )
-            shop_card = root / "docs/equipment/shop-cards/example.md"
-            shop_card.parent.mkdir(parents=True, exist_ok=True)
-            shop_card.write_text("# Example Equipment\n\nStatus: Equipment Shop Card\n", encoding="utf-8")
+            self.write_shop_card(root)
             plan = root / "docs/equipment/inspection-test-plans/example.md"
             plan.parent.mkdir(parents=True, exist_ok=True)
             plan.write_text(
@@ -12799,6 +13133,7 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
                 "Delivery compliance: passed\n",
                 encoding="utf-8",
             )
+            self.write_closeout_record(root)
 
             results = validator.validate_published_equipment_delivery(root)
 
@@ -13824,6 +14159,7 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
             "docs/equipment/inspection-test-plans/README.md",
             "docs/equipment/shop-cards/README.md",
             "inventory/equipment.toml",
+            "templates/equipment-epic-closeout.md",
             "templates/equipment-inspection-test-plan.md",
             "templates/equipment-shop-card.md",
             "templates/equipment-stock-record.toml",
