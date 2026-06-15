@@ -10,6 +10,7 @@ from pathlib import Path
 REPO_SERVER = Path("tools/agent_equipment_config_mcp_server.py")
 REPO_MARKER = Path("inventory/equipment.toml")
 MARKETPLACE_MARKER = Path(".agents/plugins/marketplace.json")
+SERVER_ENV_VAR_NAMES = ("AGENT_ARMORY_ROOT",)
 
 
 def has_armory_marketplace(candidate: Path) -> bool:
@@ -54,6 +55,14 @@ def find_armory_root(*, env_root: str | None = None, start_dir: Path | None = No
     return None
 
 
+def server_environment() -> dict[str, str]:
+    return {
+        name: value
+        for name in SERVER_ENV_VAR_NAMES
+        if (value := os.environ.get(name)) is not None
+    }
+
+
 def launch(argv: list[str] | None = None) -> int:
     _argv = argv if argv is not None else sys.argv[1:]
     root = find_armory_root(
@@ -83,7 +92,7 @@ def launch(argv: list[str] | None = None) -> int:
         os.execve(
             python_executable,
             [python_executable, str(server), *_argv],
-            os.environ.copy(),
+            server_environment(),
         )
     except OSError as error:
         print(
