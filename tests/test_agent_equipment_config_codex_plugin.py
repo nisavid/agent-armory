@@ -794,7 +794,7 @@ class AgentEquipmentConfigCodexPluginValidationTests(unittest.TestCase):
                     server = root / REPO_SERVER
                     os.chdir(root)
                     python_executable = str(Path(sys.executable).resolve())
-                    os.execve(python_executable, [python_executable, "-c", "print(1)"], os.environ.copy())
+                    os.execve(python_executable, [python_executable, "-c", "print(1)"], server_environment())
                 """,
             )
 
@@ -846,6 +846,61 @@ class AgentEquipmentConfigCodexPluginValidationTests(unittest.TestCase):
         self.assertIn(expected, root_guard_results)
         self.assertIn(expected, exec_guard_results)
 
+    def test_validator_rejects_launcher_with_broad_server_environment_passthrough(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_valid_plugin_fixture(root)
+            launcher_path = root / LAUNCHER_PATH
+            launcher_text = launcher_path.read_text(encoding="utf-8")
+            launcher_path.write_text(
+                launcher_text.replace("            server_environment(),", "            os.environ.copy(),"),
+                encoding="utf-8",
+            )
+
+            results = validator.validate_agent_equipment_config_codex_plugin(root)
+
+        self.assertIn(
+            CheckResult(
+                "agent_equipment_config_codex_plugin:launcher:content",
+                False,
+                "launcher must resolve the Armory checkout and exec the standalone MCP server",
+                "plugins/agent-equipment-config/mcp/agent_equipment_config_launcher.py",
+            ),
+            results,
+        )
+
+    def test_validator_rejects_launcher_with_control_flow_in_exec_failure_handler(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_valid_plugin_fixture(root)
+            launcher_path = root / LAUNCHER_PATH
+            launcher_text = launcher_path.read_text(encoding="utf-8")
+            launcher_path.write_text(
+                launcher_text.replace(
+                    '        print(\n'
+                    '            f"Agent Equipment Config MCP launcher could not execute {python_executable}: {error}",\n'
+                    "            file=sys.stderr,\n"
+                    "        )\n"
+                    "        return 127\n",
+                    "        while True:\n"
+                    "            pass\n"
+                    "        return 127\n",
+                ),
+                encoding="utf-8",
+            )
+
+            results = validator.validate_agent_equipment_config_codex_plugin(root)
+
+        self.assertIn(
+            CheckResult(
+                "agent_equipment_config_codex_plugin:launcher:content",
+                False,
+                "launcher must resolve the Armory checkout and exec the standalone MCP server",
+                "plugins/agent-equipment-config/mcp/agent_equipment_config_launcher.py",
+            ),
+            results,
+        )
+
     def test_validator_rejects_launcher_entrypoint_before_launch_function(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -891,7 +946,7 @@ class AgentEquipmentConfigCodexPluginValidationTests(unittest.TestCase):
                     "def candidate_is_armory_root(candidate: Path) -> bool:\n",
                     "def candidate_is_armory_root(candidate: Path) -> bool:\n"
                     "    python_executable = str(Path(sys.executable).resolve())\n"
-                    "    os.execve(python_executable, [python_executable, str(candidate / REPO_SERVER)], os.environ.copy())\n",
+                    "    os.execve(python_executable, [python_executable, str(candidate / REPO_SERVER)], server_environment())\n",
                 ),
                 encoding="utf-8",
             )
@@ -929,7 +984,7 @@ class AgentEquipmentConfigCodexPluginValidationTests(unittest.TestCase):
                     server = root / REPO_SERVER
                     os.chdir(root)
                     python_executable = str(Path(sys.executable).resolve())
-                    os.execve(python_executable, [python_executable, str(server)], os.environ.copy())
+                    os.execve(python_executable, [python_executable, str(server)], server_environment())
                 """,
             )
 
@@ -974,7 +1029,7 @@ class AgentEquipmentConfigCodexPluginValidationTests(unittest.TestCase):
                     os.chdir(root)
                     python_executable = str(Path(sys.executable).resolve())
                     try:
-                        os.execve(python_executable, [python_executable, str(server)], os.environ.copy())
+                        os.execve(python_executable, [python_executable, str(server)], server_environment())
                     except OSError:
                         return 127
                 """,
@@ -1018,7 +1073,7 @@ class AgentEquipmentConfigCodexPluginValidationTests(unittest.TestCase):
                     os.chdir(root)
                     python_executable = str(Path(sys.executable).resolve())
                     try:
-                        os.execve(python_executable, [python_executable, str(server)], os.environ.copy())
+                        os.execve(python_executable, [python_executable, str(server)], server_environment())
                     except OSError:
                         return 127
                 """,
@@ -1070,6 +1125,25 @@ class AgentEquipmentConfigCodexPluginValidationTests(unittest.TestCase):
 
 
 class AgentEquipmentConfigLauncherTests(unittest.TestCase):
+    def test_launcher_server_environment_allows_only_agent_armory_root(self):
+        launcher = load_module(
+            Path(__file__).resolve().parents[1] / LAUNCHER_PATH,
+            "config_launcher_server_environment",
+        )
+
+        with mock.patch.dict(
+            launcher.os.environ,
+            {
+                "AGENT_ARMORY_ROOT": "/tmp/armory",
+                "PATH": "/tmp/controlled",
+                "SECRET_TOKEN": "secret",
+            },
+            clear=True,
+        ):
+            env = launcher.server_environment()
+
+        self.assertEqual({"AGENT_ARMORY_ROOT": "/tmp/armory"}, env)
+
     def test_launcher_prefers_valid_env_root_and_finds_server(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -1118,6 +1192,7 @@ class AgentEquipmentConfigLauncherTests(unittest.TestCase):
             [python_executable, str(root.resolve() / "tools/agent_equipment_config_mcp_server.py"), "--stdio"],
             exec_call["args"],
         )
+        self.assertEqual({}, exec_call["env"])
 
     def test_launcher_rejects_lookalike_repo_without_marketplace_marker(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -1156,7 +1231,15 @@ class AgentEquipmentConfigLauncherTests(unittest.TestCase):
                 exec_call["env"] = env
                 raise RuntimeError("stop before exec")
 
-            with mock.patch.dict(launcher.os.environ, {"AGENT_ARMORY_ROOT": str(root)}, clear=True):
+            with mock.patch.dict(
+                launcher.os.environ,
+                {
+                    "AGENT_ARMORY_ROOT": str(root),
+                    "PATH": str(Path(tmpdir) / "spoofed-bin"),
+                    "SECRET_TOKEN": "secret",
+                },
+                clear=True,
+            ):
                 with mock.patch.object(launcher.os, "chdir") as chdir:
                     with mock.patch.object(launcher.os, "execve", side_effect=fake_execve):
                         with self.assertRaisesRegex(RuntimeError, "stop before exec"):
@@ -1169,6 +1252,7 @@ class AgentEquipmentConfigLauncherTests(unittest.TestCase):
             [python_executable, str(root.resolve() / "tools/agent_equipment_config_mcp_server.py"), "--stdio"],
             exec_call["args"],
         )
+        self.assertEqual({"AGENT_ARMORY_ROOT": str(root)}, exec_call["env"])
 
     def test_launcher_rechecks_server_before_exec(self):
         with tempfile.TemporaryDirectory() as tmpdir:

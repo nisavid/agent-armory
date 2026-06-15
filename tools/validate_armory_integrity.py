@@ -7113,6 +7113,23 @@ def ast_constant_set_assignment(tree: ast.Module, *, target: str, values: set[st
     } == values and len(assigned.elts) == len(values)
 
 
+def ast_constant_tuple_assignment(tree: ast.Module, *, target: str, values: tuple[str, ...]) -> bool:
+    assignments = [
+        node
+        for node in tree.body
+        if isinstance(node, ast.Assign)
+        and any(isinstance(item, ast.Name) and item.id == target for item in node.targets)
+    ]
+    if len(assignments) != 1:
+        return False
+    assigned = assignments[0].value
+    if not isinstance(assigned, ast.Tuple):
+        return False
+    return tuple(
+        item.value for item in assigned.elts if isinstance(item, ast.Constant) and isinstance(item.value, str)
+    ) == values and len(assigned.elts) == len(values)
+
+
 def ast_calls_are_allowlisted(
     node: ast.AST, *, allowed_calls: set[str], allowed_method_names: set[str]
 ) -> bool:
@@ -7340,13 +7357,17 @@ def ast_execve_repo_server(node: ast.AST) -> bool:
         and second_argv.args[0].id == "server"
         and not second_argv.keywords
     )
-    env_copy = (
+    env_allowlist = (
         isinstance(env, ast.Call)
-        and ast_call_name(env.func) == "os.environ.copy"
+        and ast_call_name(env.func) == "server_environment"
         and not env.args
         and not env.keywords
     )
-    return has_python_command and has_server_argv and env_copy
+    return has_python_command and has_server_argv and env_allowlist
+
+
+def ast_print_expr(node: ast.AST) -> bool:
+    return ast_expression_call(node, "print") is not None
 
 
 def ast_execve_try_returns_127(node: ast.AST) -> bool:
@@ -7357,9 +7378,25 @@ def ast_execve_try_returns_127(node: ast.AST) -> bool:
     if len(node.handlers) != 1 or node.orelse or node.finalbody:
         return False
     handler = node.handlers[0]
-    return ast_call_name(handler.type) == "OSError" and ast_terminal_return_constant(
-        handler.body,
-        127,
+    return (
+        ast_call_name(handler.type) == "OSError"
+        and len(handler.body) == 2
+        and ast_print_expr(handler.body[0])
+        and ast_return_constant(handler.body[1], 127)
+    )
+
+
+def ast_server_environment_contract(function: ast.FunctionDef) -> bool:
+    names = ast_name_ids(function)
+    calls = set(ast_call_names(function))
+    constants = ast_string_constants(function)
+    attrs = ast_attribute_names(function)
+    return (
+        "SERVER_ENV_VAR_NAMES" in names
+        and "os.environ.get" in calls
+        and "AGENT_ARMORY_ROOT" not in constants
+        and "copy" not in attrs
+        and any(isinstance(statement, ast.Return) for statement in function.body)
     )
 
 
@@ -7452,6 +7489,7 @@ def ast_launcher_module_contract(tree: ast.Module) -> bool:
         "has_armory_marketplace",
         "candidate_is_armory_root",
         "find_armory_root",
+        "server_environment",
         "launch",
     }
     seen_functions: set[str] = set()
@@ -7470,7 +7508,12 @@ def ast_launcher_module_contract(tree: ast.Module) -> bool:
             continue
         if isinstance(node, ast.Assign) and any(
             isinstance(target, ast.Name)
-            and target.id in {"REPO_SERVER", "REPO_MARKER", "MARKETPLACE_MARKER"}
+            and target.id in {
+                "REPO_SERVER",
+                "REPO_MARKER",
+                "MARKETPLACE_MARKER",
+                "SERVER_ENV_VAR_NAMES",
+            }
             for target in node.targets
         ):
             continue
@@ -7490,6 +7533,15 @@ def ast_launcher_module_contract(tree: ast.Module) -> bool:
         entrypoint_predicate=ast_launch_entrypoint,
     ):
         return False
+    if not ast_constant_tuple_assignment(
+        tree,
+        target="SERVER_ENV_VAR_NAMES",
+        values=("AGENT_ARMORY_ROOT",),
+    ):
+        return False
+    server_environment = ast_function(tree, "server_environment")
+    if server_environment is None or not ast_server_environment_contract(server_environment):
+        return False
     scoped_calls = {
         "has_armory_marketplace": (
             {"any", "isinstance", "json.loads"},
@@ -7503,9 +7555,22 @@ def ast_launcher_module_contract(tree: ast.Module) -> bool:
             {"Path", "Path.cwd", "candidate_is_armory_root"},
             {"expanduser", "resolve"},
         ),
+        "server_environment": (
+            {"os.environ.get"},
+            set(),
+        ),
         "launch": (
-            {"Path", "find_armory_root", "os.chdir", "os.environ.get", "os.execve", "print", "str"},
-            {"copy", "is_file", "resolve"},
+            {
+                "Path",
+                "find_armory_root",
+                "os.chdir",
+                "os.environ.get",
+                "os.execve",
+                "print",
+                "server_environment",
+                "str",
+            },
+            {"is_file", "resolve"},
         ),
     }
     return all(

@@ -25,11 +25,12 @@ current Python interpreter.
 - `.mcp.json` uses a direct local server map, `python3.14`, plugin-local
   launcher args, `env_vars = ["AGENT_ARMORY_ROOT"]`, default prompt approval,
   and prompt overrides for `config.apply` and `migrate.config_apply`.
-- No static secrets, HTTP MCP endpoint, broad environment pass-through, or
-  alternate executable path is allowed by the validator.
+- No static secrets, HTTP MCP endpoint, broad server environment pass-through,
+  or alternate executable path is allowed by the validator.
 - The launcher rejects lookalike roots without the Armory marketplace marker,
-  uses an absolute interpreter path for the final `exec`, and fails closed with
-  install guidance when no trusted checkout is found.
+  uses an absolute interpreter path and an `AGENT_ARMORY_ROOT`-only server
+  environment for the final `exec`, and fails closed with install guidance when
+  no trusted checkout is found.
 - The guard hook no-ops unrelated tools and denies Config local-write MCP calls
   unless the tool input includes `apply_authority = "operator"`.
 - The validator statically restricts launcher and hook imports, functions,
