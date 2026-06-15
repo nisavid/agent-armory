@@ -50,8 +50,6 @@ def handle_request(message: dict[str, Any]) -> dict[str, Any] | None:
         return None
     if not isinstance(method, str):
         return jsonrpc_error(request_id, -32600, "JSON-RPC method must be a string")
-    if method == "notifications/initialized":
-        return None
     if method == "initialize":
         if not isinstance(params, dict):
             return jsonrpc_error(request_id, -32602, "initialize params must be an object")

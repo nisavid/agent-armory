@@ -273,6 +273,16 @@ class AgentEquipmentConfigMcpServerTests(unittest.TestCase):
         self.assertEqual(responses, [])
         self.assertEqual(stderr, "")
 
+    def test_server_replies_to_request_shaped_initialized_method(self):
+        responses, stderr, returncode = self.run_server(
+            [{"jsonrpc": "2.0", "id": 1, "method": "notifications/initialized", "params": {}}]
+        )
+
+        self.assertEqual(returncode, 0, stderr)
+        self.assertEqual(responses[0]["id"], 1)
+        self.assertEqual(responses[0]["error"]["code"], -32601)
+        self.assertEqual(stderr, "")
+
     def test_server_returns_jsonrpc_error_for_unexpected_tool_exceptions(self):
         with mock.patch.object(
             agent_equipment_config_mcp_server.agent_equipment_config,
