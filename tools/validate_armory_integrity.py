@@ -7368,12 +7368,26 @@ def ast_execve_repo_server(node: ast.AST) -> bool:
 
 def ast_stderr_print_expr(node: ast.AST) -> bool:
     call = ast_expression_call(node, "print")
+    if call is None or len(call.args) != 1 or len(call.keywords) != 1:
+        return False
+    keyword = call.keywords[0]
+    message = call.args[0]
+    if keyword.arg != "file" or ast_call_name(keyword.value) != "sys.stderr":
+        return False
+    if not isinstance(message, ast.JoinedStr):
+        return False
+    constants = {
+        part.value for part in message.values if isinstance(part, ast.Constant) and isinstance(part.value, str)
+    }
+    formatted_names = {
+        ast_call_name(part.value)
+        for part in message.values
+        if isinstance(part, ast.FormattedValue) and ast_call_name(part.value) is not None
+    }
     return (
-        call is not None
-        and any(
-            keyword.arg == "file" and ast_call_name(keyword.value) == "sys.stderr"
-            for keyword in call.keywords
-        )
+        "Agent Equipment Config MCP launcher could not execute " in constants
+        and ": " in constants
+        and formatted_names == {"python_executable", "error"}
     )
 
 
@@ -7691,6 +7705,7 @@ sys.dont_write_bytecode = True
 spec.loader.exec_module(module)
 plugin_mcp_dir = root / "plugins/agent-equipment-config/mcp"
 module.os.environ.clear()
+server_environment_missing = dict(module.server_environment())
 module.os.environ.update(
     {
         "AGENT_ARMORY_ROOT": str(root),
@@ -7712,6 +7727,7 @@ print(
                 module.find_armory_root(env_root=str(root / "missing"), start_dir=plugin_mcp_dir)
             ),
             "server_environment": dict(module.server_environment()),
+            "server_environment_missing": server_environment_missing,
         },
         sort_keys=True,
     )
@@ -7758,6 +7774,7 @@ print(
         "env": expected_root,
         "fallback": expected_root,
         "server_environment": {"AGENT_ARMORY_ROOT": expected_root},
+        "server_environment_missing": {},
     }
     if observed != expected:
         return CheckResult(
