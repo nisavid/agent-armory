@@ -47,8 +47,9 @@ newline-delimited JSON-RPC responses to stdout. It supports MCP protocol
 versions `2025-11-25` and `2025-06-18`, advertises the static tool list, and
 handles `initialize`, `notifications/initialized`, `tools/list`, and
 `tools/call`. Tool-call failures are returned as MCP result objects with
-`isError: true`; malformed JSON-RPC envelopes are transport errors. Diagnostics
-must not be written to stdout.
+`isError: true`; malformed JSON-RPC envelopes return JSON-RPC error responses
+such as parse-error or invalid-request codes. Diagnostics must not be written to
+stdout.
 
 ## Operation map
 

@@ -6,10 +6,14 @@ import tempfile
 import textwrap
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 ROOT = Path(__file__).parents[1]
 SERVER = ROOT / "tools" / "agent_equipment_config_mcp_server.py"
+sys.path.insert(0, str(ROOT))
+
+from tools import agent_equipment_config_mcp_server
 
 
 class AgentEquipmentConfigMcpServerTests(unittest.TestCase):
@@ -75,6 +79,7 @@ class AgentEquipmentConfigMcpServerTests(unittest.TestCase):
         )
         self.assertEqual(stderr, "")
 
+    @unittest.skipUnless(sys.platform != "win32", "select is not supported on Windows pipes")
     def test_server_writes_responses_before_stdin_eof(self):
         process = subprocess.Popen(
             [sys.executable, str(SERVER)],
@@ -229,3 +234,41 @@ class AgentEquipmentConfigMcpServerTests(unittest.TestCase):
         self.assertEqual(responses[0]["id"], None)
         self.assertEqual(responses[0]["error"]["code"], -32700)
         self.assertEqual(stderr, "")
+
+    def test_server_reports_invalid_request_for_missing_method(self):
+        responses, stderr, returncode = self.run_server([{"jsonrpc": "2.0", "id": 1, "params": {}}])
+
+        self.assertEqual(returncode, 0, stderr)
+        self.assertEqual(responses[0]["id"], 1)
+        self.assertEqual(responses[0]["error"]["code"], -32600)
+        self.assertEqual(stderr, "")
+
+    def test_server_ignores_unknown_notifications_without_id(self):
+        responses, stderr, returncode = self.run_server_raw(
+            '{"jsonrpc":"2.0","method":"notifications/unknown","params":{}}\n'
+        )
+
+        self.assertEqual(returncode, 0, stderr)
+        self.assertEqual(responses, [])
+        self.assertEqual(stderr, "")
+
+    def test_server_returns_jsonrpc_error_for_unexpected_tool_exceptions(self):
+        with mock.patch.object(
+            agent_equipment_config_mcp_server.agent_equipment_config,
+            "call_mcp_tool",
+            side_effect=RuntimeError("unexpected runtime failure"),
+        ):
+            response = agent_equipment_config_mcp_server.handle_request(
+                {
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "tools/call",
+                    "params": {"name": "config.resolve", "arguments": {}},
+                }
+            )
+
+        assert response is not None
+        self.assertEqual(response["id"], 1)
+        self.assertNotIn("error", response)
+        self.assertTrue(response["result"]["isError"])
+        self.assertEqual(response["result"]["content"][0]["text"], "internal error while calling Config tool")
