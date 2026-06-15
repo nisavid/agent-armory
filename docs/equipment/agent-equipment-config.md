@@ -63,7 +63,19 @@ Config MCP tools, use
 `config.patch`, `config.create_layer`, `config.apply`, `onboard.config`,
 `migrate.config_preview`, and `migrate.config_apply` for the same operation
 families. The importable runtime exposes tool metadata through
-`mcp_tool_definitions()` and direct dispatch through `call_mcp_tool()`.
+`mcp_tool_definitions()` and direct dispatch through `call_mcp_tool()`. The
+standalone stdio MCP server is:
+
+```bash
+python3.14 tools/agent_equipment_config_mcp_server.py
+```
+
+The server is a protocol wrapper around the importable runtime. It does not
+discover config paths, resolve secret values, call networks, or add a separate
+Config product surface. Use the CLI commands above when the harness cannot
+launch an MCP server or when command output is the clearer review artifact.
+Local-write MCP tools still require their per-call authority and host approval
+friction before a mutation-capable call.
 
 ## Load contract
 

@@ -241,7 +241,11 @@ surface.
 
 When exposing MCP, wrap `tools.agent_equipment_config.mcp_tool_definitions()`
 and `tools.agent_equipment_config.call_mcp_tool()` rather than hand-copying
-the Config operation behavior. The current MCP layer classifies
+the Config operation behavior. The standalone stdio wrapper is
+`python3.14 tools/agent_equipment_config_mcp_server.py`; use it when a harness
+can launch an MCP server, and use the fluent CLI commands as the fallback when
+MCP is unavailable or a command transcript is the clearer evidence surface. The
+current MCP layer classifies
 `config.resolve`, `config.validate`, `config.diff`, `config.propose`,
 `config.patch`, `config.create_layer`, `onboard.config`, and
 `migrate.config_preview` as read-only or read-only policy decision tools. It

@@ -8,8 +8,8 @@ standard-library runtime engine slice for fluent CLI operations,
 effective-config, config-diff, diagnostics, plain handoff promotion, authority
 checks, projection classification, read-only authoring proposal and
 plan-generation surfaces, reviewed plan-artifact apply, MCP parity tool
-definitions, plus reusable consumer action decisions. It does not implement Agent Equipment
-beyond this runtime slice, publish assets, resolve secrets,
+definitions, the standalone stdio MCP server wrapper, plus reusable consumer
+action decisions. It does not implement Agent Equipment beyond this runtime slice, publish assets, resolve secrets,
 mutate external systems, or implement harness controls. Source mutation is
 limited to explicit migration apply and reviewed plan-artifact apply for
 eligible local TOML sources.
@@ -48,6 +48,8 @@ or secret provider.
 - Secret reference metadata to harness-specific secret resolution.
 - Effective-config output to Agents, humans, tools, hooks, and review evidence.
 - Issue Tracker Ops policy to external GitHub mutation behavior.
+- MCP client JSON-RPC messages over stdio to the standalone Config MCP server
+  process.
 
 ## Operation classes
 
@@ -62,6 +64,7 @@ or secret provider.
 | Migration preview | Read | Do not rewrite source config. |
 | Source migration apply | Local write | Require eligible source category, trusted provenance, dry-run-first output, explicit authority, and audit records. |
 | MCP Config parity tools | Read or local write | Mirror the current CLI/runtime operation families with typed schemas, MCP annotations, read/write classification, auth source, side-effect metadata, approval requirements, failure modes, and mutation gates. |
+| Standalone MCP stdio server | Process wrapper | Keep stdout protocol-only, parse newline-delimited JSON-RPC, reject malformed envelopes, delegate tool definitions and calls to the runtime, and add no network, discovery, secret-provider, or approval-bypass behavior. |
 | General config apply | Local write | `config apply` consumes reviewed `patch-layer` and `create-layer` plan artifacts and requires edit intent, source eligibility, diff or create payload, authority, precondition fingerprint, all-or-nothing atomic write, durability classification, rollback stance, and audit controls before writing. |
 | Consumer action decision | Policy decision | Fail closed for mutation-capable behavior unless effective Config is usable, authority and semantics pass, and the required capability is supported. |
 | Enforcement projection | Advisory or blocking control | Label blocking support versus advisory fallback. |
@@ -81,6 +84,9 @@ or secret provider.
 - MCP parity tools classify read-only versus mutation-capable behavior before
   publication and preserve runtime refusals, source category, authority, and
   audit evidence in structured output.
+- The standalone MCP server writes only JSON-RPC responses to stdout, returns
+  tool refusals as result-level `isError: true` objects, and leaves local-write
+  authorization to the existing runtime and host approval controls.
 - MCP authoring parity keeps `config.propose`, `config.patch`, and
   `config.create_layer` read-only, and classifies `config.apply` as a local
   write that requires per-call operator authority plus harness approval when
