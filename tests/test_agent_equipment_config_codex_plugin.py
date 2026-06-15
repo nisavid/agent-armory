@@ -924,6 +924,32 @@ class AgentEquipmentConfigCodexPluginValidationTests(unittest.TestCase):
             results,
         )
 
+    def test_validator_rejects_launcher_exec_failure_handler_that_prints_environment(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_valid_plugin_fixture(root)
+            launcher_path = root / LAUNCHER_PATH
+            launcher_text = launcher_path.read_text(encoding="utf-8")
+            launcher_path.write_text(
+                launcher_text.replace(
+                    'f"Agent Equipment Config MCP launcher could not execute {python_executable}: {error}"',
+                    "os.environ",
+                ),
+                encoding="utf-8",
+            )
+
+            results = validator.validate_agent_equipment_config_codex_plugin(root)
+
+        self.assertIn(
+            CheckResult(
+                "agent_equipment_config_codex_plugin:launcher:content",
+                False,
+                "launcher must resolve the Armory checkout and exec the standalone MCP server",
+                "plugins/agent-equipment-config/mcp/agent_equipment_config_launcher.py",
+            ),
+            results,
+        )
+
     def test_validator_rejects_launcher_server_environment_that_leaks_ambient_env(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -954,6 +980,41 @@ class AgentEquipmentConfigCodexPluginValidationTests(unittest.TestCase):
                 and result.path == "plugins/agent-equipment-config/mcp/agent_equipment_config_launcher.py"
                 and result.detail.startswith("launcher discovery probe resolved unexpected roots:")
                 and "SHOULD_NOT_REACH_MCP" in result.detail
+                for result in results
+            ),
+            results,
+        )
+
+    def test_validator_rejects_launcher_server_environment_that_includes_unset_allowlist_value(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_valid_plugin_fixture(root)
+            launcher_path = root / LAUNCHER_PATH
+            launcher_text = launcher_path.read_text(encoding="utf-8")
+            launcher_path.write_text(
+                launcher_text.replace(
+                    "def server_environment() -> dict[str, str]:\n"
+                    "    return {\n"
+                    "        name: value\n"
+                    "        for name in SERVER_ENV_VAR_NAMES\n"
+                    "        if (value := os.environ.get(name)) is not None\n"
+                    "    }\n",
+                    "def server_environment() -> dict[str, str]:\n"
+                    "    _seen = [os.environ.get(name) for name in SERVER_ENV_VAR_NAMES]\n"
+                    "    return {name: os.environ.get(name) for name in SERVER_ENV_VAR_NAMES}\n",
+                ),
+                encoding="utf-8",
+            )
+
+            results = validator.validate_agent_equipment_config_codex_plugin(root)
+
+        self.assertTrue(
+            any(
+                result.name == "agent_equipment_config_codex_plugin:launcher:content"
+                and not result.ok
+                and result.path == "plugins/agent-equipment-config/mcp/agent_equipment_config_launcher.py"
+                and result.detail.startswith("launcher discovery probe resolved unexpected roots:")
+                and "'server_environment_missing': {'AGENT_ARMORY_ROOT': None}" in result.detail
                 for result in results
             ),
             results,
