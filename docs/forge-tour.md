@@ -59,8 +59,10 @@ equipment from being treated as the same thing.
 The Forge separates equipment manufacturing from future outfitting and use.
 Examples, blueprints, and candidates remain construction material until they
 reach the readiness state that makes them safe to select. The first selectable
-surface is [Agent Equipment Config](equipment/agent-equipment-config.md), a
-published runtime slice for effective-config and config-diff behavior. Its
+surface is the
+[Agent Equipment Config shop card](equipment/shop-cards/agent-equipment-config.md),
+which stocks the published runtime slice for effective-config and config-diff
+behavior with delivery compliance pending. Its
 [integration guide](equipment/agent-equipment-config-integration.md) shows how
 Smiths, Wielders, and Outfitters connect Config to equipment and harness
 surfaces.

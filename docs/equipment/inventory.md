@@ -11,19 +11,20 @@ inventory uses schema `agent-armory.equipment-stock.v1`.
 
 ## Stock Records
 
-No stocked equipment is recorded in `inventory/equipment.toml` yet.
+- `agent-equipment-config` - Agent Equipment Config - `pending` -
+  [shop card](../../docs/equipment/shop-cards/agent-equipment-config.md) -
+  [ITP](../../docs/equipment/inspection-test-plans/agent-equipment-config.md)
 
 ## Shop Cards
 
-Equipment Shop Cards will live in the
-[shop-card index](shop-cards/README.md). Future stock records will reference
-cards from `inventory/equipment.toml`.
+Equipment Shop Cards live in the [shop-card index](shop-cards/README.md).
+Stock records reference cards from `inventory/equipment.toml`.
 
 ## Inspection and Test Plans
 
-Equipment Inspection and Test Plans will live in the
-[ITP index](inspection-test-plans/README.md). Future stock records will
-reference ITPs from `inventory/equipment.toml`.
+Equipment Inspection and Test Plans live in the
+[ITP index](inspection-test-plans/README.md). Stock records reference ITPs from
+`inventory/equipment.toml`.
 
 ## Gear-Up Paths
 
@@ -33,5 +34,6 @@ published runtime documentation surface, and the
 Smiths, Wielders, and Outfitters connect that runtime to equipment and harness
 surfaces.
 
-Config does not have a stocked inventory record or shop card yet. Issue #152
-owns the Config stock record and shop-card retrofit.
+Config now has a stocked inventory record and
+[shop card](shop-cards/agent-equipment-config.md). Its delivery compliance is
+pending until Codex gear-up validation passes.
