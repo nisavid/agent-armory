@@ -12560,8 +12560,6 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
         config = records.get("agent-equipment-config")
 
         self.assertIsNotNone(config)
-        if config is None:
-            return
 
         self.assertEqual("Agent Equipment Config", config.get("name"))
         self.assertEqual("published", config.get("promotion_state"))
@@ -12578,6 +12576,10 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
             "docs/closeout/agent-equipment-config-delivery-retrofit.md",
             config.get("closeout_record"),
         )
+        for path_field in ["shop_card", "inspection_test_plan", "closeout_record"]:
+            self.assertTrue(
+                (repo_root / config[path_field]).exists(), config.get(path_field)
+            )
 
         expected_component_statuses = {
             "Config CLI runtime": "required",
