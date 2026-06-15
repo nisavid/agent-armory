@@ -68,7 +68,10 @@ def handle_request(message: dict[str, Any]) -> dict[str, Any] | None:
             )
         return jsonrpc_result(request_id, initialize_result(str(protocol_version)))
     if method == "tools/list":
-        return jsonrpc_result(request_id, {"tools": agent_equipment_config.mcp_tool_definitions()})
+        try:
+            return jsonrpc_result(request_id, {"tools": agent_equipment_config.mcp_tool_definitions()})
+        except Exception:
+            return jsonrpc_error(request_id, -32603, "internal error while listing Config tools")
     if method == "tools/call":
         if not isinstance(params, dict):
             return jsonrpc_error(request_id, -32602, "tools/call params must be an object")

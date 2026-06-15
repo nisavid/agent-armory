@@ -293,3 +293,18 @@ class AgentEquipmentConfigMcpServerTests(unittest.TestCase):
         self.assertNotIn("error", response)
         self.assertTrue(response["result"]["isError"])
         self.assertEqual(response["result"]["content"][0]["text"], "internal error while calling Config tool")
+
+    def test_server_returns_jsonrpc_error_for_unexpected_tool_list_exceptions(self):
+        with mock.patch.object(
+            agent_equipment_config_mcp_server.agent_equipment_config,
+            "mcp_tool_definitions",
+            side_effect=RuntimeError("unexpected runtime failure"),
+        ):
+            response = agent_equipment_config_mcp_server.handle_request(
+                {"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}
+            )
+
+        assert response is not None
+        self.assertEqual(response["id"], 1)
+        self.assertEqual(response["error"]["code"], -32603)
+        self.assertEqual(response["error"]["message"], "internal error while listing Config tools")
