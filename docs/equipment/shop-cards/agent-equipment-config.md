@@ -25,6 +25,15 @@ integration surfaces:
   migrations.
 - MCP parity through the importable runtime and the standalone stdio server in
   [`tools/agent_equipment_config_mcp_server.py`](../../../tools/agent_equipment_config_mcp_server.py).
+- Codex plugin packaging through the repo marketplace at
+  [`.agents/plugins/marketplace.json`](../../../.agents/plugins/marketplace.json)
+  and plugin source under
+  [`plugins/agent-equipment-config/`](../../../plugins/agent-equipment-config/).
+- A thin Codex routing skill at
+  [`plugins/agent-equipment-config/skills/agent-equipment-config/SKILL.md`](../../../plugins/agent-equipment-config/skills/agent-equipment-config/SKILL.md)
+  for Smith, Wielder, and Outfitter Config work.
+- A plugin-bundled `PreToolUse` guard hook that denies Config local-write MCP
+  calls missing `apply_authority = "operator"`.
 - Wielder, Smith, and Outfitter guidance in the
   [runtime guide](../agent-equipment-config.md) and
   [integration guide](../agent-equipment-config-integration.md).
@@ -56,6 +65,10 @@ keeps delivery compliance pending until Codex gear-up validation passes.
   python3.14 tools/agent_equipment_config_mcp_server.py
   ```
 
+- Use the Codex plugin from the repo marketplace when a Codex session should
+  equip the routing skill, plugin-local MCP launcher, and local-write guard
+  hook together.
+
 - Use the [Config integration guide](../agent-equipment-config-integration.md)
   when adding Config awareness to equipment, harness adapters, hooks, scripts,
   plugins, or local workflows.
@@ -77,8 +90,16 @@ keeps delivery compliance pending until Codex gear-up validation passes.
   [`templates/config/example.toml`](../../../templates/config/example.toml),
   and
   [`templates/config/issue-tracker-ops-plain-handoff.toml`](../../../templates/config/issue-tracker-ops-plain-handoff.toml).
-- Planned: Codex plugin, tracked by #154.
-- Planned: Config routing skill, tracked by #155.
+- Required: Codex plugin,
+  [`plugins/agent-equipment-config/.codex-plugin/plugin.json`](../../../plugins/agent-equipment-config/.codex-plugin/plugin.json),
+  [`.mcp.json`](../../../plugins/agent-equipment-config/.mcp.json),
+  [MCP launcher](../../../plugins/agent-equipment-config/mcp/agent_equipment_config_launcher.py),
+  [hooks](../../../plugins/agent-equipment-config/hooks/hooks.json),
+  [guard hook](../../../plugins/agent-equipment-config/hooks/config_write_guard.py),
+  [README](../../../plugins/agent-equipment-config/README.md), and repo
+  [marketplace](../../../.agents/plugins/marketplace.json).
+- Required: Config routing skill,
+  [`plugins/agent-equipment-config/skills/agent-equipment-config/SKILL.md`](../../../plugins/agent-equipment-config/skills/agent-equipment-config/SKILL.md).
 - Planned: Codex gear-up validation, tracked by #156.
 - Unavailable: secret value resolution. Config records secret references and
   leaves provider lookup, authentication, value lifetime, and private audit to

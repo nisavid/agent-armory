@@ -2,13 +2,13 @@ schema_version = "vanilla-harness-capability-profile.v1alpha1"
 profile_kind = "vanilla_harness_capability_profile"
 harness_id = "codex"
 display_name = "Codex"
-checked_at = "2026-05-10T19:13:40-04:00"
-checked_version = "0.130.0 (rust-v0.130.0)"
-version_basis = "GitHub release rust-v0.130.0 for openai/codex, plus first-party OpenAI Codex docs for integration surfaces."
+checked_at = "2026-06-15T08:13:00-04:00"
+checked_version = "0.139.0 (rust-v0.139.0)"
+version_basis = "GitHub release rust-v0.139.0 for openai/codex, local codex-cli 0.139.0 observation, plus first-party OpenAI Codex docs for integration surfaces."
 evidence_category = "source-supported"
 summary_scheduling = "Codex supports app automations and noninteractive runs that can be scheduled externally; both inherit Codex sandbox and approval constraints."
 scheduling = "Codex app automations support recurring schedules. Noninteractive codex exec runs can also be invoked from external schedulers such as cron or GitHub Actions."
-limitations = "App-server, plugin-sharing, and hook details remain feature-specific surfaces. Unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention."
+limitations = "Plugin, hook, MCP, app-server, and marketplace behavior is component-specific. Plugin-bundled hooks require trust review, unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention."
 uncertainty = "Memory-like behavior is limited to context-preserving automations and adjacent app surfaces; no stable shared memory API or cross-harness import contract is proven by the checked first-party sources."
 refresh_notes = "Refresh from GitHub releases first, then first-party OpenAI Codex docs. Keep app, CLI, plugin, hook, and automation surfaces distinct."
 components = [
@@ -29,7 +29,8 @@ components = [
     "thread context",
 ]
 local_observations = [
-    "No local Codex binary, app profile, plugin install, automation state, or app-server state was inspected for this refresh.",
+    "Local Codex CLI reported codex-cli 0.139.0 on 2026-06-15; no app profile, automation state, or app-server state was inspected for this refresh.",
+    "A temporary Codex plugin install on 2026-06-15 loaded a bundled MCP server from a direct .mcp.json server map; the documented wrapped mcp_servers object installed successfully but did not appear in codex mcp list under codex-cli 0.139.0.",
 ]
 
 [scope]
@@ -37,10 +38,10 @@ surface = "vanilla_harness_capability_surface"
 applicability = "Default settings and default equipment immediately after installation and onboarding."
 
 [[evidence]]
-id = "ev-codex-current-stable-release-version-r-1523e16305"
+id = "ev-codex-current-stable-release-version-r-b257cd0ee7"
 category = "source-supported"
 source_kind = "first_party"
-url = "https://github.com/openai/codex/releases/tag/rust-v0.130.0"
+url = "https://github.com/openai/codex/releases/tag/rust-v0.139.0"
 claim_scope = "current stable release version, release date, and release notes"
 
 [[evidence]]
@@ -128,10 +129,10 @@ url = "https://github.com/openai/codex/blob/5512b23c95084c39eb4c6bdbfe2e7e665eaf
 claim_scope = "CLI configuration details"
 
 [[version_observation]]
-id = "vo-codex-rust-v0-130-0"
-observed_version = "rust-v0.130.0"
-checked_at = "2026-05-10T19:13:40-04:00"
-source_url = "https://github.com/openai/codex/releases/tag/rust-v0.130.0"
+id = "vo-codex-rust-v0-139-0"
+observed_version = "rust-v0.139.0"
+checked_at = "2026-06-15T08:13:00-04:00"
+source_url = "https://github.com/openai/codex/releases/tag/rust-v0.139.0"
 source_kind = "first_party"
 canonical_profile_change = true
 evidence_class = "source_backed"
@@ -142,7 +143,7 @@ name = "Plugin sharing metadata"
 scope = "plugins"
 description = "Release and plugin docs describe share settings, link metadata, and discoverability controls for Codex plugins."
 evidence_ids = [
-    "ev-codex-current-stable-release-version-r-1523e16305",
+    "ev-codex-current-stable-release-version-r-b257cd0ee7",
     "ev-codex-plugin-support-ebef8b225b",
 ]
 evidence_class = "source_backed"
@@ -156,7 +157,7 @@ name = "Live app-server config uptake"
 scope = "app-server and lifecycle"
 description = "Release notes report live app-server threads picking up config changes, so lifecycle claims record reload behavior without generalizing it to every component."
 evidence_ids = [
-    "ev-codex-current-stable-release-version-r-1523e16305",
+    "ev-codex-current-stable-release-version-r-b257cd0ee7",
     "ev-codex-app-server-api-surface-258a770667",
 ]
 evidence_class = "source_backed"
@@ -186,7 +187,7 @@ triage_rationale = "Issue #45 promotes the research-note instruction/context evi
 install_activation = "Instruction material loads through skills, plugin contents, subagent definitions, automation prompts, and noninteractive run prompts."
 configuration_surface = "Skill roots, plugin installs, subagent definitions, automation setup, CLI arguments, and config files determine the active instruction surface."
 reload_update_behavior = "App-server threads can pick up config changes according to release notes; other instruction sources should be refreshed at their component boundary."
-limitations = "App-server, plugin-sharing, and hook details remain feature-specific surfaces. Unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention."
+limitations = "Plugin, hook, MCP, app-server, and marketplace behavior is component-specific. Plugin-bundled hooks require trust review, unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention."
 uncertainty = "Memory-like behavior is limited to context-preserving automations and adjacent app surfaces; no stable shared memory API or cross-harness import contract is proven by the checked first-party sources."
 
 [[claim.detail]]
@@ -227,7 +228,7 @@ triage_rationale = "The supported migrated claim remains valid and now records l
 install_activation = "Skills are loaded from configured project, user, and plugin skill roots and activate explicitly or implicitly."
 configuration_surface = "Skill roots and plugin installation determine visibility."
 reload_update_behavior = "Skill file and plugin changes should be reloaded through Codex skill/plugin discovery."
-limitations = "App-server, plugin-sharing, and hook details remain feature-specific surfaces. Unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention."
+limitations = "Plugin, hook, MCP, app-server, and marketplace behavior is component-specific. Plugin-bundled hooks require trust review, unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention."
 uncertainty = "Memory-like behavior is limited to context-preserving automations and adjacent app surfaces; no stable shared memory API or cross-harness import contract is proven by the checked first-party sources."
 
 [[claim.detail]]
@@ -249,11 +250,11 @@ evidence_class = "source_backed"
 id = "claim-codex-mcp_tools"
 family = "mcp_tools"
 status = "supported"
-statement = "Codex plugins can bundle MCP servers, and current release notes include MCP runtime work."
+statement = "Codex plugins can bundle MCP servers through plugin manifest mcpServers fields that point at .mcp.json files. Direct server maps are locally verified for plugin installs on codex-cli 0.139.0; the documented mcp_servers wrapper is not treated as verified for this plugin because it did not appear in codex mcp list during the local install prototype."
 evidence_ids = [
     "ev-codex-plugin-support-ebef8b225b",
     "ev-codex-plugin-authoring-support-0d95e14458",
-    "ev-codex-current-stable-release-version-r-1523e16305",
+    "ev-codex-current-stable-release-version-r-b257cd0ee7",
 ]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
@@ -262,16 +263,16 @@ evidence_basis = "current_first_party_source"
 claim_triage = "changed"
 triage_rationale = "The migrated profile lacked a dedicated MCP claim even though plugin-bundled MCP is now source-backed."
 install_activation = "MCP servers attach through plugin bundles and Codex configuration."
-configuration_surface = "Plugin manifests and config decide which MCP servers are available."
+configuration_surface = "Plugin manifests and .mcp.json direct server maps decide which MCP servers are available for the locally verified plugin-install path. Plugin-scoped mcp_servers config appears in current documentation but needs separate verification before Armory relies on it."
 reload_update_behavior = "MCP availability follows plugin and runtime reload behavior; exact server event taxonomy remains schema pressure."
-limitations = "App-server, plugin-sharing, and hook details remain feature-specific surfaces. Unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention."
+limitations = "Plugin, hook, MCP, app-server, and marketplace behavior is component-specific. Plugin-bundled hooks require trust review, unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention."
 uncertainty = "Memory-like behavior is limited to context-preserving automations and adjacent app surfaces; no stable shared memory API or cross-harness import contract is proven by the checked first-party sources."
 
 [[claim.detail]]
 component = "MCP and tool surfaces"
 load_attachment_point = "MCP servers attach through plugin bundles and Codex configuration."
 activation = "MCP servers attach through plugin bundles and Codex configuration."
-mutability = "Plugin manifests and config decide which MCP servers are available."
+mutability = "Plugin manifests and .mcp.json direct server maps decide which MCP servers are available for the locally verified plugin-install path. Plugin-scoped mcp_servers config appears in current documentation but needs separate verification before Armory relies on it."
 scope = [
     "plugin",
     "project",
@@ -279,7 +280,7 @@ scope = [
 evidence_ids = [
     "ev-codex-plugin-support-ebef8b225b",
     "ev-codex-plugin-authoring-support-0d95e14458",
-    "ev-codex-current-stable-release-version-r-1523e16305",
+    "ev-codex-current-stable-release-version-r-b257cd0ee7",
 ]
 evidence_class = "source_backed"
 
@@ -287,7 +288,7 @@ evidence_class = "source_backed"
 id = "claim-codex-hooks_events"
 family = "hooks_events"
 status = "supported"
-statement = "Codex supports hooks that run scripts at documented agent-loop events including permission and tool-use points."
+statement = "Codex supports hooks that run command scripts at documented agent-loop events including permission and tool-use points, and enabled plugins can bundle hooks."
 evidence_ids = [
     "ev-codex-hook-support-cb4d0708c5",
 ]
@@ -297,17 +298,17 @@ migration_status = "refreshed_from_migrated_claim"
 evidence_basis = "current_first_party_source"
 claim_triage = "retained"
 triage_rationale = "The hooks claim remains supported; event vocabulary stays harness-specific pending SP-008."
-install_activation = "Hooks attach to configured Codex hook events."
-configuration_surface = "Hook configuration controls event binding and script execution."
+install_activation = "Hooks attach to configured Codex hook events, including plugin-bundled hooks after trust review."
+configuration_surface = "Hook configuration and plugin manifests control event binding and script execution."
 reload_update_behavior = "Hook changes are configuration-bound and must be verified per event surface."
-limitations = "App-server, plugin-sharing, and hook details remain feature-specific surfaces. Unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention."
+limitations = "Plugin, hook, MCP, app-server, and marketplace behavior is component-specific. Plugin-bundled hooks require trust review, unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention."
 uncertainty = "Memory-like behavior is limited to context-preserving automations and adjacent app surfaces; no stable shared memory API or cross-harness import contract is proven by the checked first-party sources."
 
 [[claim.detail]]
 component = "hooks and event surfaces"
-load_attachment_point = "Hooks attach to configured Codex hook events."
-activation = "Hooks attach to configured Codex hook events."
-mutability = "Hook configuration controls event binding and script execution."
+load_attachment_point = "Hooks attach to configured Codex hook events, including plugin-bundled hooks after trust review."
+activation = "Hooks attach to configured Codex hook events, including plugin-bundled hooks after trust review."
+mutability = "Hook configuration and plugin manifests control event binding and script execution."
 scope = [
     "project",
     "user",
@@ -321,11 +322,11 @@ evidence_class = "source_backed"
 id = "claim-codex-plugins_bundles"
 family = "plugins_bundles"
 status = "supported"
-statement = "Codex plugins are installable bundles that can contain skills, apps, MCP servers, hooks, and sharing metadata."
+statement = "Codex plugins are installable bundles that can contain skills, apps, MCP servers, hooks, assets, and sharing metadata."
 evidence_ids = [
     "ev-codex-plugin-support-ebef8b225b",
     "ev-codex-plugin-authoring-support-0d95e14458",
-    "ev-codex-current-stable-release-version-r-1523e16305",
+    "ev-codex-current-stable-release-version-r-b257cd0ee7",
 ]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
@@ -333,17 +334,17 @@ migration_status = "refreshed_from_migrated_claim"
 evidence_basis = "current_first_party_source"
 claim_triage = "retained"
 triage_rationale = "The plugin claim remains supported and now records bundle component shape."
-install_activation = "Plugins install into Codex plugin surfaces and expose bundled components."
-configuration_surface = "Plugin metadata, share settings, and installed files shape available bundle components."
-reload_update_behavior = "Plugin reload/update behavior is component-scoped; release notes add sharing metadata but not a universal reload contract."
-limitations = "App-server, plugin-sharing, and hook details remain feature-specific surfaces. Unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention."
+install_activation = "Plugins install from marketplaces into Codex plugin cache paths and expose bundled components."
+configuration_surface = "Marketplace entries, plugin metadata, share settings, plugin cache state, and installed files shape available bundle components."
+reload_update_behavior = "Plugin reload/update behavior is component-scoped; release notes add marketplace cache behavior but not a universal reload contract."
+limitations = "Plugin, hook, MCP, app-server, and marketplace behavior is component-specific. Plugin-bundled hooks require trust review, unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention."
 uncertainty = "Memory-like behavior is limited to context-preserving automations and adjacent app surfaces; no stable shared memory API or cross-harness import contract is proven by the checked first-party sources."
 
 [[claim.detail]]
 component = "plugins and bundles"
-load_attachment_point = "Plugins install into Codex plugin surfaces and expose bundled components."
-activation = "Plugins install into Codex plugin surfaces and expose bundled components."
-mutability = "Plugin metadata, share settings, and installed files shape available bundle components."
+load_attachment_point = "Plugins install from marketplaces into Codex plugin cache paths and expose bundled components."
+activation = "Plugins install from marketplaces into Codex plugin cache paths and expose bundled components."
+mutability = "Marketplace entries, plugin metadata, share settings, plugin cache state, and installed files shape available bundle components."
 scope = [
     "plugin",
     "user",
@@ -352,7 +353,7 @@ scope = [
 evidence_ids = [
     "ev-codex-plugin-support-ebef8b225b",
     "ev-codex-plugin-authoring-support-0d95e14458",
-    "ev-codex-current-stable-release-version-r-1523e16305",
+    "ev-codex-current-stable-release-version-r-b257cd0ee7",
 ]
 evidence_class = "source_backed"
 
@@ -373,7 +374,7 @@ triage_rationale = "The migrated subagent/profile claim remains supported with p
 install_activation = "Subagents attach through built-in or custom definitions and can be selected for delegated work."
 configuration_surface = "Subagent definitions and config influence sandbox and model behavior."
 reload_update_behavior = "Subagent updates follow configuration and definition reload behavior."
-limitations = "App-server, plugin-sharing, and hook details remain feature-specific surfaces. Unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention."
+limitations = "Plugin, hook, MCP, app-server, and marketplace behavior is component-specific. Plugin-bundled hooks require trust review, unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention."
 uncertainty = "Memory-like behavior is limited to context-preserving automations and adjacent app surfaces; no stable shared memory API or cross-harness import contract is proven by the checked first-party sources."
 
 [[claim.detail]]
@@ -438,7 +439,7 @@ unknowns = "First-party sources do not define a stable shared memory API."
 id = "claim-codex-config_settings"
 family = "config_settings"
 status = "supported"
-statement = "Codex exposes config surfaces for agent behavior, sandboxing, approval, hooks, and provider settings."
+statement = "Codex exposes config surfaces for agent behavior, sandboxing, approval, hooks, MCP servers, plugin-scoped MCP policy, and provider settings."
 evidence_ids = [
     "ev-codex-configuration-and-permission-sur-6902c10f69",
     "ev-codex-cli-configuration-details-4e2edad532",
@@ -452,7 +453,7 @@ triage_rationale = "The configuration claim remains supported and now records ho
 install_activation = "Configuration attaches through Codex config files, CLI settings, and app surfaces."
 configuration_surface = "Config reference and CLI config determine available settings."
 reload_update_behavior = "Release notes show some live app-server config uptake; other settings need component-specific reload verification."
-limitations = "App-server, plugin-sharing, and hook details remain feature-specific surfaces. Unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention."
+limitations = "Plugin, hook, MCP, app-server, and marketplace behavior is component-specific. Plugin-bundled hooks require trust review, unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention."
 uncertainty = "Memory-like behavior is limited to context-preserving automations and adjacent app surfaces; no stable shared memory API or cross-harness import contract is proven by the checked first-party sources."
 
 [[claim.detail]]
@@ -476,7 +477,7 @@ evidence_class = "source_backed"
 id = "claim-codex-permissions_approvals_sandboxing"
 family = "permissions_approvals_sandboxing"
 status = "supported"
-statement = "Codex sandbox and approval settings constrain CLI, app automation, noninteractive, hook, and subagent behavior."
+statement = "Codex sandbox and approval settings constrain CLI, app automation, noninteractive, hook, MCP, plugin, and subagent behavior."
 evidence_ids = [
     "ev-codex-configuration-and-permission-sur-6902c10f69",
     "ev-codex-noninteractive-execution-support-4c7e489f5a",
@@ -490,7 +491,7 @@ triage_rationale = "The permissions claim remains supported and is tied to autom
 install_activation = "Permissions and sandboxing activate through config, CLI flags, app automation context, and noninteractive mode."
 configuration_surface = "Approval policy and sandbox config determine effect boundaries."
 reload_update_behavior = "Permission behavior changes with configuration and runtime mode; hooks are not a complete enforcement boundary by themselves."
-limitations = "App-server, plugin-sharing, and hook details remain feature-specific surfaces. Unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention."
+limitations = "Plugin, hook, MCP, app-server, and marketplace behavior is component-specific. Plugin-bundled hooks require trust review, unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention."
 uncertainty = "Memory-like behavior is limited to context-preserving automations and adjacent app surfaces; no stable shared memory API or cross-harness import contract is proven by the checked first-party sources."
 
 [[claim.detail]]
@@ -529,7 +530,7 @@ triage_rationale = "The automation claim remains supported and now separates nat
 install_activation = "Automations activate from Codex app schedules; codex exec activates from an external scheduler or CI runner."
 configuration_surface = "App automation setup, CLI args, GitHub Action workflow config, sandbox, and approval settings define the runner context."
 reload_update_behavior = "Missed-run behavior is not fully specified; app and external runners should be treated separately."
-limitations = "App-server, plugin-sharing, and hook details remain feature-specific surfaces. Unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention."
+limitations = "Plugin, hook, MCP, app-server, and marketplace behavior is component-specific. Plugin-bundled hooks require trust review, unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention."
 uncertainty = "Memory-like behavior is limited to context-preserving automations and adjacent app surfaces; no stable shared memory API or cross-harness import contract is proven by the checked first-party sources."
 
 [[claim.detail]]
@@ -601,7 +602,7 @@ statement = "Codex exposes connector/provider surfaces through GitHub Actions, a
 evidence_ids = [
     "ev-codex-github-actions-integration-e85b72f10c",
     "ev-codex-configuration-and-permission-sur-6902c10f69",
-    "ev-codex-current-stable-release-version-r-1523e16305",
+    "ev-codex-current-stable-release-version-r-b257cd0ee7",
 ]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
@@ -612,7 +613,7 @@ triage_rationale = "Provider and connector evidence is now carried as a supporte
 install_activation = "Connectors attach through GitHub Action integration, app integrations, and provider configuration."
 configuration_surface = "Provider and connector settings live in Codex config and integration setup."
 reload_update_behavior = "Provider taxonomy and connector reload behavior remain schema pressure under SP-009."
-limitations = "App-server, plugin-sharing, and hook details remain feature-specific surfaces. Unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention."
+limitations = "Plugin, hook, MCP, app-server, and marketplace behavior is component-specific. Plugin-bundled hooks require trust review, unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention."
 uncertainty = "Memory-like behavior is limited to context-preserving automations and adjacent app surfaces; no stable shared memory API or cross-harness import contract is proven by the checked first-party sources."
 
 [[claim.detail]]
@@ -629,7 +630,7 @@ scope = [
 evidence_ids = [
     "ev-codex-github-actions-integration-e85b72f10c",
     "ev-codex-configuration-and-permission-sur-6902c10f69",
-    "ev-codex-current-stable-release-version-r-1523e16305",
+    "ev-codex-current-stable-release-version-r-b257cd0ee7",
 ]
 evidence_class = "source_backed"
 
@@ -642,7 +643,7 @@ evidence_ids = [
     "ev-codex-noninteractive-execution-support-4c7e489f5a",
     "ev-codex-app-server-api-surface-258a770667",
     "ev-codex-github-actions-integration-e85b72f10c",
-    "ev-codex-current-stable-release-version-r-1523e16305",
+    "ev-codex-current-stable-release-version-r-b257cd0ee7",
 ]
 applicability_scope = "vanilla harness after default installation and onboarding"
 capability_origin = "migrated aggregate harness catalog"
@@ -653,7 +654,7 @@ triage_rationale = "The runtime claim remains supported and is broadened with cu
 install_activation = "Runtime mode activates through app, CLI, codex exec, app-server, remote-control, or GitHub Action entrypoints."
 configuration_surface = "Runtime mode is selected by invocation surface and configuration."
 reload_update_behavior = "Runtime reload/update behavior is mode-specific."
-limitations = "App-server, plugin-sharing, and hook details remain feature-specific surfaces. Unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention."
+limitations = "Plugin, hook, MCP, app-server, and marketplace behavior is component-specific. Plugin-bundled hooks require trust review, unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention."
 uncertainty = "Memory-like behavior is limited to context-preserving automations and adjacent app surfaces; no stable shared memory API or cross-harness import contract is proven by the checked first-party sources."
 
 [[claim.detail]]
@@ -671,7 +672,7 @@ evidence_ids = [
     "ev-codex-noninteractive-execution-support-4c7e489f5a",
     "ev-codex-app-server-api-surface-258a770667",
     "ev-codex-github-actions-integration-e85b72f10c",
-    "ev-codex-current-stable-release-version-r-1523e16305",
+    "ev-codex-current-stable-release-version-r-b257cd0ee7",
 ]
 evidence_class = "source_backed"
 
@@ -721,7 +722,7 @@ family = "lifecycle_reload_update"
 status = "supported"
 statement = "Codex release notes and config docs support component-scoped lifecycle behavior, including live app-server config uptake."
 evidence_ids = [
-    "ev-codex-current-stable-release-version-r-1523e16305",
+    "ev-codex-current-stable-release-version-r-b257cd0ee7",
     "ev-codex-app-server-api-surface-258a770667",
     "ev-codex-configuration-and-permission-sur-6902c10f69",
 ]
@@ -734,7 +735,7 @@ triage_rationale = "Lifecycle support is added without generalizing one componen
 install_activation = "Lifecycle actions attach to app-server threads, config, plugin, and skill surfaces."
 configuration_surface = "Config and installed component metadata determine reload/update behavior."
 reload_update_behavior = "Reload behavior is component-specific and should not be flattened into a universal live-reload guarantee."
-limitations = "App-server, plugin-sharing, and hook details remain feature-specific surfaces. Unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention."
+limitations = "Plugin, hook, MCP, app-server, and marketplace behavior is component-specific. Plugin-bundled hooks require trust review, unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention."
 uncertainty = "Memory-like behavior is limited to context-preserving automations and adjacent app surfaces; no stable shared memory API or cross-harness import contract is proven by the checked first-party sources."
 
 [[claim.detail]]
@@ -749,7 +750,7 @@ scope = [
     "skill",
 ]
 evidence_ids = [
-    "ev-codex-current-stable-release-version-r-1523e16305",
+    "ev-codex-current-stable-release-version-r-b257cd0ee7",
     "ev-codex-app-server-api-surface-258a770667",
     "ev-codex-configuration-and-permission-sur-6902c10f69",
 ]

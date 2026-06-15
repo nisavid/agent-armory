@@ -96,6 +96,7 @@ class ValidationBoundaryTests(unittest.TestCase):
         self.assertEqual(inventory["harness_catalog"]["boundary"], "forge_integrity")
         self.assertEqual(inventory["templates"]["boundary"], "equipment_candidate_shape")
         self.assertEqual(inventory["published_equipment_delivery"]["boundary"], "armory_integrity")
+        self.assertEqual(inventory["agent_equipment_config_codex_plugin"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["published_equipment_inventory_view"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["examples"]["boundary"], "equipment_candidate_shape")
         self.assertEqual(inventory["specs"]["boundary"], "equipment_candidate_shape")
@@ -12556,6 +12557,8 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
             for record in inventory.get("equipment", [])
             if isinstance(record, dict)
         }
+        equipment_records = [record for record in inventory.get("equipment", []) if isinstance(record, dict)]
+        self.assertEqual(len(equipment_records), len(records), "duplicate equipment ids must not be hidden")
 
         config = records.get("agent-equipment-config")
 
@@ -12586,8 +12589,8 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
             "Stdio MCP server wrapper": "required",
             "Runtime and integration docs": "required",
             "Example config layers": "optional",
-            "Codex plugin": "planned",
-            "Config routing skill": "planned",
+            "Codex plugin": "required",
+            "Config routing skill": "required",
             "Codex gear-up validation": "planned",
             "Secret value resolution": "unavailable",
         }

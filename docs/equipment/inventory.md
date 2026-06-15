@@ -29,7 +29,7 @@ Equipment Inspection and Test Plans live in the
 ## Gear-Up Paths
 
 [Agent Equipment Config](agent-equipment-config.md) is available now as a
-published runtime documentation surface, and the
+published runtime and Codex plugin surface, and the
 [Config integration guide](agent-equipment-config-integration.md) shows how
 Smiths, Wielders, and Outfitters connect that runtime to equipment and harness
 surfaces.

@@ -1,0 +1,40 @@
+{
+  "name": "agent-equipment-config",
+  "version": "0.1.0",
+  "description": "Use Agent Equipment Config from Codex with routing guidance, MCP access, and a local-write guard hook.",
+  "author": {
+    "name": "Agent Armory",
+    "url": "https://github.com/nisavid/agent-armory"
+  },
+  "homepage": "https://github.com/nisavid/agent-armory",
+  "repository": "https://github.com/nisavid/agent-armory",
+  "license": "MIT",
+  "keywords": [
+    "agent-equipment",
+    "config",
+    "codex",
+    "mcp"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "hooks": "./hooks/hooks.json",
+  "interface": {
+    "displayName": "Agent Equipment Config",
+    "developerName": "Agent Armory",
+    "shortDescription": "Route Agent Equipment Config work through Armory docs, MCP, and guards.",
+    "longDescription": "Agent Equipment Config helps Codex inspect effective Config layers, plan migrations, and apply reviewed local Config writes through the Armory runtime. The plugin bundles a routing skill, an AGENT_ARMORY_ROOT-based MCP launcher, and a PreToolUse guard for local-write MCP tools.",
+    "category": "Productivity",
+    "websiteURL": "https://github.com/nisavid/agent-armory",
+    "privacyPolicyURL": "https://github.com/nisavid/agent-armory",
+    "termsOfServiceURL": "https://github.com/nisavid/agent-armory",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Inspect the effective Agent Equipment Config for this repository.",
+      "Plan a reviewed Agent Equipment Config change before applying it."
+    ],
+    "brandColor": "#2563EB"
+  }
+}

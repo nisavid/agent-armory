@@ -1,1 +1,3 @@
 codex-security-scans/
+__pycache__/
+*.py[cod]

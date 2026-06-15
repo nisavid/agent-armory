@@ -18,9 +18,9 @@ Use first-party sources where available. Use third-party fallback metadata only 
 
 ## Refresh summary
 
-Checked at: 2026-05-10T19:13:40-04:00.
+Checked at: 2026-05-10T19:13:40-04:00 to 2026-06-15T08:13:00-04:00.
 
-The profiles preserve source-backed version, component, scheduling, limitation, uncertainty, refresh-note, local-observation, claim-triage, and enrichment fields. No local harness binaries, workspace configs, gateways, plugin installs, cloud agents, or automation state were inspected during the issue #45 profile refresh.
+The profiles preserve source-backed version, component, scheduling, limitation, uncertainty, refresh-note, local-observation, claim-triage, and enrichment fields. Local observations are recorded per profile; workspace configs, gateways, plugin installs, cloud agents, and automation state remain profile-scoped evidence surfaces.
 
 Documentation indexes can lag behind current release evidence. For version anchors, prefer GitHub releases or official changelogs over generated indexes or secondary metadata.
 
@@ -28,7 +28,7 @@ Documentation indexes can lag behind current release evidence. For version ancho
 
 | Harness | Profile | Version basis | Checked version | Evidence | Scheduling posture |
 | --- | --- | --- | --- | --- | --- |
-| Codex | [Codex profile](harness-capabilities/vanilla/codex.toml) | GitHub release rust-v0.130.0 for openai/codex, plus first-party OpenAI Codex docs for integration surfaces. | 0.130.0 (rust-v0.130.0) | source-supported | Codex supports app automations and noninteractive runs that can be scheduled externally; both inherit Codex sandbox and approval constraints. |
+| Codex | [Codex profile](harness-capabilities/vanilla/codex.toml) | GitHub release rust-v0.139.0 for openai/codex, local codex-cli 0.139.0 observation, plus first-party OpenAI Codex docs for integration surfaces. | 0.139.0 (rust-v0.139.0) | source-supported | Codex supports app automations and noninteractive runs that can be scheduled externally; both inherit Codex sandbox and approval constraints. |
 | Claude Code | [Claude Code profile](harness-capabilities/vanilla/claude_code.toml) | GitHub release v2.1.138 for anthropics/claude-code, plus first-party Claude Code docs for integration surfaces. | 2.1.138 | documentation-supported | Claude Code supports cloud routines, desktop scheduled tasks, and session scheduled tasks with distinct runner loci and permission contexts. |
 | Cursor | [Cursor profile](harness-capabilities/vanilla/cursor.toml) | Official Cursor changelog through the 2026-05-07 Cursor 3.3 entry, plus first-party Cursor docs for integration surfaces. | 3.3 changelog state through 2026-05-07 | documentation-supported | Cursor Cloud Agent automations support schedule and event triggers; plan parallelism, PR review, and multitask surfaces are current changelog-backed runtime surfaces. |
 | Hermes Agent | [Hermes Agent profile](harness-capabilities/vanilla/hermes_agent.toml) | GitHub release v2026.5.7, named Hermes Agent v0.13.0, plus first-party Hermes docs carried by the migrated profile. | 0.13.0 (v2026.5.7) | source-supported | Hermes supports cron, no_agent cron mode, curator/background processes, Kanban workers, gateway ticks, and heartbeat-like multi-agent worker flows. |
@@ -43,11 +43,11 @@ The [Codex profile](harness-capabilities/vanilla/codex.toml) preserves source-ba
 
 Scheduling support: Codex supports app automations and noninteractive runs that can be scheduled externally; both inherit Codex sandbox and approval constraints.
 
-Limitations: App-server, plugin-sharing, and hook details remain feature-specific surfaces. Unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention.
+Limitations: Plugin, hook, MCP, app-server, and marketplace behavior is component-specific. Plugin-bundled hooks require trust review, unattended runs still need sandbox and approval controls, and no checked source proves native import of another harness bundle convention.
 
 Key sources:
 
-- [current stable release version, release date, and release notes](https://github.com/openai/codex/releases/tag/rust-v0.130.0)
+- [current stable release version, release date, and release notes](https://github.com/openai/codex/releases/tag/rust-v0.139.0)
 - [Codex change history](https://developers.openai.com/codex/changelog)
 - [skill support](https://developers.openai.com/codex/skills)
 - [plugin support](https://developers.openai.com/codex/plugins)

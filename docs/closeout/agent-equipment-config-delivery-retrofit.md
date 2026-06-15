@@ -21,10 +21,11 @@ Published Equipment Delivery standard.
 - Closeout record:
   `docs/closeout/agent-equipment-config-delivery-retrofit.md`.
 - Advertised gear-up surfaces: Config CLI runtime,
-  `tools/agent_equipment_config.py`, and stdio MCP server,
-  `tools/agent_equipment_config_mcp_server.py`.
-- Component manifest: required CLI, MCP, and docs surfaces; optional example
-  Config layers; planned Codex plugin, Config routing skill, and Codex gear-up
+  `tools/agent_equipment_config.py`, stdio MCP server,
+  `tools/agent_equipment_config_mcp_server.py`, Codex plugin, and Config
+  routing skill.
+- Component manifest: required CLI, MCP, docs, Codex plugin, and Config routing
+  skill surfaces; optional example Config layers; planned Codex gear-up
   validation; unavailable secret value resolution.
 
 ## Issue Ops Projection
@@ -37,9 +38,8 @@ Published Equipment Delivery standard.
 - Labels: `enhancement`, `ready-for-agent`, `depth:L3`,
   `kind:documentation`, `mode:afk-implementation`, `brief:present`,
   `dependency:unblocked`.
-- Projected issue comment or PR summary: #152 adds delivery surfaces for the
-  historical Config runtime slice and keeps delivery compliance pending until
-  Codex gear-up validation passes.
+- Projected issue comment or PR summary: Config delivery surfaces are stocked,
+  and delivery compliance remains pending until Codex gear-up validation passes.
 
 Issue comments and PR text summarize this closeout record. They are not the
 delivery authority.
