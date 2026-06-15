@@ -6480,7 +6480,7 @@ def validate_published_equipment_delivery(root: Path) -> list[CheckResult]:
                     )
                 )
             else:
-                card_ok, card_detail, _card_path = repo_relative_path_status(root, shop_card, "file")
+                card_ok, card_detail, card_path = repo_relative_path_status(root, shop_card, "file")
                 if not card_ok:
                     results.append(
                         CheckResult(
@@ -6491,7 +6491,7 @@ def validate_published_equipment_delivery(root: Path) -> list[CheckResult]:
                         )
                     )
                 else:
-                    card_markdown = _card_path.read_text(encoding="utf-8")
+                    card_markdown = card_path.read_text(encoding="utf-8")
                     results.extend(
                         missing_markdown_section_results(
                             f"published_equipment_delivery:equipment:{equipment_id}:shop_card",
