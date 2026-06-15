@@ -46,9 +46,9 @@ def handle_request(message: dict[str, Any]) -> dict[str, Any] | None:
     method = message.get("method")
     params = message.get("params", {})
 
+    if is_notification:
+        return None
     if not isinstance(method, str):
-        if is_notification:
-            return None
         return jsonrpc_error(request_id, -32600, "JSON-RPC method must be a string")
     if method == "notifications/initialized":
         return None
@@ -88,8 +88,6 @@ def handle_request(message: dict[str, Any]) -> dict[str, Any] | None:
                 },
             )
 
-    if is_notification:
-        return None
     return jsonrpc_error(request_id, -32601, f"unknown method {method!r}")
 
 

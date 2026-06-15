@@ -252,6 +252,27 @@ class AgentEquipmentConfigMcpServerTests(unittest.TestCase):
         self.assertEqual(responses, [])
         self.assertEqual(stderr, "")
 
+    def test_server_ignores_known_notifications_without_id(self):
+        responses, stderr, returncode = self.run_server(
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "initialize",
+                    "params": {"protocolVersion": "2025-11-25", "capabilities": {}},
+                },
+                {"jsonrpc": "2.0", "method": "tools/list", "params": {}},
+                {
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "params": {"name": "config.resolve", "arguments": {}},
+                },
+            ]
+        )
+
+        self.assertEqual(returncode, 0, stderr)
+        self.assertEqual(responses, [])
+        self.assertEqual(stderr, "")
+
     def test_server_returns_jsonrpc_error_for_unexpected_tool_exceptions(self):
         with mock.patch.object(
             agent_equipment_config_mcp_server.agent_equipment_config,
