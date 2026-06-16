@@ -30,6 +30,7 @@ from tools.validate_armory_integrity import (
     HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
     SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
     PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
+    EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH,
     find_markdown_links,
     harness_matrix_rows,
     load_toml,
@@ -67,6 +68,7 @@ from tools.validate_armory_integrity import (
     validate_harbor_external_tool_evaluation_record,
     validate_skill_eval_methodology_source_intake,
     validate_plugin_creator_source_intake,
+    validate_equipment_ingestion_delivery_alignment,
     validate_templates,
     validate_threat_model,
 )
@@ -118,6 +120,7 @@ class ValidationBoundaryTests(unittest.TestCase):
         self.assertEqual(inventory["harbor_external_tool_evaluation_record"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["skill_eval_methodology_source_intake"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["plugin_creator_source_intake"]["boundary"], "armory_integrity")
+        self.assertEqual(inventory["equipment_ingestion_delivery_alignment"]["boundary"], "armory_integrity")
         self.assertEqual(inventory["source_retired_tree"]["boundary"], "historical_seed_migration")
         self.assertEqual(inventory["final_source_retired_stamp"]["boundary"], "historical_seed_migration")
         self.assertEqual(
@@ -156,6 +159,31 @@ class ValidationBoundaryTests(unittest.TestCase):
                 ok=True,
                 detail="present",
                 path=PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
+            ),
+        )
+
+    def test_live_validator_run_includes_equipment_ingestion_delivery_alignment(self):
+        repo_root = Path(__file__).resolve().parents[1]
+
+        results = run(repo_root, final_closeout=True)
+        result_map = {result.name: result for result in results}
+
+        self.assertEqual(
+            result_map[f"required_path:{EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH}"],
+            CheckResult(
+                name=f"required_path:{EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH}",
+                ok=True,
+                detail="exists",
+                path=EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH,
+            ),
+        )
+        self.assertEqual(
+            result_map["equipment_ingestion_delivery_alignment:record"],
+            CheckResult(
+                name="equipment_ingestion_delivery_alignment:record",
+                ok=True,
+                detail="present",
+                path=EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH,
             ),
         )
 
@@ -468,6 +496,24 @@ class ValidatorPrimitiveTests(unittest.TestCase):
                     ok=False,
                     detail="missing",
                     path=PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
+                )
+            ],
+        )
+
+    def test_validate_equipment_ingestion_delivery_alignment_reports_missing_doc(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+
+            results = validate_equipment_ingestion_delivery_alignment(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="equipment_ingestion_delivery_alignment:path",
+                    ok=False,
+                    detail="missing",
+                    path=EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH,
                 )
             ],
         )
@@ -2724,6 +2770,303 @@ class ValidatorPrimitiveTests(unittest.TestCase):
                     ok=True,
                     detail="present",
                     path=PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
+                )
+            ],
+        )
+
+    def test_validate_equipment_ingestion_delivery_alignment_requires_record_shape(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Equipment Ingestion Delivery Alignment
+
+                    ## Scope Boundary
+
+                    #157 closes the alignment record.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_equipment_ingestion_delivery_alignment(root)
+
+        self.assertIn(
+            CheckResult(
+                name="equipment_ingestion_delivery_alignment:status",
+                ok=False,
+                detail="status must be Alignment Record",
+                path=EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="equipment_ingestion_delivery_alignment:section:Source Evidence",
+                ok=False,
+                detail="missing section: Source Evidence",
+                path=EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_equipment_ingestion_delivery_alignment_requires_coverage_terms(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Equipment Ingestion Delivery Alignment
+
+                    Status: Alignment Record
+
+                    ## Scope Boundary
+
+                    #157 records alignment.
+
+                    ## Source Evidence
+
+                    #5, #84, #85, #147, and #157.
+
+                    ## Accepted Alignment
+
+                    Source intake records licensing and compatibility evidence.
+                    Forge design decides the equipment shape before stock inventory.
+                    inventory/equipment.toml remains the stock authority.
+                    The Equipment Shop Card and storefront display are projections.
+                    The Equipment Inspection and Test Plan and delivery compliance gate stock.
+
+                    ## Skill And Plugin Routing
+
+                    skill-eval and plugin-shaped routes stay slice-specific.
+
+                    ## Follow-Up Projection
+
+                    No new follow-up is projected here.
+
+                    ## Dependency And Label Cleanup
+
+                    Dependency labels remain unblocked.
+
+                    ## Security Documentation And Review Closeout
+
+                    Reviewed.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_equipment_ingestion_delivery_alignment(root)
+
+        self.assertIn(
+            CheckResult(
+                name="equipment_ingestion_delivery_alignment:coverage:provenance",
+                ok=False,
+                detail="missing coverage term: provenance",
+                path=EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH,
+            ),
+            results,
+        )
+        self.assertIn(
+            CheckResult(
+                name="equipment_ingestion_delivery_alignment:coverage:promotion state",
+                ok=False,
+                detail="missing coverage term: promotion state",
+                path=EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH,
+            ),
+            results,
+        )
+
+    def test_validate_equipment_ingestion_delivery_alignment_requires_exact_issue_routes(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Equipment Ingestion Delivery Alignment
+
+                    Status: Alignment Record
+
+                    ## Scope Boundary
+
+                    #51 records alignment.
+
+                    ## Source Evidence
+
+                    #84a, #85b, #147x, and #157-later.
+
+                    ## Accepted Alignment
+
+                    Source intake records provenance, eligibility, licensing,
+                    update-channel, and compatibility evidence. Forge design decides the
+                    equipment shape before stock inventory. inventory/equipment.toml
+                    remains the stock authority. The Equipment Shop Card and storefront display
+                    are projections. The Equipment Inspection and Test Plan and
+                    delivery compliance gate stockable releases separately from promotion state.
+
+                    ## Skill And Plugin Routing
+
+                    skill-eval and plugin-shaped routes stay slice-specific.
+
+                    ## Follow-Up Projection
+
+                    No new follow-up is projected here.
+
+                    ## Dependency And Label Cleanup
+
+                    Dependency labels remain unblocked.
+
+                    ## Security Documentation And Review Closeout
+
+                    Reviewed.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_equipment_ingestion_delivery_alignment(root)
+
+        for route in ("#5", "#84", "#85", "#147", "#157"):
+            self.assertIn(
+                CheckResult(
+                    name=f"equipment_ingestion_delivery_alignment:routing:{route}",
+                    ok=False,
+                    detail=f"missing downstream route: {route}",
+                    path=EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH,
+                ),
+                results,
+            )
+
+    def test_validate_equipment_ingestion_delivery_alignment_rejects_host_local_paths(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH
+            path.parent.mkdir(parents=True)
+            template = textwrap.dedent(
+                """\
+                # Equipment Ingestion Delivery Alignment
+
+                Status: Alignment Record
+
+                ## Scope Boundary
+
+                #157 records alignment.
+
+                ## Source Evidence
+
+                #5, #84, #85, #147, and #157. Scratch source: `{host_local_path}`.
+
+                ## Accepted Alignment
+
+                Source intake records provenance, eligibility, licensing,
+                update-channel, and compatibility evidence. Forge design decides the
+                equipment shape before stock inventory. inventory/equipment.toml
+                remains the stock authority. The Equipment Shop Card and storefront display
+                are projections. The Equipment Inspection and Test Plan and
+                delivery compliance gate stockable releases separately from promotion state.
+
+                ## Skill And Plugin Routing
+
+                skill-eval and plugin-shaped routes stay slice-specific.
+
+                ## Follow-Up Projection
+
+                No new follow-up is projected here.
+
+                ## Dependency And Label Cleanup
+
+                Dependency labels remain unblocked.
+
+                ## Security Documentation And Review Closeout
+
+                Reviewed.
+                """
+            )
+
+            for host_local_path in (
+                "/home/agent/work/agent-armory",
+                r"C:\Users\agent\Documents\agent-armory",
+            ):
+                with self.subTest(host_local_path=host_local_path):
+                    path.write_text(template.format(host_local_path=host_local_path), encoding="utf-8")
+                    results = validate_equipment_ingestion_delivery_alignment(root)
+
+                    self.assertIn(
+                        CheckResult(
+                            name="equipment_ingestion_delivery_alignment:portable_paths",
+                            ok=False,
+                            detail="record must not preserve host-local paths",
+                            path=EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH,
+                        ),
+                        results,
+                    )
+
+    def test_validate_equipment_ingestion_delivery_alignment_accepts_complete_record(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Equipment Ingestion Delivery Alignment
+
+                    Status: Alignment Record
+
+                    ## Scope Boundary
+
+                    #157 records alignment for #5 and does not implement ingestion.
+
+                    ## Source Evidence
+
+                    #5, #84, #85, #147, and #157 supply the durable source evidence.
+
+                    ## Accepted Alignment
+
+                    Source intake records provenance, eligibility, licensing,
+                    update-channel, and compatibility evidence. Forge design decides the
+                    equipment shape before stock inventory. inventory/equipment.toml
+                    remains the stock authority. The Equipment Shop Card and storefront display
+                    are projections. The Equipment Inspection and Test Plan and
+                    delivery compliance gate stockable releases separately from promotion state.
+
+                    ## Skill And Plugin Routing
+
+                    skill-eval and plugin-shaped routes stay slice-specific.
+
+                    ## Follow-Up Projection
+
+                    No new follow-up is projected here.
+
+                    ## Dependency And Label Cleanup
+
+                    Dependency labels remain unblocked.
+
+                    ## Security Documentation And Review Closeout
+
+                    Reviewed.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_equipment_ingestion_delivery_alignment(root)
+
+        self.assertEqual(
+            results,
+            [
+                CheckResult(
+                    name="equipment_ingestion_delivery_alignment:record",
+                    ok=True,
+                    detail="present",
+                    path=EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH,
                 )
             ],
         )
