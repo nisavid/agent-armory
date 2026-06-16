@@ -224,6 +224,11 @@ VALIDATION_INVENTORY = [
         "relationship": "Top-level repository integrity check for the durable plugin-creator source-intake ledger.",
     },
     {
+        "check": "equipment_ingestion_delivery_alignment",
+        "boundary": "armory_integrity",
+        "relationship": "Top-level repository integrity check for the durable equipment-ingestion delivery alignment record.",
+    },
+    {
         "check": "source_retired_tree",
         "boundary": "historical_seed_migration",
         "relationship": "Historical Seed migration guard that prevents retired raw source trees from returning to the live repository.",
@@ -581,6 +586,7 @@ EXTERNAL_TOOL_EVALUATION_PATH = "docs/external-tool-evaluation.md"
 HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH = "docs/evaluations/harbor.md"
 SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH = "docs/closeout/skill-eval-methodology-source-intake.md"
 PLUGIN_CREATOR_SOURCE_INTAKE_PATH = "docs/closeout/plugin-creator-source-intake.md"
+EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH = "docs/closeout/equipment-ingestion-delivery-alignment.md"
 HARBOR_JIG_SOURCE_MAP_REQUIRED_SECTIONS = [
     "Scope Boundary",
     "Portable Source Inventory",
@@ -1055,6 +1061,40 @@ PLUGIN_CREATOR_SOURCE_INTAKE_COVERAGE_TERMS = [
     "asset metadata",
 ]
 PLUGIN_CREATOR_SOURCE_INTAKE_DOWNSTREAM_ROUTES = ["#5", "#154", "#157"]
+EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_REQUIRED_SECTIONS = [
+    "Scope Boundary",
+    "Source Evidence",
+    "Accepted Alignment",
+    "Skill And Plugin Routing",
+    "Follow-Up Projection",
+    "Dependency And Label Cleanup",
+    "Security Documentation And Review Closeout",
+]
+EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_COVERAGE_TERMS = [
+    "source intake",
+    "provenance",
+    "eligibility",
+    "licensing",
+    "update-channel",
+    "compatibility evidence",
+    "Forge design",
+    "stock inventory",
+    "inventory/equipment.toml",
+    "Equipment Shop Card",
+    "storefront display",
+    "Equipment Inspection and Test Plan",
+    "delivery compliance",
+    "promotion state",
+    "skill-eval",
+    "plugin-shaped",
+]
+EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_DOWNSTREAM_ROUTES = [
+    "#5",
+    "#84",
+    "#85",
+    "#147",
+    "#157",
+]
 SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_REQUIRED_SECTIONS = [
     "Scope Boundary",
     "Portable Source Inventory",
@@ -2625,6 +2665,84 @@ def validate_plugin_creator_source_intake(root: Path) -> list[CheckResult]:
             True,
             "present",
             PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
+        )
+    ]
+
+
+def validate_equipment_ingestion_delivery_alignment(root: Path) -> list[CheckResult]:
+    ok, detail, path = repo_relative_path_status(root, EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH, "file")
+    if not ok:
+        return [
+            CheckResult(
+                "equipment_ingestion_delivery_alignment:path",
+                False,
+                detail,
+                EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH,
+            )
+        ]
+    markdown = path.read_text(encoding="utf-8")
+    visible_markdown = markdown_visible_text(markdown)
+    nonblank_lines = [line.strip() for line in visible_markdown.splitlines() if line.strip()]
+    headings = markdown_heading_texts(markdown)
+    results: list[CheckResult] = []
+    if "Status: Alignment Record" not in nonblank_lines[:8]:
+        results.append(
+            CheckResult(
+                "equipment_ingestion_delivery_alignment:status",
+                False,
+                "status must be Alignment Record",
+                EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH,
+            )
+        )
+    for required_section in EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_REQUIRED_SECTIONS:
+        if normalize_reference_label(required_section) not in headings:
+            results.append(
+                CheckResult(
+                    f"equipment_ingestion_delivery_alignment:section:{required_section}",
+                    False,
+                    f"missing section: {required_section}",
+                    EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH,
+                )
+            )
+    searchable_markdown = markdown_link_search_text(markdown)
+    searchable_markdown_casefold = searchable_markdown.casefold()
+    for required_term in EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_COVERAGE_TERMS:
+        if required_term.casefold() not in searchable_markdown_casefold:
+            results.append(
+                CheckResult(
+                    f"equipment_ingestion_delivery_alignment:coverage:{required_term}",
+                    False,
+                    f"missing coverage term: {required_term}",
+                    EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH,
+                )
+            )
+    for route in EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_DOWNSTREAM_ROUTES:
+        if not required_downstream_route_present(searchable_markdown, route):
+            results.append(
+                CheckResult(
+                    f"equipment_ingestion_delivery_alignment:routing:{route}",
+                    False,
+                    f"missing downstream route: {route}",
+                    EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH,
+                )
+            )
+    if HOST_LOCAL_PATH_RE.search(visible_markdown):
+        results.append(
+            CheckResult(
+                "equipment_ingestion_delivery_alignment:portable_paths",
+                False,
+                "record must not preserve host-local paths",
+                EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH,
+            )
+        )
+    if results:
+        return results
+    return [
+        CheckResult(
+            "equipment_ingestion_delivery_alignment:record",
+            True,
+            "present",
+            EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH,
         )
     ]
 
@@ -10005,6 +10123,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
         HARBOR_EXTERNAL_TOOL_EVALUATION_RECORD_PATH,
         SKILL_EVAL_METHODOLOGY_SOURCE_INTAKE_PATH,
         PLUGIN_CREATOR_SOURCE_INTAKE_PATH,
+        EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH,
         THREAT_MODEL_PATH,
         ISSUE_TRACKER_OPS_POLICY_CONFIG_PATH,
         DOCUMENTATION_CLOSEOUT_PATH,
@@ -10052,6 +10171,7 @@ def run(root: Path, *, final_closeout: bool = False) -> list[CheckResult]:
     results.extend(validate_harbor_external_tool_evaluation_record(root))
     results.extend(validate_skill_eval_methodology_source_intake(root))
     results.extend(validate_plugin_creator_source_intake(root))
+    results.extend(validate_equipment_ingestion_delivery_alignment(root))
     results.extend(validate_source_retired_tree(root, include_disposition=False))
     results.extend(validate_final_source_retired_stamp(root))
     if final_closeout:
