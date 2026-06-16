@@ -34,8 +34,11 @@ parity work completed by #135. This closeout does not reopen either issue.
 - Codex gear-up validation issue: #156.
 - Historical completed issues: #23 and #135 remain closed because their
   runtime-slice and MCP-parity work is complete.
-- Dependency state: #156 is unblocked and blocks parent #147.
-- Labels: `enhancement`, `ready-for-agent`, `depth:L3`,
+- Dependency state: #147 has no live native dependency blockers. #152 and
+  #156 are closed evidence slices for delivery retrofit and Codex gear-up
+  validation. #180 and #181 remain open styled design and Storefront follow-ups,
+  not blockers for closing the original delivery-system epic.
+- #156 labels at closeout: `enhancement`, `ready-for-agent`, `depth:L3`,
   `kind:implementation`, `mode:afk-implementation`, `brief:present`,
   `dependency:unblocked`.
 - Projected issue comment or PR summary: Config delivery surfaces are stocked,
