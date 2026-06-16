@@ -2726,7 +2726,8 @@ def validate_equipment_ingestion_delivery_alignment(root: Path) -> list[CheckRes
                     EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH,
                 )
             )
-    if HOST_LOCAL_PATH_RE.search(visible_markdown):
+    # Scan raw markdown so fenced scratch paths cannot bypass the portability gate.
+    if HOST_LOCAL_PATH_RE.search(markdown):
         results.append(
             CheckResult(
                 "equipment_ingestion_delivery_alignment:portable_paths",
