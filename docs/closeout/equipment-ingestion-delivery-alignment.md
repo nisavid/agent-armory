@@ -10,9 +10,9 @@ promotion work; it does not implement the #5 ingestion pipeline, create stock
 records, create Equipment Shop Card files, create Equipment Inspection and Test
 Plan files, or claim that any source intake candidate is stockable.
 
-#5 owns the broader equipment ingestion and promotion pipeline. #157 records the
-accepted delivery-system alignment and the routing of the now-closed #84 and #85
-source-intake findings into that later work.
+Issue #5 owns the broader equipment ingestion and promotion pipeline. #157
+records the accepted delivery-system alignment and the routing of the now-closed
+#84 and #85 source-intake findings into that later work.
 
 ## Source Evidence
 
@@ -55,12 +55,12 @@ compliance.
 
 ## Skill And Plugin Routing
 
-#84 applies only to ingestion slices that consume skill-eval methodology,
+Issue #84 applies only to ingestion slices that consume skill-eval methodology,
 package-validation, pressure-validation, trigger-selection evals, harness
 adaptation, or skill-publication evidence. It is not a general ingestion rule for
 all equipment shapes.
 
-#85 applies only to plugin-shaped ingestion slices or marketplace-like
+Issue #85 applies only to plugin-shaped ingestion slices or marketplace-like
 presentation slices that need plugin manifest scaffolding, component surface
 selection, asset metadata, policy/auth semantics, placeholder-debt handling, or
 Codex plugin publication evidence. It is not a universal schema for all
@@ -111,7 +111,7 @@ human-facing or agent-facing public workflow document needs a behavioral update
 from #157 beyond this closeout record.
 
 Ralph review scope for #157 is cross-boundary coherence across #5, #84, #85,
-#147, this record, validator coverage, security closeout, documentation
+issue #147, this record, validator coverage, security closeout, documentation
 closeout, and issue projection. Story quality review scope is the fit with the
 Forge conveyor and Efficient Coherence doctrine: record stable boundaries here,
 keep unresolved ingestion design in #5, and avoid broadening skill/plugin source

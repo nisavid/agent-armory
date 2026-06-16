@@ -3008,6 +3008,71 @@ class ValidatorPrimitiveTests(unittest.TestCase):
                         results,
                     )
 
+    def test_validate_equipment_ingestion_delivery_alignment_rejects_fenced_host_local_paths(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    # Equipment Ingestion Delivery Alignment
+
+                    Status: Alignment Record
+
+                    ## Scope Boundary
+
+                    #157 records alignment.
+
+                    ## Source Evidence
+
+                    #5, #84, #85, #147, and #157.
+
+                    ```text
+                    Scratch source: /home/agent/work/agent-armory
+                    ```
+
+                    ## Accepted Alignment
+
+                    Source intake records provenance, eligibility, licensing,
+                    update-channel, and compatibility evidence. Forge design decides the
+                    equipment shape before stock inventory. inventory/equipment.toml
+                    remains the stock authority. The Equipment Shop Card and storefront display
+                    are projections. The Equipment Inspection and Test Plan and
+                    delivery compliance gate stockable releases separately from promotion state.
+
+                    ## Skill And Plugin Routing
+
+                    skill-eval and plugin-shaped routes stay slice-specific.
+
+                    ## Follow-Up Projection
+
+                    No new follow-up is projected here.
+
+                    ## Dependency And Label Cleanup
+
+                    Dependency labels remain unblocked.
+
+                    ## Security Documentation And Review Closeout
+
+                    Reviewed.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            results = validate_equipment_ingestion_delivery_alignment(root)
+
+        self.assertIn(
+            CheckResult(
+                name="equipment_ingestion_delivery_alignment:portable_paths",
+                ok=False,
+                detail="record must not preserve host-local paths",
+                path=EQUIPMENT_INGESTION_DELIVERY_ALIGNMENT_PATH,
+            ),
+            results,
+        )
+
     def test_validate_equipment_ingestion_delivery_alignment_accepts_complete_record(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
