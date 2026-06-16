@@ -5,11 +5,11 @@ id = "agent-equipment-config"
 name = "Agent Equipment Config"
 summary = "Shared Config runtime slice for loading TOML policy layers, explaining effective configuration, and exposing CLI and MCP parity."
 promotion_state = "published"
-delivery_compliance = "pending"
+delivery_compliance = "passed"
 shop_card = "docs/equipment/shop-cards/agent-equipment-config.md"
 inspection_test_plan = "docs/equipment/inspection-test-plans/agent-equipment-config.md"
 closeout_record = "docs/closeout/agent-equipment-config-delivery-retrofit.md"
-notes = "Historical published runtime slice from #23 and #135; delivery compliance remains pending until Codex gear-up validation passes."
+notes = "Published runtime slice from #23 and #135 with Codex gear-up validation recorded in the ITP and closeout evidence."
 
 [[equipment.components]]
 name = "Config CLI runtime"
@@ -69,9 +69,11 @@ paths = ["plugins/agent-equipment-config/skills/agent-equipment-config/SKILL.md"
 [[equipment.components]]
 name = "Codex gear-up validation"
 kind = "validation"
-status = "planned"
-paths = []
-notes = "Tracked by #156; delivery compliance remains pending until it passes."
+status = "required"
+paths = [
+  "docs/equipment/inspection-test-plans/agent-equipment-config.md",
+  "docs/closeout/agent-equipment-config-delivery-retrofit.md",
+]
 
 [[equipment.components]]
 name = "Secret value resolution"

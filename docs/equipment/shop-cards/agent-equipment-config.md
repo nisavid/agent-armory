@@ -40,12 +40,12 @@ integration surfaces:
 
 ## Delivery status
 
-Delivery compliance: pending.
+Delivery compliance: passed.
 
 The canonical stock record is
 [`inventory/equipment.toml`](../../../inventory/equipment.toml). The linked
 [Inspection and Test Plan](../inspection-test-plans/agent-equipment-config.md)
-keeps delivery compliance pending until Codex gear-up validation passes.
+records the repo-local Codex gear-up checks and residual limits.
 
 ## Gear-up paths
 
@@ -99,7 +99,10 @@ keeps delivery compliance pending until Codex gear-up validation passes.
   [marketplace](../../../.agents/plugins/marketplace.json).
 - Required: Config routing skill,
   [`plugins/agent-equipment-config/skills/agent-equipment-config/SKILL.md`](../../../plugins/agent-equipment-config/skills/agent-equipment-config/SKILL.md).
-- Planned: Codex gear-up validation, tracked by #156.
+- Required: Codex gear-up validation evidence,
+  [Inspection and Test Plan](../inspection-test-plans/agent-equipment-config.md)
+  and
+  [delivery closeout](../../closeout/agent-equipment-config-delivery-retrofit.md).
 - Unavailable: secret value resolution. Config records secret references and
   leaves provider lookup, authentication, value lifetime, and private audit to
   the provider-owning surface.
@@ -122,8 +125,8 @@ keeps delivery compliance pending until Codex gear-up validation passes.
 ## Support and lifecycle
 
 The published runtime slice is supported as local repository equipment. Its
-delivery compliance remains pending until Codex gear-up validation passes and
-the linked ITP records that result.
+delivery compliance is backed by the linked ITP, closeout record, CLI fallback,
+stdio MCP smoke path, Codex plugin source, and routing skill.
 
 Rollback is documentation-only for this retrofit: remove or revise the stock
 record and its linked card, ITP, closeout, and storefront routes if a later
