@@ -11,7 +11,7 @@ inventory uses schema `agent-armory.equipment-stock.v1`.
 
 ## Stock Records
 
-- `agent-equipment-config` - Agent Equipment Config - `pending` -
+- `agent-equipment-config` - Agent Equipment Config - `passed` -
   [shop card](shop-cards/agent-equipment-config.md) -
   [ITP](inspection-test-plans/agent-equipment-config.md)
 
@@ -36,4 +36,4 @@ surfaces.
 
 Config now has a stocked inventory record and
 [shop card](shop-cards/agent-equipment-config.md). Its delivery compliance is
-pending until Codex gear-up validation passes.
+passed with repo-local Codex gear-up evidence in the linked ITP.

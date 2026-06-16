@@ -12974,7 +12974,7 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
 
         self.assertEqual("Agent Equipment Config", config.get("name"))
         self.assertEqual("published", config.get("promotion_state"))
-        self.assertEqual("pending", config.get("delivery_compliance"))
+        self.assertEqual("passed", config.get("delivery_compliance"))
         self.assertEqual(
             "docs/equipment/shop-cards/agent-equipment-config.md",
             config.get("shop_card"),
@@ -12999,7 +12999,7 @@ class PublishedEquipmentDeliveryValidationTests(unittest.TestCase):
             "Example config layers": "optional",
             "Codex plugin": "required",
             "Config routing skill": "required",
-            "Codex gear-up validation": "planned",
+            "Codex gear-up validation": "required",
             "Secret value resolution": "unavailable",
         }
         component_records = [

@@ -1667,10 +1667,17 @@ AGENT_EQUIPMENT_CONFIG_PLUGIN_STOCK_COMPONENT_PATHS = {
         }
     ),
     "Config routing skill": frozenset({AGENT_EQUIPMENT_CONFIG_PLUGIN_SKILL_PATH}),
+    "Codex gear-up validation": frozenset(
+        {
+            "docs/equipment/inspection-test-plans/agent-equipment-config.md",
+            "docs/closeout/agent-equipment-config-delivery-retrofit.md",
+        }
+    ),
 }
 AGENT_EQUIPMENT_CONFIG_PLUGIN_STOCK_COMPONENT_KINDS = {
     "Codex plugin": "plugin",
     "Config routing skill": "skill",
+    "Codex gear-up validation": "validation",
 }
 AGENT_EQUIPMENT_CONFIG_MCP_WRITE_TOOLS = ["config.apply", "migrate.config_apply"]
 AGENT_EQUIPMENT_CONFIG_HOOK_MATCHER = (
@@ -8539,7 +8546,7 @@ def validate_agent_equipment_config_codex_plugin_inventory(root: Path) -> list[C
         ]
     results: list[CheckResult] = []
     for component_name, expected_paths in AGENT_EQUIPMENT_CONFIG_PLUGIN_STOCK_COMPONENT_PATHS.items():
-        component_key = component_name.lower().replace(" ", "_")
+        component_key = component_name.lower().replace(" ", "_").replace("-", "_")
         component_matches = [
             component
             for component in components

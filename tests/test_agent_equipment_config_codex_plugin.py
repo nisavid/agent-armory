@@ -741,6 +741,42 @@ class AgentEquipmentConfigCodexPluginValidationTests(unittest.TestCase):
             results,
         )
 
+    def test_validator_rejects_planned_codex_gear_up_validation_component(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_valid_plugin_fixture(root)
+            inventory_path = root / "inventory/equipment.toml"
+            inventory_text = inventory_path.read_text(encoding="utf-8")
+            inventory_text = inventory_text.replace(
+                'name = "Codex gear-up validation"\n'
+                'kind = "validation"\n'
+                'status = "required"\n'
+                'paths = [\n'
+                '  "docs/equipment/inspection-test-plans/agent-equipment-config.md",\n'
+                '  "docs/closeout/agent-equipment-config-delivery-retrofit.md",\n'
+                ']\n',
+                'name = "Codex gear-up validation"\n'
+                'kind = "validation"\n'
+                'status = "planned"\n'
+                'paths = []\n'
+                'notes = "Tracked by #156."\n',
+            )
+            inventory_path.write_text(inventory_text, encoding="utf-8")
+
+            results = validator.validate_agent_equipment_config_codex_plugin(root)
+
+        self.assertIn(
+            CheckResult(
+                "agent_equipment_config_codex_plugin:inventory:codex_gear_up_validation",
+                False,
+                "Codex gear-up validation must be a required validation component and list stocked paths; "
+                "missing paths: docs/closeout/agent-equipment-config-delivery-retrofit.md, "
+                "docs/equipment/inspection-test-plans/agent-equipment-config.md",
+                "inventory/equipment.toml",
+            ),
+            results,
+        )
+
     def test_validator_rejects_wrapped_mcp_server_maps_for_this_plugin(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -1210,7 +1246,7 @@ class AgentEquipmentConfigCodexPluginValidationTests(unittest.TestCase):
             results,
         )
 
-    def test_live_stock_record_requires_plugin_skill_launcher_and_hook_paths(self):
+    def test_live_stock_record_requires_plugin_skill_launcher_hook_and_gear_up_paths(self):
         repo_root = Path(__file__).resolve().parents[1]
         inventory = load_toml(repo_root / "inventory/equipment.toml")
         config = next(
@@ -1223,9 +1259,13 @@ class AgentEquipmentConfigCodexPluginValidationTests(unittest.TestCase):
 
         self.assertEqual("required", components["Codex plugin"]["status"])
         self.assertEqual("required", components["Config routing skill"]["status"])
-        self.assertEqual("planned", components["Codex gear-up validation"]["status"])
+        self.assertEqual("required", components["Codex gear-up validation"]["status"])
 
-        required_paths = set(components["Codex plugin"]["paths"]) | set(components["Config routing skill"]["paths"])
+        required_paths = (
+            set(components["Codex plugin"]["paths"])
+            | set(components["Config routing skill"]["paths"])
+            | set(components["Codex gear-up validation"]["paths"])
+        )
         for relative_path in [
             ".agents/plugins/marketplace.json",
             "plugins/agent-equipment-config/.codex-plugin/plugin.json",
@@ -1235,6 +1275,8 @@ class AgentEquipmentConfigCodexPluginValidationTests(unittest.TestCase):
             "plugins/agent-equipment-config/hooks/config_write_guard.py",
             "plugins/agent-equipment-config/skills/agent-equipment-config/SKILL.md",
             "plugins/agent-equipment-config/README.md",
+            "docs/equipment/inspection-test-plans/agent-equipment-config.md",
+            "docs/closeout/agent-equipment-config-delivery-retrofit.md",
         ]:
             self.assertIn(relative_path, required_paths)
             self.assertTrue(
